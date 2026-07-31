@@ -110,8 +110,23 @@ uv run pytest                    # offline unit tests
 MT5_LIVE_SMOKE=1 uv run pytest -m live   # needs terminal + server
 ```
 
+## Charts & day-to-day use
+
+See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
+
+- How to open charts, timeframes, zoom, indicators  
+- Hyprland freezes / black menus / mouse recovery  
+- `./scripts/07-restart-terminal.sh` and `./scripts/08-status.sh`  
+
+```bash
+./scripts/04-start-terminal.sh --detach   # start (or warn if already running)
+./scripts/07-restart-terminal.sh          # after freeze / invisible window
+./scripts/08-status.sh                    # process + bridge freshness
+```
+
 ## Docs
 
+- [Charts & stability (Hyprland/Wine)](docs/CHARTS-AND-STABILITY.md)
 - [Arch setup](docs/ARCH-SETUP.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Troubleshooting](docs/TROUBLESHOOTING.md)

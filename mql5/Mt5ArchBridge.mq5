@@ -5,21 +5,23 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.01"
+#property version   "1.02"
 #property description "Writes account/symbols/candles JSON under MQL5/Files/mt5_arch/"
 
-input int    InpTimerMs     = 1000;
+input int    InpTimerSec    = 1;       // Snapshot interval (seconds) — more reliable than ms under Wine
 input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,USDCHF";
 input string InpTimeframes  = "M15,H1,H4,D1";
 input int    InpCandleCount = 50;
 
 string g_dir = "mt5_arch";
+datetime g_last_write = 0;
 
 int OnInit()
   {
    FolderCreate(g_dir);
-   EventSetMillisecondTimer((int)MathMax(200, InpTimerMs));
-   Print("Mt5ArchBridge ON -> Files/", g_dir);
+   // Second-based timer is more reliable under Wine than EventSetMillisecondTimer
+   EventSetTimer((int)MathMax(1, InpTimerSec));
+   Print("Mt5ArchBridge ON -> Files/", g_dir, " timer=", InpTimerSec, "s");
    WriteAll();
    return INIT_SUCCEEDED;
   }
@@ -34,10 +36,17 @@ void OnTimer()
    WriteAll();
   }
 
-void OnTick() {}
+void OnTick()
+  {
+   // Backup path if timer stalls under Wine (at most once per second)
+   datetime now = TimeLocal();
+   if(now != g_last_write)
+      WriteAll();
+  }
 
 void WriteAll()
   {
+   g_last_write = TimeLocal();
    WriteAccount();
    WriteTerminal();
    WriteSymbols();
@@ -46,7 +55,8 @@ void WriteAll()
    int h = FileOpen(g_dir + "\\heartbeat.txt", FILE_WRITE|FILE_TXT|FILE_ANSI);
    if(h != INVALID_HANDLE)
      {
-      FileWriteString(h, IntegerToString((long)TimeLocal()));
+      FileWriteString(h, IntegerToString((long)TimeLocal()) + " connected=" +
+         (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0"));
       FileClose(h);
      }
   }
@@ -73,8 +83,10 @@ void Put(const string rel, const string body)
 
 void WriteAccount()
   {
+   // Prefer trade-server fields; zeros often mean not fully connected yet
+   long login = AccountInfoInteger(ACCOUNT_LOGIN);
    string j = "{";
-   j += "\"login\":" + IntegerToString(AccountInfoInteger(ACCOUNT_LOGIN)) + ",";
+   j += "\"login\":" + IntegerToString(login) + ",";
    j += "\"balance\":" + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ",";
    j += "\"equity\":" + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2) + ",";
    j += "\"margin\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN), 2) + ",";
@@ -85,8 +97,10 @@ void WriteAccount()
    j += "\"server\":\"" + Esc(AccountInfoString(ACCOUNT_SERVER)) + "\",";
    j += "\"name\":\"" + Esc(AccountInfoString(ACCOUNT_NAME)) + "\",";
    j += "\"company\":\"" + Esc(AccountInfoString(ACCOUNT_COMPANY)) + "\",";
+   j += "\"trade_mode\":" + IntegerToString((int)AccountInfoInteger(ACCOUNT_TRADE_MODE)) + ",";
    j += "\"trade_allowed\":" + (TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",";
-   j += "\"algo_allowed\":" + (MQLInfoInteger(MQL_TRADE_ALLOWED) ? "true" : "false");
+   j += "\"algo_allowed\":" + (MQLInfoInteger(MQL_TRADE_ALLOWED) ? "true" : "false") + ",";
+   j += "\"terminal_connected\":" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false");
    j += "}";
    Put(g_dir + "\\account.json", j);
   }
