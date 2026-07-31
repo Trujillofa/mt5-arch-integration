@@ -141,7 +141,9 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 ./scripts/10-recover-terminal.sh --fullscreen        # window vanished / ghost process
 ./scripts/09-fullscreen-terminal.sh                  # maximize on active monitor (fullscreenstate 1)
 ./scripts/11-clipboard-bridge.sh start               # Wayland→X11 so Ctrl+V works in MT5
+./scripts/12-paste-into-mt5.sh --type                # hard-type clipboard into focused MT5 field
 ./scripts/08-status.sh                               # process + bridge + ghost check
+# Keys: Super+Alt+V paste · Super+Alt+Shift+V type (login/password)
 ```
 
 ## Docs

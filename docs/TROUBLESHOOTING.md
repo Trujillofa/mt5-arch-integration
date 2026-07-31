@@ -108,24 +108,42 @@ export MT5_RPYC_PORT=18813
 
 `mt5server` effectively allows remote control of a trading terminal. Keep it on `127.0.0.1` unless you have a secured tunnel.
 
-## Ctrl+V paste does nothing in MT5
+## Ctrl+V / right-click Paste does nothing in MT5
 
-MT5 is an **XWayland** app. Copies from Firefox/Kitty land in the **Wayland** clipboard only.
+MT5 is **XWayland**. Linux apps use the **Wayland** clipboard. Screenshots (PNG) on the clipboard also block text paste.
+
+### Quick fix (most reliable)
+
+1. Copy **text** (not a screenshot) from the browser.  
+2. Click the MT5 password/login field.  
+3. Press **Super+Alt+V** (paste) or **Super+Alt+Shift+V** (type keys — best for login).
+
+Or from a terminal:
 
 ```bash
-sudo pacman -S --needed wl-clipboard xclip
 cd ~/Projects/trading/mt5-arch-integration
 ./scripts/11-clipboard-bridge.sh start
-# after copying text in a browser:
-./scripts/11-clipboard-bridge.sh once
+./scripts/11-clipboard-bridge.sh once          # after each copy if needed
+./scripts/12-paste-into-mt5.sh                 # focus MT5 + Shift+Insert
+./scripts/12-paste-into-mt5.sh --type          # types characters (login/password)
 ```
 
-Alternatives inside MT5: **Shift+Insert**, **Super+V** (Omarchy), or right-click → Paste.
-
-Check both sides match:
+### Checks
 
 ```bash
-wl-paste
-xclip -o -selection clipboard
-./scripts/11-clipboard-bridge.sh status
+# Must show text, not PNG garbage:
+wl-paste --type text
+./scripts/11-clipboard-bridge.sh status        # wayland_text and x11_utf8 should match
 ```
+
+If `wl-paste --type text` is empty, the clipboard is an **image** — copy the password again as text.
+
+### Keys
+
+| Key | Effect |
+|-----|--------|
+| Super+Alt+V | Force-paste into MT5 |
+| Super+Alt+Shift+V | Type clipboard into focused field |
+| Super+V | Omarchy universal paste (Shift+Insert) |
+| Shift+Insert | Wine-friendly paste |
+| Ctrl+V | Works only if X11 UTF8_STRING is populated |

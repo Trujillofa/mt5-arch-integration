@@ -164,32 +164,30 @@ windowrulev2 = float, class:^(MetaEditor64\.exe)$
 # Install once (if needed)
 sudo pacman -S --needed wl-clipboard xclip
 
-# Start bridge (also auto-started by 04/07/10)
+# Start bridge (also auto-started by 04/07/10 + Hyprland autostart)
 ./scripts/11-clipboard-bridge.sh start
-./scripts/11-clipboard-bridge.sh status   # wayland and x11clip should match
+./scripts/11-clipboard-bridge.sh status   # wayland_text and x11_utf8 must match
 ```
 
-Then in MT5:
+**Important:** copy **text**, not a screenshot. If the clipboard is a PNG, paste into login fields will stay empty.
+
+Then in MT5 (click the field first):
 
 | Key | Action |
 |-----|--------|
-| **Ctrl+V** | Paste (needs bridge) |
-| **Shift+Insert** | Paste (same; often more reliable under Wine) |
-| **Super+V** | Omarchy “universal paste” → sends Shift+Insert to the focused window |
-| Right-click → Paste | Always works if X11 clip is populated |
+| **Super+Alt+V** | Force-paste into MT5 (recommended) |
+| **Super+Alt+Shift+V** | **Type** clipboard chars (best for password/login) |
+| **Ctrl+V** / **Shift+Insert** | Native paste (needs bridge + text on X11) |
+| **Super+V** | Omarchy universal paste → Shift+Insert |
+| Right-click → Paste | Works only if X11 UTF8 text is set |
 
-One-shot after copying a password in the browser:
+One-shot / hard paste:
 
 ```bash
 ./scripts/11-clipboard-bridge.sh once
+./scripts/12-paste-into-mt5.sh          # focus + Shift+Insert
+./scripts/12-paste-into-mt5.sh --type   # type into focused field
 ```
-
-Optional always-on (Hyprland `autostart.conf`):
-
-```conf
-exec-once = ~/Projects/trading/mt5-arch-integration/scripts/11-clipboard-bridge.sh start
-```
-
 **Ghost process:** `terminal64.exe` is alive but Hyprland has **zero** `terminal64.exe` clients. Login-only is *not* a ghost (recover will wait for the main shell). Always:
 
 ```bash
