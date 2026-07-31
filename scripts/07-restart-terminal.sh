@@ -95,5 +95,19 @@ for c in cs:
   done
 fi
 
-info "Login to WSFmarkets-Server only. Keep Mt5ArchBridge on one chart."
+FULLSCREEN=0
+for arg in "$@"; do
+  case "$arg" in
+    --fullscreen|--maximize) FULLSCREEN=1 ;;
+  esac
+done
+
+if [[ "$FULLSCREEN" -eq 1 ]]; then
+  sleep 2
+  info "Applying maximize on active monitor..."
+  "$SCRIPT_DIR/09-fullscreen-terminal.sh" --mode maximize || warn "fullscreen apply deferred (login dialog?)"
+fi
+
+info "Login to WSFmarkets-Server only. Keep charts as tabs (not undocked)."
+info "Fullscreen later: ./scripts/09-fullscreen-terminal.sh"
 info "Status: ./scripts/08-status.sh"

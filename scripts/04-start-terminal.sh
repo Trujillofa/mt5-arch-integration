@@ -66,12 +66,15 @@ info "Bridge EA: keep Mt5ArchBridge on one chart."
 
 DETACH=0
 PORTABLE=1
+FULLSCREEN=0
 for arg in "$@"; do
   case "$arg" in
     --detach) DETACH=1 ;;
     --no-portable) PORTABLE=0 ;;
+    --fullscreen|--maximize) FULLSCREEN=1 ;;
     -h|--help)
-      echo "Usage: $0 [--detach] [--no-portable]"
+      echo "Usage: $0 [--detach] [--no-portable] [--fullscreen]"
+      echo "  --fullscreen  after start, maximize main MT5 on active monitor"
       exit 0
       ;;
   esac
@@ -102,7 +105,15 @@ for c in json.load(sys.stdin):
     subprocess.run(['hyprctl', 'dispatch', 'focuswindow', f'address:{a}'], capture_output=True)
 " 2>/dev/null || true
   fi
+  if [[ "$FULLSCREEN" -eq 1 ]]; then
+    sleep 2
+    info "Applying maximize on active monitor..."
+    "$SCRIPT_DIR/09-fullscreen-terminal.sh" --mode maximize || warn "fullscreen apply deferred (login dialog?)"
+  fi
   exit 0
 fi
 
+if [[ "$FULLSCREEN" -eq 1 ]]; then
+  warn "--fullscreen requires --detach (will apply after background start)"
+fi
 exec wine "$term" "${ARGS[@]}"

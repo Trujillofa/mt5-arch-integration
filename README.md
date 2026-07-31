@@ -133,9 +133,12 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 - `./scripts/07-restart-terminal.sh` and `./scripts/08-status.sh`  
 
 ```bash
-./scripts/04-start-terminal.sh --detach   # start (or warn if already running)
-./scripts/07-restart-terminal.sh          # after freeze / invisible window
-./scripts/08-status.sh                    # process + bridge freshness
+./scripts/04-start-terminal.sh --detach              # start (or warn if already running)
+./scripts/04-start-terminal.sh --detach --fullscreen # start + fill active monitor
+./scripts/07-restart-terminal.sh --fullscreen        # after freeze / invisible window
+./scripts/09-fullscreen-terminal.sh                  # maximize main MT5 (tabs only)
+./scripts/09-fullscreen-terminal.sh --dry-run        # print target WxH
+./scripts/08-status.sh                               # process + bridge + fullscreen plan
 ```
 
 ## Docs

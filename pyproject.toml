@@ -37,6 +37,7 @@ dev = [
 
 [project.scripts]
 mt5-arch = "mt5_arch.cli:main"
+mt5-arch-window = "mt5_arch.window_ops:main"
 
 [project.urls]
 Homepage = "https://github.com/Trujillofa/mt5-arch-integration"

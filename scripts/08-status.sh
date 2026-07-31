@@ -89,6 +89,15 @@ else
 fi
 
 echo
+echo "==> Fullscreen plan (dry-run)"
+if command -v uv >/dev/null 2>&1; then
+  (cd "$REPO_ROOT" && uv run python -m mt5_arch.window_ops --dry-run 2>/dev/null) \
+    || warn "window plan failed (hyprctl?)"
+else
+  echo "  (uv not ready)"
+fi
+
+echo
 echo "==> CLI (optional)"
 if [[ -x "$REPO_ROOT/.venv/bin/mt5-arch" ]] || command -v uv >/dev/null 2>&1; then
   (cd "$REPO_ROOT" && uv run mt5-arch ping --json 2>/dev/null) || warn "mt5-arch ping failed (stale bridge or EA stopped)"

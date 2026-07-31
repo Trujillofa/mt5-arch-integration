@@ -20,8 +20,9 @@ Honest baseline: **Wine MT5 will not feel like Windows.** Charts, Market Watch, 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
 ./scripts/04-start-terminal.sh --detach
+./scripts/04-start-terminal.sh --detach --fullscreen   # fill active monitor
 # or after a freeze:
-./scripts/07-restart-terminal.sh
+./scripts/07-restart-terminal.sh --fullscreen
 ./scripts/08-status.sh
 ```
 
@@ -31,13 +32,40 @@ Login only to **`WSFmarkets-Server`**. Title should look like:
 
 Never use **MetaQuotes-Demo** for this account.
 
+## Full-screen / maximize (smooth charting)
+
+**Goal:** main MT5 window fills the **active** Hyprland monitor (e.g. 1920×1080).  
+**Never** use Wine virtual desktop (`explorer /desktop=…`) — it breaks mouse under Hyprland.
+
+```bash
+# Print plan (works even if MT5 is not running)
+./scripts/09-fullscreen-terminal.sh --dry-run
+./scripts/09-fullscreen-terminal.sh --dry-run --json
+
+# Apply maximize (preferred — better Wine input than exclusive fullscreen)
+./scripts/09-fullscreen-terminal.sh --mode maximize
+
+# Other monitor on dual 1080p
+./scripts/09-fullscreen-terminal.sh --monitor HDMI-A-1
+
+# Exclusive-style Hyprland fullscreen
+./scripts/09-fullscreen-terminal.sh --mode fullscreen
+```
+
+Rules for a smooth full-screen experience:
+
+1. **One main window** maximized — not undocked chart children.
+2. **Charts stay as tabs** inside that window (Market Watch → double-click symbol).
+3. Close windows titled like `EURUSD, Euro vs US Dollar` (undocked = often black under Wine).
+4. Dual monitors: the script targets the **focused/active** monitor only (not span both).
+
 ## How to use charts
 
 ### Open a chart
 
 1. **Market Watch** (left): find symbol (EURUSD, GBPUSD, …).
-2. **Double-click** the symbol → new chart (or chart replaces active window).
-3. Or right-click symbol → **Chart Window**.
+2. **Double-click** the symbol → new chart **tab** (do not undock).
+3. Avoid “Chart Window” undocked floating windows under Wine.
 
 ### Timeframes
 
