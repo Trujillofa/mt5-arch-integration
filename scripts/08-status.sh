@@ -89,10 +89,26 @@ else
 fi
 
 echo
-echo "==> Fullscreen plan (dry-run)"
+echo "==> Window / ghost check"
 if command -v uv >/dev/null 2>&1; then
-  (cd "$REPO_ROOT" && uv run python -m mt5_arch.window_ops --dry-run 2>/dev/null) \
-    || warn "window plan failed (hyprctl?)"
+  (cd "$REPO_ROOT" && uv run python -m mt5_arch.window_ops --dry-run --json 2>/dev/null) \
+    | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+except Exception:
+    print('  (parse failed)'); sys.exit(0)
+print(f\"  process_running={d.get('process_running')} ghost={d.get('ghost_process')} status={d.get('status')}\")
+mw = d.get('main_window')
+if mw:
+    print(f\"  main={mw.get('title')!r} size={mw.get('size')}\")
+else:
+    print('  main=(none)')
+pl = d.get('placement') or {}
+print(f\"  plan={pl.get('width')}x{pl.get('height')} mon={ (d.get('monitor') or {}).get('name') }\")
+if d.get('ghost_process'):
+    print('  RECOVER: ./scripts/10-recover-terminal.sh --fullscreen')
+" || warn "window plan failed (hyprctl?)"
 else
   echo "  (uv not ready)"
 fi

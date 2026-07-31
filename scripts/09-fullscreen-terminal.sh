@@ -54,4 +54,13 @@ ARGS=(--mode "$MODE")
 [[ "$JSON" -eq 1 ]] && ARGS+=(--json)
 
 info "MT5 window $MODE (no Wine virtual desktop)..."
+set +e
 uv run python -m mt5_arch.window_ops "${ARGS[@]}"
+rc=$?
+set -e
+if [[ "$rc" -eq 3 && "$DRY_RUN" -eq 0 ]]; then
+  warn "Ghost/unmapped MT5 detected — recovering..."
+  "$SCRIPT_DIR/10-recover-terminal.sh" --fullscreen
+  exit $?
+fi
+exit "$rc"

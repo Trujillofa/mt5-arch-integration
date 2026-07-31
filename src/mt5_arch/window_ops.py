@@ -8,21 +8,23 @@ import sys
 
 from mt5_arch.hypr_geometry import (
     apply_placement,
+    is_ghost_terminal,
     placement_within_tolerance,
     plan_fullscreen,
+    terminal64_process_running,
 )
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         prog="mt5-arch-window",
-        description="Maximize/fullscreen main MT5 terminal on active Hyprland monitor",
+        description="Maximize main MT5 terminal on active Hyprland monitor",
     )
     p.add_argument(
         "--mode",
         choices=("maximize", "fullscreen"),
         default="maximize",
-        help="maximize (move+resize, preferred) or exclusive-style fullscreen",
+        help="maximize (tiled fill, preferred) or fullscreen-1 after tile",
     )
     p.add_argument("--monitor", default=None, help="Hyprland monitor name (e.g. HDMI-A-2)")
     p.add_argument(
@@ -36,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    proc = terminal64_process_running()
     try:
         mon, placement, main = plan_fullscreen(
             mode=args.mode,
@@ -45,7 +48,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    payload = {
+    ghost = is_ghost_terminal(process_running=proc, main_window=main)
+
+    payload: dict = {
         "monitor": {
             "name": mon.name,
             "width": mon.width,
@@ -71,32 +76,44 @@ def main(argv: list[str] | None = None) -> int:
             "size": list(main.size),
             "floating": main.floating,
         },
+        "process_running": proc,
+        "ghost_process": ghost,
         "dry_run": args.dry_run,
         "virtual_desktop": False,
     }
 
     if main is None:
-        payload["status"] = "no_main_window"
-        payload["hint"] = (
-            "Start MT5 (./scripts/04-start-terminal.sh --detach) then re-run. "
-            "Charts must stay as tabs in the main window — not undocked."
-        )
+        if ghost:
+            payload["status"] = "ghost_process"
+            payload["hint"] = (
+                "MT5 process is running but the window is unmapped (Hyprland/Wine bug). "
+                "Run: ./scripts/10-recover-terminal.sh"
+            )
+            code = 3
+        else:
+            payload["status"] = "no_main_window"
+            payload["hint"] = (
+                "Start MT5: ./scripts/04-start-terminal.sh --detach "
+                "then re-run fullscreen. Charts as tabs only — not undocked."
+            )
+            code = 0 if args.dry_run else 2
         if args.json:
             print(json.dumps(payload, indent=2))
         else:
             print(f"monitor: {mon.name} {mon.width}x{mon.height} @ ({mon.x},{mon.y})")
             print(f"target:  {placement.width}x{placement.height} mode={placement.mode}")
-            print("main:    (not found — dry-run geometry still valid)")
+            if ghost:
+                print("main:    GHOST process (no Hyprland window)")
+            else:
+                print("main:    (not found)")
             print(payload["hint"])
-        # Planning geometry without MT5 is success (operator can start terminal next)
-        return 0
+        return code
 
     cmds = apply_placement(main, placement, dry_run=args.dry_run)
     payload["commands"] = cmds
     payload["status"] = "planned" if args.dry_run else "applied"
 
     if not args.dry_run:
-        # re-fetch size if possible
         try:
             from mt5_arch.hypr_geometry import fetch_clients, select_main_terminal
 
@@ -108,8 +125,11 @@ def main(argv: list[str] | None = None) -> int:
                     "size": list(again.size),
                 }
                 payload["within_tolerance"] = placement_within_tolerance(
-                    again.size, placement, tol_px=64
+                    again.size, placement, tol_px=96
                 )
+            elif terminal64_process_running():
+                payload["status"] = "unmapped_after_apply"
+                payload["hint"] = "Window vanished after resize; run ./scripts/10-recover-terminal.sh"
         except Exception:  # noqa: BLE001
             pass
 
@@ -132,6 +152,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"status:  {payload['status']}")
             if "within_tolerance" in payload:
                 print(f"fit:     {payload['within_tolerance']}")
+            if payload.get("status") == "unmapped_after_apply":
+                print(payload.get("hint", ""))
+    if payload.get("status") == "unmapped_after_apply":
+        return 3
     return 0
 
 

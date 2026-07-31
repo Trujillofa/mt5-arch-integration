@@ -149,11 +149,25 @@ windowrulev2 = float, class:^(MetaEditor64\.exe)$
 | Mouse dead | Alt+Tab to MT5, click chart center; never use Wine “virtual desktop” |
 | Frozen, high CPU | `./scripts/07-restart-terminal.sh` |
 | Black Tools/Options | Skip them; Experts/OpenCL already set in config |
-| Process running, no window | `./scripts/07-restart-terminal.sh` (moves to active workspace) |
+| Process running, no window (**ghost**) | `./scripts/10-recover-terminal.sh --fullscreen` |
+| Window vanishes after **chart click** | Same — Wine unmapped the surface; run recover (not “lost forever”) |
+
+**Ghost process:** `terminal64.exe` is alive but Hyprland has no window. Always:
+
+```bash
+/home/yderf/Projects/trading/mt5-arch-integration/scripts/10-recover-terminal.sh --fullscreen
+```
+
+`09-fullscreen-terminal.sh` auto-calls recover when it detects a ghost (exit code 3).
+
+Safer maximize uses **tiled fill** (not exclusive fullscreen), which is less likely to unmap after chart clicks. Prefer a **dedicated empty workspace** for MT5; avoid minimize and undocked charts.
+
+Optional Hyprland rules: `ops/hyprland/mt5-window-rules.conf`
 
 ### Avoid for stability
 
 - Wine **virtual desktop** (`explorer /desktop=…`) — broke mouse here  
+- **Minimize button** and undocking charts (both can unmap the window)  
 - Opening **Market** store tab for long periods  
 - Multiple `terminal64.exe` instances  
 - MetaQuotes-Demo login for WSFunded accounts  
@@ -182,7 +196,9 @@ Charts can stream while `AccountInfo` returns zeros under Wine.
 |--------|------|
 | `04-start-terminal.sh` | Start MT5 (Hyprland-safe env) |
 | `07-restart-terminal.sh` | Kill stuck terminal + relaunch + focus |
-| `08-status.sh` | Process, window, bridge freshness |
+| `08-status.sh` | Process, window, ghost check, bridge |
+| `09-fullscreen-terminal.sh` | Maximize main MT5 on active monitor |
+| `10-recover-terminal.sh` | Ghost process / vanished window recovery |
 | `06-install-file-bridge.sh` | Install/compile Mt5ArchBridge EA |
 
 ## Related docs

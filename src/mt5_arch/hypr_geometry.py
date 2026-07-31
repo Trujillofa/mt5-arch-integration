@@ -6,6 +6,7 @@ Pure functions are unit-tested without hyprctl. I/O wrappers call hyprctl when p
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from collections.abc import Sequence
@@ -188,6 +189,67 @@ def select_main_terminal(clients: Sequence[ClientRef]) -> ClientRef | None:
     return max(mains, key=lambda c: c.size[0] * c.size[1])
 
 
+def terminal64_process_running() -> bool:
+    """True if a Wine MetaTrader terminal64.exe process exists."""
+    for pid in os.listdir("/proc"):
+        if not pid.isdigit():
+            continue
+        try:
+            with open(f"/proc/{pid}/cmdline", "rb") as fh:
+                cmd = fh.read().replace(b"\x00", b" ").decode("utf-8", "replace")
+        except OSError:
+            continue
+        if "bash" in cmd or "extglob" in cmd:
+            continue
+        if "terminal64.exe" in cmd:
+            return True
+    return False
+
+
+def is_ghost_terminal(
+    *,
+    process_running: bool,
+    main_window: ClientRef | None,
+) -> bool:
+    """Process alive but no mapped main Hyprland window (minimize/unmap bug)."""
+    return bool(process_running and main_window is None)
+
+
+def kill_terminal64_processes() -> list[int]:
+    """SIGTERM then SIGKILL MetaTrader terminal/editor processes. Returns PIDs killed."""
+    import signal
+    import time
+
+    keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
+    killed: list[int] = []
+    for pid_s in list(os.listdir("/proc")):
+        if not pid_s.isdigit():
+            continue
+        try:
+            with open(f"/proc/{pid_s}/cmdline", "rb") as fh:
+                cmd = fh.read().replace(b"\x00", b" ").decode("utf-8", "replace")
+        except OSError:
+            continue
+        if "bash" in cmd or "extglob" in cmd:
+            continue
+        if not any(k in cmd for k in keys) and "webview-exe-name=terminal64" not in cmd:
+            continue
+        pid = int(pid_s)
+        try:
+            os.kill(pid, signal.SIGTERM)
+            killed.append(pid)
+        except ProcessLookupError:
+            pass
+    time.sleep(1.5)
+    for pid in killed:
+        try:
+            os.kill(pid, 0)
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    return killed
+
+
 def placement_within_tolerance(
     actual_size: tuple[int, int],
     expected: WindowPlacement,
@@ -314,19 +376,16 @@ def apply_placement(
     dispatcher name (e.g. ``exact 1920 1080,address:0x…``).
     """
     addr = f"address:{client.address}"
-    # Wine often ignores floating resize (sticks ~1600x900). Tiling fills the
-    # monitor reliably under Hyprland (typically 1920x1080 minus gaps/bar).
+    # Wine + Hyprland: floating exact resize is ignored; exclusive fullscreen (2)
+    # and toggle-heavy paths can unmap the window after chart clicks.
+    # Prefer: focus → move to monitor → settiled only (fills ~monitor minus gaps).
     steps: list[tuple[str, str]] = [
         ("focuswindow", addr),
-        # move to monitor while focused (do not glue mon:name and address)
         ("movewindow", f"mon:{placement.monitor}"),
         ("settiled", addr),
     ]
     if placement.mode == "fullscreen":
-        # exclusive fullscreen after tiling
-        steps.append(("fullscreen", "2"))
-    else:
-        # pseudo-maximize: tiled + fullscreen 1 (maximize without exclusive grab)
+        # optional exclusive — may be less stable with Wine; still available
         steps.append(("fullscreen", "1"))
 
     cmds = [f"{d} {a}" for d, a in steps]

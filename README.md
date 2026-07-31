@@ -138,7 +138,8 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 ./scripts/07-restart-terminal.sh --fullscreen        # after freeze / invisible window
 ./scripts/09-fullscreen-terminal.sh                  # maximize main MT5 (tabs only)
 ./scripts/09-fullscreen-terminal.sh --dry-run        # print target WxH
-./scripts/08-status.sh                               # process + bridge + fullscreen plan
+./scripts/10-recover-terminal.sh --fullscreen        # window vanished / ghost process
+./scripts/08-status.sh                               # process + bridge + ghost check
 ```
 
 ## Docs

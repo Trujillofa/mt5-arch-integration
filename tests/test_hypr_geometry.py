@@ -159,6 +159,36 @@ def test_select_main_prefers_largest() -> None:
     assert main.size == (1920, 1080)
 
 
+def test_is_ghost_terminal() -> None:
+    from mt5_arch.hypr_geometry import is_ghost_terminal
+
+    main = ClientRef(
+        "0x1",
+        "118248 - WSFmarkets-Server - Netting",
+        "terminal64.exe",
+        (0, 0),
+        (1920, 1080),
+        False,
+    )
+    assert is_ghost_terminal(process_running=True, main_window=None) is True
+    assert is_ghost_terminal(process_running=False, main_window=None) is False
+    assert is_ghost_terminal(process_running=True, main_window=main) is False
+    assert is_ghost_terminal(process_running=False, main_window=main) is False
+
+
+def test_is_main_accepts_bracket_title() -> None:
+    assert is_main_terminal_client(
+        ClientRef(
+            "0x1",
+            "118248 - WSFmarkets-Server - Netting - [USDJPY,H1]",
+            "terminal64.exe",
+            (0, 0),
+            (1900, 1000),
+            True,
+        )
+    )
+
+
 def test_placement_within_tolerance() -> None:
     mon = DUAL_1080[0]
     p = compute_maximize_placement(mon)
