@@ -23,7 +23,7 @@ export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 # Never enable Wine virtual desktop (breaks mouse under Hyprland)
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
-# Single instance: avoid zombie second terminals
+# Single instance: avoid zombie second terminals; recover ghosts automatically
 if python3 -c "
 import os, sys
 for pid in os.listdir('/proc'):
@@ -40,7 +40,24 @@ for pid in os.listdir('/proc'):
         sys.exit(0)
 sys.exit(1)
 " >/tmp/mt5-existing.pid 2>/dev/null; then
-  warn "terminal64.exe already running (pid $(cat /tmp/mt5-existing.pid))."
+  EXISTING_PID="$(cat /tmp/mt5-existing.pid)"
+  # Count Hyprland terminal64 windows (0 ⇒ ghost process)
+  WIN_COUNT=0
+  if command -v hyprctl >/dev/null 2>&1; then
+    WIN_COUNT="$(hyprctl clients -j 2>/dev/null | python3 -c "
+import sys, json
+try:
+    cs = json.load(sys.stdin)
+except Exception:
+    print(0); raise SystemExit(0)
+print(sum(1 for c in cs if c.get('class') == 'terminal64.exe'))
+" 2>/dev/null || echo 0)"
+  fi
+  if [[ "${WIN_COUNT:-0}" -eq 0 ]]; then
+    warn "terminal64.exe pid $EXISTING_PID is a GHOST (no Hyprland window) — recovering"
+    exec "$SCRIPT_DIR/10-recover-terminal.sh" "$@"
+  fi
+  warn "terminal64.exe already running (pid $EXISTING_PID, windows=$WIN_COUNT)."
   warn "Use ./scripts/07-restart-terminal.sh to kill and relaunch, or attach to the existing window."
   if command -v hyprctl >/dev/null 2>&1; then
     hyprctl clients -j 2>/dev/null | python3 -c "
@@ -50,6 +67,14 @@ for c in json.load(sys.stdin):
         print('  window:', c.get('title'), 'ws=', (c.get('workspace') or {}).get('id'))
 " 2>/dev/null || true
   fi
+  # Still apply fullscreen if requested on the live window
+  for arg in "$@"; do
+    case "$arg" in
+      --fullscreen|--maximize)
+        "$SCRIPT_DIR/09-fullscreen-terminal.sh" --mode maximize || true
+        ;;
+    esac
+  done
   exit 0
 fi
 

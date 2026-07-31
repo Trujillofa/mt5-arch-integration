@@ -65,10 +65,27 @@ nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
 echo $! >/tmp/mt5-terminal.pid
 info "PID $(cat /tmp/mt5-terminal.pid)  log=/tmp/mt5-terminal.log"
 
-# Wait for window and move to active Hyprland workspace
+# Wait for main shell (not just Login), then move to active Hyprland workspace
 if command -v hyprctl >/dev/null 2>&1; then
-  info "Waiting for Hyprland window..."
-  for _ in $(seq 1 25); do
+  info "Waiting for Hyprland main window..."
+  MAIN_ADDR=""
+  for _ in $(seq 1 40); do
+    MAIN_ADDR="$(cd "$REPO_ROOT" && uv run python - <<'PY' 2>/dev/null || true
+from mt5_arch.hypr_geometry import fetch_clients, select_main_terminal
+m = select_main_terminal(fetch_clients())
+print(m.address if m else "")
+PY
+)"
+    if [[ -n "${MAIN_ADDR:-}" ]]; then
+      cur="$(hyprctl activeworkspace -j 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)"
+      if [[ -n "$cur" ]]; then
+        hyprctl dispatch movetoworkspace "${cur},address:${MAIN_ADDR}" >/dev/null 2>&1 || true
+      fi
+      hyprctl dispatch focuswindow "address:${MAIN_ADDR}" >/dev/null 2>&1 || true
+      info "Focused main terminal on workspace ${cur:-?} ($MAIN_ADDR)"
+      break
+    fi
+    # Fallback: any terminal64 window (Login) — focus only, keep waiting for main
     mapfile -t addrs < <(hyprctl clients -j 2>/dev/null | python3 -c "
 import sys, json
 try:
@@ -80,19 +97,13 @@ for c in cs:
         print(c.get('address', ''))
 " 2>/dev/null || true)
     if [[ ${#addrs[@]} -gt 0 && -n "${addrs[0]:-}" ]]; then
-      cur="$(hyprctl activeworkspace -j 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)"
-      for a in "${addrs[@]}"; do
-        [[ -z "$a" ]] && continue
-        if [[ -n "$cur" ]]; then
-          hyprctl dispatch movetoworkspace "${cur},address:${a}" >/dev/null 2>&1 || true
-        fi
-        hyprctl dispatch focuswindow "address:${a}" >/dev/null 2>&1 || true
-      done
-      info "Focused terminal window(s) on workspace ${cur:-?}"
-      break
+      hyprctl dispatch focuswindow "address:${addrs[0]}" >/dev/null 2>&1 || true
     fi
     sleep 0.4
   done
+  if [[ -z "${MAIN_ADDR:-}" ]]; then
+    warn "main window not ready yet (Login still open?); maximize may defer"
+  fi
 fi
 
 FULLSCREEN=0
@@ -103,8 +114,10 @@ for arg in "$@"; do
 done
 
 if [[ "$FULLSCREEN" -eq 1 ]]; then
-  sleep 2
+  # Wait briefly more so title becomes main shell after auto-login
+  sleep 1.5
   info "Applying maximize on active monitor..."
+  export MT5_NO_AUTO_RECOVER="${MT5_NO_AUTO_RECOVER:-1}"
   "$SCRIPT_DIR/09-fullscreen-terminal.sh" --mode maximize || warn "fullscreen apply deferred (login dialog?)"
 fi
 

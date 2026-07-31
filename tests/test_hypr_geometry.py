@@ -170,10 +170,50 @@ def test_is_ghost_terminal() -> None:
         (1920, 1080),
         False,
     )
+    login = ClientRef("0x2", "Login", "terminal64.exe", (0, 0), (400, 300), True)
+    # Backward-compat: no window list + no main ⇒ ghost
     assert is_ghost_terminal(process_running=True, main_window=None) is True
     assert is_ghost_terminal(process_running=False, main_window=None) is False
     assert is_ghost_terminal(process_running=True, main_window=main) is False
     assert is_ghost_terminal(process_running=False, main_window=main) is False
+    # True ghost: process + zero windows
+    assert (
+        is_ghost_terminal(process_running=True, main_window=None, any_terminal_window=[])
+        is True
+    )
+    # Login-only is NOT a ghost (avoids recover kill-loop during startup)
+    assert (
+        is_ghost_terminal(
+            process_running=True, main_window=None, any_terminal_window=[login]
+        )
+        is False
+    )
+    assert (
+        is_ghost_terminal(
+            process_running=True, main_window=None, any_terminal_window=True
+        )
+        is False
+    )
+
+
+def test_list_terminal64_clients() -> None:
+    from mt5_arch.hypr_geometry import list_terminal64_clients
+
+    clients = [
+        ClientRef("0xa", "Login", "terminal64.exe", (0, 0), (400, 300), True),
+        ClientRef("0xb", "kitty", "kitty", (0, 0), (800, 600), False),
+        ClientRef(
+            "0xc",
+            "118248 - WSFmarkets-Server - Netting",
+            "terminal64.exe",
+            (0, 0),
+            (1900, 1000),
+            False,
+        ),
+    ]
+    terms = list_terminal64_clients(clients)
+    assert len(terms) == 2
+    assert {t.address for t in terms} == {"0xa", "0xc"}
 
 
 def test_is_main_accepts_bracket_title() -> None:

@@ -151,16 +151,17 @@ windowrulev2 = float, class:^(MetaEditor64\.exe)$
 | Black Tools/Options | Skip them; Experts/OpenCL already set in config |
 | Process running, no window (**ghost**) | `./scripts/10-recover-terminal.sh --fullscreen` |
 | Window vanishes after **chart click** | Same — Wine unmapped the surface; run recover (not “lost forever”) |
+| Window tiny on shared workspace | `./scripts/09-fullscreen-terminal.sh` (uses `fullscreenstate 1`) |
 
-**Ghost process:** `terminal64.exe` is alive but Hyprland has no window. Always:
+**Ghost process:** `terminal64.exe` is alive but Hyprland has **zero** `terminal64.exe` clients. Login-only is *not* a ghost (recover will wait for the main shell). Always:
 
 ```bash
 /home/yderf/Projects/trading/mt5-arch-integration/scripts/10-recover-terminal.sh --fullscreen
 ```
 
-`09-fullscreen-terminal.sh` auto-calls recover when it detects a ghost (exit code 3).
+`09-fullscreen-terminal.sh` auto-calls recover on true ghost (exit code 3), with a nesting guard so it cannot loop forever. `04-start-terminal.sh` also redirects to recover when it finds a ghost PID.
 
-Safer maximize uses **tiled fill** (not exclusive fullscreen), which is less likely to unmap after chart clicks. Prefer a **dedicated empty workspace** for MT5; avoid minimize and undocked charts.
+Maximize uses Hyprland **`fullscreenstate 1 1`** (absolute maximize, not toggle; not exclusive fullscreen 2). That fills the active monitor (≈1896×1030 with gaps on 1920×1080) even when other tiled windows share the workspace. Prefer a **dedicated empty workspace** for MT5; avoid minimize and undocked charts.
 
 Optional Hyprland rules: `ops/hyprland/mt5-window-rules.conf`
 

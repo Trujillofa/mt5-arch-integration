@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.02"
+#property version   "1.03"
 #property description "Writes account/symbols/candles JSON under MQL5/Files/mt5_arch/"
 
 input int    InpTimerSec    = 1;       // Snapshot interval (seconds) — more reliable than ms under Wine
@@ -81,10 +81,22 @@ void Put(const string rel, const string body)
    FileClose(h);
   }
 
+// Under Wine, TERMINAL_CONNECTED is often false even when charts stream and
+// AccountInfoInteger(ACCOUNT_LOGIN) is set. Treat login+server as connected.
+bool IsEffectivelyConnected()
+  {
+   if(TerminalInfoInteger(TERMINAL_CONNECTED))
+      return true;
+   if(AccountInfoInteger(ACCOUNT_LOGIN) > 0 && StringLen(AccountInfoString(ACCOUNT_SERVER)) > 0)
+      return true;
+   return false;
+  }
+
 void WriteAccount()
   {
    // Prefer trade-server fields; zeros often mean not fully connected yet
    long login = AccountInfoInteger(ACCOUNT_LOGIN);
+   bool connected = IsEffectivelyConnected();
    string j = "{";
    j += "\"login\":" + IntegerToString(login) + ",";
    j += "\"balance\":" + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ",";
@@ -100,15 +112,18 @@ void WriteAccount()
    j += "\"trade_mode\":" + IntegerToString((int)AccountInfoInteger(ACCOUNT_TRADE_MODE)) + ",";
    j += "\"trade_allowed\":" + (TerminalInfoInteger(TERMINAL_TRADE_ALLOWED) ? "true" : "false") + ",";
    j += "\"algo_allowed\":" + (MQLInfoInteger(MQL_TRADE_ALLOWED) ? "true" : "false") + ",";
-   j += "\"terminal_connected\":" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false");
+   j += "\"terminal_connected\":" + (connected ? "true" : "false") + ",";
+   j += "\"terminal_connected_raw\":" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false");
    j += "}";
    Put(g_dir + "\\account.json", j);
   }
 
 void WriteTerminal()
   {
+   bool connected = IsEffectivelyConnected();
    string j = "{";
-   j += "\"connected\":" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false") + ",";
+   j += "\"connected\":" + (connected ? "true" : "false") + ",";
+   j += "\"connected_raw\":" + (TerminalInfoInteger(TERMINAL_CONNECTED) ? "true" : "false") + ",";
    j += "\"name\":\"" + Esc(TerminalInfoString(TERMINAL_NAME)) + "\",";
    j += "\"path\":\"" + Esc(TerminalInfoString(TERMINAL_PATH)) + "\",";
    j += "\"company\":\"" + Esc(TerminalInfoString(TERMINAL_COMPANY)) + "\",";

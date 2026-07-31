@@ -189,6 +189,11 @@ def select_main_terminal(clients: Sequence[ClientRef]) -> ClientRef | None:
     return max(mains, key=lambda c: c.size[0] * c.size[1])
 
 
+def list_terminal64_clients(clients: Sequence[ClientRef]) -> list[ClientRef]:
+    """All Hyprland clients with class terminal64.exe (main + Login + charts)."""
+    return [c for c in clients if c.class_name == "terminal64.exe"]
+
+
 def terminal64_process_running() -> bool:
     """True if a Wine MetaTrader terminal64.exe process exists."""
     for pid in os.listdir("/proc"):
@@ -209,10 +214,25 @@ def terminal64_process_running() -> bool:
 def is_ghost_terminal(
     *,
     process_running: bool,
-    main_window: ClientRef | None,
+    main_window: ClientRef | None = None,
+    any_terminal_window: bool | Sequence[ClientRef] | None = None,
 ) -> bool:
-    """Process alive but no mapped main Hyprland window (minimize/unmap bug)."""
-    return bool(process_running and main_window is None)
+    """True only when process is alive and Hyprland has zero terminal64 windows.
+
+    Login / undocked charts / partial titles still count as visible windows —
+    those are *not* ghosts (killing them causes recover loops during startup).
+    """
+    if not process_running:
+        return False
+    if main_window is not None:
+        return False
+    if any_terminal_window is None:
+        # Backward-compatible: treat missing window list as "unknown → not main"
+        # only counts as ghost when caller passes any_terminal_window explicitly.
+        return True
+    if isinstance(any_terminal_window, bool):
+        return not any_terminal_window
+    return len(list_terminal64_clients(any_terminal_window)) == 0
 
 
 def kill_terminal64_processes() -> list[int]:
@@ -369,24 +389,25 @@ def apply_placement(
 ) -> list[str]:
     """Dispatch Hyprland commands to maximize/fullscreen the client.
 
-    Prefers floating maximize (move+resize) for Wine input stability; exclusive
-    fullscreen is used when mode == 'fullscreen'.
+    Uses absolute ``fullscreenstate`` (not toggle) so re-runs stay stable.
+    - maximize → internal=1 client=1 (fills monitor minus gaps; Wine-safe)
+    - fullscreen → internal=2 client=2 (exclusive; can unmap after chart clicks)
 
-    hyprctl expects the dispatcher args as a *single* string after the
-    dispatcher name (e.g. ``exact 1920 1080,address:0x…``).
+    hyprctl expects dispatcher args as a *single* string after the name.
     """
     addr = f"address:{client.address}"
-    # Wine + Hyprland: floating exact resize is ignored; exclusive fullscreen (2)
-    # and toggle-heavy paths can unmap the window after chart clicks.
-    # Prefer: focus → move to monitor → settiled only (fills ~monitor minus gaps).
+    # fullscreenstate is absolute (Hyprland ≥0.40). Prefer over `fullscreen`
+    # toggle, which unmaximizes on second apply and can unmap Wine surfaces.
+    if placement.mode == "fullscreen":
+        fs_args = f"2 2,{addr}"
+    else:
+        fs_args = f"1 1,{addr}"
     steps: list[tuple[str, str]] = [
         ("focuswindow", addr),
         ("movewindow", f"mon:{placement.monitor}"),
         ("settiled", addr),
+        ("fullscreenstate", fs_args),
     ]
-    if placement.mode == "fullscreen":
-        # optional exclusive — may be less stable with Wine; still available
-        steps.append(("fullscreen", "1"))
 
     cmds = [f"{d} {a}" for d, a in steps]
     if patch_ini:
@@ -402,18 +423,30 @@ def apply_placement(
             capture_output=True,
             text=True,
         )
-    # Wine often snaps back once — re-apply geometry only (never re-toggle fullscreen)
+    # Second pass: only re-assert absolute fullscreenstate.
+    # Re-running settiled/movewindow here clears maximize (fs → 0).
     import time
 
-    time.sleep(0.4)
-    for dispatcher, args in steps:
-        if dispatcher in {"resizewindowpixel", "movewindowpixel", "movewindow", "focuswindow", "setfloating"}:
-            subprocess.run(
-                ["hyprctl", "dispatch", dispatcher, args],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
+    time.sleep(0.35)
+    subprocess.run(
+        ["hyprctl", "dispatch", "focuswindow", addr],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["hyprctl", "dispatch", "fullscreenstate", fs_args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    time.sleep(0.2)
+    subprocess.run(
+        ["hyprctl", "dispatch", "fullscreenstate", fs_args],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
     return cmds
 
 

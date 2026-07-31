@@ -8,9 +8,12 @@ import sys
 
 from mt5_arch.hypr_geometry import (
     apply_placement,
+    fetch_clients,
     is_ghost_terminal,
+    list_terminal64_clients,
     placement_within_tolerance,
     plan_fullscreen,
+    select_main_terminal,
     terminal64_process_running,
 )
 
@@ -24,7 +27,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--mode",
         choices=("maximize", "fullscreen"),
         default="maximize",
-        help="maximize (tiled fill, preferred) or fullscreen-1 after tile",
+        help="maximize (fullscreenstate 1, preferred) or exclusive fullscreenstate 2",
     )
     p.add_argument("--monitor", default=None, help="Hyprland monitor name (e.g. HDMI-A-2)")
     p.add_argument(
@@ -39,16 +42,33 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     proc = terminal64_process_running()
+    clients = None
     try:
         mon, placement, main = plan_fullscreen(
             mode=args.mode,
             monitor_name=args.monitor,
         )
+        try:
+            clients = fetch_clients()
+            if main is None:
+                main = select_main_terminal(clients)
+        except Exception:  # noqa: BLE001
+            clients = None
     except Exception as exc:  # noqa: BLE001
         print(f"error: {exc}", file=sys.stderr)
         return 1
 
-    ghost = is_ghost_terminal(process_running=proc, main_window=main)
+    term_wins = list_terminal64_clients(clients) if clients is not None else []
+    # True ghost only when process is alive and zero terminal64 clients exist.
+    # If hyprctl failed (clients is None), do not claim ghost — avoid kill loops.
+    if clients is None:
+        ghost = False
+    else:
+        ghost = is_ghost_terminal(
+            process_running=proc,
+            main_window=main,
+            any_terminal_window=term_wins,
+        )
 
     payload: dict = {
         "monitor": {
@@ -76,6 +96,7 @@ def main(argv: list[str] | None = None) -> int:
             "size": list(main.size),
             "floating": main.floating,
         },
+        "terminal64_windows": len(term_wins) if clients is not None else None,
         "process_running": proc,
         "ghost_process": ghost,
         "dry_run": args.dry_run,
@@ -87,9 +108,17 @@ def main(argv: list[str] | None = None) -> int:
             payload["status"] = "ghost_process"
             payload["hint"] = (
                 "MT5 process is running but the window is unmapped (Hyprland/Wine bug). "
-                "Run: ./scripts/10-recover-terminal.sh"
+                "Run: ./scripts/10-recover-terminal.sh --fullscreen"
             )
             code = 3
+        elif proc and clients is not None and term_wins:
+            titles = ", ".join(repr(c.title[:40]) for c in term_wins[:4])
+            payload["status"] = "waiting_for_main"
+            payload["hint"] = (
+                f"MT5 windows present ({titles}) but not yet the main shell "
+                "(Login / child). Wait for login, keep charts as tabs, then re-run."
+            )
+            code = 2
         else:
             payload["status"] = "no_main_window"
             payload["hint"] = (
@@ -104,6 +133,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"target:  {placement.width}x{placement.height} mode={placement.mode}")
             if ghost:
                 print("main:    GHOST process (no Hyprland window)")
+            elif payload["status"] == "waiting_for_main":
+                print("main:    (login/child only — not ghost)")
             else:
                 print("main:    (not found)")
             print(payload["hint"])
@@ -115,21 +146,31 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.dry_run:
         try:
-            from mt5_arch.hypr_geometry import fetch_clients, select_main_terminal
-
-            again = select_main_terminal(fetch_clients())
+            again_clients = fetch_clients()
+            again = select_main_terminal(again_clients)
             if again is not None:
                 payload["main_window_after"] = {
                     "title": again.title,
                     "at": list(again.at),
                     "size": list(again.size),
                 }
+                # Gaps often leave ~1896x1030 on 1920x1080 — tolerate that.
                 payload["within_tolerance"] = placement_within_tolerance(
-                    again.size, placement, tol_px=96
+                    again.size, placement, tol_px=120
                 )
-            elif terminal64_process_running():
-                payload["status"] = "unmapped_after_apply"
-                payload["hint"] = "Window vanished after resize; run ./scripts/10-recover-terminal.sh"
+            else:
+                still = list_terminal64_clients(again_clients)
+                if terminal64_process_running() and not still:
+                    payload["status"] = "unmapped_after_apply"
+                    payload["hint"] = (
+                        "Window vanished after resize; run ./scripts/10-recover-terminal.sh"
+                    )
+                elif still:
+                    payload["status"] = "main_lost_after_apply"
+                    payload["hint"] = (
+                        "Main title not recognized after apply; windows still mapped. "
+                        "Re-run once login finishes."
+                    )
         except Exception:  # noqa: BLE001
             pass
 
@@ -152,7 +193,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"status:  {payload['status']}")
             if "within_tolerance" in payload:
                 print(f"fit:     {payload['within_tolerance']}")
-            if payload.get("status") == "unmapped_after_apply":
+            after = payload.get("main_window_after") or {}
+            if after.get("size"):
+                print(f"after:   {after['size'][0]}x{after['size'][1]}")
+            if payload.get("status") in {"unmapped_after_apply", "main_lost_after_apply"}:
                 print(payload.get("hint", ""))
     if payload.get("status") == "unmapped_after_apply":
         return 3

@@ -58,9 +58,12 @@ set +e
 uv run python -m mt5_arch.window_ops "${ARGS[@]}"
 rc=$?
 set -e
-if [[ "$rc" -eq 3 && "$DRY_RUN" -eq 0 ]]; then
+if [[ "$rc" -eq 3 && "$DRY_RUN" -eq 0 && "${MT5_NO_AUTO_RECOVER:-0}" != "1" ]]; then
   warn "Ghost/unmapped MT5 detected — recovering..."
   "$SCRIPT_DIR/10-recover-terminal.sh" --fullscreen
   exit $?
+fi
+if [[ "$rc" -eq 3 && "${MT5_NO_AUTO_RECOVER:-0}" == "1" ]]; then
+  warn "ghost still present during nested recover — not re-entering recover"
 fi
 exit "$rc"

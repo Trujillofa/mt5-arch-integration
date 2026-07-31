@@ -44,23 +44,44 @@ fi
 if ! grep -q 'terminal_connected' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing terminal_connected account field"
 fi
+if ! grep -q 'IsEffectivelyConnected' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing IsEffectivelyConnected (Wine TERMINAL_CONNECTED fallback)"
+fi
 info "Deployed EA has timer + OnTick + connection fields"
 
+EX5="$EXPERTS/Mt5ArchBridge.ex5"
+LOG="$EXPERTS/Mt5ArchBridge.log"
 if [[ -z "$METAEDITOR" ]]; then
   warn "MetaEditor64.exe missing — source deployed; compile with F7 when MetaEditor is available"
 else
   info "Compiling with MetaEditor..."
-  wine "$METAEDITOR" /compile:"C:\\Program Files\\MetaTrader 5\\MQL5\\Experts\\Mt5ArchBridge.mq5" /log 2>/dev/null || true
-  sleep 2
+  # Drop stale binary so we never report an old ex5 as success
+  rm -f "$EX5"
+  (
+    cd "$EXPERTS"
+    wine "$METAEDITOR" /compile:"Mt5ArchBridge.mq5" /log 2>/dev/null || true
+  ) &
+  compile_pid=$!
+  for _ in $(seq 1 40); do
+    if [[ -f "$EX5" ]]; then
+      break
+    fi
+    sleep 0.5
+  done
+  wait "$compile_pid" 2>/dev/null || true
 fi
 
-EX5="$EXPERTS/Mt5ArchBridge.ex5"
-LOG="$EXPERTS/Mt5ArchBridge.log"
 if [[ -f "$EX5" ]]; then
-  info "Compiled OK: $EX5 ($(stat -c%s "$EX5") bytes)"
+  # Reject binaries older than the source we just deployed
+  if [[ "$EX5" -ot "$EXPERTS/Mt5ArchBridge.mq5" ]]; then
+    warn "ex5 is older than mq5 — compile may have failed; open MetaEditor and F7"
+    [[ -f "$LOG" ]] && { info "compile log:"; iconv -f UTF-16 -t UTF-8 "$LOG" 2>/dev/null | tail -20 || tr -d '\000' <"$LOG" | tail -20; }
+  else
+    info "Compiled OK: $EX5 ($(stat -c%s "$EX5") bytes)"
+  fi
 else
   warn "ex5 not found yet — open MetaEditor and compile manually (F7) if needed"
-  [[ -f "$LOG" ]] && { info "compile log:"; tr -d '\000' <"$LOG" | tail -30; }
+  [[ -f "$LOG" ]] && { info "compile log:"; iconv -f UTF-16 -t UTF-8 "$LOG" 2>/dev/null | tail -30 || tr -d '\000' <"$LOG" | tail -30; }
 fi
 # Ensure output dir exists for EA
 mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_arch"/{orders_in,orders_out}

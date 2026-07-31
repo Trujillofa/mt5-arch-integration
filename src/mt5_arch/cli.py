@@ -99,10 +99,27 @@ def _print_result(data: Any, *, as_json: bool) -> None:
 def cmd_ping(client: Any, as_json: bool) -> int:
     info = client.ping()
     payload = asdict(info)
-    _print_result(payload, as_json=as_json)
+    # File-bridge under Wine: TERMINAL_CONNECTED is often false while login works.
+    # Treat bridge-alive + trade_allowed + company/path as success; only soft-warn.
     if not info.connected:
+        try:
+            acc = client.account_info()
+            if getattr(acc, "login", 0) and getattr(acc, "server", ""):
+                payload["connected"] = True
+                payload["connected_inferred"] = True
+                _print_result(payload, as_json=as_json)
+                print(
+                    "note: TERMINAL_CONNECTED raw=false under Wine; "
+                    f"inferred connected via login={acc.login} server={acc.server}",
+                    file=sys.stderr,
+                )
+                return 0
+        except Exception:  # noqa: BLE001
+            pass
+        _print_result(payload, as_json=as_json)
         print("warning: terminal reports connected=false", file=sys.stderr)
         return 2
+    _print_result(payload, as_json=as_json)
     return 0
 
 
