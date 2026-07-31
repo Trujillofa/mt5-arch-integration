@@ -1,0 +1,44 @@
+# Secrets and local state
+.env
+config/local.paths
+config/settings.local.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Runtime artifacts
+data/
+logs/
+*.log
+*.pid
+
+# Never commit Wine prefixes or Windows installers
+*.exe
+!scripts/**/*.example
+.wine*/
+**/drive_c/
+system.reg
+user.reg
+userdef.reg
+winetricks.log

@@ -1,0 +1,18 @@
+[Unit]
+Description=MT5 RPyC bridge (mt5server under Wine)
+After=mt5-terminal.service
+Wants=mt5-terminal.service
+
+[Service]
+Type=simple
+Environment=WINEPREFIX=%h/.mt5
+Environment=WINEARCH=win64
+Environment=WINEDEBUG=-all
+Environment=MT5_RPYC_PORT=18812
+# Optional: EnvironmentFile=%h/Projects/trading/mt5-arch-integration/.env
+ExecStart=/usr/bin/wine %h/.mt5/drive_c/mt5linux/mt5server.exe -p 18812
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

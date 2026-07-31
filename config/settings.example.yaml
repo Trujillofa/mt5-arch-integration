@@ -1,0 +1,24 @@
+# Example settings for mt5-arch-integration.
+# Copy to settings.local.yaml (gitignored) if you prefer YAML over .env.
+
+wine:
+  prefix: ~/.mt5
+  arch: win64
+
+rpyc:
+  host: localhost
+  port: 18812
+
+mt5:
+  # login/password/server usually come from env (MT5_LOGIN, MT5_PASSWORD, MT5_SERVER)
+  server: WSFmarkets-Server
+  # terminal_path: optional override if auto-detect fails
+  # terminal_path: ~/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe
+
+smoke:
+  symbols:
+    - EURUSD
+    - GBPUSD
+    - XAUUSD
+  timeframe: H1
+  candle_count: 10

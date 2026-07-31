@@ -1,0 +1,19 @@
+[Unit]
+Description=MetaTrader 5 terminal (Wine)
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+Environment=WINEPREFIX=%h/.mt5
+Environment=WINEARCH=win64
+Environment=WINEDEBUG=-all
+# Override path after install if needed:
+# Environment=MT5_TERMINAL_PATH=%h/.mt5/drive_c/Program Files/MetaTrader 5/terminal64.exe
+ExecStart=/usr/bin/wine terminal64.exe
+WorkingDirectory=%h/.mt5
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
