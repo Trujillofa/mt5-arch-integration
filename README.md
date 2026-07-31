@@ -6,11 +6,19 @@ This is **not** a full trading agent. For strategies, risk, and paper/live modes
 
 ## Architecture (short)
 
+**Recommended on Arch/Wine** — file bridge (avoids broken Python IPC):
+
 ```
-Linux Python (mt5-arch / mt5linux)
-        │ RPyC :18812
+Linux Python (mt5-arch, MT5_BACKEND=file)
+        │ reads JSON files
         ▼
-Wine: mt5server.exe  →  MetaTrader5 package  →  terminal64.exe  →  broker
+Wine: terminal64.exe + Mt5ArchBridge.mq5 EA  →  broker
+```
+
+**Optional** — mt5linux/RPyC (often hits `IPC timeout` under Wine 11):
+
+```
+Linux Python → RPyC :18812 → mt5server.exe → MetaTrader5 package → terminal64.exe
 ```
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -43,11 +51,23 @@ cp .env.example .env
 
 Complete the installer GUI, log into your broker, enable **Algo Trading**.
 
-### 4. Run
+### 4. File bridge (recommended)
 
 ```bash
-./scripts/04-start-terminal.sh   # keep running
-./scripts/05-start-mt5server.sh  # keep running (second terminal)
+./scripts/04-start-terminal.sh   # log in to broker
+./scripts/06-install-file-bridge.sh
+```
+
+In the MT5 window:
+
+1. **Algo Trading** toolbar button → **green**
+2. Tools → Options → Expert Advisors → allow algorithmic trading
+3. MetaEditor (F4) → open `Experts/Mt5ArchBridge.mq5` → **Compile (F7)**
+4. Navigator → Expert Advisors → **Mt5ArchBridge** → drag onto any chart
+5. Window → **Tile Windows** (clears large black empty chart area)
+
+```bash
+# .env should have MT5_BACKEND=file (default)
 uv run mt5-arch ping
 uv run mt5-arch account
 uv run mt5-arch symbols EURUSD XAUUSD

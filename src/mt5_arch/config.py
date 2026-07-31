@@ -60,11 +60,28 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("WINEARCH", "winearch"),
     )
 
-    @field_validator("mt5_terminal_path", "wineprefix", mode="before")
+    # Backend: "file" (MQL5 EA bridge — recommended on Wine) or "rpyc" (mt5linux)
+    mt5_backend: str = Field(
+        default="file",
+        validation_alias=AliasChoices("MT5_BACKEND", "mt5_backend"),
+    )
+    mt5_bridge_dir: Path | None = Field(
+        default=None,
+        validation_alias=AliasChoices("MT5_BRIDGE_DIR", "mt5_bridge_dir"),
+    )
+    mt5_bridge_max_age: float = Field(
+        default=15.0,
+        validation_alias=AliasChoices("MT5_BRIDGE_MAX_AGE", "mt5_bridge_max_age"),
+    )
+
+    @field_validator("mt5_terminal_path", "wineprefix", "mt5_bridge_dir", mode="before")
     @classmethod
     def expand_paths(cls, value: object) -> object:
         if value is None or value == "":
             return None if value == "" else value
+        # Windows-style paths (C:\...) must not go through Path.resolve on Linux
+        if isinstance(value, str) and (value.startswith("C:") or value.startswith("c:")):
+            return value
         expanded = _expand_path(value)  # type: ignore[arg-type]
         return expanded
 
@@ -73,11 +90,13 @@ class Settings(BaseSettings):
 
     def redacted_summary(self) -> dict[str, object]:
         return {
+            "mt5_backend": self.mt5_backend,
             "mt5_login": self.mt5_login,
             "mt5_password": "***" if self.mt5_password else None,
             "mt5_server": self.mt5_server,
             "mt5_rpyc_host": self.mt5_rpyc_host,
             "mt5_rpyc_port": self.mt5_rpyc_port,
+            "mt5_bridge_dir": str(self.mt5_bridge_dir) if self.mt5_bridge_dir else None,
             "wineprefix": str(self.wineprefix),
             "mt5_terminal_path": str(self.mt5_terminal_path) if self.mt5_terminal_path else None,
         }

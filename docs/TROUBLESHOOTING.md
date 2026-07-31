@@ -1,8 +1,39 @@
 # Troubleshooting
 
-## `mt5-arch ping` — connection refused
+## Algo Trading is gray / `automated trading is disabled`
 
-**Cause:** `mt5server.exe` not running or wrong port.
+Python IPC **and** Expert Advisors need this on:
+
+1. Toolbar: click **Algo Trading** until it is **green**.
+2. Tools → Options → Expert Advisors → ☑ **Allow algorithmic trading**.
+3. Terminal log will stop showing `Experts automated trading is disabled`.
+
+## Large black empty area under charts
+
+Wine + multi-chart layout glitch. In MT5:
+
+- **Window → Tile Windows** (or Tile Horizontally / Vertically)
+- Or close floating chart windows and re-open one chart full size
+- Avoid maximizing across mixed DPI monitors when possible
+
+## File bridge: `No account.json` / stale heartbeat
+
+Default backend is `MT5_BACKEND=file` (recommended on Arch/Wine).
+
+1. `./scripts/06-install-file-bridge.sh`
+2. In MetaEditor: open `MQL5/Experts/Mt5ArchBridge.mq5` → **Compile (F7)** → must produce `.ex5`
+3. Navigator → Expert Advisors → **Mt5ArchBridge** → drag onto a chart
+4. Enable Algo Trading (green) and “Allow live trading” on the EA
+5. Confirm files appear:
+
+```bash
+ls -la ~/.mt5/drive_c/Program\ Files/MetaTrader\ 5/MQL5/Files/mt5_arch/
+uv run mt5-arch account
+```
+
+## `mt5-arch ping` — connection refused (RPyC backend only)
+
+**Cause:** `mt5server.exe` not running or wrong port. Prefer `MT5_BACKEND=file`.
 
 ```bash
 ./scripts/healthcheck.sh
