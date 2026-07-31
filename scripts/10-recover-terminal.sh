@@ -35,6 +35,9 @@ for arg in "$@"; do
   esac
 done
 
+# Clipboard bridge BEFORE unsetting WAYLAND (Wine/XWayland paste)
+ensure_clipboard_bridge
+
 if [[ -n "${DISPLAY:-}" ]]; then
   unset WAYLAND_DISPLAY || true
 fi

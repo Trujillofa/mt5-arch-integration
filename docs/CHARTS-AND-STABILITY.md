@@ -146,12 +146,49 @@ windowrulev2 = float, class:^(MetaEditor64\.exe)$
 |---------|-----|
 | Stuck on File/View menu bar | Esc several times; if dead → `./scripts/07-restart-terminal.sh` |
 | Ctrl+E / Ctrl+N do nothing | Hyprland bind — use toolbar / Alt menus instead |
+| **Ctrl+V paste does nothing** | Start bridge: `./scripts/11-clipboard-bridge.sh start` — see [Clipboard / paste](#clipboard--paste-ctrlv) |
 | Mouse dead | Alt+Tab to MT5, click chart center; never use Wine “virtual desktop” |
 | Frozen, high CPU | `./scripts/07-restart-terminal.sh` |
 | Black Tools/Options | Skip them; Experts/OpenCL already set in config |
 | Process running, no window (**ghost**) | `./scripts/10-recover-terminal.sh --fullscreen` |
 | Window vanishes after **chart click** | Same — Wine unmapped the surface; run recover (not “lost forever”) |
 | Window tiny on shared workspace | `./scripts/09-fullscreen-terminal.sh` (uses `fullscreenstate 1`) |
+
+## Clipboard / paste (Ctrl+V)
+
+**Cause:** Omarchy apps copy into the **Wayland** clipboard. MetaTrader runs as **XWayland** and only reads the **X11** clipboard. Without a bridge, paste is empty.
+
+**Fix (shipped):**
+
+```bash
+# Install once (if needed)
+sudo pacman -S --needed wl-clipboard xclip
+
+# Start bridge (also auto-started by 04/07/10)
+./scripts/11-clipboard-bridge.sh start
+./scripts/11-clipboard-bridge.sh status   # wayland and x11clip should match
+```
+
+Then in MT5:
+
+| Key | Action |
+|-----|--------|
+| **Ctrl+V** | Paste (needs bridge) |
+| **Shift+Insert** | Paste (same; often more reliable under Wine) |
+| **Super+V** | Omarchy “universal paste” → sends Shift+Insert to the focused window |
+| Right-click → Paste | Always works if X11 clip is populated |
+
+One-shot after copying a password in the browser:
+
+```bash
+./scripts/11-clipboard-bridge.sh once
+```
+
+Optional always-on (Hyprland `autostart.conf`):
+
+```conf
+exec-once = ~/Projects/trading/mt5-arch-integration/scripts/11-clipboard-bridge.sh start
+```
 
 **Ghost process:** `terminal64.exe` is alive but Hyprland has **zero** `terminal64.exe` clients. Login-only is *not* a ghost (recover will wait for the main shell). Always:
 

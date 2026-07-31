@@ -9,6 +9,9 @@ load_dotenv
 export_wine_env
 require_cmd wine
 
+# Clipboard bridge BEFORE unsetting WAYLAND (Wine/XWayland paste)
+ensure_clipboard_bridge
+
 # Prefer XWayland path under Hyprland (more reliable input for Wine)
 if [[ -n "${DISPLAY:-}" ]]; then
   unset WAYLAND_DISPLAY || true

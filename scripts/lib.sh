@@ -22,6 +22,32 @@ export_wine_env() {
   export WINEDEBUG="${WINEDEBUG:--all}"
 }
 
+# Ensure Wayland clipboard is visible to Wine/XWayland (Ctrl+V paste).
+# Safe to call often; starts bridge if missing and does a one-shot sync.
+ensure_clipboard_bridge() {
+  local bridge="$REPO_ROOT/scripts/11-clipboard-bridge.sh"
+  if [[ ! -x "$bridge" ]]; then
+    return 0
+  fi
+  # Prefer not to fail start scripts if wl-paste/xclip missing
+  if ! command -v wl-paste >/dev/null 2>&1 || ! command -v xclip >/dev/null 2>&1; then
+    warn "clipboard bridge skipped (need wl-paste + xclip). Install: pacman -S wl-clipboard xclip"
+    return 0
+  fi
+  # Keep WAYLAND_DISPLAY for the bridge (wine start scripts may unset it later)
+  local saved_wl="${WAYLAND_DISPLAY:-}"
+  if [[ -z "$saved_wl" ]]; then
+    for sock in wayland-1 wayland-0; do
+      if [[ -S "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/$sock" ]]; then
+        saved_wl="$sock"
+        break
+      fi
+    done
+  fi
+  DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="$saved_wl" "$bridge" start >/dev/null 2>&1 || true
+  DISPLAY="${DISPLAY:-:0}" WAYLAND_DISPLAY="$saved_wl" "$bridge" once >/dev/null 2>&1 || true
+}
+
 require_cmd() {
   local cmd="$1"
   if ! command -v "$cmd" >/dev/null 2>&1; then

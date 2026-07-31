@@ -13,6 +13,9 @@ if [[ -z "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]]; then
   die "No graphical display. Start from a desktop session (Hyprland/Omarchy terminal)."
 fi
 
+# Clipboard bridge BEFORE unsetting WAYLAND (Wine needs X11 clip; Linux apps use Wayland)
+ensure_clipboard_bridge
+
 # Prefer XWayland for Wine input
 if [[ -n "${DISPLAY:-}" ]]; then
   unset WAYLAND_DISPLAY || true

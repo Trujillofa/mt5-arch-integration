@@ -114,6 +114,14 @@ else
 fi
 
 echo
+echo "==> Clipboard bridge (Wayland → X11 for Wine paste)"
+if [[ -x "$SCRIPT_DIR/11-clipboard-bridge.sh" ]]; then
+  "$SCRIPT_DIR/11-clipboard-bridge.sh" status 2>/dev/null || warn "bridge not running — ./scripts/11-clipboard-bridge.sh start"
+else
+  echo "  (no 11-clipboard-bridge.sh)"
+fi
+
+echo
 echo "==> CLI (optional)"
 if [[ -x "$REPO_ROOT/.venv/bin/mt5-arch" ]] || command -v uv >/dev/null 2>&1; then
   (cd "$REPO_ROOT" && uv run mt5-arch ping --json 2>/dev/null) || warn "mt5-arch ping failed (stale bridge or EA stopped)"

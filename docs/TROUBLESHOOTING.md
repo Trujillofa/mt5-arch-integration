@@ -107,3 +107,25 @@ export MT5_RPYC_PORT=18813
 ## Do not bind RPyC to the public internet
 
 `mt5server` effectively allows remote control of a trading terminal. Keep it on `127.0.0.1` unless you have a secured tunnel.
+
+## Ctrl+V paste does nothing in MT5
+
+MT5 is an **XWayland** app. Copies from Firefox/Kitty land in the **Wayland** clipboard only.
+
+```bash
+sudo pacman -S --needed wl-clipboard xclip
+cd ~/Projects/trading/mt5-arch-integration
+./scripts/11-clipboard-bridge.sh start
+# after copying text in a browser:
+./scripts/11-clipboard-bridge.sh once
+```
+
+Alternatives inside MT5: **Shift+Insert**, **Super+V** (Omarchy), or right-click → Paste.
+
+Check both sides match:
+
+```bash
+wl-paste
+xclip -o -selection clipboard
+./scripts/11-clipboard-bridge.sh status
+```
