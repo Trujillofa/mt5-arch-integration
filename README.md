@@ -110,6 +110,20 @@ uv run pytest                    # offline unit tests
 MT5_LIVE_SMOKE=1 uv run pytest -m live   # needs terminal + server
 ```
 
+## Install on Arch (official Linux guide counterpart)
+
+MetaQuotes documents Ubuntu/Debian/Fedora only:
+
+- [Installation on Linux](https://www.metatrader5.com/en/terminal/help/start_advanced/install_linux)
+
+Arch equivalent (same Wine prefix `~/.mt5`, WebView2, mt5setup):
+
+```bash
+./scripts/mt5linux-arch.sh
+```
+
+Details: **[docs/INSTALL-LINUX-ARCH.md](docs/INSTALL-LINUX-ARCH.md)**
+
 ## Charts & day-to-day use
 
 See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
