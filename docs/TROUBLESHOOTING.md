@@ -16,6 +16,10 @@ Wine + multi-chart layout glitch. In MT5:
 - Or close floating chart windows and re-open one chart full size
 - Avoid maximizing across mixed DPI monitors when possible
 
+## Black undocked chart window (`EURUSD, Euro vs US Dollar`)
+
+Separate floating chart windows often paint **entirely black** under Wine. Close them. Open symbols only as **tabs inside the main terminal** (Market Watch → double-click). Prefer **bar** chart mode if candlestick bodies vanish (default bull body was black-on-black).
+
 ## File bridge: `No account.json` / stale heartbeat
 
 Default backend is `MT5_BACKEND=file` (recommended on Arch/Wine).

@@ -140,6 +140,7 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 
 ## Docs
 
+- [Install on Arch (vs official Ubuntu guide)](docs/INSTALL-LINUX-ARCH.md)
 - [Charts & stability (Hyprland/Wine)](docs/CHARTS-AND-STABILITY.md)
 - [Arch setup](docs/ARCH-SETUP.md)
 - [Architecture](docs/ARCHITECTURE.md)

@@ -39,10 +39,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("ping", parents=[common], help="Check RPyC + terminal connectivity")
+    sub.add_parser("ping", parents=[common], help="Check file-bridge or RPyC connectivity")
     sub.add_parser("account", parents=[common], help="Print account snapshot")
     sub.add_parser("config", parents=[common], help="Show redacted settings (no secrets)")
-
     p_sym = sub.add_parser("symbols", parents=[common], help="Print symbol specs")
     p_sym.add_argument("symbols", nargs="+", help="Symbol names, e.g. EURUSD XAUUSD")
 

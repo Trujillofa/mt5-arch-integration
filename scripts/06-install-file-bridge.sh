@@ -21,27 +21,47 @@ do
 done
 
 [[ -f "$SRC" ]] || die "missing $SRC"
-[[ -d "$EXPERTS" ]] || die "Experts dir missing — install MT5 first"
-[[ -n "$METAEDITOR" ]] || die "MetaEditor64.exe missing"
+# Create Experts dir if prefix exists but tree incomplete
+if [[ ! -d "$EXPERTS" ]]; then
+  if [[ -d "$WINEPREFIX/drive_c/Program Files/MetaTrader 5" ]]; then
+    mkdir -p "$EXPERTS"
+  else
+    die "Experts dir missing — install MT5 first (./scripts/mt5linux-arch.sh or 02-install-mt5.sh)"
+  fi
+fi
 
 mkdir -p "$EXPERTS"
 cp -f "$SRC" "$EXPERTS/Mt5ArchBridge.mq5"
-info "Copied EA to $EXPERTS/Mt5ArchBridge.mq5"
+info "Copied EA source to $EXPERTS/Mt5ArchBridge.mq5"
+# Verify deploy (gating for install path)
+[[ -f "$EXPERTS/Mt5ArchBridge.mq5" ]] || die "copy failed"
+if ! grep -q 'EventSetTimer' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing EventSetTimer (second-based refresh)"
+fi
+if ! grep -q 'OnTick' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing OnTick backup path"
+fi
+if ! grep -q 'terminal_connected' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing terminal_connected account field"
+fi
+info "Deployed EA has timer + OnTick + connection fields"
 
-info "Compiling with MetaEditor..."
-# MetaEditor compile switches: /compile:<file> /log
-wine "$METAEDITOR" /compile:"C:\\Program Files\\MetaTrader 5\\MQL5\\Experts\\Mt5ArchBridge.mq5" /log 2>/dev/null || true
-sleep 2
+if [[ -z "$METAEDITOR" ]]; then
+  warn "MetaEditor64.exe missing — source deployed; compile with F7 when MetaEditor is available"
+else
+  info "Compiling with MetaEditor..."
+  wine "$METAEDITOR" /compile:"C:\\Program Files\\MetaTrader 5\\MQL5\\Experts\\Mt5ArchBridge.mq5" /log 2>/dev/null || true
+  sleep 2
+fi
 
 EX5="$EXPERTS/Mt5ArchBridge.ex5"
 LOG="$EXPERTS/Mt5ArchBridge.log"
 if [[ -f "$EX5" ]]; then
   info "Compiled OK: $EX5 ($(stat -c%s "$EX5") bytes)"
 else
-  warn "ex5 not found yet — open MetaEditor and compile manually if needed"
-  [[ -f "$LOG" ]] && { info "compile log:"; cat "$LOG" | tr -d '\000' | tail -30; }
+  warn "ex5 not found yet — open MetaEditor and compile manually (F7) if needed"
+  [[ -f "$LOG" ]] && { info "compile log:"; tr -d '\000' <"$LOG" | tail -30; }
 fi
-
 # Ensure output dir exists for EA
 mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_arch"/{orders_in,orders_out}
 

@@ -90,13 +90,14 @@ class Settings(BaseSettings):
 
     def redacted_summary(self) -> dict[str, object]:
         return {
-            "mt5_backend": self.mt5_backend,
+            "mt5_backend": self.mt5_backend or "file",
             "mt5_login": self.mt5_login,
             "mt5_password": "***" if self.mt5_password else None,
             "mt5_server": self.mt5_server,
             "mt5_rpyc_host": self.mt5_rpyc_host,
             "mt5_rpyc_port": self.mt5_rpyc_port,
             "mt5_bridge_dir": str(self.mt5_bridge_dir) if self.mt5_bridge_dir else None,
+            "mt5_bridge_max_age": self.mt5_bridge_max_age,
             "wineprefix": str(self.wineprefix),
             "mt5_terminal_path": str(self.mt5_terminal_path) if self.mt5_terminal_path else None,
         }

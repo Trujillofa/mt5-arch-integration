@@ -18,8 +18,21 @@ def test_parser_candles() -> None:
     assert args.count == 5
 
 
-def test_config_command_exits_zero(capsys) -> None:
+def test_config_command_exits_zero(capsys, monkeypatch) -> None:
+    monkeypatch.setenv("MT5_BACKEND", "file")
+    monkeypatch.delenv("MT5_PASSWORD", raising=False)
     code = main(["config", "--json"])
     assert code == 0
     out = capsys.readouterr().out
+    assert "mt5_backend" in out
+    assert "file" in out
     assert "mt5_rpyc_port" in out or "18812" in out
+    # secrets never appear as plaintext password fields with real values
+    assert '"mt5_password": null' in out or '"mt5_password": "***"' in out
+
+
+def test_default_backend_is_file() -> None:
+    from mt5_arch.config import Settings
+
+    s = Settings(_env_file=None)
+    assert (s.mt5_backend or "file").lower() == "file"
