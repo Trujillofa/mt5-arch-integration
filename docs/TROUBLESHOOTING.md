@@ -35,6 +35,189 @@ ls -la ~/.mt5/drive_c/Program\ Files/MetaTrader\ 5/MQL5/Files/mt5_arch/
 uv run mt5-arch account
 ```
 
+## Balance always 0 / no orders / Journal has no Network lines
+
+**This is not the Python CLI inventing zeros.** The EA writes what MQL5
+`AccountInfo*` returns. A **cached** login+server can appear in the window
+title while the trade server is offline:
+
+| Symptom | Meaning |
+|---------|---------|
+| `currency`/`leverage` empty, balance `0` | No live trade session |
+| Journal: only Terminal/Experts, **no `Network`** | Auth never completes |
+| `mt5-arch ping` exit 2 / connected false | Honest offline (after fix) |
+| Wine `connect` → `STATUS_DEVICE_NOT_READY` | TCP under Wine failing |
+
+**Force login from `.env` + re-attach EA:**
+
+```bash
+./scripts/13-force-login-bridge.sh
+# writes ~/.mt5/.../auto_login.ini (chmod 600), restarts terminal with /config
+uv run mt5-arch account
+```
+
+**Journal still empty of Network after that:**
+
+1. Toolbox → **Journal** (not Experts). Clear filters.
+2. Host can reach HTTPS but Wine may still fail TLS/connect — check Docker
+   bridges / Tailscale not stealing routes; default route should be LAN.
+3. Confirm server name is exact (`WSFmarkets-Server`, not MetaQuotes-Demo).
+4. Prefer broker’s own MT5 build if they ship one (server list embedded).
+5. Proof of Wine socket failure (optional):
+
+```bash
+WINEPREFIX=~/.mt5 WINEDEBUG=+winsock wine terminal64.exe /portable \
+  /config:auto_login.ini 2>&1 | rg 'connect failed|ConnectEx' | head
+```
+
+`0xc00000a3` = device not ready / nonblocking connect issue under Wine.
+Host `python3` connecting to the same IP:443 may still succeed — that means
+the problem is **Wine’s stack**, not your password and not our bridge parser.
+
+### Docker / multi-homed source IP (Send-Q stuck, 4/0 kb)
+
+If `ss` shows `terminal64`/`main` ESTAB from `172.17/18/19.x` (Docker bridges)
+or Tailscale with **Send-Q > 0** and no Journal `Network` lines, Wine is
+picking a bad source address. `13-force-login-bridge.sh` auto-loads
+`scripts/wine-net/force_src_bind.so` (LD_PRELOAD) to bind outbound sockets to
+the LAN IP (`MT5_FORCE_SRC_IP`, default from `ip route get 1.1.1.1`).
+
+```bash
+# rebuild helper if needed
+gcc -shared -fPIC -O2 -o scripts/wine-net/force_src_bind.so \
+  scripts/wine-net/force_src_bind.c -ldl
+./scripts/13-force-login-bridge.sh
+ss -tnp | grep -E 'terminal|wineserver'   # expect src 192.168.x.x not 172.x
+```
+
+Even with LAN source, TLS may still stall (Send-Q stuck) under Wine 11 + MT5 —
+that remains an environment limit until Wine/network path is fixed system-wide.
+
+### Isolation recipe tried (2026-08-01)
+
+Automated test (see `.net-fix-evidence/SUMMARY.md`):
+
+1. `docker stop` all running containers + `tailscale down`
+2. `./scripts/13-force-login-bridge.sh` (LAN preload on)
+3. `winetricks -q winhttp crypt32` then **reverted crypt32 to builtin**
+   (native crypt32 caused `Certificates initialization ... failed`)
+
+**Result:** still **zero** Journal `Network` lines; account shell offline
+(login/server cached, currency/leverage empty).
+
+Helper for repeat: `./scripts/14-isolate-net-and-login.sh` (stops containers +
+Tailscale, force-login, restores on exit).
+
+**Not sufficient alone:** stopping containers does not remove `docker0`/`br-*`
+interfaces; full iface-down needs root.
+
+### Full bridge iface-down recipe (root, Phase 4)
+
+`./scripts/14-isolate-net-and-login.sh` only stops containers + Tailscale.
+To also bring Docker bridges down during force-login (and restore on exit):
+
+```bash
+# requires passwordless or interactive sudo for ip link
+export WINEPREFIX=~/.mt5-staging   # or your active prefix
+./scripts/15-bridge-down-and-login.sh --wait-sec=60
+```
+
+What it does: `docker stop` running containers → `tailscale down` →
+`ip link set docker0` and `br-*` **down** → `./scripts/13-force-login-bridge.sh`
+(LAN `force_src_bind`) → **EXIT trap** restores bridges, restarts containers,
+`tailscale up`.
+
+**Result (2026-08-01):** still **zero** Journal `Network` lines; currency/leverage
+empty. Full iface-down does **not** by itself fix trade auth. Evidence:
+`.net-fix-evidence/workflow-bridge-down.log`,
+`phase4-bridge-down-*.log`, `SUMMARY.md` Phase 4.
+
+### wine-staging + alternate prefix (Phase 3, 2026-08-01) — still Pass B
+
+```bash
+# system wine is wine-staging 11.13 (Provides: wine)
+export WINEPREFIX=~/.mt5-staging
+# install MT5 into that prefix, then:
+./scripts/13-force-login-bridge.sh
+```
+
+**Result:** EA + auto_login work; window title shows `118248 - WSFmarkets-Server`;
+file bridge writes `account.json`; **still zero Journal Network lines** and empty
+currency/leverage. With wineserver killed and `force_src_bind`, sockets use LAN
+src (`192.168.0.144`) but ESTAB connections often show **Send-Q stuck** — Wine
+TLS/trade auth does not complete even though host `openssl` to the same IPs works.
+
+Evidence: `.net-fix-evidence/SUMMARY.md`.
+
+**Script pitfalls fixed in-tree:**
+- `find_terminal64` must honor active `WINEPREFIX` (do not let `config/local.paths`
+  force `~/.mt5` when experimenting with another prefix).
+- Restart must kill **wineserver** so `LD_PRELOAD` applies to a fresh server.
+
+### Root bridge-down + Wine TLS (Phase 4 workflow, 2026-08-01) — still Pass B
+
+Workflow `mt5-net-fix` (user `~/.grok/workflows/mt5-net-fix.rhai`) ran:
+
+1. **`./scripts/15-bridge-down-and-login.sh`** — stop containers, `tailscale down`,
+   `sudo ip link set docker0/br-* down`, force-login, restore trap.  
+   **Result:** Network still **0**; currency/leverage empty; services restored.
+2. **Builtin** `crypt32/secur32/winhttp/bcrypt` + force-login + short
+   `WINEDEBUG=+winsock`.  
+   **Result:** Network **0**; connect fails at TCP
+   (`STATUS_HOST_UNREACHABLE` / `STATUS_DEVICE_NOT_READY`) — not schannel/certs.
+
+Full write-up: `.net-fix-evidence/WORKFLOW-REPORT.md`.
+
+### One MT5 for every broker?
+
+**Partial.** See [MULTI-BROKER-MT5.md](MULTI-BROKER-MT5.md). One terminal can multi-account
+only when each company server is present and Wine can auth. Brand installers pre-seed
+`servers.dat`; cross-company login fails (`Invalid account`). Concurrent live bridges
+usually mean separate prefixes/processes.
+
+### Multi-broker Wine prefixes (WSF + Vantage)
+
+| Broker | Installer | Prefix | Login (example) | Server |
+|--------|-----------|--------|-----------------|--------|
+| WSF | `wsfmarkets5setup.exe` | `~/.mt5-wsf` | **149736** (demo) | `WSFmarkets-Server` |
+| Vantage | `vantageinternational5setup.exe` | `~/.mt5-vantage` | **27496181** (live) | **`VantageMarkets-Live 5`** (not `VantageInternational-Live 5`) |
+| FP Markets SC | `fpmarketssc5setup.exe` | `~/.mt5-fpmarkets` | set after GUI | exact name from Journal |
+
+Broker terminals install under brand folders; scripts expect `…/MetaTrader 5` — create a symlink:
+
+```bash
+# WSF
+ln -s "WSFmarkets MT5 Terminal" ~/.mt5-wsf/drive_c/Program\ Files/MetaTrader\ 5
+# Vantage
+ln -s "Vantage International MT5" ~/.mt5-vantage/drive_c/Program\ Files/MetaTrader\ 5
+# FP Markets SC
+ln -s "FP Markets MT5 Terminal" ~/.mt5-fpmarkets/drive_c/Program\ Files/MetaTrader\ 5
+```
+
+Switch + force-login (password never printed):
+
+```bash
+export MT5_PASSWORD='real-master-password-for-this-account'
+./scripts/16-use-broker.sh wsf --login
+./scripts/16-use-broker.sh vantage --login
+```
+
+Profiles: `config/brokers/wsf.env`, `config/brokers/vantage.env`.
+
+**WSF proof (2026-08-01):** with correct login **149736**, Journal shows:
+
+```text
+Network  '149736': authorized on WSFmarkets-Server through Access Server London
+Network  '149736': trading has been enabled, demo account - hedging mode
+```
+
+**Invalid account** for `118248` / placeholder password is expected. Do **not** log Vantage
+login into `WSFmarkets-Server` (or vice versa).
+
+**Vantage** needs its own brand terminal + `VantageInternational-Live 5` + real password.
+Generic `~/.mt5` often never gets Network lines for Vantage under Wine.
+
+
 ## `mt5-arch ping` — connection refused (RPyC backend only)
 
 **Cause:** `mt5server.exe` not running or wrong port. Prefer `MT5_BACKEND=file`.

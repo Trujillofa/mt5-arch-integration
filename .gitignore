@@ -42,3 +42,6 @@ system.reg
 user.reg
 userdef.reg
 winetricks.log
+.net-fix-evidence/
+.env.broker
+.grok/

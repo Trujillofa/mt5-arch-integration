@@ -4,14 +4,33 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Load .env if present (does not override already-exported vars).
+# Load .env if present. Does not override variables already set in the environment
+# (so WINEPREFIX=~/.mt5-staging ./scripts/13-force-login-bridge.sh works).
 load_dotenv() {
   local env_file="${1:-$REPO_ROOT/.env}"
   if [[ -f "$env_file" ]]; then
-    set -a
-    # shellcheck disable=SC1090
-    source "$env_file"
-    set +a
+    local line key val
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      # strip CR, skip blanks/comments
+      line="${line//$'\r'/}"
+      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ "$line" != *=* ]] && continue
+      key="${line%%=*}"
+      val="${line#*=}"
+      # trim key whitespace
+      key="${key#"${key%%[![:space:]]*}"}"
+      key="${key%"${key##*[![:space:]]}"}"
+      [[ -z "$key" ]] && continue
+      # strip optional surrounding quotes on value
+      if [[ "$val" =~ ^\".*\"$ ]]; then val="${val:1:-1}"
+      elif [[ "$val" =~ ^\'.*\'$ ]]; then val="${val:1:-1}"
+      fi
+      # skip if already set in environment
+      if [[ -n "${!key+x}" ]]; then
+        continue
+      fi
+      export "$key=$val"
+    done <"$env_file"
   fi
 }
 
@@ -61,25 +80,50 @@ warn() { echo "warning: $*" >&2; }
 die()  { echo "error: $*" >&2; exit 1; }
 
 find_terminal64() {
+  # Always honor the active WINEPREFIX. config/local.paths and MT5_TERMINAL_PATH
+  # may hardcode ~/.mt5 from an older install — only use them if they live under
+  # the current prefix (never source local.paths; that used to clobber WINEPREFIX).
   local prefix="${WINEPREFIX:-$HOME/.mt5}"
-  if [[ -n "${MT5_TERMINAL_PATH:-}" && -f "$MT5_TERMINAL_PATH" ]]; then
-    echo "$MT5_TERMINAL_PATH"
+  local candidate found local_term
+
+  candidate="$prefix/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+  if [[ -f "$candidate" ]]; then
+    echo "$candidate"
     return 0
   fi
-  if [[ -f "$REPO_ROOT/config/local.paths" ]]; then
-    # shellcheck disable=SC1091
-    source "$REPO_ROOT/config/local.paths"
-    if [[ -n "${MT5_TERMINAL_PATH:-}" && -f "$MT5_TERMINAL_PATH" ]]; then
-      echo "$MT5_TERMINAL_PATH"
-      return 0
-    fi
-  fi
-  local found
+
   found="$(find "$prefix" -type f -name 'terminal64.exe' 2>/dev/null | head -n 1 || true)"
   if [[ -n "$found" ]]; then
     echo "$found"
     return 0
   fi
+
+  if [[ -n "${MT5_TERMINAL_PATH:-}" && -f "$MT5_TERMINAL_PATH" ]]; then
+    case "$MT5_TERMINAL_PATH" in
+      "$prefix"/*)
+        echo "$MT5_TERMINAL_PATH"
+        return 0
+        ;;
+    esac
+  fi
+
+  if [[ -f "$REPO_ROOT/config/local.paths" ]]; then
+    local_term="$(
+      # shellcheck disable=SC1091
+      MT5_TERMINAL_PATH=""
+      source "$REPO_ROOT/config/local.paths" >/dev/null 2>&1 || true
+      printf '%s' "${MT5_TERMINAL_PATH:-}"
+    )"
+    if [[ -n "$local_term" && -f "$local_term" ]]; then
+      case "$local_term" in
+        "$prefix"/*)
+          echo "$local_term"
+          return 0
+          ;;
+      esac
+    fi
+  fi
+
   return 1
 }
 

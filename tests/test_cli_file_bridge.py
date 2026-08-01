@@ -76,3 +76,42 @@ def test_cli_stale_bridge_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     assert code == 1
     err = capsys.readouterr().err
     assert "stale" in err.lower() or "error" in err.lower()
+
+
+def test_cli_offline_cached_account_exits_2(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """login+server without currency/leverage is treated as offline (not success)."""
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    # Simulate Wine offline shell: identity present, money meta empty
+    account = json.loads((bridge / "account.json").read_text(encoding="utf-8"))
+    account.update(
+        {
+            "balance": 0.0,
+            "equity": 0.0,
+            "currency": "",
+            "leverage": 0,
+            "name": "",
+            "company": "",
+            "terminal_connected": False,
+        }
+    )
+    (bridge / "account.json").write_text(json.dumps(account), encoding="utf-8")
+    terminal = json.loads((bridge / "terminal.json").read_text(encoding="utf-8"))
+    terminal["connected"] = False
+    (bridge / "terminal.json").write_text(json.dumps(terminal), encoding="utf-8")
+
+    monkeypatch.setenv("MT5_BACKEND", "file")
+    monkeypatch.setenv("MT5_BRIDGE_DIR", str(bridge))
+    monkeypatch.setenv("MT5_BRIDGE_MAX_AGE", "60")
+
+    code = main(["account", "--json"])
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "offline" in err.lower() or "cached" in err.lower()
+
+    code = main(["ping", "--json"])
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "not trade-connected" in err.lower() or "connected=false" in err.lower()

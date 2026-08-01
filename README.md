@@ -23,6 +23,12 @@ Linux Python → RPyC :18812 → mt5server.exe → MetaTrader5 package → termi
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+**Multi-broker:** one MT5 binary can hold multiple accounts only when each broker’s
+**trade server is in that terminal’s server list**. Brand installers mainly pre-seed
+that list; they are not separate trading engines. Feasibility and layout:
+[docs/MULTI-BROKER-MT5.md](docs/MULTI-BROKER-MT5.md). Switch profiles with
+`./scripts/16-use-broker.sh <name>` or `uv run mt5-arch brokers`.
+
 ## Quick start (Arch)
 
 ### 1. System packages
@@ -88,9 +94,34 @@ uv run mt5-arch candles EURUSD --tf H1 --count 10
 | `mt5-arch account` | Balance / equity / margin |
 | `mt5-arch symbols SYM...` | Lot min/max/step, ticks |
 | `mt5-arch candles SYM [--tf H1] [--count 10]` | OHLCV |
+| `mt5-arch brokers [name]` | List multi-broker profiles (`config/brokers/*.env`) |
 | `mt5-arch config` | Redacted settings |
 
 Add `--json` for machine-readable output. `-v` / `-vv` for logs.
+
+## Documentation
+
+Full index: **[docs/README.md](docs/README.md)**.
+
+| Doc | Topic |
+|-----|--------|
+| [docs/MULTI-BROKER-MT5.md](docs/MULTI-BROKER-MT5.md) | One MT5 vs per-broker installers (feasibility) |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Network, Wine, Algo Trading, multi-broker |
+| [docs/INSTALL-LINUX-ARCH.md](docs/INSTALL-LINUX-ARCH.md) | Arch install |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | File bridge vs RPyC |
+| [docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md) | Charts / clipboard under Wine |
+
+## Multi-broker (reference)
+
+Prefer a **broker-branded** MT5 install per company you trade (server list + Wine auth reliability on Arch). Profiles:
+
+```bash
+./scripts/16-use-broker.sh vantage    # or wsf, fpmarkets
+export WINEPREFIX=~/.mt5-vantage MT5_BACKEND=file
+uv run mt5-arch account
+```
+
+Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see troubleshooting multi-broker section).
 
 ## Configuration
 

@@ -81,31 +81,58 @@ void Put(const string rel, const string body)
    FileClose(h);
   }
 
-// Under Wine, TERMINAL_CONNECTED is often false even when charts stream and
-// AccountInfoInteger(ACCOUNT_LOGIN) is set. Treat login+server as connected.
+// Under Wine, TERMINAL_CONNECTED is often false even when the trade session is
+// healthy. Do NOT treat login+server alone as connected: those fields stay
+// populated from the last cached account while balance/currency/leverage are 0.
+// Live session heuristic: login+server AND at least one of currency/leverage/company.
 bool IsEffectivelyConnected()
   {
    if(TerminalInfoInteger(TERMINAL_CONNECTED))
       return true;
-   if(AccountInfoInteger(ACCOUNT_LOGIN) > 0 && StringLen(AccountInfoString(ACCOUNT_SERVER)) > 0)
+   long login = AccountInfoInteger(ACCOUNT_LOGIN);
+   if(login <= 0)
+      return false;
+   if(StringLen(AccountInfoString(ACCOUNT_SERVER)) == 0)
+      return false;
+   if(StringLen(AccountInfoString(ACCOUNT_CURRENCY)) > 0)
+      return true;
+   if(AccountInfoInteger(ACCOUNT_LEVERAGE) > 0)
+      return true;
+   if(StringLen(AccountInfoString(ACCOUNT_COMPANY)) > 0)
       return true;
    return false;
   }
 
 void WriteAccount()
   {
-   // Prefer trade-server fields; zeros often mean not fully connected yet
+   // Prefer trade-server fields; zeros + empty currency usually mean not fully connected
    long login = AccountInfoInteger(ACCOUNT_LOGIN);
+   double balance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double equity = AccountInfoDouble(ACCOUNT_EQUITY);
+   string currency = AccountInfoString(ACCOUNT_CURRENCY);
+   int leverage = (int)AccountInfoInteger(ACCOUNT_LEVERAGE);
    bool connected = IsEffectivelyConnected();
+   // Periodic diagnostics when still offline (avoid spam: once per 30s via last write stamp)
+   static datetime s_last_diag = 0;
+   datetime now = TimeLocal();
+   if(!connected && (now - s_last_diag) >= 30)
+     {
+      s_last_diag = now;
+      Print("Mt5ArchBridge account offline-ish login=", login,
+            " bal=", DoubleToString(balance, 2),
+            " cur=", currency,
+            " lev=", leverage,
+            " raw_conn=", (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0"));
+     }
    string j = "{";
    j += "\"login\":" + IntegerToString(login) + ",";
-   j += "\"balance\":" + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + ",";
-   j += "\"equity\":" + DoubleToString(AccountInfoDouble(ACCOUNT_EQUITY), 2) + ",";
+   j += "\"balance\":" + DoubleToString(balance, 2) + ",";
+   j += "\"equity\":" + DoubleToString(equity, 2) + ",";
    j += "\"margin\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN), 2) + ",";
    j += "\"free_margin\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN_FREE), 2) + ",";
    j += "\"margin_level\":" + DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN_LEVEL), 2) + ",";
-   j += "\"currency\":\"" + Esc(AccountInfoString(ACCOUNT_CURRENCY)) + "\",";
-   j += "\"leverage\":" + IntegerToString((int)AccountInfoInteger(ACCOUNT_LEVERAGE)) + ",";
+   j += "\"currency\":\"" + Esc(currency) + "\",";
+   j += "\"leverage\":" + IntegerToString(leverage) + ",";
    j += "\"server\":\"" + Esc(AccountInfoString(ACCOUNT_SERVER)) + "\",";
    j += "\"name\":\"" + Esc(AccountInfoString(ACCOUNT_NAME)) + "\",";
    j += "\"company\":\"" + Esc(AccountInfoString(ACCOUNT_COMPANY)) + "\",";

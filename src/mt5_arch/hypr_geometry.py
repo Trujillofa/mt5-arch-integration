@@ -398,10 +398,7 @@ def apply_placement(
     addr = f"address:{client.address}"
     # fullscreenstate is absolute (Hyprland ≥0.40). Prefer over `fullscreen`
     # toggle, which unmaximizes on second apply and can unmap Wine surfaces.
-    if placement.mode == "fullscreen":
-        fs_args = f"2 2,{addr}"
-    else:
-        fs_args = f"1 1,{addr}"
+    fs_args = f"2 2,{addr}" if placement.mode == "fullscreen" else f"1 1,{addr}"
     steps: list[tuple[str, str]] = [
         ("focuswindow", addr),
         ("movewindow", f"mon:{placement.monitor}"),

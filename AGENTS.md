@@ -10,7 +10,9 @@ Do **not** add strategy engines, risk managers, Telegram bots, or TimescaleDB he
 
 - Secrets only via `.env` / environment variables; never log `MT5_PASSWORD`.
 - Scripts are bash, `set -euo pipefail`, shared helpers in `scripts/lib.sh`.
-- Default Wine prefix: `~/.mt5` (outside the git tree).
+- Default Wine prefix: broker builds preferred — `~/.mt5-wsf` (WSF) or `~/.mt5-vantage` (Vantage); legacy `~/.mt5` generic portable.
+- Multi-broker model: **partial** one-install multi-account (server list required); see `docs/MULTI-BROKER-MT5.md`.
+- Switch brokers: `./scripts/16-use-broker.sh <name> [--login]` or `uv run mt5-arch brokers` (`config/brokers/*.env`).
 - RPyC default port: `18812`, bind localhost.
 - Typed models in `mt5_arch/models.py` stay compatible with the agent bridge shapes where practical (`AccountInfo`, `SymbolInfo`, `Candle`).
 

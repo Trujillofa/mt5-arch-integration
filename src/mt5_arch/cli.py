@@ -11,6 +11,7 @@ from dataclasses import asdict
 from typing import Any
 
 from mt5_arch import __version__
+from mt5_arch.brokers import list_broker_profiles, load_broker_profile
 from mt5_arch.client import MT5ArchClient, MT5ArchError
 from mt5_arch.config import Settings
 from mt5_arch.file_bridge import FileBridgeClient, FileBridgeError
@@ -42,6 +43,17 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("ping", parents=[common], help="Check file-bridge or RPyC connectivity")
     sub.add_parser("account", parents=[common], help="Print account snapshot")
     sub.add_parser("config", parents=[common], help="Show redacted settings (no secrets)")
+    p_brokers = sub.add_parser(
+        "brokers",
+        parents=[common],
+        help="List multi-broker profiles (config/brokers/*.env); no passwords",
+    )
+    p_brokers.add_argument(
+        "name",
+        nargs="?",
+        default=None,
+        help="Optional profile name (e.g. vantage, wsf)",
+    )
     p_sym = sub.add_parser("symbols", parents=[common], help="Print symbol specs")
     p_sym.add_argument("symbols", nargs="+", help="Symbol names, e.g. EURUSD XAUUSD")
 
@@ -99,21 +111,37 @@ def _print_result(data: Any, *, as_json: bool) -> None:
 def cmd_ping(client: Any, as_json: bool) -> int:
     info = client.ping()
     payload = asdict(info)
-    # File-bridge under Wine: TERMINAL_CONNECTED is often false while login works.
-    # Treat bridge-alive + trade_allowed + company/path as success; only soft-warn.
+    # File-bridge under Wine: TERMINAL_CONNECTED is often false while a live trade
+    # session is fine. Only infer connected when account money/meta fields look live
+    # (currency/leverage/company). login+server alone can be cached while offline.
     if not info.connected:
         try:
             acc = client.account_info()
-            if getattr(acc, "login", 0) and getattr(acc, "server", ""):
+            login = int(getattr(acc, "login", 0) or 0)
+            server = str(getattr(acc, "server", "") or "")
+            currency = str(getattr(acc, "currency", "") or "")
+            leverage = int(getattr(acc, "leverage", 0) or 0)
+            company = str(getattr(acc, "company", "") or "")
+            liveish = bool(login and server and (currency or leverage > 0 or company))
+            if liveish:
                 payload["connected"] = True
                 payload["connected_inferred"] = True
                 _print_result(payload, as_json=as_json)
                 print(
                     "note: TERMINAL_CONNECTED raw=false under Wine; "
-                    f"inferred connected via login={acc.login} server={acc.server}",
+                    f"inferred connected via login={login} server={server}",
                     file=sys.stderr,
                 )
                 return 0
+            _print_result(payload, as_json=as_json)
+            print(
+                "warning: terminal not trade-connected "
+                f"(login={login or '—'} server={server or '—'}; "
+                "currency/leverage empty). "
+                "Run ./scripts/13-force-login-bridge.sh or File→Login in MT5.",
+                file=sys.stderr,
+            )
+            return 2
         except Exception:  # noqa: BLE001
             pass
         _print_result(payload, as_json=as_json)
@@ -123,9 +151,71 @@ def cmd_ping(client: Any, as_json: bool) -> int:
     return 0
 
 
+def cmd_brokers(name: str | None, as_json: bool) -> int:
+    """List or show broker profiles from config/brokers/*.env (no MT5 connection)."""
+    if name:
+        try:
+            profile = load_broker_profile(name)
+        except FileNotFoundError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+        payload = {
+            "name": profile.name,
+            "path": str(profile.path),
+            **profile.as_exports(),
+        }
+        _print_result(payload, as_json=as_json)
+        return 0
+
+    profiles = list_broker_profiles()
+    rows = [
+        {
+            "name": p.name,
+            "login": p.login,
+            "server": p.server,
+            "wineprefix": p.wineprefix,
+            "backend": p.backend,
+        }
+        for p in profiles
+    ]
+    if as_json:
+        _print_result(rows, as_json=True)
+        return 0
+    if not rows:
+        print("no broker profiles under config/brokers/*.env", file=sys.stderr)
+        return 1
+    for row in rows:
+        print(
+            f"{row['name']}: login={row['login']} server={row['server']!r} "
+            f"prefix={row['wineprefix']}"
+        )
+    print(
+        "note: one MT5 process ≠ every broker; see docs/MULTI-BROKER-MT5.md",
+        file=sys.stderr,
+    )
+    return 0
+
+
 def cmd_account(client: Any, as_json: bool) -> int:
     account = client.account_info()
-    _print_result(asdict(account), as_json=as_json)
+    payload = asdict(account)
+    _print_result(payload, as_json=as_json)
+    # Surface offline/cached sessions: login present but no money meta fields
+    if (
+        int(account.login or 0) > 0
+        and not (account.currency or account.leverage > 0 or account.company)
+        and float(account.balance or 0) == 0.0
+    ):
+        print(
+            "warning: account looks offline/cached "
+            "(balance=0, empty currency/leverage). "
+            "Not a real funded session until MT5 trade-server auth succeeds.",
+            file=sys.stderr,
+        )
+        return 2
     return 0
 
 
@@ -183,6 +273,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "config":
         _print_result(settings.redacted_summary(), as_json=args.json)
         return 0
+
+    if args.command == "brokers":
+        return cmd_brokers(getattr(args, "name", None), args.json)
 
     try:
         client = _open_client(settings)
