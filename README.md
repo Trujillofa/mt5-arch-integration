@@ -1,8 +1,10 @@
 # mt5-arch-integration
 
-MetaTrader 5 **integration layer** for **Arch Linux**: Wine terminal + [mt5linux](https://github.com/lucas-campagna/mt5linux) RPyC bridge + native Linux Python CLI.
+MetaTrader 5 **integration layer** for **Arch Linux**: Wine terminal + file-bridge EA (or [mt5linux](https://github.com/lucas-campagna/mt5linux) RPyC) + native Linux Python CLI.
 
-This is **not** a full trading agent. For strategies, risk, and paper/live modes see [`mt5-trading-agent`](../mt5-trading-agent).
+This is **not** a full trading agent (no strategies, risk engine, or Telegram bot). Use it as a stable platform under Wine for account/market data and order plumbing from other apps.
+
+**Docs index:** [docs/README.md](docs/README.md) · **Repo:** [github.com/Trujillofa/mt5-arch-integration](https://github.com/Trujillofa/mt5-arch-integration)
 
 ## Architecture (short)
 
@@ -138,7 +140,8 @@ Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see tr
 | `MT5_SERVER` | — | Broker server name |
 | `MT5_RPYC_HOST` | `localhost` | mt5server host |
 | `MT5_RPYC_PORT` | `18812` | mt5server port |
-| `WINEPREFIX` | `~/.mt5` | Wine prefix |
+| `WINEPREFIX` | `~/.mt5` (legacy) / brand prefixes | Wine prefix (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`) |
+| `MT5_BACKEND` | `file` | `file` (recommended) or `rpyc` |
 
 ## Tests
 
@@ -183,20 +186,24 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 # Keys: Super+Alt+V paste · Super+Alt+Shift+V type (login/password)
 ```
 
-## Docs
-
-- [Install on Arch (vs official Ubuntu guide)](docs/INSTALL-LINUX-ARCH.md)
-- [Charts & stability (Hyprland/Wine)](docs/CHARTS-AND-STABILITY.md)
-- [Arch setup](docs/ARCH-SETUP.md)
-- [Architecture](docs/ARCHITECTURE.md)
-- [Troubleshooting](docs/TROUBLESHOOTING.md)
-
 ## Security
 
-- Never commit `.env` or Wine prefixes.
-- Keep RPyC on localhost.
-- Treat mt5server as full trading control plane.
+- Never commit `.env`, passwords, Wine prefixes, or broker installers (`.exe`).
+- Keep RPyC on **localhost** only.
+- Treat a live terminal + bridge as full trading control; do not expose them on the network.
+- Example logins in `config/brokers/*.env` are non-secret account IDs from local testing — replace with yours.
+
+## Contributing
+
+Issues and PRs welcome for Arch/Wine packaging, bridge robustness, and docs.  
+Keep the scope as a **platform layer** (no strategy engines in this repo).
+
+```bash
+uv sync --all-extras
+uv run pytest
+uv run ruff check src tests
+```
 
 ## License
 
-MIT
+[MIT](LICENSE)
