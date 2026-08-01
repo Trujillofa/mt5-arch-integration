@@ -121,6 +121,12 @@ export WINEPREFIX=~/.mt5-vantage MT5_BACKEND=file
 uv run mt5-arch account
 ```
 
+| Profile | Prefix | Server (example) |
+|---------|--------|------------------|
+| `vantage` | `~/.mt5-vantage` | `VantageMarkets-Live 5` |
+| `wsf` | `~/.mt5-wsf` | `WSFmarkets-Server` |
+| `fpmarkets` | `~/.mt5-fpmarkets` | `FPMarketsSC-Live` |
+
 Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see troubleshooting multi-broker section).
 
 ## Configuration

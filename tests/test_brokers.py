@@ -48,6 +48,7 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     names = {p.name for p in profiles}
     assert "wsf" in names, "expected config/brokers/wsf.env"
     assert "vantage" in names, "expected config/brokers/vantage.env"
+    assert "fpmarkets" in names, "expected config/brokers/fpmarkets.env"
 
     wsf = load_broker_profile("wsf")
     assert wsf.login == "149736"
@@ -58,6 +59,11 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert vant.login == "27496181"
     assert vant.server == "VantageMarkets-Live 5"
     assert "mt5-vantage" in vant.wineprefix
+
+    fpm = load_broker_profile("fpmarkets")
+    assert fpm.login == "84076984"
+    assert fpm.server == "FPMarketsSC-Live"
+    assert "mt5-fpmarkets" in fpm.wineprefix
 
     # as_exports never includes password keys
     exp = vant.as_exports()

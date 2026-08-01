@@ -31,7 +31,7 @@ journals under `~/.mt5*`, `.net-fix-evidence/SUMMARY.md` (2026-08-01).
 |------|--------|
 | `~/.mt5-wsf` — **WSFmarkets MT5 Terminal** | Login **149736** → `WSFmarkets-Server` → Journal **`authorized`** (demo, hedging) |
 | `~/.mt5-vantage` — **Vantage International MT5** | Login **27496181** → **`VantageMarkets-Live 5`** → Journal **`authorized`**, CLI Pass A (`currency=USD`, `leverage=500`) |
-| `~/.mt5-fpmarkets` — **FP Markets MT5 Terminal** | Installed from `fpmarketssc5setup.exe` (First Prudential Markets Limited); brand start OK; set login/server after GUI auth |
+| `~/.mt5-fpmarkets` — **FP Markets MT5 Terminal** | Login **84076984** → **`FPMarketsSC-Live`** → Journal **`authorized`**, live Pass A (`currency=USD`, `leverage=500`) |
 | Cross-login | `27496181` on **`WSFmarkets-Server`** → **`Invalid account`** (wrong company/server) |
 | `~/.mt5` generic MetaQuotes portable | Long stretches with **Network count 0** under Wine (auth path failed before broker reply) |
 

@@ -181,7 +181,7 @@ usually mean separate prefixes/processes.
 |--------|-----------|--------|-----------------|--------|
 | WSF | `wsfmarkets5setup.exe` | `~/.mt5-wsf` | **149736** (demo) | `WSFmarkets-Server` |
 | Vantage | `vantageinternational5setup.exe` | `~/.mt5-vantage` | **27496181** (live) | **`VantageMarkets-Live 5`** (not `VantageInternational-Live 5`) |
-| FP Markets SC | `fpmarketssc5setup.exe` | `~/.mt5-fpmarkets` | set after GUI | exact name from Journal |
+| FP Markets SC | `fpmarketssc5setup.exe` | `~/.mt5-fpmarkets` | **84076984** (live) | **`FPMarketsSC-Live`** |
 
 Broker terminals install under brand folders; scripts expect `…/MetaTrader 5` — create a symlink:
 
