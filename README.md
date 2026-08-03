@@ -131,6 +131,14 @@ uv run mt5-arch account
 
 Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see troubleshooting multi-broker section).
 
+**Desktop / app menu icons** (after brand installs):
+
+```bash
+./scripts/17-install-desktop-launchers.sh
+# App launcher: "FP Markets MT5" · "Vantage International MT5" · "WSFmarkets MT5"
+# CLI: mt5-fpmarkets | mt5-vantage | mt5-wsf
+```
+
 ## Configuration
 
 | Variable | Default | Meaning |

@@ -175,7 +175,22 @@ only when each company server is present and Wine can auth. Brand installers pre
 `servers.dat`; cross-company login fails (`Invalid account`). Concurrent live bridges
 usually mean separate prefixes/processes.
 
-### Multi-broker Wine prefixes (WSF + Vantage)
+### App menu / Desktop icons missing or broken (FP Markets, etc.)
+
+Wine installers often only create nested entries under
+`~/.local/share/applications/wine/Programs/...` with **tiny broken icons**.
+Install top-level launchers (app menu + Desktop + `~/.local/bin/mt5-*`):
+
+```bash
+./scripts/17-install-desktop-launchers.sh
+# then open launcher and search: FP Markets MT5 | Vantage | WSFmarkets
+# or: mt5-fpmarkets   /   mt5-vantage   /   mt5-wsf
+```
+
+Each launcher sets the correct `WINEPREFIX` and runs `terminal64.exe /portable`
+(not a fragile Wine `.lnk`).
+
+### Multi-broker Wine prefixes (WSF + Vantage + FP Markets)
 
 | Broker | Installer | Prefix | Login (example) | Server |
 |--------|-----------|--------|-----------------|--------|

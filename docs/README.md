@@ -43,6 +43,7 @@ Details and “one install for all brokers?” answer: [MULTI-BROKER-MT5.md](MUL
 | `scripts/14-isolate-net-and-login.sh` | Stop docker/ts, force-login, restore |
 | `scripts/15-bridge-down-and-login.sh` | Root bridge-down + force-login + restore |
 | `scripts/16-use-broker.sh` | Activate `config/brokers/<name>.env` |
+| `scripts/17-install-desktop-launchers.sh` | App menu + Desktop icons (`mt5-fpmarkets`, etc.) |
 | `scripts/wine-net/force_src_bind.so` | Prefer LAN source IP under multi-homed hosts |
 
 ## Safety / secrets
