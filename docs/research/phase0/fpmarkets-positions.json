@@ -1,0 +1,37 @@
+{
+  "positions": [
+    {
+      "ticket": 237511830,
+      "symbol": "NZDCHF.r",
+      "side": "sell",
+      "volume": 0.48,
+      "open_price": 0.4685,
+      "stop_loss": 0.0,
+      "take_profit": 0.46672,
+      "profit": -463.07,
+      "status": "open"
+    },
+    {
+      "ticket": 237702274,
+      "symbol": "NZDCHF.r",
+      "side": "sell",
+      "volume": 0.48,
+      "open_price": 0.47051,
+      "stop_loss": 0.0,
+      "take_profit": 0.46672,
+      "profit": -343.89,
+      "status": "open"
+    },
+    {
+      "ticket": 242365136,
+      "symbol": "US30",
+      "side": "sell",
+      "volume": 0.2,
+      "open_price": 53473.8,
+      "stop_loss": 54484.16,
+      "take_profit": 52944.45,
+      "profit": -116.15,
+      "status": "open"
+    }
+  ]
+}

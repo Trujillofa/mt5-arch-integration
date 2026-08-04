@@ -1,0 +1,155 @@
+{
+  "phase": "0-vantage-live",
+  "captured_at_utc": "2026-08-04T15:48:30.541517+00:00",
+  "broker": "vantage",
+  "wineprefix": "/home/yderf/.mt5-vantage",
+  "ping": {
+    "connected": true,
+    "name": "Vantage International MT5",
+    "path": "C:\\Program Files\\Vantage International MT5",
+    "company": "Vantage International Group Limited",
+    "build": 6090,
+    "trade_allowed": true,
+    "tradeapi_disabled": false
+  },
+  "account": {
+    "login": 27496181,
+    "server": "VantageMarkets-Live 5",
+    "company": "Vantage Markets (Pty) Ltd",
+    "currency": "USD",
+    "leverage": 500,
+    "balance": 8983.11,
+    "equity": 7079.78
+  },
+  "server_utc_offset_hours_approx": 3,
+  "symbols": [
+    {
+      "symbol": "EURUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.0,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "GBPUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.0,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "USDJPY",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 3,
+      "point": 0.001,
+      "tick_value": 0.6352554,
+      "tick_size": 0.001,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "USDCHF",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.23522364,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "XAUUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100.0,
+      "digits": 2,
+      "point": 0.01,
+      "tick_value": 1.0,
+      "tick_size": 0.01,
+      "trade_mode": "FULL"
+    }
+  ],
+  "positions": {
+    "positions": [
+      {
+        "ticket": 160386103,
+        "symbol": "NZDCHF",
+        "side": "sell",
+        "volume": 1.36,
+        "open_price": 0.46847,
+        "stop_loss": 0.0,
+        "take_profit": 0.46672,
+        "profit": -1343.91,
+        "status": "open"
+      },
+      {
+        "ticket": 160956880,
+        "symbol": "NZDCHF",
+        "side": "sell",
+        "volume": 1.36,
+        "open_price": 0.47033,
+        "stop_loss": 0.0,
+        "take_profit": 0.46672,
+        "profit": -1031.45,
+        "status": "open"
+      },
+      {
+        "ticket": 171409144,
+        "symbol": "NZDCHF",
+        "side": "sell",
+        "volume": 1.36,
+        "open_price": 0.47449,
+        "stop_loss": 0.0,
+        "take_profit": 0.47415,
+        "profit": -332.62,
+        "status": "open"
+      },
+      {
+        "ticket": 173522562,
+        "symbol": "DJ30.r",
+        "side": "sell",
+        "volume": 0.4,
+        "open_price": 53465.5,
+        "stop_loss": 54484.16,
+        "take_profit": 52944.45,
+        "profit": -262.42,
+        "status": "open"
+      }
+    ]
+  },
+  "xau_h1_last": {
+    "time": "2026-08-04T18:00:00+00:00",
+    "open": 4083.53,
+    "high": 4087.22,
+    "low": 4074.79,
+    "close": 4083.61,
+    "volume": 23277.0
+  },
+  "btc": {
+    "chart_seen": "BTCUSD",
+    "in_bridge_export": false,
+    "note": "EA v1.03 InpSymbols lacked BTCUSD; v1.04 deployed \u2014 re-attach EA to export"
+  },
+  "gold": {
+    "symbol": "XAUUSD",
+    "contract_size": 100.0,
+    "digits": 2,
+    "trade_mode": "FULL",
+    "h1_live": true
+  }
+}

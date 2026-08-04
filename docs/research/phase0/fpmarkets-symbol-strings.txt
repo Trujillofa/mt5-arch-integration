@@ -1,0 +1,1 @@
+=== FP live symbols.dat: /home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/symbols/symbols-84076984.dat ===

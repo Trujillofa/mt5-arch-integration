@@ -5,11 +5,13 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.03"
+#property version   "1.04"
 #property description "Writes account/symbols/candles JSON under MQL5/Files/mt5_arch/"
 
 input int    InpTimerSec    = 1;       // Snapshot interval (seconds) — more reliable than ms under Wine
-input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,USDCHF";
+// Phase 0 (FP Markets): gold is XAUUSD.r; BTC is BTCUSD. Keep bare XAUUSD for brokers without .r.
+// SymbolSelect silently skips missing names — safe to list both conventions.
+input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,USDCHF,XAUUSD,XAUUSD.r,BTCUSD";
 input string InpTimeframes  = "M15,H1,H4,D1";
 input int    InpCandleCount = 50;
 

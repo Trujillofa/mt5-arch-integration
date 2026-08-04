@@ -1,0 +1,13 @@
+{
+  "login": 27496181,
+  "balance": 8983.11,
+  "equity": 7079.78,
+  "margin": 523.69,
+  "free_margin": 6556.09,
+  "margin_level": 1351.9,
+  "currency": "USD",
+  "leverage": 500,
+  "server": "VantageMarkets-Live 5",
+  "name": "[redacted]",
+  "company": "Vantage Markets (Pty) Ltd"
+}

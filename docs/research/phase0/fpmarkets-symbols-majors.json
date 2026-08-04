@@ -1,0 +1,50 @@
+[
+  {
+    "symbol": "EURUSD",
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "contract_size": 100000.0,
+    "digits": 5,
+    "point": 1e-05,
+    "tick_value": 1.0,
+    "tick_size": 1e-05,
+    "trade_mode": "DISABLED"
+  },
+  {
+    "symbol": "GBPUSD",
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "contract_size": 100000.0,
+    "digits": 5,
+    "point": 1e-05,
+    "tick_value": 1.0,
+    "tick_size": 1e-05,
+    "trade_mode": "DISABLED"
+  },
+  {
+    "symbol": "USDJPY",
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "contract_size": 100000.0,
+    "digits": 3,
+    "point": 0.001,
+    "tick_value": 0.63516664,
+    "tick_size": 0.001,
+    "trade_mode": "DISABLED"
+  },
+  {
+    "symbol": "USDCHF",
+    "min_lot": 0.01,
+    "max_lot": 50.0,
+    "lot_step": 0.01,
+    "contract_size": 100000.0,
+    "digits": 5,
+    "point": 1e-05,
+    "tick_value": 1.23517787,
+    "tick_size": 1e-05,
+    "trade_mode": "DISABLED"
+  }
+]

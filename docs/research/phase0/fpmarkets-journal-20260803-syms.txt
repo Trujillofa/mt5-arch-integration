@@ -1,0 +1,11 @@
+IH	0	09:26:12.715	Network	'84076984': terminal synchronized with First Prudential Markets Limited: 2 positions, 0 orders, 834 symbols, 0 spreads
+NM	0	10:33:01.481	Trades	'84076984': market sell 0.01 BTCUSD sl: 64000.00 tp: 63000.00
+HD	0	10:33:01.626	Trades	'84076984': accepted market sell 0.01 BTCUSD sl: 64000.00 tp: 63000.00
+MI	0	10:33:01.796	Trades	'84076984': market sell 0.01 BTCUSD sl: 64000.00 tp: 63000.00 placed for execution
+PD	0	10:33:01.797	Trades	'84076984': order #242248269 sell 0.01 / 0.01 BTCUSD at market done in 316.259 ms
+LO	0	10:33:01.798	Trades	'84076984': deal #227259495 sell 0.01 BTCUSD at 63677.80 done (based on order #242248269)
+HH	0	12:04:00.909	Indicators	custom indicator ForexIndicatorTemplate (NZDCHF.r,H1) loaded succesfully
+FQ	0	12:24:52.623	Trades	'84076984': deal #227275625 buy 0.01 BTCUSD at 64003.55 done (based on order #242265310)
+FO	0	15:05:05.212	Indicators	custom indicator ForexIndicatorTemplate (NZDCHF.r,H1) loaded succesfully
+JN	0	17:40:04.507	Network	'84076984': terminal synchronized with First Prudential Markets Limited: 2 positions, 0 orders, 834 symbols, 0 spreads
+OL	0	20:08:47.727	Network	'84076984': terminal synchronized with First Prudential Markets Limited: 2 positions, 0 orders, 834 symbols, 0 spreads

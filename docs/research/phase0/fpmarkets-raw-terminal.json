@@ -1,0 +1,10 @@
+{
+  "connected": true,
+  "connected_raw": true,
+  "name": "FP Markets MT5 Terminal",
+  "path": "C:\\Program Files\\FP Markets MT5 Terminal",
+  "company": "First Prudential Markets Limited",
+  "build": 6090,
+  "trade_allowed": true,
+  "tradeapi_disabled": false
+}

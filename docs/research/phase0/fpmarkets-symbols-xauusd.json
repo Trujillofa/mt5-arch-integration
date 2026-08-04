@@ -1,0 +1,2 @@
+error: Symbol 'XAUUSD' not in bridge export. Add it to EA input InpSymbols and ensure it is in Market Watch.
+hint: ./scripts/06-install-file-bridge.sh then attach EA + green Algo Trading
