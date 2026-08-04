@@ -29,6 +29,7 @@ SRC_INC="${ROOT}/mql5/Include/ForexUtils.mqh"
 SRC_IND=(
   "${ROOT}/mql5/Indicators/ForexIndicatorTemplate.mq5"
   "${ROOT}/mql5/Indicators/ForexHtfPivotsFib.mq5"
+  "${ROOT}/mql5/Indicators/BtcTrendPullback.mq5"
 )
 SRC_EA=(
   "${ROOT}/mql5/Experts/ForexSignalLogger.mq5"
@@ -74,12 +75,15 @@ cat <<'EOF'
 Next steps:
   1. MetaEditor (F4) → compile (F7):
        Include/ForexUtils.mqh          (auto via includes)
-       Indicators/ForexHtfPivotsFib.mq5     ← primary chart tool
+       Indicators/ForexHtfPivotsFib.mq5     ← FX/gold primary
+       Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
        Indicators/ForexIndicatorTemplate.mq5
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
-  2. Chart M15 or H1 (at or below H4):
-       Navigator → Indicators → ForexHtfPivotsFib → drag
+  2. FX/gold H1: ForexHtfPivotsFib
+     BTCUSD H1:  BtcTrendPullback
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)
+       FX:  InpIndicatorName=ForexHtfPivotsFib  buffer 7
+       BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/
 EOF

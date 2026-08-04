@@ -17,6 +17,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |
+| [research/BTC-INDICATOR-DESIGN.md](research/BTC-INDICATOR-DESIGN.md) | BtcTrendPullback design (crypto-agent → MQL5) |
 
 ## Multi-broker (WSF / Vantage / FP Markets)
 

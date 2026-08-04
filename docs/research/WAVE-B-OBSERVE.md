@@ -3,26 +3,39 @@
 **Goal:** Run HTF Fib + optional signal logger for 1–2 weeks. **No OrderSend.**  
 **Broker:** Vantage (`~/.mt5-vantage`) — majors + `XAUUSD` trade_mode FULL.
 
-Installed & compiled (2026-08-04):
+Installed & compiled (2026-08-04+):
 
-- `Indicators/ForexHtfPivotsFib.ex5` ← primary
+- `Indicators/ForexHtfPivotsFib.ex5` ← FX/gold primary
+- `Indicators/BtcTrendPullback.ex5` ← **BTCUSD primary**
 - `Indicators/ForexIndicatorTemplate.ex5` ← optional
 - `Experts/ForexSignalLogger.ex5` ← log-only
 - `Experts/Mt5ArchBridge.ex5` v1.04
+
+Design: [BTC-INDICATOR-DESIGN.md](BTC-INDICATOR-DESIGN.md)
 
 ---
 
 ## Chart setup (do in MT5 UI)
 
-For each symbol: **EURUSD, GBPUSD, USDJPY, XAUUSD**
+### FX / gold — **EURUSD, GBPUSD, USDJPY, XAUUSD**
 
 | Setting | Value |
 |---------|--------|
 | Timeframe | **H1** (or M15) |
 | Indicator | Navigator → Indicators → **ForexHtfPivotsFib** |
 | Look for | Golden zone 61.8–78.6, EMA200 filter, lime/red markers |
-| Optional EA | **ForexSignalLogger** (Algo Trading green) |
+| Optional EA | **ForexSignalLogger** name=`ForexHtfPivotsFib` buffer **7** |
 | Template | Save chart template after first chart looks right |
+
+### BTC — **BTCUSD**
+
+| Setting | Value |
+|---------|--------|
+| Timeframe | **H1** |
+| Indicator | Navigator → Indicators → **BtcTrendPullback** |
+| Look for | EMA50/200, ATR bands, lime/red reclaim arrows |
+| Optional EA | **ForexSignalLogger** name=`BtcTrendPullback` buffer **7**, **MaxSpreadPips=0** |
+| Bridge | Ensure `Mt5ArchBridge` `InpSymbols` includes `BTCUSD` |
 
 **Do not** attach a trading EA that places orders.
 
