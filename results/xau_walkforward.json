@@ -3,9 +3,9 @@
   "n_folds": 4,
   "oos_region_start": "2025-01-01 00:00:00+00:00",
   "data_range": {
-    "start": "2024-08-16 19:00:00+00:00",
-    "end": "2026-08-06 18:00:00+00:00",
-    "n_bars": 11637
+    "start": "2021-09-01 21:00:00+00:00",
+    "end": "2026-08-06 20:00:00+00:00",
+    "n_bars": 29151
   },
   "grid_size": 12,
   "grid_axes": {
@@ -33,13 +33,23 @@
   "baseline_params": {
     "mode": "bb_rsi",
     "rsi_buy": 30.0,
-    "rsi_sell": 50.0,
-    "sl_atr": 1.5,
-    "tp_atr": 2.0,
-    "bb_col": "bb_lo",
+    "rsi_sell": 58.0,
+    "sl_atr": 1.0,
+    "tp_atr": 1.2,
+    "bb_col": "bb_lo15",
     "trend_col": "ema200",
     "use_macd_filter": false,
-    "hours": null,
+    "hours": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
     "long_only": true,
     "risk_pct": 0.01,
     "cooldown": 2,
@@ -50,9 +60,9 @@
     {
       "fold": 1,
       "train_range": {
-        "start": "2024-08-16 19:00:00+00:00",
+        "start": "2021-09-01 21:00:00+00:00",
         "end": "2024-12-31 23:00:00+00:00",
-        "n_bars": 2203
+        "n_bars": 19715
       },
       "oos_range": {
         "start": "2025-01-02 01:00:00+00:00",
@@ -61,11 +71,21 @@
       },
       "chosen_params": {
         "mode": "bb_rsi",
-        "rsi_sell": 50.0,
-        "bb_col": "bb_lo",
+        "rsi_sell": 58.0,
+        "bb_col": "bb_lo15",
         "trend_col": "ema200",
         "use_macd_filter": false,
-        "hours": null,
+        "hours": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
         "long_only": true,
         "risk_pct": 0.01,
         "cooldown": 2,
@@ -75,43 +95,43 @@
         "require_uptrend": true
       },
       "train_metrics": {
-        "net_profit": 857.1682266533066,
-        "win_rate": 73.6842105263158,
-        "profit_factor": 2.646023628504906,
-        "max_drawdown_pct": 2.220664383815709,
-        "n_trades": 19,
-        "wins": 14,
-        "losses": 5
+        "net_profit": 1045.4677624228598,
+        "win_rate": 49.504950495049506,
+        "profit_factor": 1.2097621008716082,
+        "max_drawdown_pct": 8.649472291207976,
+        "n_trades": 101,
+        "wins": 50,
+        "losses": 51
       },
       "train_gates_pass": false,
       "n_passers_train": 0,
       "oos_metrics": {
-        "net_profit": 364.2754286346649,
-        "win_rate": 61.111111111111114,
-        "profit_factor": 1.2835529821178562,
-        "max_drawdown_pct": 3.230739506246833,
-        "n_trades": 36,
-        "wins": 22,
-        "losses": 14
+        "net_profit": 108.7753857933258,
+        "win_rate": 45.0,
+        "profit_factor": 1.1179634176923818,
+        "max_drawdown_pct": 3.508261731105454,
+        "n_trades": 20,
+        "wins": 9,
+        "losses": 11
       },
       "oos_gates_pass": false,
       "baseline_oos_metrics": {
-        "net_profit": 157.6727713548471,
-        "win_rate": 50.0,
-        "profit_factor": 1.2522645539505115,
-        "max_drawdown_pct": 2.706353737481538,
-        "n_trades": 14,
-        "wins": 7,
-        "losses": 7
+        "net_profit": 213.2453263237121,
+        "win_rate": 60.0,
+        "profit_factor": 2.818727717922046,
+        "max_drawdown_pct": 0.9972972585085518,
+        "n_trades": 5,
+        "wins": 3,
+        "losses": 2
       },
       "baseline_oos_gates_pass": false
     },
     {
       "fold": 2,
       "train_range": {
-        "start": "2024-08-16 19:00:00+00:00",
+        "start": "2021-09-01 21:00:00+00:00",
         "end": "2025-05-27 19:00:00+00:00",
-        "n_bars": 4562
+        "n_bars": 22074
       },
       "oos_range": {
         "start": "2025-05-27 20:00:00+00:00",
@@ -120,11 +140,90 @@
       },
       "chosen_params": {
         "mode": "bb_rsi",
-        "rsi_sell": 50.0,
-        "bb_col": "bb_lo",
+        "rsi_sell": 58.0,
+        "bb_col": "bb_lo15",
         "trend_col": "ema200",
         "use_macd_filter": false,
-        "hours": null,
+        "hours": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "long_only": true,
+        "risk_pct": 0.01,
+        "cooldown": 2,
+        "rsi_buy": 35.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.0,
+        "require_uptrend": true
+      },
+      "train_metrics": {
+        "net_profit": 1252.5193238120828,
+        "win_rate": 49.18032786885246,
+        "profit_factor": 1.2067203978905827,
+        "max_drawdown_pct": 8.649472291207976,
+        "n_trades": 122,
+        "wins": 60,
+        "losses": 62
+      },
+      "train_gates_pass": false,
+      "n_passers_train": 0,
+      "oos_metrics": {
+        "net_profit": 325.50401802409624,
+        "win_rate": 58.333333333333336,
+        "profit_factor": 1.6882278290659798,
+        "max_drawdown_pct": 3.116533110946839,
+        "n_trades": 12,
+        "wins": 7,
+        "losses": 5
+      },
+      "oos_gates_pass": false,
+      "baseline_oos_metrics": {
+        "net_profit": 232.21020458735256,
+        "win_rate": 100.0,
+        "profit_factor": 99.0,
+        "max_drawdown_pct": 0.17801003650377908,
+        "n_trades": 2,
+        "wins": 2,
+        "losses": 0
+      },
+      "baseline_oos_gates_pass": false
+    },
+    {
+      "fold": 3,
+      "train_range": {
+        "start": "2021-09-01 21:00:00+00:00",
+        "end": "2025-10-17 18:00:00+00:00",
+        "n_bars": 24433
+      },
+      "oos_range": {
+        "start": "2025-10-17 19:00:00+00:00",
+        "end": "2026-03-13 20:00:00+00:00",
+        "n_bars": 2359
+      },
+      "chosen_params": {
+        "mode": "bb_rsi",
+        "rsi_sell": 58.0,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "use_macd_filter": false,
+        "hours": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
         "long_only": true,
         "risk_pct": 0.01,
         "cooldown": 2,
@@ -134,92 +233,33 @@
         "require_uptrend": true
       },
       "train_metrics": {
-        "net_profit": 1610.24366929793,
-        "win_rate": 56.89655172413793,
-        "profit_factor": 1.6157095400562285,
-        "max_drawdown_pct": 4.762460959053477,
-        "n_trades": 58,
-        "wins": 33,
-        "losses": 25
+        "net_profit": 2187.082424243273,
+        "win_rate": 46.15384615384615,
+        "profit_factor": 1.2863870059266551,
+        "max_drawdown_pct": 9.5466065009587,
+        "n_trades": 143,
+        "wins": 66,
+        "losses": 77
       },
-      "train_gates_pass": true,
-      "n_passers_train": 4,
+      "train_gates_pass": false,
+      "n_passers_train": 0,
       "oos_metrics": {
-        "net_profit": 170.20737492311355,
-        "win_rate": 48.0,
-        "profit_factor": 1.1379879766409138,
-        "max_drawdown_pct": 3.2973622222623296,
-        "n_trades": 25,
-        "wins": 12,
+        "net_profit": -597.4399045037185,
+        "win_rate": 23.529411764705884,
+        "profit_factor": 0.4766399919053738,
+        "max_drawdown_pct": 6.911707554808796,
+        "n_trades": 17,
+        "wins": 4,
         "losses": 13
       },
       "oos_gates_pass": false,
       "baseline_oos_metrics": {
-        "net_profit": 566.0802421203953,
-        "win_rate": 87.5,
-        "profit_factor": 7.108153465226211,
-        "max_drawdown_pct": 1.3800175892702782,
-        "n_trades": 8,
-        "wins": 7,
-        "losses": 1
-      },
-      "baseline_oos_gates_pass": false
-    },
-    {
-      "fold": 3,
-      "train_range": {
-        "start": "2024-08-16 19:00:00+00:00",
-        "end": "2025-10-17 18:00:00+00:00",
-        "n_bars": 6921
-      },
-      "oos_range": {
-        "start": "2025-10-17 19:00:00+00:00",
-        "end": "2026-03-13 19:00:00+00:00",
-        "n_bars": 2358
-      },
-      "chosen_params": {
-        "mode": "bb_rsi",
-        "rsi_sell": 50.0,
-        "bb_col": "bb_lo",
-        "trend_col": "ema200",
-        "use_macd_filter": false,
-        "hours": null,
-        "long_only": true,
-        "risk_pct": 0.01,
-        "cooldown": 2,
-        "rsi_buy": 30.0,
-        "sl_atr": 1.5,
-        "tp_atr": 2.0,
-        "require_uptrend": true
-      },
-      "train_metrics": {
-        "net_profit": 1239.0264602774037,
-        "win_rate": 64.70588235294117,
-        "profit_factor": 2.025556231997442,
-        "max_drawdown_pct": 3.5557257333827557,
-        "n_trades": 34,
-        "wins": 22,
-        "losses": 12
-      },
-      "train_gates_pass": true,
-      "n_passers_train": 2,
-      "oos_metrics": {
-        "net_profit": 252.81862769918462,
-        "win_rate": 66.66666666666667,
-        "profit_factor": 2.0425451423242764,
-        "max_drawdown_pct": 2.6437996321666333,
-        "n_trades": 9,
-        "wins": 6,
-        "losses": 3
-      },
-      "oos_gates_pass": false,
-      "baseline_oos_metrics": {
-        "net_profit": 252.81862769918462,
-        "win_rate": 66.66666666666667,
-        "profit_factor": 2.0425451423242764,
-        "max_drawdown_pct": 2.6437996321666333,
-        "n_trades": 9,
-        "wins": 6,
+        "net_profit": -48.82772176826937,
+        "win_rate": 40.0,
+        "profit_factor": 0.8138019540394054,
+        "max_drawdown_pct": 1.1184632381772361,
+        "n_trades": 5,
+        "wins": 2,
         "losses": 3
       },
       "baseline_oos_gates_pass": false
@@ -227,69 +267,79 @@
     {
       "fold": 4,
       "train_range": {
-        "start": "2024-08-16 19:00:00+00:00",
-        "end": "2026-03-13 19:00:00+00:00",
-        "n_bars": 9279
+        "start": "2021-09-01 21:00:00+00:00",
+        "end": "2026-03-13 20:00:00+00:00",
+        "n_bars": 26792
       },
       "oos_range": {
-        "start": "2026-03-13 20:00:00+00:00",
-        "end": "2026-08-06 18:00:00+00:00",
-        "n_bars": 2358
+        "start": "2026-03-13 21:00:00+00:00",
+        "end": "2026-08-06 20:00:00+00:00",
+        "n_bars": 2359
       },
       "chosen_params": {
         "mode": "bb_rsi",
-        "rsi_sell": 50.0,
-        "bb_col": "bb_lo",
+        "rsi_sell": 58.0,
+        "bb_col": "bb_lo15",
         "trend_col": "ema200",
         "use_macd_filter": false,
-        "hours": null,
+        "hours": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
         "long_only": true,
         "risk_pct": 0.01,
         "cooldown": 2,
-        "rsi_buy": 30.0,
-        "sl_atr": 1.5,
-        "tp_atr": 2.0,
+        "rsi_buy": 35.0,
+        "sl_atr": 1.0,
+        "tp_atr": 1.5,
         "require_uptrend": true
       },
       "train_metrics": {
-        "net_profit": 1524.198429116606,
-        "win_rate": 64.44444444444444,
-        "profit_factor": 1.9485224220801478,
-        "max_drawdown_pct": 3.5557257333827557,
-        "n_trades": 45,
-        "wins": 29,
-        "losses": 16
+        "net_profit": 1445.217804535708,
+        "win_rate": 43.75,
+        "profit_factor": 1.1599818162399747,
+        "max_drawdown_pct": 9.5466065009587,
+        "n_trades": 160,
+        "wins": 70,
+        "losses": 90
       },
-      "train_gates_pass": true,
-      "n_passers_train": 2,
+      "train_gates_pass": false,
+      "n_passers_train": 0,
       "oos_metrics": {
-        "net_profit": -152.77321812248192,
-        "win_rate": 40.0,
-        "profit_factor": 0.44782072092410063,
-        "max_drawdown_pct": 2.7644209000466367,
-        "n_trades": 5,
-        "wins": 2,
+        "net_profit": 285.51554771876545,
+        "win_rate": 57.142857142857146,
+        "profit_factor": 1.989371088050036,
+        "max_drawdown_pct": 2.1658678083778637,
+        "n_trades": 7,
+        "wins": 4,
         "losses": 3
       },
       "oos_gates_pass": false,
       "baseline_oos_metrics": {
-        "net_profit": -152.77321812248192,
-        "win_rate": 40.0,
-        "profit_factor": 0.44782072092410063,
-        "max_drawdown_pct": 2.7644209000466367,
-        "n_trades": 5,
-        "wins": 2,
-        "losses": 3
+        "net_profit": -83.59738451519206,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown_pct": 0.8359738451519297,
+        "n_trades": 1,
+        "wins": 0,
+        "losses": 1
       },
       "baseline_oos_gates_pass": false
     }
   ],
   "aggregate_oos": {
     "n_folds": 4,
-    "sum_net_profit": 634.5282131344811,
-    "total_trades": 75,
-    "mean_win_rate": 56.0,
-    "mean_profit_factor": 1.2279767055017867,
+    "sum_net_profit": 122.355047032469,
+    "total_trades": 56,
+    "mean_win_rate": 42.857142857142854,
+    "mean_profit_factor": 1.3180505816784427,
     "fold_pass_rate": 0.0,
     "folds_pass": [
       false,
@@ -297,38 +347,38 @@
       false,
       false
     ],
-    "min_oos_drawdown_pct": 2.6437996321666333,
-    "max_oos_drawdown_pct": 3.2973622222623296,
+    "min_oos_drawdown_pct": 2.1658678083778637,
+    "max_oos_drawdown_pct": 6.911707554808796,
     "per_fold_net_profit": [
-      364.2754286346649,
-      170.20737492311355,
-      252.81862769918462,
-      -152.77321812248192
+      108.7753857933258,
+      325.50401802409624,
+      -597.4399045037185,
+      285.51554771876545
     ],
     "per_fold_trades": [
-      36,
-      25,
-      9,
-      5
+      20,
+      12,
+      17,
+      7
     ],
     "per_fold_profit_factor": [
-      1.2835529821178562,
-      1.1379879766409138,
-      2.0425451423242764,
-      0.44782072092410063
+      1.1179634176923818,
+      1.6882278290659798,
+      0.4766399919053738,
+      1.989371088050036
     ],
     "per_fold_win_rate": [
-      61.111111111111114,
-      48.0,
-      66.66666666666667,
-      40.0
+      45.0,
+      58.333333333333336,
+      23.529411764705884,
+      57.142857142857146
     ]
   },
   "baseline_aggregate_oos": {
-    "sum_net_profit": 823.7984230519451,
-    "total_trades": 36,
-    "mean_win_rate": 61.111111111111114,
-    "mean_profit_factor": 2.712695970606275,
+    "sum_net_profit": 313.0304246276032,
+    "total_trades": 13,
+    "mean_win_rate": 53.84615384615385,
+    "mean_profit_factor": 25.658132417990362,
     "fold_pass_rate": 0.0,
     "folds_pass": [
       false,
@@ -336,27 +386,27 @@
       false,
       false
     ],
-    "min_oos_drawdown_pct": 1.3800175892702782,
-    "max_oos_drawdown_pct": 2.7644209000466367,
+    "min_oos_drawdown_pct": 0.17801003650377908,
+    "max_oos_drawdown_pct": 1.1184632381772361,
     "per_fold_net_profit": [
-      157.6727713548471,
-      566.0802421203953,
-      252.81862769918462,
-      -152.77321812248192
+      213.2453263237121,
+      232.21020458735256,
+      -48.82772176826937,
+      -83.59738451519206
     ],
     "per_fold_trades": [
-      14,
-      8,
-      9,
-      5
+      5,
+      2,
+      5,
+      1
     ]
   },
   "vs_baseline": {
-    "delta_sum_net_profit": -189.27020991746394,
-    "delta_total_trades": 39,
-    "delta_mean_pf": -1.4847192651044883,
+    "delta_sum_net_profit": -190.67537759513422,
+    "delta_total_trades": 43,
+    "delta_mean_pf": -24.34008183631192,
     "delta_fold_pass_rate": 0.0,
     "wf_better_on_np": false
   },
-  "search_seconds": 0.7963608430000022
+  "search_seconds": 2.9867932200140785
 }

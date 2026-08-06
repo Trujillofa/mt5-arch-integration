@@ -16,12 +16,14 @@ import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import cast
 
 import numpy as np
 import pandas as pd
 
 CSV_PATH = Path(__file__).resolve().parent / "xauusd_data.csv"
 PARAMS_PATH = Path(__file__).resolve().parent / "strategy_params.json"
+HOLDOUT_LOCK = Path(__file__).resolve().parent / "results" / "xau_holdout_lock.json"
 START_BALANCE = 10_000.0
 # $1 move on 1.0 lot ≈ $100 (100 oz); so $1 move on 0.01 lot ≈ $1
 CONTRACT_SIZE = 100.0
@@ -44,6 +46,29 @@ def load_h1() -> pd.DataFrame:
     if df.empty:
         raise RuntimeError(f"No H1 data in {CSV_PATH}")
     return df
+
+
+def holdout_start(lock_path: Path = HOLDOUT_LOCK) -> pd.Timestamp | None:
+    """Pre-registered selection boundary from results/xau_holdout_lock.json.
+
+    The protocol is `holdout_rule: NEVER used for selection`, so any search that
+    picks params must stay strictly before this timestamp. Matches the develop
+    convention used by scripts/xau_*.py: develop is ``time < holdout_start``.
+    """
+    if not lock_path.is_file():
+        return None
+    value = json.loads(lock_path.read_text()).get("holdout_start")
+    if not value:
+        return None
+    ts = cast(pd.Timestamp, pd.Timestamp(value))
+    return ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+
+
+def develop_only(raw: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
+    out = raw.loc[raw["time"] < cutoff].reset_index(drop=True)
+    if out.empty:
+        raise RuntimeError(f"No H1 bars before {cutoff}; nothing to fit on.")
+    return out
 
 
 def data_window(raw: pd.DataFrame, csv_path: Path = CSV_PATH) -> dict:
@@ -451,9 +476,31 @@ def main(argv: list[str] | None = None) -> int:
         default=PARAMS_PATH,
         help=f"destination for --save (default: {PARAMS_PATH.name})",
     )
+    ap.add_argument(
+        "--to",
+        default=None,
+        help="fit strictly before this UTC timestamp (default: holdout_start from the lock)",
+    )
+    ap.add_argument(
+        "--unbounded",
+        action="store_true",
+        help="fit on the whole CSV, ignoring the pre-registered holdout (breaks the protocol)",
+    )
     args = ap.parse_args(argv)
 
     raw = load_h1()
+    cutoff = None
+    if args.unbounded:
+        print("WARNING: --unbounded — selecting on holdout data; params are NOT protocol-clean.")
+    else:
+        cutoff = pd.Timestamp(args.to, tz="UTC") if args.to else holdout_start()
+        if cutoff is None:
+            print(f"WARNING: no holdout lock at {HOLDOUT_LOCK}; fitting on the whole CSV.")
+        else:
+            full = len(raw)
+            raw = develop_only(raw, cutoff)
+            print(f"Selection window: time < {cutoff} ({len(raw)}/{full} H1 bars; holdout sealed)")
+
     d = indicators(raw)
     print(f"Loaded H1 bars={len(d)} {d['time'].iloc[0]} → {d['time'].iloc[-1]}")
 
@@ -549,7 +596,11 @@ def main(argv: list[str] | None = None) -> int:
                     "params": {
                         k: (list(v) if isinstance(v, tuple) else v) for k, v in best_p.items()
                     },
-                    "data": data_window(raw),
+                    "data": {
+                        **data_window(raw),
+                        "selection_cutoff": str(cutoff) if cutoff is not None else None,
+                        "holdout_sealed": cutoff is not None,
+                    },
                     "timeframe": "H1",
                     "start_balance": START_BALANCE,
                 },

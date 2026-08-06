@@ -1,5 +1,27 @@
 # XAU offline loop status
 
+## 2026-08-06 — baseline protocol correction (out of band, not a research fire)
+
+`strategy_params.json` was re-fitted because its recorded metrics no longer reproduced
+(claimed PF 1.7256 / 50 trades; replayed PF 1.378 / 124 trades on the shipped CSV — the
+params predated a CSV extension and carried no fit window).
+
+| Field | Value |
+|-------|--------|
+| **cause** | params file recorded no fit window; CSV grew underneath it |
+| **first refit** | unbounded (2021-09-01 → 2026-08-06) — **violated** `holdout_rule`, discarded |
+| **shipped refit** | selection window `time < 2026-01-01` (25626 H1 bars); holdout sealed |
+| **baseline now** | PF 1.7456 · WR 59.52 · DD 3.81 · n=42 (develop only, in-sample) |
+| **guard** | `backtest.py` bounds selection at `holdout_start` from `xau_holdout_lock.json`; `--unbounded` warns |
+| **downstream** | `xau_regime_analysis` / `xau_walkforward` / `xau_train_only_retrain` re-run against the corrected baseline |
+| **live_go** | **false** (unchanged) |
+| **promote** | **no** (unchanged) — baseline OOS samples are tiny: 12–13 trades, 3 long signals in 2026 |
+
+2026 was already labeled `2026_to_peek` (peeked, diagnostic only) before this correction, so
+the re-runs consume no fresh holdout. The sealed virgin path is unchanged and still WAIT_DATA.
+
+---
+
 | Field | Value |
 |-------|--------|
 | **timestamp_utc** | 2026-08-06 (multi-year fire) |

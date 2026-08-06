@@ -22,7 +22,7 @@ The `mt5-arch` CLI (`uv run mt5-arch ping|account|symbols|candles|brokers|config
 The offline research scripts (`backtest.py`, `fetch_data.py`, `live_trader.py`, `scripts/xau_*.py`, `scripts/htf_fib_*.py`) are run with plain `python3`, **not** `uv run` — they need `numpy`/`pandas`, which are deliberately not declared in `pyproject.toml` and come from the host/venv site-packages. `uv sync` does not install them.
 
 ```bash
-python3 backtest.py            # read-only parameter search, prints metrics
+python3 backtest.py            # read-only search inside the develop window, prints metrics
 python3 backtest.py --save     # also rewrite strategy_params.json (+ its fit window)
 ```
 
@@ -72,6 +72,7 @@ Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`, w
 
 - **Causality.** `scripts/htf_fib_core.py` stamps a fractal pivot at its *confirmation* bar (`center + right`), never at the pivot center — a pivot is not knowable when it forms. Every fib/pivot consumer must import from this module rather than re-deriving pivots; re-implementing it is how lookahead bias gets reintroduced.
 - **State file.** `results/xau_loop_status.md` records the current disposition (`live_go`, `stop_reason`, `next_step`) of the long-running XAU research loop, with per-run artifacts in `results/*.json` and hostile-review `*_skeptic.md` notes. Read it before touching the pipeline; the standing disposition is RESEARCH_ONLY / promote=no.
+- **Pre-registered holdout.** `results/xau_holdout_lock.json` fixes `holdout_start = 2026-01-01` under the rule "NEVER used for selection". Anything that *selects* params must fit strictly before it — `backtest.py` enforces this by default (`--to` overrides, `--unbounded` breaks it and says so). Evaluating on the holdout is allowed; searching on it is not.
 - **Window labeling.** Do not relabel in-sample or already-peeked windows as OOS, and do not retune on holdout data. Optimizers write candidate params to `results/`; only `backtest.py --save` updates `strategy_params.json` (a plain run is read-only, so tests and exploratory runs never mutate tracked state).
 - **Fit window.** `strategy_params.json` carries a `data` block (bar count, start/end, CSV sha256) recording the window its metrics came from. Replay params through `slice_to_window()` rather than the whole CSV — otherwise every CSV extension silently changes the numbers, and `tests/test_xau_pipeline.py` will catch the divergence as a reproduction failure. A refit is the fix, not a widened tolerance.
 - **No live orders.** `live_trader.py` is dry by default and needs an explicit `--live`. Never pass it, and never place orders from tests or smoke checks, without direct user consent.

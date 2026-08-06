@@ -1,10 +1,10 @@
 {
   "metrics": {
-    "net_profit": 1231.3665325805,
-    "win_rate": 57.77777777777778,
-    "profit_factor": 1.6365292522917125,
+    "net_profit": 1298.5519915678237,
+    "win_rate": 59.523809523809526,
+    "profit_factor": 1.7456395719646718,
     "max_drawdown_pct": 3.805867544911966,
-    "n_trades": 45
+    "n_trades": 42
   },
   "params": {
     "mode": "bb_rsi",
@@ -34,9 +34,11 @@
     "csv": "xauusd_data.csv",
     "sha256": "dab5de3a73331cbf264ac66cc16c1aab65161e4794bfb1a49f0be1f29ab5edc3",
     "timeframe": "H1",
-    "bars": 29151,
+    "bars": 25626,
     "start": "2021-09-01T21:00:00+00:00",
-    "end": "2026-08-06T20:00:00+00:00"
+    "end": "2025-12-31T23:00:00+00:00",
+    "selection_cutoff": "2026-01-01 00:00:00+00:00",
+    "holdout_sealed": true
   },
   "timeframe": "H1",
   "start_balance": 10000.0
