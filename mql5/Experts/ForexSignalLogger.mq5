@@ -3,8 +3,8 @@
 //| Thin EA: reads indicator signal buffers, logs only (no orders)   |
 //|                                                                  |
 //| Attach to the same chart as the indicator you want to monitor.   |
-//| Default: ForexHtfPivotsFib buffer 7.                             |
-//| For ForexIndicatorTemplate use buffer 8 and name that indicator. |
+//| Default: ForexHtfPivotsFib buffer 8.                             |
+//| For ForexIndicatorTemplate use buffer 9 and name that indicator. |
 //|                                                                  |
 //| Output:                                                           |
 //|  • Experts tab Print lines                                        |
@@ -21,7 +21,7 @@
 
 input group "=== Indicator ==="
 input string InpIndicatorName   = "ForexHtfPivotsFib"; // Indicator file name (no .ex5)
-input int    InpSignalBuffer    = 7;                   // Signal buffer index
+input int    InpSignalBuffer    = 8;                   // Signal buffer (HTF Fib=8, Template=9)
 input int    InpSignalShift     = 1;                   // 1 = last closed bar
 
 input group "=== Filters ==="

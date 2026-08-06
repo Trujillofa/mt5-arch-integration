@@ -4,9 +4,10 @@
 |------|------|
 | `Include/ForexUtils.mqh` | Pips, sessions, spread, pure EMA/ATR/RSI, pivot helpers |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
-| `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** confirmed HTF pivots + directional Fib |
+| `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
+| `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — buffer 8 + ATR SL/TP |
 | `Mt5ArchBridge.mq5` | File bridge EA for Linux Python |
 
 Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md)
@@ -44,6 +45,30 @@ MetaEditor **F7** compile order:
 | Logger | `InpIndicatorName=BtcTrendPullback`, buffer **7**, `InpMaxSpreadPips=0` |
 | Look for | EMA50/200 stack, pullback reclaim arrows, ATR bands (price, not pips) |
 
+### Trading mode (both indicators)
+
+| Mode | EMAs | Sessions | Spread | Fib | Chart |
+|------|------|----------|--------|-----|-------|
+| **INTRADAY** | **20 / 50** + bias **200** | London/NY/overlap | max 2.5 p | 4H pivots | M15–H1 |
+| **SWING** | **50 / 200** (bias = 200) | off | off | Daily pivots | H4–D1 |
+
+- Cloud / timing = fast vs slow  
+- Signals also require **close vs EMA bias (200)** when mode uses bias filter  
+- `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields  
+
+Signal buffers: **HTF Fib = 8**, **Template = 9**.
+
+### RSI + RSI-MA (both indicators)
+
+| Input | Default | Role |
+|-------|---------|------|
+| `InpRsiPeriod` | 14 | RSI length |
+| `InpRsiMaPeriod` | 14 | MA of RSI (signal line) |
+| `InpRsiMaMethod` | SMA | SMA or EMA on RSI |
+| `InpUseRsiMaFilter` | true | Long needs RSI > RSI-MA; short RSI < RSI-MA |
+
+Panel shows `RSI` and `RSI MA` with above/below tag.
+
 ### ForexHtfPivotsFib buffers (`iCustom`)
 
 | Index | Content |
@@ -56,6 +81,8 @@ MetaEditor **F7** compile order:
 | 5 | Fib 78.6 |
 | 6 | Swing direction (+1/−1) |
 | **7** | **Signal (+1/−1/0)** |
+| 8 | RSI |
+| 9 | RSI-MA |
 
 ```mql5
 double sig[];

@@ -44,4 +44,7 @@ userdef.reg
 winetricks.log
 .net-fix-evidence/
 .env.broker
-.grok/
+# Grok local state — keep shared workflows only
+.grok/*
+!.grok/workflows/
+!.grok/workflows/**

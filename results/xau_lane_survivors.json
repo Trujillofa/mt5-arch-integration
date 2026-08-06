@@ -1,0 +1,127 @@
+{
+  "protocol": {
+    "holdout_start": "2026-01-01 00:00:00+00:00",
+    "hard_gates": {
+      "profit_factor": 1.5,
+      "win_rate": 55.0,
+      "max_drawdown_pct": 10.0,
+      "n_trades": 20
+    },
+    "selection_policy": "hard_pass only for survivors; no retune after holdout",
+    "champions_frozen": true,
+    "champions_mutated": false
+  },
+  "summary": {
+    "n_evaluated": 5,
+    "n_survivors": 1,
+    "hard_pass": 1,
+    "underpowered": 2,
+    "fail": 2,
+    "n_struggling_but_improved": 3
+  },
+  "survivors": [
+    {
+      "lane_id": "vol_gate_sparse",
+      "mode": "vol_gate_bb",
+      "params": {
+        "require_uptrend": true,
+        "trend_col": "ema200",
+        "risk_pct": 0.01,
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.55,
+        "rsi_buy": 35.0,
+        "rsi_sell": 48.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "bb_col": "bb_lo15",
+        "cooldown": 2,
+        "exit_on_vol_spike": true,
+        "h4_bias": false,
+        "max_entries_per_day": 2,
+        "be_at_r": null,
+        "hours": null,
+        "failed_breakout_fade": false
+      },
+      "holdout_metrics": {
+        "net_profit": 413.801198529095,
+        "win_rate": 80.0,
+        "profit_factor": 2.124891390051017,
+        "max_drawdown_pct": 1.4282578083545363,
+        "n_trades": 20,
+        "wins": 16,
+        "losses": 4,
+        "expectancy": 20.69005992645475,
+        "expectancy_sqrt_n": 92.52876090819424
+      },
+      "develop_metrics_frozen": {
+        "net_profit": 397.8649843393391,
+        "win_rate": 71.42857142857143,
+        "profit_factor": 1.3552508616648657,
+        "max_drawdown_pct": 7.277769614881163,
+        "n_trades": 42,
+        "wins": 30,
+        "losses": 12,
+        "expectancy": 9.472975817603313,
+        "expectancy_sqrt_n": 61.39189991617527
+      },
+      "real": true,
+      "status": "hard_pass"
+    }
+  ],
+  "struggling_but_improved": [
+    {
+      "lane_id": "donchian_turtle",
+      "mode": "donchian_turtle",
+      "status": "fail",
+      "underpowered": false,
+      "holdout_metrics": {
+        "net_profit": 1762.1731543681854,
+        "win_rate": 39.583333333333336,
+        "profit_factor": 1.720676037922006,
+        "max_drawdown_pct": 8.146491840693336,
+        "n_trades": 48,
+        "expectancy": 36.71194071600386
+      },
+      "note": "holdout DD 8.15 < develop DD 9.22",
+      "promote": false
+    },
+    {
+      "lane_id": "atr_trail_breakout",
+      "mode": "atr_trail_breakout",
+      "status": "underpowered",
+      "underpowered": true,
+      "holdout_metrics": {
+        "net_profit": 572.0668163971768,
+        "win_rate": 75.0,
+        "profit_factor": 5.12591723151556,
+        "max_drawdown_pct": 2.7779894281026176,
+        "n_trades": 4,
+        "expectancy": 143.0167040992942
+      },
+      "note": "holdout PF 5.126 > develop PF 2.480; holdout WR 75.0 > develop WR 52.6; holdout DD 2.78 < develop DD 9.24",
+      "promote": false
+    },
+    {
+      "lane_id": "htf_fib_xau",
+      "mode": "htf_fib",
+      "status": "underpowered",
+      "underpowered": true,
+      "holdout_metrics": {
+        "net_profit": 928.0012164352752,
+        "win_rate": 50.0,
+        "profit_factor": 2.406374143688846,
+        "max_drawdown_pct": 2.1953104754043253,
+        "n_trades": 14,
+        "expectancy": 66.28580117394823
+      },
+      "note": "holdout DD 2.20 < develop DD 3.75",
+      "promote": false
+    }
+  ],
+  "best_survivor": {
+    "lane_id": "vol_gate_sparse",
+    "mode": "vol_gate_bb",
+    "holdout_net_profit": 413.801198529095
+  },
+  "reason": "1 hard_pass of 5 champions on holdout (PF>1.5, WR>55, DD<10, n>=20)."
+}

@@ -1,0 +1,35 @@
+{
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "source": "wine_export:Vantage International MT5 (ExportXauHistory InpMonths=60)",
+  "csv_path": "xauusd_data.csv",
+  "min_h1": "2021-09-01T21:00:00+00:00",
+  "max_h1": "2026-08-06T20:00:00+00:00",
+  "n_h1": 29151,
+  "min_m15": "2022-05-16T06:00:00+00:00",
+  "max_m15": "2026-08-06T20:30:00+00:00",
+  "n_m15": 100000,
+  "bars_per_year": {
+    "2023": 5894,
+    "2024": 5935,
+    "2025": 5911,
+    "2026": 3525
+  },
+  "bars_per_year_all": {
+    "2021": 1970,
+    "2022": 5916,
+    "2023": 5894,
+    "2024": 5935,
+    "2025": 5911,
+    "2026": 3525
+  },
+  "has_2023": true,
+  "span_days_h1": 1799,
+  "notes": [
+    "Default ExportXauHistory.mq5 InpMonths=24 only returned H1 from ~2024-08-16 (broker window limited by request, not availability).",
+    "Re-export with InpMonths=60 retrieved H1 from 2021-09-01 through 2026-08-06; includes full 2023.",
+    "M15 hit Charts.MaxBars=100000 (~2022-05-16 start); H1 did not hit that cap at 29151 bars.",
+    "No bars invented; all OHLC from Wine Vantage MT5 CopyRates export.",
+    "MQL source restored to InpMonths=24 after deep export; xauusd_data.csv keeps deep history."
+  ]
+}

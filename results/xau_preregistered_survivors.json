@@ -1,0 +1,371 @@
+{
+  "protocol": {
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "develop_end": "2025-12-31T23:59:59+00:00",
+    "hard_gates": {
+      "profit_factor": 1.5,
+      "win_rate": 55.0,
+      "max_drawdown_pct": 10.0,
+      "n_trades": 20
+    },
+    "selection_policy": "single-pass pre-registered only; no grid; no holdout re-pick",
+    "underpowered_positive_rule": "holdout PF>1.2 AND NP>0 AND n_trades in [8,19] AND DD<10; flag only, not promote"
+  },
+  "verification": {
+    "n_registered": 24,
+    "n_evaluated": 24,
+    "ids_match": true,
+    "no_extra_trials": true,
+    "holdout_start_matches_lock": true,
+    "holdout_start_lock": "2026-01-01T00:00:00+00:00",
+    "holdout_start_eval": "2026-01-01 00:00:00+00:00"
+  },
+  "summary": {
+    "n_configs": 24,
+    "n_survivors": 0,
+    "n_underpowered_positive": 5,
+    "hard_pass": 0,
+    "underpowered": 15,
+    "fail": 9
+  },
+  "survivors": [],
+  "underpowered_positive": [
+    {
+      "id": "vol_gate_sparse_a035_r35",
+      "family": "vol_gate_sparse",
+      "mode": "vol_gate_bb",
+      "params": {
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.35,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "use_macd_filter": false,
+        "exit_on_vol_spike": true,
+        "long_only": true,
+        "cooldown": 2,
+        "risk_pct": 0.01
+      },
+      "holdout": {
+        "net_profit": 247.84470194607275,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 1.5372100482893034,
+        "max_drawdown_pct": 1.9563415346342232,
+        "n_trades": 17
+      },
+      "flag": "underpowered_positive",
+      "note": "flag only; not promoted (n_trades in [8,19] or below hard gates)"
+    },
+    {
+      "id": "atr_trail_n24_v065_t30",
+      "family": "atr_trail_breakout",
+      "mode": "atr_trail_breakout",
+      "params": {
+        "mode": "atr_trail_breakout",
+        "entry_N": 24,
+        "donch_n": 24,
+        "atr_min_pct": 0.65,
+        "trail_atr": 3.0,
+        "sl_atr": 2.0,
+        "tp_atr": null,
+        "use_fixed_tp": false,
+        "ema_trend": "ema100",
+        "require_uptrend": true,
+        "long_only": true,
+        "cooldown": 2,
+        "risk_pct": 0.01
+      },
+      "holdout": {
+        "net_profit": 388.71337937285534,
+        "win_rate": 36.8421052631579,
+        "profit_factor": 1.344368270247767,
+        "max_drawdown_pct": 9.663001217325965,
+        "n_trades": 19
+      },
+      "flag": "underpowered_positive",
+      "note": "flag only; not promoted (n_trades in [8,19] or below hard gates)"
+    },
+    {
+      "id": "vol_gate_sparse_a040_r35",
+      "family": "vol_gate_sparse",
+      "mode": "vol_gate_bb",
+      "params": {
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.4,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "use_macd_filter": false,
+        "exit_on_vol_spike": true,
+        "long_only": true,
+        "cooldown": 2,
+        "risk_pct": 0.01
+      },
+      "holdout": {
+        "net_profit": 180.7779291940933,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 1.3421089677771931,
+        "max_drawdown_pct": 2.613541316853812,
+        "n_trades": 17
+      },
+      "flag": "underpowered_positive",
+      "note": "flag only; not promoted (n_trades in [8,19] or below hard gates)"
+    },
+    {
+      "id": "vol_gate_sparse_a050_r35",
+      "family": "vol_gate_sparse",
+      "mode": "vol_gate_bb",
+      "params": {
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.5,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "use_macd_filter": false,
+        "exit_on_vol_spike": true,
+        "long_only": true,
+        "cooldown": 2,
+        "risk_pct": 0.01
+      },
+      "holdout": {
+        "net_profit": 134.86717098154986,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 1.2440536373741127,
+        "max_drawdown_pct": 2.856671147528686,
+        "n_trades": 17
+      },
+      "flag": "underpowered_positive",
+      "note": "flag only; not promoted (n_trades in [8,19] or below hard gates)"
+    },
+    {
+      "id": "donch_turtle_s2_sl25_ema",
+      "family": "donchian_turtle",
+      "mode": "donchian_turtle",
+      "params": {
+        "mode": "donchian_turtle",
+        "entry_N": 55,
+        "exit_N": 20,
+        "atr_sl": 2.5,
+        "atr_tp": null,
+        "exit_on_exit_channel": true,
+        "atr_min_pct": null,
+        "trend_filter": true,
+        "trend_col": "ema200",
+        "long_only": true,
+        "cooldown": 2,
+        "risk_pct": 0.01
+      },
+      "holdout": {
+        "net_profit": 203.105273597851,
+        "win_rate": 31.57894736842105,
+        "profit_factor": 1.2372739776698476,
+        "max_drawdown_pct": 9.335851104252713,
+        "n_trades": 19
+      },
+      "flag": "underpowered_positive",
+      "note": "flag only; not promoted (n_trades in [8,19] or below hard gates)"
+    }
+  ],
+  "ranking_holdout_pf_n_ge_10": [
+    {
+      "id": "donch_turtle_s2_sl20_ema_vol",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 1.877567071999415,
+      "holdout_net_profit": 748.9925140410969,
+      "holdout_win_rate": 26.666666666666668,
+      "holdout_max_drawdown_pct": 12.379896956053276,
+      "holdout_n_trades": 15,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 1
+    },
+    {
+      "id": "donch_turtle_s2_sl20",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 1.8044933648810977,
+      "holdout_net_profit": 816.8457539505962,
+      "holdout_win_rate": 33.333333333333336,
+      "holdout_max_drawdown_pct": 13.093246854359311,
+      "holdout_n_trades": 21,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 2
+    },
+    {
+      "id": "vol_gate_sparse_a035_r35",
+      "family": "vol_gate_sparse",
+      "holdout_profit_factor": 1.5372100482893034,
+      "holdout_net_profit": 247.84470194607275,
+      "holdout_win_rate": 64.70588235294117,
+      "holdout_max_drawdown_pct": 1.9563415346342232,
+      "holdout_n_trades": 17,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 3
+    },
+    {
+      "id": "donch_turtle_s1_sl25_ema",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 1.4825972547304473,
+      "holdout_net_profit": 514.9503876221775,
+      "holdout_win_rate": 44.11764705882353,
+      "holdout_max_drawdown_pct": 6.349417163254804,
+      "holdout_n_trades": 34,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 4
+    },
+    {
+      "id": "donch_turtle_s1_sl20",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 1.3681093239136097,
+      "holdout_net_profit": 714.0400446319777,
+      "holdout_win_rate": 40.0,
+      "holdout_max_drawdown_pct": 9.312001388219358,
+      "holdout_n_trades": 45,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 5
+    },
+    {
+      "id": "atr_trail_n24_v065_t30",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 1.344368270247767,
+      "holdout_net_profit": 388.71337937285534,
+      "holdout_win_rate": 36.8421052631579,
+      "holdout_max_drawdown_pct": 9.663001217325965,
+      "holdout_n_trades": 19,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 6
+    },
+    {
+      "id": "vol_gate_sparse_a040_r35",
+      "family": "vol_gate_sparse",
+      "holdout_profit_factor": 1.3421089677771931,
+      "holdout_net_profit": 180.7779291940933,
+      "holdout_win_rate": 64.70588235294117,
+      "holdout_max_drawdown_pct": 2.613541316853812,
+      "holdout_n_trades": 17,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 7
+    },
+    {
+      "id": "vol_gate_sparse_a050_r35",
+      "family": "vol_gate_sparse",
+      "holdout_profit_factor": 1.2440536373741127,
+      "holdout_net_profit": 134.86717098154986,
+      "holdout_win_rate": 64.70588235294117,
+      "holdout_max_drawdown_pct": 2.856671147528686,
+      "holdout_n_trades": 17,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 8
+    },
+    {
+      "id": "donch_turtle_s2_sl25_ema",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 1.2372739776698476,
+      "holdout_net_profit": 203.105273597851,
+      "holdout_win_rate": 31.57894736842105,
+      "holdout_max_drawdown_pct": 9.335851104252713,
+      "holdout_n_trades": 19,
+      "status": "underpowered",
+      "hard_pass_holdout": false,
+      "rank": 9
+    },
+    {
+      "id": "atr_trail_n24_v055_t30",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 0.9835640202368597,
+      "holdout_net_profit": -24.0672178459281,
+      "holdout_win_rate": 34.78260869565217,
+      "holdout_max_drawdown_pct": 12.434353995827802,
+      "holdout_n_trades": 23,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 10
+    },
+    {
+      "id": "donch_turtle_s1_sl20_ema_vol",
+      "family": "donchian_turtle",
+      "holdout_profit_factor": 0.9472842893164312,
+      "holdout_net_profit": -55.244176325943045,
+      "holdout_win_rate": 29.166666666666668,
+      "holdout_max_drawdown_pct": 10.425638513979672,
+      "holdout_n_trades": 24,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 11
+    },
+    {
+      "id": "atr_trail_n20_v055_t30",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 0.8600114868329133,
+      "holdout_net_profit": -236.47545741492104,
+      "holdout_win_rate": 30.76923076923077,
+      "holdout_max_drawdown_pct": 14.43454020336111,
+      "holdout_n_trades": 26,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 12
+    },
+    {
+      "id": "atr_trail_n24_v055_t25",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 0.8575750111469395,
+      "holdout_net_profit": -189.21470083142594,
+      "holdout_win_rate": 40.74074074074074,
+      "holdout_max_drawdown_pct": 11.414840216665329,
+      "holdout_n_trades": 27,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 13
+    },
+    {
+      "id": "atr_trail_n20_v065_t25",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 0.8225098754341162,
+      "holdout_net_profit": -218.58037321786742,
+      "holdout_win_rate": 34.61538461538461,
+      "holdout_max_drawdown_pct": 10.810523660305067,
+      "holdout_n_trades": 26,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 14
+    },
+    {
+      "id": "atr_trail_n20_v055_t25",
+      "family": "atr_trail_breakout",
+      "holdout_profit_factor": 0.7698730454248548,
+      "holdout_net_profit": -344.3049004722534,
+      "holdout_win_rate": 36.666666666666664,
+      "holdout_max_drawdown_pct": 12.949462302871103,
+      "holdout_n_trades": 30,
+      "status": "fail",
+      "hard_pass_holdout": false,
+      "rank": 15
+    }
+  ],
+  "reason": "No config passed hard holdout gates (PF>=1.5, WR>=55.0, DD<10.0, n_trades>=20). Of 24 pre-registered configs: 0 hard_pass, 15 underpowered, 9 fail. 5 underpowered_positive flagged (PF>1.2, NP>0, n in [8,19], DD<10) \u2014 not promoted.",
+  "candidate_params_written": false,
+  "meta": {
+    "source_eval": "results/xau_preregistered_holdout_eval.json",
+    "source_registry": "results/xau_preregistered_registry.json",
+    "source_lock": "results/xau_holdout_lock.json",
+    "written_at": "2026-08-06T16:11:33.968274+00:00"
+  }
+}

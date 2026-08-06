@@ -13,9 +13,9 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.00"
-#property description "BTC trend pullback: H4 bias + H1 reclaim. Signal buffer 7 (+1/−1/0)."
-#property description "Closed bars only. ATR guides — not FX pips. Visual/iCustom only."
+#property version     "1.10"
+#property description "BTC trend pullback v1.10 — fast EMA param change under Wine"
+#property description "H4 bias + H1 reclaim. Signal buffer 7. Closed-bar only."
 #property strict
 
 #property indicator_chart_window
@@ -36,13 +36,13 @@
 
 #property indicator_label3  "ATR Lower"
 #property indicator_type3   DRAW_LINE
-#property indicator_color3  clrDimGray
+#property indicator_color3  clrDodgerBlue
 #property indicator_style3  STYLE_DOT
 #property indicator_width3  1
 
 #property indicator_label4  "ATR Upper"
 #property indicator_type4   DRAW_LINE
-#property indicator_color4  clrDimGray
+#property indicator_color4  clrCoral
 #property indicator_style4  STYLE_DOT
 #property indicator_width4  1
 
@@ -140,6 +140,12 @@ int g_hHtfEma200= INVALID_HANDLE;
 
 string g_pfx;
 
+// HTF bias cache: many H1 bars share one H4 bar — avoid 10k× iBarShift under Wine
+datetime g_htf_cache_open = 0;
+int      g_htf_cache_bias = 0;
+double   g_htf_cache_str  = 0.0;
+int      g_htf_cache_shift= -999;
+
 //+------------------------------------------------------------------+
 int OnInit()
   {
@@ -179,7 +185,7 @@ int OnInit()
 
    IndicatorSetInteger(INDICATOR_DIGITS, _Digits);
    IndicatorSetString(INDICATOR_SHORTNAME,
-                      "BtcTrendPullback | sig@7 closed-bar");
+                      StringFormat("BtcTP EMA(%d/%d) sig@7", InpEmaFast, InpEmaSlow));
 
    g_hEma50  = iMA(_Symbol, PERIOD_CURRENT, InpEmaFast, 0, MODE_EMA, PRICE_CLOSE);
    g_hEma200 = iMA(_Symbol, PERIOD_CURRENT, InpEmaSlow, 0, MODE_EMA, PRICE_CLOSE);
@@ -196,6 +202,10 @@ int OnInit()
       return INIT_FAILED;
 
    g_pfx = "BTCTP_" + IntegerToString(ChartID()) + "_";
+   g_htf_cache_open  = 0;
+   g_htf_cache_shift = -999;
+   Print("BtcTrendPullback v1.10 EMA ", InpEmaFast, "/", InpEmaSlow,
+         " HTF=", EnumToString(InpHtfPeriod));
    return INIT_SUCCEEDED;
   }
 
@@ -209,7 +219,13 @@ void OnDeinit(const int reason)
    if(g_hAtr       != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hHtfEma50  != INVALID_HANDLE) IndicatorRelease(g_hHtfEma50);
    if(g_hHtfEma200 != INVALID_HANDLE) IndicatorRelease(g_hHtfEma200);
-   ObjectsDeleteAll(0, g_pfx);
+   // EMA tweak = REASON_PARAMETERS — do NOT wipe objects (Wine freeze)
+   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
+      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
+     {
+      ObjectsDeleteAll(0, g_pfx);
+      Comment("");
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -251,15 +267,32 @@ int HtfBiasAt(const datetime chart_time, double &out_strength)
   {
    out_strength = 0.0;
    int sh = CompletedHtfShift(chart_time);
+   if(sh < 0)
+      return 0;
+
+   // Cache by HTF bar open time (or shift) — critical on full recalc after EMA change
+   datetime htf_open = iTime(_Symbol, InpHtfPeriod, sh);
+   if(htf_open > 0 && htf_open == g_htf_cache_open && sh == g_htf_cache_shift)
+     {
+      out_strength = g_htf_cache_str;
+      return g_htf_cache_bias;
+     }
+
    double e50, e200, c;
    if(!CopyHtfEma(sh, e50, e200, c))
       return 0;
    out_strength = (e50 - e200) / e200;
+   int bias = 0;
    if(c > e200 && e50 > e200 && out_strength >= InpMinTrendStrengthPct)
-      return +1;
-   if(c < e200 && e50 < e200 && (-out_strength) >= InpMinTrendStrengthPct)
-      return -1;
-   return 0;
+      bias = +1;
+   else if(c < e200 && e50 < e200 && (-out_strength) >= InpMinTrendStrengthPct)
+      bias = -1;
+
+   g_htf_cache_open  = htf_open;
+   g_htf_cache_shift = sh;
+   g_htf_cache_bias  = bias;
+   g_htf_cache_str   = out_strength;
+   return bias;
   }
 
 //+------------------------------------------------------------------+
@@ -478,33 +511,29 @@ void DrawPanel(const double close_px,
                const double htf_strength,
                const double last_sig)
   {
-   string name = g_pfx + "panel";
+   // Comment() only — Wine-safe (no stacked OBJ_LABEL)
+   if(!InpShowPanel)
+     {
+      Comment("");
+      return;
+     }
    string bias = (htf_bias > 0) ? "BULL" : (htf_bias < 0) ? "BEAR" : "CHOP";
    string sigs = (last_sig > 0.5) ? "LONG" : (last_sig < -0.5) ? "SHORT" : "flat";
-   string txt =
-      "BtcTrendPullback\n" +
-      "HTF " + EnumToString(InpHtfPeriod) + ": " + bias +
-      "  str=" + DoubleToString(htf_strength * 100.0, 2) + "%\n" +
-      "Close " + DoubleToString(close_px, _Digits) +
-      "  EMA50 " + DoubleToString(ema50, _Digits) +
-      "  EMA200 " + DoubleToString(ema200, _Digits) + "\n" +
-      "ATR% " + DoubleToString(atr_pct * 100.0, 2) +
-      "  VWAP " + (InpUseVwap ? "ON" : "OFF") +
-      "  last_sig " + sigs + "\n" +
-      "sig@7 closed-bar | no orders";
+   // Strip PERIOD_ prefix
+   string htf = EnumToString(InpHtfPeriod);
+   if(StringFind(htf, "PERIOD_") == 0)
+      htf = StringSubstr(htf, 7);
 
-   if(ObjectFind(0, name) < 0)
-     {
-      ObjectCreate(0, name, OBJ_LABEL, 0, 0, 0);
-      ObjectSetInteger(0, name, OBJPROP_CORNER, CORNER_LEFT_UPPER);
-      ObjectSetInteger(0, name, OBJPROP_XDISTANCE, 8);
-      ObjectSetInteger(0, name, OBJPROP_YDISTANCE, 20);
-      ObjectSetInteger(0, name, OBJPROP_COLOR, clrWhite);
-      ObjectSetInteger(0, name, OBJPROP_FONTSIZE, 9);
-      ObjectSetString(0, name, OBJPROP_FONT, "Consolas");
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-     }
-   ObjectSetString(0, name, OBJPROP_TEXT, txt);
+   Comment(
+      "BtcTrendPullback v1.10\n" +
+      StringFormat("EMAs   %d / %d\n", InpEmaFast, InpEmaSlow) +
+      StringFormat("HTF %s: %s  str=%.2f%%\n", htf, bias, htf_strength * 100.0) +
+      StringFormat("Close  %s\n", DoubleToString(close_px, _Digits)) +
+      StringFormat("EMA%d  %s\n", InpEmaFast, DoubleToString(ema50, _Digits)) +
+      StringFormat("EMA%d  %s\n", InpEmaSlow, DoubleToString(ema200, _Digits)) +
+      StringFormat("ATR%%   %.2f  VWAP %s\n", atr_pct * 100.0, (InpUseVwap ? "ON" : "OFF")) +
+      StringFormat("Signal %s  | sig@7 | no orders", sigs)
+   );
   }
 
 //+------------------------------------------------------------------+
@@ -541,14 +570,27 @@ int OnCalculate(const int rates_total,
    double macd_hist[];
    ArrayResize(macd_hist, rates_total);
    ArraySetAsSeries(macd_hist, false);
-   for(int j = 0; j < rates_total; j++)
+   // Only fill hist for bars we will visit (full on incremental, window on cold)
+   bool cold = (prev_calculated == 0);
+   const int max_signal_bars = 3000; // EMA tweak full-recalc safety under Wine
+   int start = (prev_calculated > 2) ? prev_calculated - 2 : need;
+   if(cold && rates_total - start > max_signal_bars)
+      start = rates_total - max_signal_bars;
+
+   for(int j = start; j < rates_total; j++)
       macd_hist[j] = macd_main[j] - macd_sig[j];
 
-   int start = (prev_calculated > 2) ? prev_calculated - 2 : need;
-
-   for(int i = start; i < rates_total && !IsStopped(); i++)
+   // Invalidate HTF cache after handle rebuild (EMA period change)
+   if(cold)
      {
-      // --- always paint structure ---
+      g_htf_cache_open  = 0;
+      g_htf_cache_shift = -999;
+     }
+
+   // Paint EMAs/ATR for full series (cheap); heavy signal work only from `start`
+   int paint0 = (prev_calculated > 2) ? prev_calculated - 2 : 0;
+   for(int i = paint0; i < rates_total && !IsStopped(); i++)
+     {
       if(InpShowEmas)
         {
          BufEma50[i]  = ema50[i];
@@ -571,7 +613,10 @@ int OnCalculate(const int rates_total,
          BufAtrLower[i] = EMPTY_VALUE;
          BufAtrUpper[i] = EMPTY_VALUE;
         }
+     }
 
+   for(int i = start; i < rates_total && !IsStopped(); i++)
+     {
       double htf_strength = 0.0;
       int htf_bias = HtfBiasAt(time[i], htf_strength);
       BufHtfBias[i] = (double)htf_bias;
@@ -605,6 +650,7 @@ int OnCalculate(const int rates_total,
 
       if(InpEdgeTrigger && i >= 2)
         {
+         // Reuse cache: prev H1 bar often same HTF bar → free
          double prev_strength = 0.0;
          int prev_bias = HtfBiasAt(time[i - 1], prev_strength);
          double prev_atr_pct = (close[i - 1] > 0.0) ? atr[i - 1] / close[i - 1] : 0.0;

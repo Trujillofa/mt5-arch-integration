@@ -135,8 +135,8 @@ Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see tr
 
 ```bash
 ./scripts/17-install-desktop-launchers.sh
-# App launcher: "FP Markets MT5" · "Vantage International MT5" · "WSFmarkets MT5"
-# CLI: mt5-fpmarkets | mt5-vantage | mt5-wsf
+# App launcher: "Exness MT5" · "FP Markets MT5" · "Vantage International MT5" · "WSFmarkets MT5"
+# CLI: mt5-exness | mt5-fpmarkets | mt5-vantage | mt5-wsf
 ```
 
 ## Configuration
@@ -148,7 +148,7 @@ Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see tr
 | `MT5_SERVER` | — | Broker server name |
 | `MT5_RPYC_HOST` | `localhost` | mt5server host |
 | `MT5_RPYC_PORT` | `18812` | mt5server port |
-| `WINEPREFIX` | `~/.mt5` (legacy) / brand prefixes | Wine prefix (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`) |
+| `WINEPREFIX` | `~/.mt5` (legacy) / brand prefixes | Wine prefix (`~/.mt5-exness`, `~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`) |
 | `MT5_BACKEND` | `file` | `file` (recommended) or `rpyc` |
 
 ## Tests

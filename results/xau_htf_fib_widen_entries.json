@@ -1,0 +1,3887 @@
+{
+  "created": "2026-08-06T17:09:41Z",
+  "safety": "offline research only; never --live; develop only; holdout unused",
+  "holdout_start": "2026-01-01 00:00:00+00:00",
+  "holdout_used": false,
+  "develop_bars": 8114,
+  "preregistered": {
+    "objective": "raise develop n toward \u226520\u201330 while PF/DD floors hold (post-fix sparse sample)",
+    "develop_hard_floors": {
+      "profit_factor": 1.3,
+      "max_drawdown_pct": 10.0,
+      "n_trades_min": 20,
+      "n_trades_target": 30,
+      "win_rate_diagnostic_floor": 50.0,
+      "expectancy_min": 15.0
+    },
+    "score": "score_fib + 12*n if n>=15; hard floor fail heavily penalized",
+    "future_virgin_holdout": {
+      "require_virgin_bars_after": "2026-08-06 (last peeked data end)",
+      "gates": {
+        "profit_factor": 1.5,
+        "win_rate": 55.0,
+        "max_drawdown_pct": 10.0,
+        "n_trades": 20
+      },
+      "forbid_retune_on_holdout": true
+    },
+    "safety": "offline research only; never --live; holdout unused this fire",
+    "note": "fib confirmation fixed; residual H4 left-label bucket caveat remains"
+  },
+  "baseline": {
+    "params": {
+      "flat_only": true,
+      "long_only": true,
+      "risk_pct": 0.01,
+      "pivot_left": 5,
+      "pivot_right": 3,
+      "fib_lo": 0.618,
+      "fib_hi": 0.786,
+      "use_rsi_ma_filter": false,
+      "rsi_long_max": 35.0,
+      "sl_atr": 1.2,
+      "tp_atr": 3.0,
+      "require_ema200_bias": false,
+      "h4_bias": false,
+      "be_at_r": null,
+      "hours": null,
+      "max_entries_per_day": 2,
+      "cooldown": 1,
+      "rsi_short_min": 60.0
+    },
+    "metrics": {
+      "net_profit": 1795.485977729084,
+      "win_rate": 58.8235294117647,
+      "profit_factor": 3.584023207225344,
+      "max_drawdown_pct": 3.7474468090303406,
+      "n_trades": 17,
+      "wins": 10,
+      "losses": 7,
+      "expectancy": 105.61682221935789,
+      "expectancy_sqrt_n": 435.46931385249485,
+      "score_fib": 637.0745442924864
+    },
+    "score": 894.8348924008666,
+    "gate_eval": {
+      "hard_pass_n_path": false,
+      "n_target_hit": false,
+      "checks": {
+        "pf": true,
+        "dd": true,
+        "n_min": false,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": true
+    }
+  },
+  "n_ablations": 50,
+  "ablations_ranked": [
+    {
+      "tag": "pack_wide_0382_786_rsi50",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1394.6403425811209,
+        "win_rate": 32.03125,
+        "profit_factor": 1.1638343257534947,
+        "max_drawdown_pct": 11.523135957102141,
+        "n_trades": 128,
+        "wins": 41,
+        "losses": 87,
+        "expectancy": 10.895627676415007,
+        "expectancy_sqrt_n": 123.26995544443005,
+        "score_fib": 167.98236395686
+      },
+      "score": 1688.847456737076,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_fast_pivot_2_2_wide",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 2,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1371.2516255102632,
+        "win_rate": 32.45614035087719,
+        "profit_factor": 1.1853646796369468,
+        "max_drawdown_pct": 9.161253605537995,
+        "n_trades": 114,
+        "wins": 37,
+        "losses": 77,
+        "expectancy": 12.028523030791783,
+        "expectancy_sqrt_n": 128.4294816561247,
+        "score_fib": 174.25920298921534
+      },
+      "score": 1638.6715430569582,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "fib=0.382-0.786",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2264.213383825436,
+        "win_rate": 48.484848484848484,
+        "profit_factor": 2.3840635881981953,
+        "max_drawdown_pct": 4.567494671627797,
+        "n_trades": 33,
+        "wins": 16,
+        "losses": 17,
+        "expectancy": 68.61252678258896,
+        "expectancy_sqrt_n": 394.1489584398506,
+        "score_fib": 579.5671199342385
+      },
+      "score": 1258.2977707269083,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_very_wide_050_100",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 55.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 4,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 789.4216063336362,
+        "win_rate": 30.70175438596491,
+        "profit_factor": 1.1124925958873275,
+        "max_drawdown_pct": 14.28736219835548,
+        "n_trades": 114,
+        "wins": 35,
+        "losses": 79,
+        "expectancy": 6.924750932751195,
+        "expectancy_sqrt_n": 73.93610758481132,
+        "score_fib": 104.96761606915152
+      },
+      "score": 1215.555744562747,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_wide_050_886_cd0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1059.4884048252939,
+        "win_rate": 32.098765432098766,
+        "profit_factor": 1.1888699923525194,
+        "max_drawdown_pct": 10.637206357404466,
+        "n_trades": 81,
+        "wins": 26,
+        "losses": 55,
+        "expectancy": 13.080103763275233,
+        "expectancy_sqrt_n": 117.7209338694771,
+        "score_fib": 158.59997341457503
+      },
+      "score": 1213.0677866249812,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "fib=0.382-0.886",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1754.0646437112814,
+        "win_rate": 43.24324324324324,
+        "profit_factor": 1.8596945824263829,
+        "max_drawdown_pct": 4.610388659854551,
+        "n_trades": 37,
+        "wins": 16,
+        "losses": 21,
+        "expectancy": 47.407152532737335,
+        "expectancy_sqrt_n": 288.366451094267,
+        "score_fib": 454.794753471316
+      },
+      "score": 1163.1766586941983,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "fib=0.5-1.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1594.250818021625,
+        "win_rate": 41.666666666666664,
+        "profit_factor": 1.746606098929382,
+        "max_drawdown_pct": 5.429138134905083,
+        "n_trades": 36,
+        "wins": 15,
+        "losses": 21,
+        "expectancy": 44.28474494504514,
+        "expectancy_sqrt_n": 265.70846967027086,
+        "score_fib": 427.2114386158856
+      },
+      "score": 1118.7438634331595,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_balanced_n_quality",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 945.3242679606965,
+        "win_rate": 40.90909090909091,
+        "profit_factor": 1.392634591009292,
+        "max_drawdown_pct": 5.881942156393011,
+        "n_trades": 44,
+        "wins": 18,
+        "losses": 26,
+        "expectancy": 21.484642453652192,
+        "expectancy_sqrt_n": 142.51299554740984,
+        "score_fib": 286.1210918336073
+      },
+      "score": 1066.8287925169286,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "sl_atr=1.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.0,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2310.995224056531,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 4.138776999807065,
+        "max_drawdown_pct": 4.244575365914699,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 135.9408955327371,
+        "expectancy_sqrt_n": 560.498671122531,
+        "score_fib": 779.0152581901399
+      },
+      "score": 1043.0152581901398,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "be_at_r=1.5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": 1.5,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2269.3699598555213,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 8.724161659146073,
+        "max_drawdown_pct": 2.3831150506641126,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 133.49235057973655,
+        "expectancy_sqrt_n": 550.4030616522367,
+        "score_fib": 768.2258943164954
+      },
+      "score": 1032.2258943164954,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_long_max=40.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1176.9842378080948,
+        "win_rate": 38.888888888888886,
+        "profit_factor": 1.5462487573711072,
+        "max_drawdown_pct": 5.1630786246980165,
+        "n_trades": 36,
+        "wins": 14,
+        "losses": 22,
+        "expectancy": 32.69400660578041,
+        "expectancy_sqrt_n": 196.16403963468247,
+        "score_fib": 346.70541874557284
+      },
+      "score": 1029.6769278839174,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "rsi_long_max=45.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 720.4405208963963,
+        "win_rate": 33.9622641509434,
+        "profit_factor": 1.212023028911817,
+        "max_drawdown_pct": 9.730525477316784,
+        "n_trades": 53,
+        "wins": 18,
+        "losses": 35,
+        "expectancy": 13.593217375403704,
+        "expectancy_sqrt_n": 98.96011624181627,
+        "score_fib": 235.20791883499254
+      },
+      "score": 1015.8294763310657,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_golden_plus_cd0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 720.4405208963963,
+        "win_rate": 33.9622641509434,
+        "profit_factor": 1.212023028911817,
+        "max_drawdown_pct": 9.730525477316784,
+        "n_trades": 53,
+        "wins": 18,
+        "losses": 35,
+        "expectancy": 13.593217375403704,
+        "expectancy_sqrt_n": 98.96011624181627,
+        "score_fib": 235.20791883499254
+      },
+      "score": 1015.8294763310657,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "fib=0.5-0.786",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1803.8854056586342,
+        "win_rate": 50.0,
+        "profit_factor": 2.488208604414664,
+        "max_drawdown_pct": 3.485544787942478,
+        "n_trades": 24,
+        "wins": 12,
+        "losses": 12,
+        "expectancy": 75.16189190244309,
+        "expectancy_sqrt_n": 368.2165665264247,
+        "score_fib": 548.0454953756952
+      },
+      "score": 973.3686244419151,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pack_n20_path_050_786",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 564.6117044433522,
+        "win_rate": 31.08108108108108,
+        "profit_factor": 1.1131346526210992,
+        "max_drawdown_pct": 7.096027816411923,
+        "n_trades": 74,
+        "wins": 23,
+        "losses": 51,
+        "expectancy": 7.629887897883138,
+        "expectancy_sqrt_n": 65.63477744866287,
+        "score_fib": 92.9643982061957
+      },
+      "score": 949.7796207228009,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "fib=0.5-0.886",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1652.537791074914,
+        "win_rate": 44.827586206896555,
+        "profit_factor": 2.027953439176413,
+        "max_drawdown_pct": 4.341398704587245,
+        "n_trades": 29,
+        "wins": 13,
+        "losses": 16,
+        "expectancy": 56.984061761203925,
+        "expectancy_sqrt_n": 306.8685639640144,
+        "score_fib": 474.96992926545795
+      },
+      "score": 943.0444032668972,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pivot_L3_R3",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1912.139312079998,
+        "win_rate": 62.5,
+        "profit_factor": 4.273154899497721,
+        "max_drawdown_pct": 2.371185011757216,
+        "n_trades": 16,
+        "wins": 10,
+        "losses": 6,
+        "expectancy": 119.50870700499988,
+        "expectancy_sqrt_n": 478.0348280199995,
+        "score_fib": 689.9038165546662
+      },
+      "score": 941.9038165546662,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "fib=0.618-0.886",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1607.6514609479027,
+        "win_rate": 50.0,
+        "profit_factor": 2.465095492330665,
+        "max_drawdown_pct": 3.7403787736388896,
+        "n_trades": 22,
+        "wins": 11,
+        "losses": 11,
+        "expectancy": 73.07506640672285,
+        "expectancy_sqrt_n": 342.75244312423655,
+        "score_fib": 518.8485439866482
+      },
+      "score": 919.8249763716082,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "baseline_champion",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=2",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=3",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 3,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 5,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=1",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 1,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=3",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=4",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 4,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "flat_only=False",
+      "params": {
+        "flat_only": false,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485,
+        "score_fib": 637.0745442924864
+      },
+      "score": 894.8348924008666,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "tp_atr=2.5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1701.8587975407308,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 3.905872011887891,
+        "max_drawdown_pct": 3.3451427888215304,
+        "n_trades": 17,
+        "wins": 11,
+        "losses": 6,
+        "expectancy": 100.1093410318077,
+        "expectancy_sqrt_n": 412.7613871851232,
+        "score_fib": 619.2431407152266
+      },
+      "score": 881.8312208935449,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "tp_atr=2.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1503.1350517109445,
+        "win_rate": 70.58823529411765,
+        "profit_factor": 4.108227318054534,
+        "max_drawdown_pct": 2.045976506109868,
+        "n_trades": 17,
+        "wins": 12,
+        "losses": 5,
+        "expectancy": 88.41970892417321,
+        "expectancy_sqrt_n": 364.5637992807346,
+        "score_fib": 569.6160501425836
+      },
+      "score": 833.6160501425836,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_long_max=50.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 486.1515529975277,
+        "win_rate": 32.20338983050848,
+        "profit_factor": 1.1301731999500342,
+        "max_drawdown_pct": 8.315992377472991,
+        "n_trades": 59,
+        "wins": 19,
+        "losses": 40,
+        "expectancy": 8.239856830466572,
+        "expectancy_sqrt_n": 63.29154125638441,
+        "score_fib": 90.50619113617894
+      },
+      "score": 792.6019812134723,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "be_at_r=1.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": 1.0,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1316.0707463138551,
+        "win_rate": 35.294117647058826,
+        "profit_factor": 7.891539660045483,
+        "max_drawdown_pct": 1.4502299112735357,
+        "n_trades": 17,
+        "wins": 6,
+        "losses": 11,
+        "expectancy": 77.41592625375618,
+        "expectancy_sqrt_n": 319.19404104926406,
+        "score_fib": 521.1285534878283
+      },
+      "score": 755.716788781946,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "h4_bias=True",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1852.300759766219,
+        "win_rate": 69.23076923076923,
+        "profit_factor": 5.712812592988717,
+        "max_drawdown_pct": 3.728981707111317,
+        "n_trades": 13,
+        "wins": 9,
+        "losses": 4,
+        "expectancy": 142.48467382817068,
+        "expectancy_sqrt_n": 513.7357974552312,
+        "score_fib": 537.9408101180017
+      },
+      "score": 753.9408101180017,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pivot_L8_R3",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1057.6196921966803,
+        "win_rate": 45.0,
+        "profit_factor": 1.9172087907563073,
+        "max_drawdown_pct": 3.762108078691527,
+        "n_trades": 20,
+        "wins": 9,
+        "losses": 11,
+        "expectancy": 52.880984609834016,
+        "expectancy_sqrt_n": 236.49095260941812,
+        "score_fib": 392.46212329448895
+      },
+      "score": 751.2202551558336,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "tp_atr=3.5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1357.8591533118902,
+        "win_rate": 47.05882352941177,
+        "profit_factor": 2.5227966196360296,
+        "max_drawdown_pct": 4.147386457024752,
+        "n_trades": 17,
+        "wins": 8,
+        "losses": 9,
+        "expectancy": 79.8740678418759,
+        "expectancy_sqrt_n": 329.3292184598052,
+        "score_fib": 502.41613674105724
+      },
+      "score": 738.3757330944212,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "sl_atr=1.5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1281.5418393379532,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 2.906513441416958,
+        "max_drawdown_pct": 3.315630493841303,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 75.38481407870313,
+        "expectancy_sqrt_n": 310.8195510140423,
+        "score_fib": 490.30885049801407
+      },
+      "score": 737.9065521192684,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_long_max=55.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 55.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 261.7267475883118,
+        "win_rate": 30.64516129032258,
+        "profit_factor": 1.0667513572958343,
+        "max_drawdown_pct": 9.082480087766886,
+        "n_trades": 62,
+        "wins": 19,
+        "losses": 43,
+        "expectancy": 4.22139915465019,
+        "expectancy_sqrt_n": 33.2393301830624,
+        "score_fib": 52.274037653575995
+      },
+      "score": 675.2877037500788,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pivot_L4_R3",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 4,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1546.367371302189,
+        "win_rate": 66.66666666666667,
+        "profit_factor": 5.061196996494515,
+        "max_drawdown_pct": 2.075950205246305,
+        "n_trades": 12,
+        "wins": 8,
+        "losses": 4,
+        "expectancy": 128.86394760851576,
+        "expectancy_sqrt_n": 446.3978090436864,
+        "score_fib": 462.1705985653896
+      },
+      "score": 666.1705985653896,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pivot_L2_R2",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 2,
+        "pivot_right": 2,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1636.7833124118984,
+        "win_rate": 87.5,
+        "profit_factor": 18.923719709100403,
+        "max_drawdown_pct": 2.0156363719122017,
+        "n_trades": 8,
+        "wins": 7,
+        "losses": 1,
+        "expectancy": 204.5979140514873,
+        "expectancy_sqrt_n": 578.6902897697164,
+        "score_fib": 582.6366783099147
+      },
+      "score": 638.6366783099147,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "sl_atr=2.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 2.0,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 919.8072641473454,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 2.581991518626813,
+        "max_drawdown_pct": 3.3139726008853025,
+        "n_trades": 17,
+        "wins": 11,
+        "losses": 6,
+        "expectancy": 54.1063096557262,
+        "expectancy_sqrt_n": 223.08602972293585,
+        "score_fib": 390.0559811645945
+      },
+      "score": 632.7858539439967,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_long_max=60.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 60.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 137.57230645318532,
+        "win_rate": 30.158730158730158,
+        "profit_factor": 1.0344423341459865,
+        "max_drawdown_pct": 9.082480087766886,
+        "n_trades": 63,
+        "wins": 19,
+        "losses": 44,
+        "expectancy": 2.183687404018815,
+        "expectancy_sqrt_n": 17.332481436414035,
+        "score_fib": 32.03631660085285
+      },
+      "score": 609.1795903075745,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "tp_atr=4.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 4.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 771.3829937193213,
+        "win_rate": 35.294117647058826,
+        "profit_factor": 1.7203073597437424,
+        "max_drawdown_pct": 7.169348968347547,
+        "n_trades": 17,
+        "wins": 6,
+        "losses": 11,
+        "expectancy": 45.37547021878361,
+        "expectancy_sqrt_n": 187.08785652411333,
+        "score_fib": 334.3503869476435
+      },
+      "score": 534.7432326379173,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "sl_atr=2.5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 2.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 544.331703416964,
+        "win_rate": 64.70588235294117,
+        "profit_factor": 2.000622305910319,
+        "max_drawdown_pct": 3.1553258197561647,
+        "n_trades": 17,
+        "wins": 11,
+        "losses": 6,
+        "expectancy": 32.01951196570377,
+        "expectancy_sqrt_n": 132.0198299153252,
+        "score_fib": 281.10447109048096
+      },
+      "score": 515.1138056791358,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "fib=0.5-0.618",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.5,
+        "fib_hi": 0.618,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 625.5100342896503,
+        "win_rate": 42.857142857142854,
+        "profit_factor": 1.8345132144670828,
+        "max_drawdown_pct": 3.748065493961906,
+        "n_trades": 14,
+        "wins": 6,
+        "losses": 8,
+        "expectancy": 44.67928816354645,
+        "expectancy_sqrt_n": 167.1745885929351,
+        "score_fib": 130.95668678710425
+      },
+      "score": 312.18867071839617,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "rsi_long_max=30.0",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 30.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 613.3812948148661,
+        "win_rate": 75.0,
+        "profit_factor": 7.179921913697383,
+        "max_drawdown_pct": 2.7609821556046596,
+        "n_trades": 4,
+        "wins": 3,
+        "losses": 1,
+        "expectancy": 153.34532370371653,
+        "expectancy_sqrt_n": 306.69064740743306,
+        "score_fib": 280.2470023210141
+      },
+      "score": 288.2470023210141,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "require_ema200_bias=True",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": true,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 669.96496330124,
+        "win_rate": 57.142857142857146,
+        "profit_factor": 3.3518022207889446,
+        "max_drawdown_pct": 2.94907513034612,
+        "n_trades": 7,
+        "wins": 4,
+        "losses": 3,
+        "expectancy": 95.70928047160571,
+        "expectancy_sqrt_n": 253.22295428879943,
+        "score_fib": 224.75841475959896
+      },
+      "score": 259.0354480714331,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "fib=0.705-0.786",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.705,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 560.3622593478017,
+        "win_rate": 50.0,
+        "profit_factor": 2.4914848435003987,
+        "max_drawdown_pct": 2.6236857567183103,
+        "n_trades": 8,
+        "wins": 4,
+        "losses": 4,
+        "expectancy": 70.04528241847521,
+        "expectancy_sqrt_n": 198.11797675292271,
+        "score_fib": 153.95371127872735
+      },
+      "score": 187.32598393123334,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pivot_L8_R5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 5,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 214.63619135650833,
+        "win_rate": 31.57894736842105,
+        "profit_factor": 1.169859054348673,
+        "max_drawdown_pct": 6.2811403296864405,
+        "n_trades": 19,
+        "wins": 6,
+        "losses": 13,
+        "expectancy": 11.296641650342544,
+        "expectancy_sqrt_n": 49.24091935523569,
+        "score_fib": 74.70832301558461
+      },
+      "score": 123.75097180173339,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": false,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pivot_L3_R5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 5,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": -88.31760689799603,
+        "win_rate": 27.77777777777778,
+        "profit_factor": 0.9298962594394652,
+        "max_drawdown_pct": 8.532154788292038,
+        "n_trades": 18,
+        "wins": 5,
+        "losses": 13,
+        "expectancy": -4.906533716555335,
+        "expectancy_sqrt_n": -20.816659578580264,
+        "score_fib": -17.1958815327843
+      },
+      "score": -426.3728802823947,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": false,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pivot_L5_R5",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 5,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": -420.5951658706822,
+        "win_rate": 22.22222222222222,
+        "profit_factor": 0.6748067821821226,
+        "max_drawdown_pct": 9.342479551254671,
+        "n_trades": 18,
+        "wins": 4,
+        "losses": 14,
+        "expectancy": -23.366398103926787,
+        "expectancy_sqrt_n": -99.1352313071467,
+        "score_fib": -118.90867598557614
+      },
+      "score": -1023.9926756216034,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": false,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "use_rsi_ma_filter=True",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": true,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 0.0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "max_drawdown_pct": 0.0,
+        "n_trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "expectancy": 0.0,
+        "expectancy_sqrt_n": 0.0,
+        "score_fib": -1000.0
+      },
+      "score": -2140.0,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": false,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    }
+  ],
+  "factor_deltas": [
+    [
+      "use_rsi_ma_filter=True",
+      -3034.8348924008665
+    ],
+    [
+      "pivot_L5_R5",
+      -1918.8275680224701
+    ],
+    [
+      "pivot_L3_R5",
+      -1321.2077726832613
+    ],
+    [
+      "pack_wide_0382_786_rsi50",
+      794.0125643362095
+    ],
+    [
+      "pivot_L8_R5",
+      -771.0839205991332
+    ],
+    [
+      "pack_fast_pivot_2_2_wide",
+      743.8366506560916
+    ],
+    [
+      "fib=0.705-0.786",
+      -707.5089084696333
+    ],
+    [
+      "require_ema200_bias=True",
+      -635.7994443294335
+    ],
+    [
+      "rsi_long_max=30.0",
+      -606.5878900798525
+    ],
+    [
+      "fib=0.5-0.618",
+      -582.6462216824705
+    ],
+    [
+      "sl_atr=2.5",
+      -379.7210867217308
+    ],
+    [
+      "fib=0.382-0.786",
+      363.46287832604173
+    ],
+    [
+      "tp_atr=4.0",
+      -360.09165976294923
+    ],
+    [
+      "pack_very_wide_050_100",
+      320.7208521618803
+    ],
+    [
+      "pack_wide_050_886_cd0",
+      318.2328942241146
+    ],
+    [
+      "rsi_long_max=60.0",
+      -285.6553020932921
+    ],
+    [
+      "fib=0.382-0.886",
+      268.3417662933317
+    ],
+    [
+      "sl_atr=2.0",
+      -262.0490384568699
+    ],
+    [
+      "pivot_L2_R2",
+      -256.19821409095186
+    ],
+    [
+      "pivot_L4_R3",
+      -228.664293835477
+    ],
+    [
+      "fib=0.5-1.0",
+      223.90897103229292
+    ],
+    [
+      "rsi_long_max=55.0",
+      -219.5471886507878
+    ],
+    [
+      "pack_balanced_n_quality",
+      171.99390011606204
+    ],
+    [
+      "sl_atr=1.5",
+      -156.92834028159814
+    ],
+    [
+      "tp_atr=3.5",
+      -156.45915930644537
+    ],
+    [
+      "sl_atr=1.0",
+      148.1803657892732
+    ],
+    [
+      "pivot_L8_R3",
+      -143.614637245033
+    ],
+    [
+      "h4_bias=True",
+      -140.89408228286493
+    ],
+    [
+      "be_at_r=1.0",
+      -139.1181036189206
+    ],
+    [
+      "be_at_r=1.5",
+      137.39100191562886
+    ],
+    [
+      "rsi_long_max=40.0",
+      134.84203548305084
+    ],
+    [
+      "rsi_long_max=45.0",
+      120.99458393019916
+    ],
+    [
+      "pack_golden_plus_cd0",
+      120.99458393019916
+    ],
+    [
+      "rsi_long_max=50.0",
+      -102.23291118739428
+    ],
+    [
+      "fib=0.5-0.786",
+      78.53373204104855
+    ],
+    [
+      "tp_atr=2.0",
+      -61.21884225828296
+    ],
+    [
+      "pack_n20_path_050_786",
+      54.94472832193435
+    ],
+    [
+      "fib=0.5-0.886",
+      48.209510866030655
+    ],
+    [
+      "pivot_L3_R3",
+      47.06892415379957
+    ],
+    [
+      "fib=0.618-0.886",
+      24.99008397074158
+    ],
+    [
+      "tp_atr=2.5",
+      -13.003671507321656
+    ],
+    [
+      "cooldown=0",
+      0.0
+    ],
+    [
+      "cooldown=2",
+      0.0
+    ],
+    [
+      "cooldown=3",
+      0.0
+    ],
+    [
+      "cooldown=5",
+      0.0
+    ],
+    [
+      "max_entries_per_day=1",
+      0.0
+    ],
+    [
+      "max_entries_per_day=3",
+      0.0
+    ],
+    [
+      "max_entries_per_day=4",
+      0.0
+    ],
+    [
+      "flat_only=False",
+      0.0
+    ]
+  ],
+  "n_secondary": 150,
+  "secondary_top": [
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2055.971345286172,
+        "win_rate": 39.2,
+        "profit_factor": 1.2819963870733828,
+        "max_drawdown_pct": 7.54567934896521,
+        "n_trades": 125,
+        "wins": 49,
+        "losses": 76,
+        "expectancy": 16.447770762289377,
+        "expectancy_sqrt_n": 183.8916675140629,
+        "score_fib": 343.79778434363345
+      },
+      "score": 2077.0248398084404,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2129.668945656556,
+        "win_rate": 38.26086956521739,
+        "profit_factor": 1.3030018782420374,
+        "max_drawdown_pct": 8.443433020513964,
+        "n_trades": 115,
+        "wins": 44,
+        "losses": 71,
+        "expectancy": 18.51886039701353,
+        "expectancy_sqrt_n": 198.59265317848178,
+        "score_fib": 360.1471731709318
+      },
+      "score": 1986.2139404749971,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1422.4363544064918,
+        "win_rate": 36.029411764705884,
+        "profit_factor": 1.1699241938619123,
+        "max_drawdown_pct": 11.597026705385181,
+        "n_trades": 136,
+        "wins": 49,
+        "losses": 87,
+        "expectancy": 10.459090841224205,
+        "expectancy_sqrt_n": 121.97291111799082,
+        "score_fib": 167.5748772617662
+      },
+      "score": 1787.1569461377403,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1615.318641846431,
+        "win_rate": 32.28346456692913,
+        "profit_factor": 1.1911975656151874,
+        "max_drawdown_pct": 11.413213574694886,
+        "n_trades": 127,
+        "wins": 41,
+        "losses": 86,
+        "expectancy": 12.719044423987647,
+        "expectancy_sqrt_n": 143.33635116236266,
+        "score_fib": 193.64215811953298
+      },
+      "score": 1758.1600908548394,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1402.206930147849,
+        "win_rate": 37.735849056603776,
+        "profit_factor": 1.2244532887983728,
+        "max_drawdown_pct": 9.99543051885374,
+        "n_trades": 106,
+        "wins": 40,
+        "losses": 66,
+        "expectancy": 13.228367265545746,
+        "expectancy_sqrt_n": 136.19437673519857,
+        "score_fib": 284.0535580136302
+      },
+      "score": 1712.8801954806977,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1371.0743354555639,
+        "win_rate": 37.38317757009346,
+        "profit_factor": 1.2187417350145684,
+        "max_drawdown_pct": 9.198578386204902,
+        "n_trades": 107,
+        "wins": 40,
+        "losses": 67,
+        "expectancy": 12.813778836033308,
+        "expectancy_sqrt_n": 132.54675892789282,
+        "score_fib": 279.77283255244356
+      },
+      "score": 1709.0203842700032,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1189.5885666654553,
+        "win_rate": 31.46853146853147,
+        "profit_factor": 1.1238384782814403,
+        "max_drawdown_pct": 13.51546435236102,
+        "n_trades": 143,
+        "wins": 45,
+        "losses": 98,
+        "expectancy": 8.318801165492694,
+        "expectancy_sqrt_n": 99.47839340697745,
+        "score_fib": 137.9735629977692
+      },
+      "score": 1666.847785598546,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2127.904599481536,
+        "win_rate": 42.16867469879518,
+        "profit_factor": 1.4218161207601494,
+        "max_drawdown_pct": 5.01600956495852,
+        "n_trades": 83,
+        "wins": 35,
+        "losses": 48,
+        "expectancy": 25.637404813030553,
+        "expectancy_sqrt_n": 233.56787369074922,
+        "score_fib": 397.4692727639778
+      },
+      "score": 1649.1338639729704,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1176.4006260062602,
+        "win_rate": 41.74757281553398,
+        "profit_factor": 1.2080772158146138,
+        "max_drawdown_pct": 6.787296785996405,
+        "n_trades": 103,
+        "wins": 43,
+        "losses": 60,
+        "expectancy": 11.421365301031653,
+        "expectancy_sqrt_n": 115.9141979654771,
+        "score_fib": 259.68241938187373
+      },
+      "score": 1620.0809754173267,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2061.84419641382,
+        "win_rate": 42.5,
+        "profit_factor": 1.4346389801809218,
+        "max_drawdown_pct": 7.049690928394317,
+        "n_trades": 80,
+        "wins": 34,
+        "losses": 46,
+        "expectancy": 25.773052455172753,
+        "expectancy_sqrt_n": 230.52118910973653,
+        "score_fib": 393.5780386535853
+      },
+      "score": 1610.0976233562992,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2058.6443702611714,
+        "win_rate": 41.02564102564103,
+        "profit_factor": 1.4272711529359483,
+        "max_drawdown_pct": 7.486125547424797,
+        "n_trades": 78,
+        "wins": 32,
+        "losses": 46,
+        "expectancy": 26.39287654180989,
+        "expectancy_sqrt_n": 233.09557419177884,
+        "score_fib": 395.95173675485063
+      },
+      "score": 1585.4120861001718,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1393.9466602617536,
+        "win_rate": 33.0,
+        "profit_factor": 1.2172689164589645,
+        "max_drawdown_pct": 11.420938910416693,
+        "n_trades": 100,
+        "wins": 33,
+        "losses": 67,
+        "expectancy": 13.939466602617536,
+        "expectancy_sqrt_n": 139.39466602617534,
+        "score_fib": 286.97248869305054
+      },
+      "score": 1568.0917091255349,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2825.1403559526025,
+        "win_rate": 40.0,
+        "profit_factor": 1.6634400115980337,
+        "max_drawdown_pct": 4.467921167755405,
+        "n_trades": 65,
+        "wins": 26,
+        "losses": 39,
+        "expectancy": 43.46369778388619,
+        "expectancy_sqrt_n": 350.4155342278429,
+        "score_fib": 530.7700070590136
+      },
+      "score": 1565.721607232984,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1078.7481622215269,
+        "win_rate": 41.07142857142857,
+        "profit_factor": 1.1753588694256467,
+        "max_drawdown_pct": 9.618838967640569,
+        "n_trades": 112,
+        "wins": 46,
+        "losses": 66,
+        "expectancy": 9.631680019835061,
+        "expectancy_sqrt_n": 101.93212016093294,
+        "score_fib": 142.18637705775367
+      },
+      "score": 1555.7219130800386,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1788.452479523914,
+        "win_rate": 41.02564102564103,
+        "profit_factor": 1.4083359945721232,
+        "max_drawdown_pct": 8.01644931606631,
+        "n_trades": 78,
+        "wins": 32,
+        "losses": 46,
+        "expectancy": 22.92887794261428,
+        "expectancy_sqrt_n": 202.50236692238857,
+        "score_fib": 360.4766281392296
+      },
+      "score": 1549.6529501090936,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1682.443253584846,
+        "win_rate": 40.78947368421053,
+        "profit_factor": 1.3880979365753103,
+        "max_drawdown_pct": 8.213238660458295,
+        "n_trades": 76,
+        "wins": 31,
+        "losses": 45,
+        "expectancy": 22.137411231379552,
+        "expectancy_sqrt_n": 192.98947685837157,
+        "score_fib": 348.79215648295855
+      },
+      "score": 1513.1925729000093,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1962.2347625031389,
+        "win_rate": 48.484848484848484,
+        "profit_factor": 1.5887879597896593,
+        "max_drawdown_pct": 7.667720449210827,
+        "n_trades": 66,
+        "wins": 32,
+        "losses": 34,
+        "expectancy": 29.730829734896044,
+        "expectancy_sqrt_n": 241.53440256798825,
+        "score_fib": 406.01407447216707
+      },
+      "score": 1468.8155908387089,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1565.934947491537,
+        "win_rate": 45.833333333333336,
+        "profit_factor": 1.4206643132101835,
+        "max_drawdown_pct": 10.165133748890689,
+        "n_trades": 72,
+        "wins": 33,
+        "losses": 39,
+        "expectancy": 21.749096492938016,
+        "expectancy_sqrt_n": 184.54720337804434,
+        "score_fib": 339.05940543377363
+      },
+      "score": 1457.7793493540587,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1949.7986195159947,
+        "win_rate": 49.20634920634921,
+        "profit_factor": 1.6146809730646325,
+        "max_drawdown_pct": 7.451239163263039,
+        "n_trades": 63,
+        "wins": 31,
+        "losses": 32,
+        "expectancy": 30.949184436761822,
+        "expectancy_sqrt_n": 245.65153589982725,
+        "score_fib": 410.4417990197198
+      },
+      "score": 1439.0747120283877,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 1.0,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2346.0102859085437,
+        "win_rate": 46.42857142857143,
+        "profit_factor": 1.7839099532685685,
+        "max_drawdown_pct": 4.081340000207425,
+        "n_trades": 56,
+        "wins": 26,
+        "losses": 30,
+        "expectancy": 41.893040819795424,
+        "expectancy_sqrt_n": 313.4988112756196,
+        "score_fib": 488.27718177279996
+      },
+      "score": 1429.8929739289713,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 2,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 2122.988885055279,
+        "win_rate": 45.0,
+        "profit_factor": 1.6784789530048325,
+        "max_drawdown_pct": 6.67667397957783,
+        "n_trades": 60,
+        "wins": 27,
+        "losses": 33,
+        "expectancy": 35.38314808425465,
+        "expectancy_sqrt_n": 274.07668653341824,
+        "score_fib": 443.0294136777695
+      },
+      "score": 1428.206597972842,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 5,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1133.2660137186003,
+        "win_rate": 42.35294117647059,
+        "profit_factor": 1.2466077324233071,
+        "max_drawdown_pct": 11.163586709630005,
+        "n_trades": 85,
+        "wins": 36,
+        "losses": 49,
+        "expectancy": 13.332541337865885,
+        "expectancy_sqrt_n": 122.91995759314972,
+        "score_fib": 266.7398791369259
+      },
+      "score": 1414.2398480013508,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 3,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 40.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 0,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1322.7773899659137,
+        "win_rate": 34.146341463414636,
+        "profit_factor": 1.2442835552062026,
+        "max_drawdown_pct": 11.804062397130007,
+        "n_trades": 82,
+        "wins": 28,
+        "losses": 54,
+        "expectancy": 16.131431584950167,
+        "expectancy_sqrt_n": 146.07632583123828,
+        "score_fib": 293.00828676812756
+      },
+      "score": 1379.1889473315116,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 370.5923529930501,
+        "win_rate": 39.23076923076923,
+        "profit_factor": 1.0498977459441436,
+        "max_drawdown_pct": 12.13263631271794,
+        "n_trades": 130,
+        "wins": 51,
+        "losses": 79,
+        "expectancy": 2.850710407638847,
+        "expectancy_sqrt_n": 32.50309950864159,
+        "score_fib": 52.17248094128249
+      },
+      "score": 1367.4295228259837,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": false,
+          "dd": false,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 8,
+        "pivot_right": 5,
+        "fib_lo": 0.382,
+        "fib_hi": 0.886,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 45.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "metrics": {
+        "net_profit": 1867.2735017527698,
+        "win_rate": 41.891891891891895,
+        "profit_factor": 1.4267278493393611,
+        "max_drawdown_pct": 13.13340516043735,
+        "n_trades": 74,
+        "wins": 31,
+        "losses": 43,
+        "expectancy": 25.233425699361753,
+        "expectancy_sqrt_n": 217.06613546766238,
+        "score_fib": 376.7219174836624
+      },
+      "score": 1363.2363609856689,
+      "gate_eval": {
+        "hard_pass_n_path": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    }
+  ],
+  "best_develop_candidate": {
+    "source": "secondary_search",
+    "tag": "refine_top1",
+    "params": {
+      "flat_only": true,
+      "long_only": true,
+      "risk_pct": 0.01,
+      "pivot_left": 3,
+      "pivot_right": 3,
+      "fib_lo": 0.382,
+      "fib_hi": 1.0,
+      "use_rsi_ma_filter": false,
+      "rsi_long_max": 50.0,
+      "sl_atr": 1.5,
+      "tp_atr": 3.0,
+      "require_ema200_bias": false,
+      "h4_bias": false,
+      "be_at_r": null,
+      "hours": null,
+      "max_entries_per_day": 3,
+      "cooldown": 1,
+      "rsi_short_min": 60.0
+    },
+    "metrics": {
+      "net_profit": 2055.971345286172,
+      "win_rate": 39.2,
+      "profit_factor": 1.2819963870733828,
+      "max_drawdown_pct": 7.54567934896521,
+      "n_trades": 125,
+      "wins": 49,
+      "losses": 76,
+      "expectancy": 16.447770762289377,
+      "expectancy_sqrt_n": 183.8916675140629,
+      "score_fib": 343.79778434363345
+    },
+    "score": 2077.0248398084404,
+    "gate_eval": {
+      "hard_pass_n_path": false,
+      "n_target_hit": true,
+      "checks": {
+        "pf": false,
+        "dd": true,
+        "n_min": true,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": false
+    }
+  },
+  "best_gate_pass_candidate": {
+    "source": "secondary_search",
+    "tag": "refine_gate_pass",
+    "params": {
+      "flat_only": true,
+      "long_only": true,
+      "risk_pct": 0.01,
+      "pivot_left": 3,
+      "pivot_right": 2,
+      "fib_lo": 0.5,
+      "fib_hi": 0.786,
+      "use_rsi_ma_filter": false,
+      "rsi_long_max": 50.0,
+      "sl_atr": 1.2,
+      "tp_atr": 2.5,
+      "require_ema200_bias": false,
+      "h4_bias": false,
+      "be_at_r": null,
+      "hours": null,
+      "max_entries_per_day": 3,
+      "cooldown": 1,
+      "rsi_short_min": 60.0
+    },
+    "metrics": {
+      "net_profit": 2129.668945656556,
+      "win_rate": 38.26086956521739,
+      "profit_factor": 1.3030018782420374,
+      "max_drawdown_pct": 8.443433020513964,
+      "n_trades": 115,
+      "wins": 44,
+      "losses": 71,
+      "expectancy": 18.51886039701353,
+      "expectancy_sqrt_n": 198.59265317848178,
+      "score_fib": 360.1471731709318
+    },
+    "score": 1986.2139404749971,
+    "gate_eval": {
+      "hard_pass_n_path": true,
+      "n_target_hit": true,
+      "checks": {
+        "pf": true,
+        "dd": true,
+        "n_min": true,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": false
+    }
+  },
+  "n_gate_pass_ablation": 9,
+  "n_gate_pass_secondary": 39,
+  "seconds": 7.97,
+  "disposition": {
+    "lane": "htf_fib_xau",
+    "status": "KEEP_OPTIMIZING",
+    "live_go": false,
+    "kill": false,
+    "note": "Widen path on develop only; virgin holdout required for promote"
+  }
+}

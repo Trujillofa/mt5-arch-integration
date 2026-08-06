@@ -1,0 +1,18 @@
+{
+  "bars": 26304,
+  "signals": 22,
+  "trades": 22,
+  "wins": 7,
+  "losses": 15,
+  "win_rate": 0.3181818181818182,
+  "net_pnl_usd_0.1lot": -95.73083876677434,
+  "profit_factor": 0.5695891359400945,
+  "max_dd_usd_0.1lot": -180.53936072228714,
+  "avg_trade_usd": -4.351401762126106,
+  "symbol": "EURUSD",
+  "period": "H1",
+  "from": "2022-01-01",
+  "to": "2024-12-31",
+  "use_rsi_ma_filter": false,
+  "note": "Offline approximation of HTF Fib (H4 pivots from H1). Not identical to MT5 iCustom; use ForexHtfFibTester in Strategy Tester for platform parity."
+}

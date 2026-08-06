@@ -1,51 +1,154 @@
 //+------------------------------------------------------------------+
 //| Mt5ArchBridge.mq5                                                |
 //| File bridge for Linux/Wine (MetaTrader5 Python IPC often fails)  |
-//| Attach to a chart and enable Algo Trading (green).               |
+//|                                                                  |
+//| FREEZE FIX (v1.20):                                              |
+//|  • Attach to ONE chart only                                      |
+//|  • Timer-only writes (no OnTick storm)                           |
+//|  • File lock so extra instances stay standby                     |
+//|  • Default 5s interval, leaner symbol/TF set                      |
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.04"
-#property description "Writes account/symbols/candles JSON under MQL5/Files/mt5_arch/"
+#property version   "1.20"
+#property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
+#property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
 
-input int    InpTimerSec    = 1;       // Snapshot interval (seconds) — more reliable than ms under Wine
-// Phase 0 (FP Markets): gold is XAUUSD.r; BTC is BTCUSD. Keep bare XAUUSD for brokers without .r.
-// SymbolSelect silently skips missing names — safe to list both conventions.
-input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,USDCHF,XAUUSD,XAUUSD.r,BTCUSD";
-input string InpTimeframes  = "M15,H1,H4,D1";
-input int    InpCandleCount = 50;
+input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
+// Lean defaults — fewer files = less Wine I/O thrash
+input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,XAUUSD.r,BTCUSD";
+input string InpTimeframes  = "H1,H4,D1";
+input int    InpCandleCount = 30;
+input bool   InpSingleWriter= true;    // Extra instances go standby (must stay true on Wine)
 
-string g_dir = "mt5_arch";
+string   g_dir = "mt5_arch";
 datetime g_last_write = 0;
+bool     g_is_writer = false;
+string   g_lock_rel;
 
+//+------------------------------------------------------------------+
 int OnInit()
   {
    FolderCreate(g_dir);
-   // Second-based timer is more reliable under Wine than EventSetMillisecondTimer
-   EventSetTimer((int)MathMax(1, InpTimerSec));
-   Print("Mt5ArchBridge ON -> Files/", g_dir, " timer=", InpTimerSec, "s");
+   g_lock_rel = g_dir + "\\writer.lock";
+
+   g_is_writer = ClaimWriterLock();
+   if(!g_is_writer)
+     {
+      Print("Mt5ArchBridge STANDBY on ", _Symbol, " chart=", ChartID(),
+            " — another chart owns the bridge. REMOVE this EA from this chart.");
+      // Still set a slow timer to reclaim if owner dies
+      EventSetTimer(30);
+      return INIT_SUCCEEDED;
+     }
+
+   EventSetTimer((int)MathMax(3, InpTimerSec));
+   Print("Mt5ArchBridge WRITER v1.20 ON ", _Symbol,
+         " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
    return INIT_SUCCEEDED;
   }
 
+//+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
    EventKillTimer();
+   if(g_is_writer)
+      ReleaseWriterLock();
   }
 
+//+------------------------------------------------------------------+
 void OnTimer()
   {
+   if(!g_is_writer)
+     {
+      // Try to become writer if lock is stale / missing
+      if(ClaimWriterLock())
+        {
+         g_is_writer = true;
+         EventKillTimer();
+         EventSetTimer((int)MathMax(3, InpTimerSec));
+         Print("Mt5ArchBridge: claimed writer lock after standby");
+         WriteAll();
+        }
+      return;
+     }
+   // Refresh lock heartbeat
+   TouchWriterLock();
    WriteAll();
   }
 
+//+------------------------------------------------------------------+
+//| NO OnTick writes — tick storms + multi-EA = Wine freeze          |
+//+------------------------------------------------------------------+
 void OnTick()
   {
-   // Backup path if timer stalls under Wine (at most once per second)
-   datetime now = TimeLocal();
-   if(now != g_last_write)
-      WriteAll();
   }
 
+//+------------------------------------------------------------------+
+bool ClaimWriterLock()
+  {
+   if(!InpSingleWriter)
+      return true;
+
+   // Stale lock: older than 60s → steal
+   if(FileIsExist(g_lock_rel, 0))
+     {
+      int hr = FileOpen(g_lock_rel, FILE_READ|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
+      if(hr != INVALID_HANDLE)
+        {
+         string line = FileReadString(hr);
+         FileClose(hr);
+         // format: chartId|unixTime
+         string parts[];
+         int n = StringSplit(line, '|', parts);
+         long owner = (n >= 1) ? StringToInteger(parts[0]) : 0;
+         long ts    = (n >= 2) ? StringToInteger(parts[1]) : 0;
+         long now   = (long)TimeLocal();
+         if(owner == ChartID())
+            return true;
+         if(ts > 0 && (now - ts) < 60)
+            return false; // live owner
+         // stale — fall through and take
+        }
+     }
+
+   int hw = FileOpen(g_lock_rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
+   if(hw == INVALID_HANDLE)
+      return false;
+   FileWriteString(hw, IntegerToString(ChartID()) + "|" + IntegerToString((long)TimeLocal()));
+   FileClose(hw);
+   return true;
+  }
+
+//+------------------------------------------------------------------+
+void TouchWriterLock()
+  {
+   int hw = FileOpen(g_lock_rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
+   if(hw == INVALID_HANDLE)
+      return;
+   FileWriteString(hw, IntegerToString(ChartID()) + "|" + IntegerToString((long)TimeLocal()));
+   FileClose(hw);
+  }
+
+//+------------------------------------------------------------------+
+void ReleaseWriterLock()
+  {
+   if(!FileIsExist(g_lock_rel, 0))
+      return;
+   int hr = FileOpen(g_lock_rel, FILE_READ|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
+   if(hr != INVALID_HANDLE)
+     {
+      string line = FileReadString(hr);
+      FileClose(hr);
+      string parts[];
+      StringSplit(line, '|', parts);
+      if(ArraySize(parts) >= 1 && StringToInteger(parts[0]) == ChartID())
+         FileDelete(g_lock_rel);
+     }
+  }
+
+//+------------------------------------------------------------------+
 void WriteAll()
   {
    g_last_write = TimeLocal();
@@ -54,15 +157,14 @@ void WriteAll()
    WriteSymbols();
    WriteCandles();
    WritePositions();
-   int h = FileOpen(g_dir + "\\heartbeat.txt", FILE_WRITE|FILE_TXT|FILE_ANSI);
-   if(h != INVALID_HANDLE)
-     {
-      FileWriteString(h, IntegerToString((long)TimeLocal()) + " connected=" +
-         (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0"));
-      FileClose(h);
-     }
+   Put(g_dir + "\\heartbeat.txt",
+       IntegerToString((long)TimeLocal()) + " connected=" +
+       (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0") +
+       " writer_chart=" + IntegerToString(ChartID()) +
+       " symbol=" + _Symbol);
   }
 
+//+------------------------------------------------------------------+
 string Esc(const string s)
   {
    string o = s;
@@ -71,12 +173,22 @@ string Esc(const string s)
    return o;
   }
 
+//+------------------------------------------------------------------+
+//| Simple direct write + share flags; throttle error spam           |
+//+------------------------------------------------------------------+
 void Put(const string rel, const string body)
   {
-   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI);
+   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
    if(h == INVALID_HANDLE)
      {
-      Print("Write fail ", rel, " err=", GetLastError());
+      static datetime s_last_err = 0;
+      datetime now = TimeLocal();
+      if(now - s_last_err >= 60)
+        {
+         s_last_err = now;
+         Print("Write fail ", rel, " err=", GetLastError(),
+               " — remove EXTRA Mt5ArchBridge from other charts");
+        }
       return;
      }
    FileWriteString(h, body);
@@ -107,14 +219,12 @@ bool IsEffectivelyConnected()
 
 void WriteAccount()
   {
-   // Prefer trade-server fields; zeros + empty currency usually mean not fully connected
    long login = AccountInfoInteger(ACCOUNT_LOGIN);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
    string currency = AccountInfoString(ACCOUNT_CURRENCY);
    int leverage = (int)AccountInfoInteger(ACCOUNT_LEVERAGE);
    bool connected = IsEffectivelyConnected();
-   // Periodic diagnostics when still offline (avoid spam: once per 30s via last write stamp)
    static datetime s_last_diag = 0;
    datetime now = TimeLocal();
    if(!connected && (now - s_last_diag) >= 30)

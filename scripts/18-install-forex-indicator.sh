@@ -19,10 +19,12 @@ CANDIDATES=(
   "${WINEPREFIX}/drive_c/Program Files/WSFmarkets MT5 Terminal/MQL5"
   "${WINEPREFIX}/drive_c/Program Files/FP Markets MT5 Terminal/MQL5"
   "${WINEPREFIX}/drive_c/Program Files/Vantage International MT5/MQL5"
+  "${WINEPREFIX}/drive_c/Program Files/MetaTrader 5 EXNESS/MQL5"
   "${HOME}/.mt5/drive_c/Program Files/MetaTrader 5/MQL5"
   "${HOME}/.mt5-wsf/drive_c/Program Files/WSFmarkets MT5 Terminal/MQL5"
   "${HOME}/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/MQL5"
   "${HOME}/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5"
+  "${HOME}/.mt5-exness/drive_c/Program Files/MetaTrader 5 EXNESS/MQL5"
 )
 
 SRC_INC="${ROOT}/mql5/Include/ForexUtils.mqh"
@@ -33,6 +35,7 @@ SRC_IND=(
 )
 SRC_EA=(
   "${ROOT}/mql5/Experts/ForexSignalLogger.mq5"
+  "${ROOT}/mql5/Experts/ForexHtfFibTester.mq5"
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
 )
 
@@ -82,7 +85,8 @@ Next steps:
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)
-       FX:  InpIndicatorName=ForexHtfPivotsFib  buffer 7
+       FX:  InpIndicatorName=ForexHtfPivotsFib  buffer 8
+       Template: buffer 9
        BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/

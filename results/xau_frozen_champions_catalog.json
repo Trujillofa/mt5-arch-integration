@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "created_from": "existing develop-only artifacts; no re-optimization; holdout not used for selection",
+    "safety": "offline frozen catalog only; not a live promote",
+    "n_entries": 8,
+    "roles": {
+      "baseline_champion": "per-lane champion from xau_lane_champions.json (develop selection)",
+      "refined_develop": "develop-refined gate-pass candidate from ablate/refine runs"
+    },
+    "sources_read": [
+      "results/xau_lane_champions.json",
+      "results/xau_candidate_params.json",
+      "results/xau_donchian_expectancy_ablate.json",
+      "results/xau_atr_trail_trade_count.json",
+      "results/xau_htf_fib_widen_entries.json"
+    ]
+  },
+  "entries": [
+    {
+      "id": "baseline_vol_gate_sparse",
+      "lane": "vol_gate_sparse",
+      "source_file": "results/xau_lane_champions.json",
+      "params": {
+        "require_uptrend": true,
+        "trend_col": "ema200",
+        "risk_pct": 0.01,
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.55,
+        "rsi_buy": 35.0,
+        "rsi_sell": 48.0,
+        "sl_atr": 1.5,
+        "tp_atr": 3.0,
+        "bb_col": "bb_lo15",
+        "cooldown": 2,
+        "exit_on_vol_spike": true,
+        "h4_bias": false,
+        "max_entries_per_day": 2,
+        "be_at_r": null,
+        "hours": null,
+        "failed_breakout_fade": false
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 397.8649843393391,
+        "win_rate": 71.42857142857143,
+        "profit_factor": 1.3552508616648657,
+        "max_drawdown_pct": 7.277769614881163,
+        "n_trades": 42,
+        "wins": 30,
+        "losses": 12,
+        "expectancy": 9.472975817603313,
+        "expectancy_sqrt_n": 61.39189991617527
+      },
+      "role": "baseline_champion",
+      "mode": "vol_gate_bb",
+      "develop_score": 1099.432071760317,
+      "status": "viable"
+    },
+    {
+      "id": "baseline_donchian_turtle",
+      "lane": "donchian_turtle",
+      "source_file": "results/xau_lane_champions.json",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "mode": "donchian_turtle"
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902
+      },
+      "role": "baseline_champion",
+      "mode": "donchian_turtle",
+      "develop_score": 1345.3851619492443,
+      "status": "viable"
+    },
+    {
+      "id": "baseline_atr_trail_breakout",
+      "lane": "atr_trail_breakout",
+      "source_file": "results/xau_lane_champions.json",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "mode": "atr_trail_breakout",
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100"
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198
+      },
+      "role": "baseline_champion",
+      "mode": "atr_trail_breakout",
+      "develop_score": 799.4722865271946,
+      "status": "viable"
+    },
+    {
+      "id": "baseline_htf_fib_xau",
+      "lane": "htf_fib_xau",
+      "source_file": "results/xau_lane_champions.json",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "mode": "htf_fib",
+        "pivot_left": 5,
+        "pivot_right": 3,
+        "fib_lo": 0.618,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 35.0,
+        "sl_atr": 1.2,
+        "tp_atr": 3.0,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 1
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 1795.485977729084,
+        "win_rate": 58.8235294117647,
+        "profit_factor": 3.584023207225344,
+        "max_drawdown_pct": 3.7474468090303406,
+        "n_trades": 17,
+        "wins": 10,
+        "losses": 7,
+        "expectancy": 105.61682221935789,
+        "expectancy_sqrt_n": 435.46931385249485
+      },
+      "role": "baseline_champion",
+      "mode": "htf_fib",
+      "develop_score": 637.0745442924864,
+      "status": "viable"
+    },
+    {
+      "id": "baseline_htf_pullback_new",
+      "lane": "htf_pullback_new",
+      "source_file": "results/xau_lane_champions.json",
+      "params": {
+        "rsi_sell": 70.0,
+        "atr_pctile_lo": 0.0,
+        "atr_pctile_hi": 0.85,
+        "atr_buffer": 0.25,
+        "h4_bias": true,
+        "hours": null,
+        "max_entries_per_day": 2,
+        "cooldown": 2,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "ema_pull": "ema20",
+        "rsi_lo": 45.0,
+        "rsi_hi": 60.0,
+        "sl_atr": 2.0,
+        "tp_atr": 2.5,
+        "stack_mode": "h4_up",
+        "use_fvg_proxy": false,
+        "be_at_r": null,
+        "mode": "htf_pullback"
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 3914.6016690229835,
+        "win_rate": 51.55555555555556,
+        "profit_factor": 1.3345828893785239,
+        "max_drawdown_pct": 8.337308127527928,
+        "n_trades": 225,
+        "wins": 116,
+        "losses": 109,
+        "expectancy": 17.398229640102148,
+        "expectancy_sqrt_n": 260.9734446015322
+      },
+      "role": "baseline_champion",
+      "mode": "htf_pullback",
+      "develop_score": 1016.7253468679361,
+      "status": "viable"
+    },
+    {
+      "id": "refined_donchian_exit_N8_gate_pass",
+      "lane": "donchian_turtle",
+      "source_file": "results/xau_donchian_expectancy_ablate.json",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 17252.3542142016,
+        "win_rate": 44.3609022556391,
+        "profit_factor": 2.4087147216931517,
+        "max_drawdown_pct": 7.915486518697993,
+        "n_trades": 133,
+        "wins": 59,
+        "losses": 74,
+        "expectancy": 129.7169489789594,
+        "expectancy_sqrt_n": 1495.9688336895674,
+        "score_expectancy_sqrt": 1747.7539821924847
+      },
+      "role": "refined_develop",
+      "tag": "exit_N=8",
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "id": "refined_atr_pack_entry20_no_atr_floor",
+      "lane": "atr_trail_breakout",
+      "source_file": "results/xau_atr_trail_trade_count.json",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "atr_min_pct": 0.0,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 85.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 12304.029389723073,
+        "win_rate": 47.674418604651166,
+        "profit_factor": 2.3221218520676548,
+        "max_drawdown_pct": 10.866976945130435,
+        "n_trades": 86,
+        "wins": 41,
+        "losses": 45,
+        "expectancy": 143.07010918282643,
+        "expectancy_sqrt_n": 1326.777610670449,
+        "score_expectancy_sqrt": 1515.4098058230022
+      },
+      "role": "refined_develop",
+      "tag": "pack_entry20_no_atr_floor",
+      "score": 1521.8548946732408,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "id": "refined_htf_fib_best_gate_pass",
+      "lane": "htf_fib_xau",
+      "source_file": "results/xau_htf_fib_widen_entries.json",
+      "params": {
+        "flat_only": true,
+        "long_only": true,
+        "risk_pct": 0.01,
+        "pivot_left": 3,
+        "pivot_right": 2,
+        "fib_lo": 0.5,
+        "fib_hi": 0.786,
+        "use_rsi_ma_filter": false,
+        "rsi_long_max": 50.0,
+        "sl_atr": 1.2,
+        "tp_atr": 2.5,
+        "require_ema200_bias": false,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "max_entries_per_day": 3,
+        "cooldown": 1,
+        "rsi_short_min": 60.0
+      },
+      "develop_metrics_if_known": {
+        "net_profit": 2129.668945656556,
+        "win_rate": 38.26086956521739,
+        "profit_factor": 1.3030018782420374,
+        "max_drawdown_pct": 8.443433020513964,
+        "n_trades": 115,
+        "wins": 44,
+        "losses": 71,
+        "expectancy": 18.51886039701353,
+        "expectancy_sqrt_n": 198.59265317848178,
+        "score_fib": 360.1471731709318
+      },
+      "role": "refined_develop",
+      "tag": "refine_gate_pass",
+      "source": "secondary_search",
+      "score": 1986.2139404749971,
+      "gate_eval": {
+        "hard_pass_n_path": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    }
+  ],
+  "notes": [
+    "dedupe skip candidate_vol_gate: identical params to baseline_vol_gate_sparse",
+    "xau_candidate_params.json vol_gate params identical to baseline_vol_gate_sparse \u2014 not re-listed"
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "meta": {
+    "split": "2026-01-02 18:18:00+00:00",
+    "train_bars": 8132,
+    "oos_bars": 3505,
+    "grid_source": "xau_new_design_specs.json",
+    "total_evals": 3798,
+    "search_seconds": 105.45,
+    "atr_pctile": "rolling_100_rank_0_1",
+    "safety": "offline research only; never --live; never place orders",
+    "note": "Train-only selection; OOS evaluated once on frozen shortlist. Do not claim profitability without OOS metrics."
+  },
+  "families": {
+    "vol_gate_bb": {
+      "n_evals": 226,
+      "n_passers": 1,
+      "best_id": "vol_gate_bb",
+      "best_params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.4,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "cooldown": 1.0,
+        "exit_on_vol_spike": true
+      },
+      "best_train": {
+        "net_profit": 622.5440345927195,
+        "win_rate": 71.42857142857143,
+        "profit_factor": 1.8136094968535053,
+        "max_drawdown_pct": 2.456590745737999,
+        "n_trades": 28,
+        "wins": 20,
+        "losses": 8
+      },
+      "train_gates": true
+    },
+    "atr_breakout": {
+      "n_evals": 510,
+      "n_passers": 0,
+      "best_id": "atr_breakout",
+      "best_params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "atr_breakout",
+        "donch_n": 24,
+        "atr_min_pct": 0.55,
+        "ema_trend": "ema100",
+        "require_ema_stack": false,
+        "rsi_max": 75.0,
+        "sl_atr": 2.0,
+        "tp_atr": 4.0,
+        "trail_atr": null,
+        "cooldown": 3.0
+      },
+      "best_train": {
+        "net_profit": 3827.5098179267625,
+        "win_rate": 47.88732394366197,
+        "profit_factor": 2.4566218718565493,
+        "max_drawdown_pct": 3.9105447228498376,
+        "n_trades": 71,
+        "wins": 34,
+        "losses": 37
+      },
+      "train_gates": false
+    },
+    "ema_pullback": {
+      "n_evals": 2722,
+      "n_passers": 77,
+      "best_id": "ema_pullback",
+      "best_params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "ema_pullback",
+        "ema_pull": "ema20",
+        "stack_mode": "ema20_gt_ema50_gt_ema100",
+        "atr_buffer": 0.5,
+        "rsi_lo": 40.0,
+        "rsi_hi": 55.0,
+        "rsi_sell": 70.0,
+        "atr_pctile_lo": 0.0,
+        "atr_pctile_hi": 0.75,
+        "sl_atr": 2.0,
+        "tp_atr": 3.0,
+        "use_macd_rising": false,
+        "cooldown": 2.0
+      },
+      "best_train": {
+        "net_profit": 4284.1943456184035,
+        "win_rate": 56.12244897959184,
+        "profit_factor": 1.9106034936184781,
+        "max_drawdown_pct": 5.987514334733142,
+        "n_trades": 98,
+        "wins": 55,
+        "losses": 43
+      },
+      "train_gates": true
+    },
+    "dual_regime": {
+      "n_evals": 340,
+      "n_passers": 0,
+      "best_id": "dual_regime",
+      "best_params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "dual_regime",
+        "bb_col": "bb_lo",
+        "switch_pct": 0.6,
+        "donch_n": 20,
+        "rsi_buy": 30.0,
+        "rsi_sell": 50.0,
+        "sl_atr_bo": 1.8,
+        "tp_atr_bo": 4.0,
+        "sl_atr_mr": 1.5,
+        "tp_atr_mr": 2.5,
+        "deadband": 0.0,
+        "cooldown": 2.0
+      },
+      "best_train": {
+        "net_profit": 4017.8542854747966,
+        "win_rate": 45.09803921568628,
+        "profit_factor": 1.7944199969732229,
+        "max_drawdown_pct": 4.4175781912319625,
+        "n_trades": 102,
+        "wins": 46,
+        "losses": 56
+      },
+      "train_gates": false
+    }
+  },
+  "all_passers_train": 78,
+  "shortlist": [
+    {
+      "id": "vol_gate_bb",
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.4,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "cooldown": 1.0,
+        "exit_on_vol_spike": true
+      },
+      "train": {
+        "net_profit": 622.5440345927195,
+        "win_rate": 71.42857142857143,
+        "profit_factor": 1.8136094968535053,
+        "max_drawdown_pct": 2.456590745737999,
+        "n_trades": 28,
+        "wins": 20,
+        "losses": 8
+      },
+      "oos": {
+        "net_profit": 102.73792919409243,
+        "win_rate": 62.5,
+        "profit_factor": 1.1944239933759884,
+        "max_drawdown_pct": 2.6291125726782694,
+        "n_trades": 16,
+        "wins": 10,
+        "losses": 6
+      },
+      "oos_gates": false,
+      "train_gates": true,
+      "global_rank": 2,
+      "tag": "family_best:vol_gate_bb"
+    },
+    {
+      "id": "atr_breakout",
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "atr_breakout",
+        "donch_n": 24,
+        "atr_min_pct": 0.55,
+        "ema_trend": "ema100",
+        "require_ema_stack": false,
+        "rsi_max": 75.0,
+        "sl_atr": 2.0,
+        "tp_atr": 4.0,
+        "trail_atr": null,
+        "cooldown": 3.0
+      },
+      "train": {
+        "net_profit": 3827.5098179267625,
+        "win_rate": 47.88732394366197,
+        "profit_factor": 2.4566218718565493,
+        "max_drawdown_pct": 3.9105447228498376,
+        "n_trades": 71,
+        "wins": 34,
+        "losses": 37
+      },
+      "oos": {
+        "net_profit": -56.84721291677852,
+        "win_rate": 34.78260869565217,
+        "profit_factor": 0.9368973001102218,
+        "max_drawdown_pct": 6.515609420023363,
+        "n_trades": 23,
+        "wins": 8,
+        "losses": 15
+      },
+      "oos_gates": false,
+      "train_gates": false,
+      "global_rank": null,
+      "tag": "family_best:atr_breakout"
+    },
+    {
+      "id": "ema_pullback",
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "ema_pullback",
+        "ema_pull": "ema20",
+        "stack_mode": "ema20_gt_ema50_gt_ema100",
+        "atr_buffer": 0.5,
+        "rsi_lo": 40.0,
+        "rsi_hi": 55.0,
+        "rsi_sell": 70.0,
+        "atr_pctile_lo": 0.0,
+        "atr_pctile_hi": 0.75,
+        "sl_atr": 2.0,
+        "tp_atr": 3.0,
+        "use_macd_rising": false,
+        "cooldown": 2.0
+      },
+      "train": {
+        "net_profit": 4284.1943456184035,
+        "win_rate": 56.12244897959184,
+        "profit_factor": 1.9106034936184781,
+        "max_drawdown_pct": 5.987514334733142,
+        "n_trades": 98,
+        "wins": 55,
+        "losses": 43
+      },
+      "oos": {
+        "net_profit": -449.42157659888517,
+        "win_rate": 32.142857142857146,
+        "profit_factor": 0.7078999985384792,
+        "max_drawdown_pct": 10.463790229211527,
+        "n_trades": 28,
+        "wins": 9,
+        "losses": 19
+      },
+      "oos_gates": false,
+      "train_gates": true,
+      "global_rank": 1,
+      "tag": "family_best:ema_pullback"
+    },
+    {
+      "id": "dual_regime",
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "dual_regime",
+        "bb_col": "bb_lo",
+        "switch_pct": 0.6,
+        "donch_n": 20,
+        "rsi_buy": 30.0,
+        "rsi_sell": 50.0,
+        "sl_atr_bo": 1.8,
+        "tp_atr_bo": 4.0,
+        "sl_atr_mr": 1.5,
+        "tp_atr_mr": 2.5,
+        "deadband": 0.0,
+        "cooldown": 2.0
+      },
+      "train": {
+        "net_profit": 4017.8542854747966,
+        "win_rate": 45.09803921568628,
+        "profit_factor": 1.7944199969732229,
+        "max_drawdown_pct": 4.4175781912319625,
+        "n_trades": 102,
+        "wins": 46,
+        "losses": 56
+      },
+      "oos": {
+        "net_profit": 136.47919408020334,
+        "win_rate": 37.142857142857146,
+        "profit_factor": 1.0975871561947346,
+        "max_drawdown_pct": 7.243810546111639,
+        "n_trades": 35,
+        "wins": 13,
+        "losses": 22
+      },
+      "oos_gates": false,
+      "train_gates": false,
+      "global_rank": 3,
+      "tag": "family_best:dual_regime"
+    }
+  ]
+}

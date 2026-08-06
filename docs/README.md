@@ -14,6 +14,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [CHARTS-AND-STABILITY.md](CHARTS-AND-STABILITY.md) | Black charts, maximize, clipboard paste under Wine |
 | [ARCH-SETUP.md](ARCH-SETUP.md) | Extra Arch environment notes |
 | [FOREX-MT5-ROADMAP.md](FOREX-MT5-ROADMAP.md) | Forex observe → paper → live waves |
+| [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |
