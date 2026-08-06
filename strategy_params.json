@@ -1,24 +1,42 @@
 {
   "metrics": {
-    "net_profit": 1383.3191532583246,
-    "win_rate": 62.0,
-    "profit_factor": 1.7256573535831388,
-    "max_drawdown_pct": 3.5557257333827557,
-    "n_trades": 50
+    "net_profit": 1231.3665325805,
+    "win_rate": 57.77777777777778,
+    "profit_factor": 1.6365292522917125,
+    "max_drawdown_pct": 3.805867544911966,
+    "n_trades": 45
   },
   "params": {
     "mode": "bb_rsi",
     "rsi_buy": 30.0,
-    "rsi_sell": 50.0,
-    "sl_atr": 1.5,
-    "tp_atr": 2.0,
-    "bb_col": "bb_lo",
+    "rsi_sell": 58.0,
+    "sl_atr": 1.0,
+    "tp_atr": 1.2,
+    "bb_col": "bb_lo15",
     "trend_col": "ema200",
     "use_macd_filter": false,
-    "hours": null,
+    "hours": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
     "long_only": true,
     "risk_pct": 0.01,
     "cooldown": 2
+  },
+  "data": {
+    "csv": "xauusd_data.csv",
+    "sha256": "dab5de3a73331cbf264ac66cc16c1aab65161e4794bfb1a49f0be1f29ab5edc3",
+    "timeframe": "H1",
+    "bars": 29151,
+    "start": "2021-09-01T21:00:00+00:00",
+    "end": "2026-08-06T20:00:00+00:00"
   },
   "timeframe": "H1",
   "start_balance": 10000.0

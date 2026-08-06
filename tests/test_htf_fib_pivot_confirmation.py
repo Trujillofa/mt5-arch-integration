@@ -66,7 +66,7 @@ def test_signal_time_not_before_confirmation():
 
 def test_legacy_center_stamp_would_fail_causal_rule():
     """Document the old bug: stamping at center violates signal >= center+right."""
-    left, right = 3, 5
+    right = 5
     c = 20
     # Old (buggy) stamp
     buggy_active = c

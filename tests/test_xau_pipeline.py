@@ -11,8 +11,18 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from backtest import (  # noqa: E402
+    indicators,
+    load_h1,
+    metrics_from_pnls,
+    normalize_params,
+    passes,
+    simulate,
+    slice_to_window,
+)
 from live_trader import MAX_RISK_FRAC, size_position  # noqa: E402
-from backtest import load_h1, metrics_from_pnls, passes, simulate, indicators  # noqa: E402
+
+PARAMS_FILE = ROOT / "strategy_params.json"
 
 
 def test_csv_exists_and_covers_year():
@@ -83,9 +93,7 @@ def test_risk_size_skips_when_min_lot_exceeds_risk():
 
 
 def test_backtest_never_oversizes_min_lot():
-    """On real CSV + winning params, no closed trade risks more than 1% at entry stop."""
-    d = indicators(load_h1())
-    # Re-run with instrumented check via simulate-equivalent sizing logic
+    """simulate()'s sizing arithmetic floors to 0 lots when min lot would breach 1% risk."""
     from backtest import CONTRACT_SIZE, START_BALANCE
 
     # Spot-check: for any atr*sl_atr where min lot exceeds risk, raw floor is 0
@@ -126,16 +134,36 @@ def test_order_request_always_has_sl_tp():
         build_order_request(mt5, symbol="XAUUSD", side=1, lots=0.1, sl=0.0, tp=2520.0)
 
 
-def test_backtest_metrics_from_real_engine():
-    """Drive simulate() on real CSV using strategy_params.json — not hard-coded prints."""
+def test_saved_params_reproduce_on_their_fit_window():
+    """Replaying strategy_params.json over its recorded window must reproduce its metrics.
+
+    Simulating over the *whole* CSV instead would drift every time the CSV is
+    extended, which is how the recorded metrics silently stopped matching before.
+    """
     import json
 
-    d = indicators(load_h1())
-    params = json.loads((ROOT / "strategy_params.json").read_text())["params"]
-    # hours may be list in JSON
-    if isinstance(params.get("hours"), list):
-        params["hours"] = tuple(params["hours"]) if params["hours"] is not None else None
-    m = simulate(d, **params)
+    saved = json.loads(PARAMS_FILE.read_text())
+    window = saved.get("data")
+    assert window, "strategy_params.json has no `data` window — re-fit with `backtest.py --save`"
+
+    raw = slice_to_window(load_h1(), window)
+    m = simulate(indicators(raw), **normalize_params(saved["params"]))
+
+    recorded = saved["metrics"]
+    assert m.n_trades == recorded["n_trades"]
+    assert m.profit_factor == pytest.approx(recorded["profit_factor"], rel=1e-6)
+    assert m.win_rate == pytest.approx(recorded["win_rate"], rel=1e-6)
+    assert m.net_profit == pytest.approx(recorded["net_profit"], rel=1e-6)
+    assert m.max_drawdown_pct == pytest.approx(recorded["max_drawdown_pct"], rel=1e-6)
+
+
+def test_saved_params_clear_the_gates():
+    """The shipped params must still satisfy the promotion gates on their fit window."""
+    import json
+
+    saved = json.loads(PARAMS_FILE.read_text())
+    raw = slice_to_window(load_h1(), saved["data"])
+    m = simulate(indicators(raw), **normalize_params(saved["params"]))
     assert m.n_trades >= 20
     assert m.profit_factor > 1.5
     assert m.win_rate > 55.0
@@ -143,10 +171,15 @@ def test_backtest_metrics_from_real_engine():
     assert passes(m)
 
 
-def test_backtest_cli_stdout_metrics():
-    """Run backtest.py entry point; parse real stdout metrics."""
+def test_backtest_cli_stdout_metrics(tmp_path):
+    """Run backtest.py entry point; parse real stdout metrics.
+
+    Runs without --save, and points --out at tmp: a test run must never rewrite
+    the tracked strategy_params.json.
+    """
+    before = PARAMS_FILE.read_bytes()
     proc = subprocess.run(
-        [sys.executable, str(ROOT / "backtest.py")],
+        [sys.executable, str(ROOT / "backtest.py"), "--out", str(tmp_path / "params.json")],
         cwd=str(ROOT),
         capture_output=True,
         text=True,
@@ -161,6 +194,30 @@ def test_backtest_cli_stdout_metrics():
     assert pf > 1.5
     assert wr > 55.0
     assert dd < 10.0
+    assert PARAMS_FILE.read_bytes() == before, "a read-only backtest run rewrote tracked params"
+    assert not (tmp_path / "params.json").exists(), "--out was written without --save"
+
+
+def test_backtest_save_is_opt_in(tmp_path):
+    """--save writes only where it is told, and records the fit window."""
+    import json
+
+    dest = tmp_path / "params.json"
+    before = PARAMS_FILE.read_bytes()
+    proc = subprocess.run(
+        [sys.executable, str(ROOT / "backtest.py"), "--save", "--out", str(dest)],
+        cwd=str(ROOT),
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    assert proc.returncode == 0, (proc.stdout + proc.stderr)[-2000:]
+    assert PARAMS_FILE.read_bytes() == before, "--out was ignored; tracked params overwritten"
+    written = json.loads(dest.read_text())
+    assert written["data"]["bars"] > 0
+    assert written["data"]["sha256"]
+    assert written["params"]["mode"]
 
 
 def test_metrics_helper_not_trivial():

@@ -3,9 +3,16 @@
 Offline XAUUSD H1 backtest from xauusd_data.csv.
 Prints Total Net Profit, Win Rate (%), Profit Factor, Max Drawdown (%).
 Autonomous parameter search until gates: PF>1.5, WR>55%, MaxDD<10%.
+
+Writing strategy_params.json is opt-in (``--save``): a plain run is read-only so
+tests and exploratory runs never mutate tracked state. Saved params carry the
+``data`` window they were fitted on, so the recorded metrics stay reproducible
+after the CSV is extended (see ``slice_to_window``).
 """
 from __future__ import annotations
 
+import argparse
+import hashlib
 import json
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +44,45 @@ def load_h1() -> pd.DataFrame:
     if df.empty:
         raise RuntimeError(f"No H1 data in {CSV_PATH}")
     return df
+
+
+def data_window(raw: pd.DataFrame, csv_path: Path = CSV_PATH) -> dict:
+    """Fingerprint the exact bars a fit was performed on."""
+    return {
+        "csv": csv_path.name,
+        "sha256": hashlib.sha256(csv_path.read_bytes()).hexdigest() if csv_path.is_file() else None,
+        "timeframe": "H1",
+        "bars": int(len(raw)),
+        "start": raw["time"].iloc[0].isoformat(),
+        "end": raw["time"].iloc[-1].isoformat(),
+    }
+
+
+def slice_to_window(raw: pd.DataFrame, window: dict) -> pd.DataFrame:
+    """Restrict raw H1 bars to a recorded fit window.
+
+    Replaying params over the whole CSV silently changes the result once the CSV
+    is extended; slicing back to the recorded window is what makes the metrics in
+    strategy_params.json checkable. Raises if the window is no longer covered.
+    """
+    start = pd.Timestamp(window["start"])
+    end = pd.Timestamp(window["end"])
+    out = raw.loc[(raw["time"] >= start) & (raw["time"] <= end)].reset_index(drop=True)
+    if len(out) != window["bars"]:
+        raise RuntimeError(
+            f"fit window {start} → {end} has {len(out)} bars in {CSV_PATH.name}, "
+            f"but was fitted on {window['bars']}. The CSV changed inside the window; "
+            "re-fit with `python3 backtest.py --save`."
+        )
+    return out
+
+
+def normalize_params(params: dict) -> dict:
+    """JSON round-trip turns the `hours` tuple into a list; simulate() needs it back."""
+    p = dict(params)
+    hours = p.get("hours")
+    p["hours"] = tuple(hours) if isinstance(hours, list) else hours
+    return p
 
 
 def indicators(df: pd.DataFrame) -> pd.DataFrame:
@@ -392,7 +438,21 @@ def refine(d: pd.DataFrame, base: dict) -> tuple[dict, Metrics]:
     return best_p, best_m
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Offline XAUUSD H1 parameter search (no orders)")
+    ap.add_argument(
+        "--save",
+        action="store_true",
+        help="write the winning params to strategy_params.json (default: read-only run)",
+    )
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=PARAMS_PATH,
+        help=f"destination for --save (default: {PARAMS_PATH.name})",
+    )
+    args = ap.parse_args(argv)
+
     raw = load_h1()
     d = indicators(raw)
     print(f"Loaded H1 bars={len(d)} {d['time'].iloc[0]} → {d['time'].iloc[-1]}")
@@ -474,24 +534,31 @@ def main() -> int:
 
     print("=== FINAL METRICS ===")
     print_metrics(best_m)
-    PARAMS_PATH.write_text(
-        json.dumps(
-            {
-                "metrics": {
-                    "net_profit": best_m.net_profit,
-                    "win_rate": best_m.win_rate,
-                    "profit_factor": best_m.profit_factor,
-                    "max_drawdown_pct": best_m.max_drawdown_pct,
-                    "n_trades": best_m.n_trades,
+
+    if args.save:
+        args.out.write_text(
+            json.dumps(
+                {
+                    "metrics": {
+                        "net_profit": best_m.net_profit,
+                        "win_rate": best_m.win_rate,
+                        "profit_factor": best_m.profit_factor,
+                        "max_drawdown_pct": best_m.max_drawdown_pct,
+                        "n_trades": best_m.n_trades,
+                    },
+                    "params": {
+                        k: (list(v) if isinstance(v, tuple) else v) for k, v in best_p.items()
+                    },
+                    "data": data_window(raw),
+                    "timeframe": "H1",
+                    "start_balance": START_BALANCE,
                 },
-                "params": {k: (list(v) if isinstance(v, tuple) else v) for k, v in best_p.items()},
-                "timeframe": "H1",
-                "start_balance": START_BALANCE,
-            },
-            indent=2,
+                indent=2,
+            )
         )
-    )
-    print(f"Wrote {PARAMS_PATH}")
+        print(f"Wrote {args.out}")
+    else:
+        print(f"Not saved (read-only run). Pass --save to update {args.out.name}.")
     return 0 if passes(best_m) else 2
 
 
