@@ -27,7 +27,10 @@ PARAMS_FILE = ROOT / "strategy_params.json"
 
 def test_csv_exists_and_covers_year():
     csv = ROOT / "xauusd_data.csv"
-    assert csv.is_file() and csv.stat().st_size > 10_000
+    assert csv.is_file() and csv.stat().st_size > 10_000, (
+        "xauusd_data.csv missing or tiny — run: python3 fetch_data.py "
+        "(see results/xau_csv_history_plan.md)"
+    )
     import pandas as pd
 
     df = pd.read_csv(csv, parse_dates=["time"])

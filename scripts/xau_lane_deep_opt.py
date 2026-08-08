@@ -14,8 +14,9 @@ import itertools
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -25,6 +26,13 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
+from htf_fib_core import (  # noqa: E402
+    confirmed_pivots,
+    expand_fib_states,
+    walk_swing_and_fibs,
+)
+from xau_new_design_search import extend_indicators  # noqa: E402
+
 from backtest import (  # noqa: E402
     CONTRACT_SIZE,
     START_BALANCE,
@@ -32,12 +40,6 @@ from backtest import (  # noqa: E402
     load_h1,
     metrics_from_pnls,
 )
-from htf_fib_core import (  # noqa: E402
-    confirmed_pivots,
-    expand_fib_states,
-    walk_swing_and_fibs,
-)
-from xau_new_design_search import extend_indicators  # noqa: E402
 
 OUT_DEEP = ROOT / "results" / "xau_lane_deep_opt.json"
 OUT_CHAMP = ROOT / "results" / "xau_lane_champions.json"
@@ -716,9 +718,7 @@ def simulate_atr_trail(
                 if trail_sl > sl:
                     sl = trail_sl
             exit_px = None
-            if pos > 0 and low[i] <= sl:
-                exit_px = sl
-            elif pos < 0 and high[i] >= sl:
+            if pos > 0 and low[i] <= sl or pos < 0 and high[i] >= sl:
                 exit_px = sl
             if exit_px is not None:
                 pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost

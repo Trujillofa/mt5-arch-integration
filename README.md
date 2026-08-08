@@ -158,6 +158,11 @@ uv run pytest                    # offline unit tests
 MT5_LIVE_SMOKE=1 uv run pytest -m live   # needs terminal + server
 ```
 
+On the research branch, `tests/test_xau_pipeline.py` needs local XAU history
+(`xauusd_data.csv`, ~9 MB). Regenerate with `python3 fetch_data.py` (host
+`numpy`/`pandas`, not `uv run`). Plan for not tracking the CSV in git:
+[results/xau_csv_history_plan.md](results/xau_csv_history_plan.md).
+
 ## Install on Arch (official Linux guide counterpart)
 
 MetaQuotes documents Ubuntu/Debian/Fedora only:

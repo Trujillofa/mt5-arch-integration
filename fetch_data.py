@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -52,7 +52,7 @@ def fetch_via_mt5(mt5) -> pd.DataFrame:
     try:
         if not mt5.symbol_select(SYMBOL, True):
             raise RuntimeError(f"symbol_select failed: {mt5.last_error()}")
-        utc_to = datetime.now(timezone.utc)
+        utc_to = datetime.now(UTC)
         utc_from = utc_to - timedelta(days=int(MONTHS * 30.5))
         frames = []
         for tf_name, tf_const in (("M15", mt5.TIMEFRAME_M15), ("H1", mt5.TIMEFRAME_H1)):
@@ -130,7 +130,7 @@ def fetch_via_wine_export(path: Path = WINE_MT5_EXPORT) -> pd.DataFrame:
         if c not in df.columns:
             raise RuntimeError(f"export missing column {c}")
     df = df[need].copy()
-    age_h = (datetime.now(timezone.utc) - df["time"].max().to_pydatetime().replace(tzinfo=timezone.utc)).total_seconds() / 3600
+    age_h = (datetime.now(UTC) - df["time"].max().to_pydatetime().replace(tzinfo=UTC)).total_seconds() / 3600
     print(
         f"Wine MT5 export: {path} size={path.stat().st_size} "
         f"age_hours={age_h:.1f}"
@@ -160,7 +160,7 @@ def fetch_via_mt5linux() -> pd.DataFrame:
     try:
         if not mt5.symbol_select(SYMBOL, True):
             raise RuntimeError(f"symbol_select: {mt5.last_error()}")
-        utc_to = datetime.now(timezone.utc)
+        utc_to = datetime.now(UTC)
         utc_from = utc_to - timedelta(days=int(MONTHS * 30.5))
         frames = []
         for tf_name, tf_const in (("M15", mt5.TIMEFRAME_M15), ("H1", mt5.TIMEFRAME_H1)):
@@ -186,7 +186,7 @@ def _h1_from_dukascopy() -> pd.DataFrame:
     raw = pd.read_csv(DUKAS_H1)
     raw["time"] = pd.to_datetime(raw["timestamp"], unit="ms", utc=True)
     df = raw[raw["high"] > raw["low"]].copy()
-    cutoff = datetime.now(timezone.utc) - timedelta(days=int(MONTHS * 30.5))
+    cutoff = datetime.now(UTC) - timedelta(days=int(MONTHS * 30.5))
     df = df[df["time"] >= cutoff].copy()
     df["timeframe"] = "H1"
     df["symbol"] = SYMBOL

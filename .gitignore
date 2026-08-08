@@ -48,3 +48,6 @@ winetricks.log
 .grok/*
 !.grok/workflows/
 !.grok/workflows/**
+
+# Research market data (regenerate: python3 fetch_data.py)
+xauusd_data.csv

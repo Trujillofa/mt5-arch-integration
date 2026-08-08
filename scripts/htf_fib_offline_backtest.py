@@ -66,7 +66,6 @@ def atr(df: pd.DataFrame, period: int = 14) -> pd.Series:
 from htf_fib_core import (  # noqa: E402
     confirmed_pivots,
     expand_fib_states,
-    fib_level,
     walk_swing_and_fibs,
 )
 

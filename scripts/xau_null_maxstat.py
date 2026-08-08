@@ -51,6 +51,8 @@ from backtest import (  # noqa: E402
     normalize_params,
     passes,
     search_score,
+)
+from backtest import (
     simulate as _simulate,
 )
 
@@ -332,8 +334,8 @@ def write_markdown(report: dict, path: Path) -> None:
         "",
         "Max-stat is gated on `n_trades >= 20` so the PF=99 thin-sample cap cannot dominate.",
         "",
-        f"| Stat | Value |",
-        f"|---|---|",
+        "| Stat | Value |",
+        "|---|---|",
         f"| max PF (n≥20) | {real['max_pf']:.4f} |",
         f"| max search_score (n≥20) | {real['max_score']:.2f} |",
         f"| max net (n≥20) | ${real['max_net']:.2f} |",
@@ -358,8 +360,8 @@ def write_markdown(report: dict, path: Path) -> None:
         "",
         "## Null distribution (best-of-grid per trial, n≥20 gated)",
         "",
-        f"| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
-        f"|---|---|---|---|---|",
+        "| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
+        "|---|---|---|---|---|",
         f"| max PF (n≥20) | {null['max_pf']['max']:.4f} | {null['max_pf']['p50']:.4f} | "
         f"{null['max_pf']['p90']:.4f} | **{null['p_max_pf']:.3f}** |",
         f"| max score (n≥20) | {null['max_score']['max']:.2f} | {null['max_score']['p50']:.2f} | "

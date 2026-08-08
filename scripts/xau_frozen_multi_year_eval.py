@@ -20,8 +20,9 @@ import csv
 import json
 import sys
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 
@@ -30,7 +31,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import Metrics, load_h1  # noqa: E402
 from xau_lane_deep_opt import (  # noqa: E402
     HOLDOUT_START,
     metrics_dict,
@@ -41,6 +41,8 @@ from xau_lane_deep_opt import (  # noqa: E402
     simulate_htf_pullback,
     simulate_vol_gate,
 )
+
+from backtest import Metrics, load_h1  # noqa: E402
 
 PARAMS_PATH = ROOT / "strategy_params.json"
 # Same costs the shipped baseline was fitted with (frictionless if absent).

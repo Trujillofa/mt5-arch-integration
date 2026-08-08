@@ -32,7 +32,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import load_h1  # noqa: E402
 from xau_lane_deep_opt import (  # noqa: E402
     HOLDOUT_START,
     metrics_dict,
@@ -41,6 +40,8 @@ from xau_lane_deep_opt import (  # noqa: E402
     serializable_params,
     simulate_atr_trail,
 )
+
+from backtest import load_h1  # noqa: E402
 
 OUT_JSON = ROOT / "results" / "xau_atr_trail_trade_count.json"
 OUT_MD = ROOT / "results" / "xau_atr_trail_trade_count.md"
@@ -414,7 +415,7 @@ def write_md(payload: dict[str, Any]) -> str:
         "",
         "## Disposition",
         "",
-        f"- Lane **KEEP_OPTIMIZING** (not KILL).",
+        "- Lane **KEEP_OPTIMIZING** (not KILL).",
         f"- Baseline n={bm['n_trades']} "
         f"{'MEETS' if base['gate_eval']['hard_pass_trade_count'] else 'MISSES'} n≥{floors['n_trades_min']} floor.",
         f"- Best candidate n={bm2['n_trades']} "

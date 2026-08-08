@@ -27,6 +27,8 @@ from backtest import (  # noqa: E402
     indicators,
     load_h1,
     passes,
+)
+from backtest import (
     simulate as _simulate,
 )
 

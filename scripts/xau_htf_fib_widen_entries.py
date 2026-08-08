@@ -32,7 +32,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import load_h1  # noqa: E402
 from xau_lane_deep_opt import (  # noqa: E402
     HOLDOUT_START,
     metrics_dict,
@@ -41,6 +40,8 @@ from xau_lane_deep_opt import (  # noqa: E402
     serializable_params,
     simulate_htf_fib_enhanced,
 )
+
+from backtest import load_h1  # noqa: E402
 
 OUT_JSON = ROOT / "results" / "xau_htf_fib_widen_entries.json"
 OUT_MD = ROOT / "results" / "xau_htf_fib_widen_entries.md"
@@ -92,7 +93,6 @@ def eval_params(d: pd.DataFrame, params: dict) -> dict[str, Any]:
 
 
 def n_path_score(md: dict[str, Any], floors: dict[str, Any]) -> float:
-    from backtest import Metrics
 
     # rebuild Metrics-like scoring via score_fib fields already in md
     n = int(md["n_trades"])
@@ -438,7 +438,7 @@ def write_md(payload: dict[str, Any]) -> str:
     lines += [
         "## Disposition",
         "",
-        f"- Lane **KEEP_OPTIMIZING** (not KILL).",
+        "- Lane **KEEP_OPTIMIZING** (not KILL).",
         f"- Baseline n={bm['n_trades']} "
         f"{'MEETS' if base['gate_eval']['hard_pass_n_path'] else 'MISSES'} n≥{floors['n_trades_min']}.",
         f"- Best n={bm2['n_trades']} (Δn {bm2['n_trades'] - bm['n_trades']:+d} vs baseline).",

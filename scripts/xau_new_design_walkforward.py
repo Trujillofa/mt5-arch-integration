@@ -29,7 +29,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import START_BALANCE, load_h1, passes  # noqa: E402
 from xau_new_design_search import (  # noqa: E402
     extend_indicators,
     is_better,
@@ -37,6 +36,8 @@ from xau_new_design_search import (  # noqa: E402
     serializable_params,
     simulate_design,
 )
+
+from backtest import START_BALANCE, load_h1, passes  # noqa: E402
 
 SHORTLIST_PATH = ROOT / "results" / "xau_new_design_search.json"
 OUT_PATH = ROOT / "results" / "xau_new_design_walkforward.json"

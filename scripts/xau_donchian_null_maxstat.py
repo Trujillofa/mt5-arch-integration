@@ -48,12 +48,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import (  # noqa: E402
-    develop_only,
-    holdout_start,
-    load_h1,
-    passes,
-)
 from xau_frozen_multi_year_eval import (  # noqa: E402
     soft_pass_expectancy,
 )
@@ -62,9 +56,18 @@ from xau_lane_deep_opt import (  # noqa: E402
     metrics_dict,
     prepare_frame,
     serializable_params,
+)
+from xau_lane_deep_opt import (
     simulate_donchian as _simulate_donchian,
 )
 from xau_null_maxstat import scramble_ohlc  # noqa: E402
+
+from backtest import (  # noqa: E402
+    develop_only,
+    holdout_start,
+    load_h1,
+    passes,
+)
 
 PARAMS_PATH = ROOT / "strategy_params.json"
 CATALOG_PATH = ROOT / "results" / "xau_frozen_champions_catalog.json"
@@ -355,16 +358,16 @@ def write_markdown(report: dict, path: Path) -> None:
         f"- Null: {null['n_trials']} return-shuffle trials, base_seed={null['base_seed']}, "
         f"workers={null['workers']}",
         f"- Costs: `{json.dumps(report['costs'])}`",
-        f"- Soft gates (turtle): PF≥1.5, n≥40, DD≤12, expectancy≥20",
-        f"- Classic gates: n≥20, PF>1.5, WR>55, DD<10",
+        "- Soft gates (turtle): PF≥1.5, n≥40, DD≤12, expectancy≥20",
+        "- Classic gates: n≥20, PF>1.5, WR>55, DD<10",
         "",
         "## Real grid (develop, costed)",
         "",
         "Max-stat is gated on `n_trades >= 20` so the PF=99 thin-sample cap cannot dominate.",
         "Primary n_passers = soft (turtle expectancy gates).",
         "",
-        f"| Stat | Value |",
-        f"|---|---|",
+        "| Stat | Value |",
+        "|---|---|",
         f"| max PF (n≥20) | {real['max_pf']:.4f} |",
         f"| max net (n≥20) | ${real['max_net']:.2f} |",
         f"| max PF raw (incl. thin) | {real.get('max_pf_raw', real['max_pf']):.4f} |",
@@ -388,8 +391,8 @@ def write_markdown(report: dict, path: Path) -> None:
         "",
         "## Null distribution (best-of-grid per trial, n≥20 gated PF / soft passers)",
         "",
-        f"| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
-        f"|---|---|---|---|---|",
+        "| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
+        "|---|---|---|---|---|",
         f"| max PF (n≥20) | {null['max_pf']['max']:.4f} | {null['max_pf']['p50']:.4f} | "
         f"{null['max_pf']['p90']:.4f} | **{null['p_max_pf']:.3f}** |",
         f"| n_passers_soft | {null['n_passers']['max']} | {null['n_passers']['p50']:.1f} | "

@@ -25,7 +25,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +32,6 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import load_h1  # noqa: E402
 from xau_lane_deep_opt import (  # noqa: E402
     HOLDOUT_START,
     metrics_dict,
@@ -42,6 +40,8 @@ from xau_lane_deep_opt import (  # noqa: E402
     serializable_params,
     simulate_donchian,
 )
+
+from backtest import load_h1  # noqa: E402
 
 OUT_JSON = ROOT / "results" / "xau_donchian_expectancy_ablate.json"
 OUT_MD = ROOT / "results" / "xau_donchian_expectancy_ablate.md"
@@ -387,12 +387,12 @@ def write_md(payload: dict[str, Any]) -> str:
         "",
         "## Disposition",
         "",
-        f"- Lane remains **KEEP_OPTIMIZING** (not KILL).",
+        "- Lane remains **KEEP_OPTIMIZING** (not KILL).",
         f"- Baseline already meets pre-reg develop expectancy gates: "
         f"**{base['gate_eval']['hard_pass_expectancy']}**.",
-        f"- Classic WR>55 gate still fails on turtle shapes by design — do not kill on WR.",
-        f"- **No holdout re-eval this fire** (contaminated window; virgin bars not available past last peek).",
-        f"- Live promote: **NO-GO**. Next: optional atr_trail trade-count work, or virgin holdout when data > last peeked end.",
+        "- Classic WR>55 gate still fails on turtle shapes by design — do not kill on WR.",
+        "- **No holdout re-eval this fire** (contaminated window; virgin bars not available past last peek).",
+        "- Live promote: **NO-GO**. Next: optional atr_trail trade-count work, or virgin holdout when data > last peeked end.",
         "",
         "*Offline research only; never --live.*",
         "",
@@ -454,7 +454,7 @@ def main() -> None:
         factor_deltas.append((tag, row["metrics"]["score_expectancy_sqrt"] - bsc))
     factor_deltas.sort(key=lambda x: abs(x[1]), reverse=True)
 
-    print(f"Secondary refine (budget=120) ...", flush=True)
+    print("Secondary refine (budget=120) ...", flush=True)
     refine = secondary_refine(develop, base_params, budget=120)
 
     # best overall

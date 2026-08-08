@@ -16,10 +16,9 @@ import argparse
 import json
 import logging
 import math
-import sys
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -167,7 +166,7 @@ def compute_signal_from_rates(df: pd.DataFrame, params: dict[str, Any]) -> int:
     row = d.iloc[i]
     hours = params.get("hours")
     if hours is not None:
-        hr = pd.to_datetime(row["time"], utc=True).hour if "time" in d.columns else datetime.now(timezone.utc).hour
+        hr = pd.to_datetime(row["time"], utc=True).hour if "time" in d.columns else datetime.now(UTC).hour
         if int(hr) not in set(int(x) for x in hours):
             return 0
     trend_col = params.get("trend_col", "ema200")

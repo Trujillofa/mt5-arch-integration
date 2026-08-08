@@ -617,9 +617,7 @@ def main(argv: list[str] | None = None) -> int:
                     )
         for p in stage3:
             m = sim(d, p)
-            if passes(m) and (not passes(best_m) or m.profit_factor > best_m.profit_factor):
-                best_p, best_m = p, m
-            elif not passes(best_m) and m.win_rate > best_m.win_rate and m.profit_factor > 1.2:
+            if passes(m) and (not passes(best_m) or m.profit_factor > best_m.profit_factor) or not passes(best_m) and m.win_rate > best_m.win_rate and m.profit_factor > 1.2:
                 best_p, best_m = p, m
         print("--- stage3 best ---")
         print_metrics(best_m)

@@ -31,12 +31,11 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from backtest import (  # noqa: E402
-    CONTRACT_SIZE,
-    START_BALANCE,
-    Metrics,
-    load_h1,
-    metrics_from_pnls,
+# Causal HTF Fib pivot/fib math (shared; stamp at c+right)
+from htf_fib_core import (  # noqa: E402
+    confirmed_pivots,
+    expand_fib_states,
+    walk_swing_and_fibs,
 )
 from xau_new_design_search import (  # noqa: E402
     WARMUP,
@@ -45,11 +44,12 @@ from xau_new_design_search import (  # noqa: E402
     simulate_design,
 )
 
-# Causal HTF Fib pivot/fib math (shared; stamp at c+right)
-from htf_fib_core import (  # noqa: E402
-    confirmed_pivots,
-    expand_fib_states,
-    walk_swing_and_fibs,
+from backtest import (  # noqa: E402
+    CONTRACT_SIZE,
+    START_BALANCE,
+    Metrics,
+    load_h1,
+    metrics_from_pnls,
 )
 
 REGISTRY_PATH = ROOT / "results" / "xau_preregistered_registry.json"

@@ -8,7 +8,13 @@
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — buffer 8 + ATR SL/TP |
-| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python |
+| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.22) |
+
+### Mt5ArchBridge symbols (v1.22)
+
+`InpSymbols` / `InpHistorySymbol` use **bare** names by default (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
+`ResolveSymbol()` tries `SymbolSelect` on the bare name, then common broker suffixes: `m` (Exness raw), `.r` (FP Markets), `.m`, `#`, `pro`.
+`symbols.json` and candle filenames use the **resolved** broker name (e.g. `EURUSDm`). Override inputs only if your broker uses a non-standard naming scheme.
 
 Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md)
 
