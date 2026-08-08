@@ -147,7 +147,7 @@ def test_saved_params_reproduce_on_their_fit_window():
     assert window, "strategy_params.json has no `data` window — re-fit with `backtest.py --save`"
 
     raw = slice_to_window(load_h1(), window)
-    m = simulate(indicators(raw), **normalize_params(saved["params"]))
+    m = simulate(indicators(raw), **normalize_params(saved["params"]), **saved.get("costs", {}))
 
     recorded = saved["metrics"]
     assert m.n_trades == recorded["n_trades"]
@@ -163,7 +163,7 @@ def test_saved_params_clear_the_gates():
 
     saved = json.loads(PARAMS_FILE.read_text())
     raw = slice_to_window(load_h1(), saved["data"])
-    m = simulate(indicators(raw), **normalize_params(saved["params"]))
+    m = simulate(indicators(raw), **normalize_params(saved["params"]), **saved.get("costs", {}))
     assert m.n_trades >= 20
     assert m.profit_factor > 1.5
     assert m.win_rate > 55.0
@@ -228,11 +228,12 @@ def test_costs_reduce_pnl_and_default_to_frictionless():
     params = normalize_params(saved["params"])
     d = indicators(slice_to_window(load_h1(), saved["data"]))
 
-    free = simulate(d, **params)
+    costs = saved.get("costs", {})
+    free = simulate(d, **params, **costs)
     assert free.net_profit == pytest.approx(saved["metrics"]["net_profit"], rel=1e-6)
 
-    # No spread column in the CSV yet -> spread term is 0; commission alone must bite.
-    costed = simulate(d, **params, commission_per_lot=3.0)
+    # Real spread is already charged; adding commission must bite further.
+    costed = simulate(d, **params, **{**costs, "commission_per_lot": 3.0})
     assert costed.net_profit < free.net_profit
     assert costed.profit_factor < free.profit_factor
     assert costed.n_trades == free.n_trades, "costs must not change which trades are taken"

@@ -12,11 +12,22 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from backtest import indicators, load_h1, simulate  # noqa: E402
+from backtest import indicators, load_h1  # noqa: E402
+from backtest import simulate as _simulate  # noqa: E402
 
 OUT_PATH = ROOT / "results" / "xau_regime_analysis.json"
 HOLDOUT_PATH = ROOT / "results" / "xau_oos_holdout.json"
 PARAMS_PATH = ROOT / "strategy_params.json"
+
+# Charge the same costs the shipped baseline was fitted with; a frictionless
+# comparison against a costed baseline is not a comparison.
+_SAVED = json.loads(PARAMS_PATH.read_text())
+COSTS = _SAVED.get("costs", {})
+
+
+def simulate(d, **kw):  # noqa: F811  (cost-aware wrapper over backtest.simulate)
+    return _simulate(d, **{**COSTS, **kw})
+
 
 
 def _normalize_params(raw: dict) -> dict:

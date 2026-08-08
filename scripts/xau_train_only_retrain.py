@@ -22,10 +22,20 @@ from backtest import (  # noqa: E402
     indicators,
     load_h1,
     passes,
-    simulate,
+    simulate as _simulate,
 )
 
 PARAMS_PATH = ROOT / "strategy_params.json"
+
+# Charge the same costs the shipped baseline was fitted with; a frictionless
+# comparison against a costed baseline is not a comparison.
+_SAVED = json.loads(PARAMS_PATH.read_text())
+COSTS = _SAVED.get("costs", {})
+
+
+def simulate(d, **kw):  # noqa: F811  (cost-aware wrapper over backtest.simulate)
+    return _simulate(d, **{**COSTS, **kw})
+
 OUT_PATH = ROOT / "results" / "xau_train_only_retrain.json"
 CANDIDATE_PATH = ROOT / "results" / "xau_candidate_params.json"
 

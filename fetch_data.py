@@ -102,11 +102,18 @@ def fetch_via_bridge_history(path: Path = BRIDGE_HISTORY) -> pd.DataFrame:
             print(f"  WARNING: dump has no {tf} rows")
             continue
         zero = int((sub["spread"] <= 0).sum())
+        median = float(sub.loc[sub["spread"] > 0, "spread"].median())
         print(
             f"  {tf}: n={len(sub)} {sub['time'].min()} → {sub['time'].max()} "
-            f"spread pts median={sub['spread'].median():.0f} zero_bars={zero}"
-            f"{'  <-- broker backfilled no spread here' if zero else ''}"
+            f"spread pts median={median:.0f} zero_bars={zero} ({100 * zero / len(sub):.1f}%)"
         )
+        if zero:
+            # A recorded 0 means "broker stored no spread for this bar", not
+            # "this bar was free to trade". Leaving it would quietly hand the
+            # backtest zero-cost entries, so fill with the timeframe median.
+            mask = (df["timeframe"] == tf) & (df["spread"] <= 0)
+            df.loc[mask, "spread"] = median
+            print(f"    filled {zero} zero-spread {tf} bars with median {median:.0f} pts")
     return df
 
 

@@ -1,5 +1,37 @@
 # XAU offline loop status
 
+## 2026-08-08 — transaction costs added (out of band, not a research fire)
+
+The backtest was frictionless. `MqlRates.spread` was always available and the old
+`Scripts/ExportXauHistory.mq5` discarded it; `Mt5ArchBridge.mq5` v1.21 now dumps it.
+
+| Field | Value |
+|-------|--------|
+| **source** | Vantage live terminal (27496181), one-shot bridge dump, 129133 rows |
+| **spread** | XAUUSD H1 median **18 pts = $0.18** round trip · p90 $0.21 · max $0.50 |
+| **zero-spread bars** | H1 4.4% / M15 2.0% — broker backfill gaps, filled with the median (0 would read as free trading) |
+| **data** | H1 29133 bars 2021-09-03 → 2026-08-07 (was 29151, re-exported) |
+| **baseline** | same params; PF **1.7456 → 1.6713**, net $1299 → $1188, n=42 (develop only) |
+| **walk-forward** | retrained OOS **flips negative**: NP +122 → **−282**, meanPF 1.318 → **0.790**, pass_rate 0% |
+| **commission/slippage** | **not measured** — MT5 exposes them only on executed deals. Left at 0; see sensitivity |
+| **live_go** | **false** (unchanged) |
+| **promote** | **no** (unchanged) |
+
+Sensitivity on the develop-window baseline (measured spread already charged):
+
+| Scenario | PF | Net |
+|---|---|---|
+| frictionless | 1.7456 | $1299 |
+| measured spread only | 1.6713 | $1188 |
+| + $3/lot | 1.6372 | $1139 |
+| + $3/lot + 10pt slip | 1.5548 | $1006 |
+| + $5/lot + 20pt slip | **1.4264** | $795 — below gate |
+
+The baseline survives measured spread; it does not survive spread + $5/lot + 20pt.
+Commission for this account still needs the broker contract spec.
+
+---
+
 ## 2026-08-06 — baseline protocol correction (out of band, not a research fire)
 
 `strategy_params.json` was re-fitted because its recorded metrics no longer reproduced

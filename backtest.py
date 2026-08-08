@@ -348,6 +348,19 @@ def simulate(
     return metrics_from_pnls(pnls, eq)
 
 
+"""Cost settings applied to every simulate() call in a search run.
+
+Empty = frictionless (historical behaviour). main() fills it from the CLI and
+records it in strategy_params.json so a replay charges the same costs.
+"""
+COSTS: dict = {}
+
+
+def sim(d: pd.DataFrame, params: dict) -> Metrics:
+    """simulate() with the run's cost settings folded in."""
+    return simulate(d, **params, **COSTS)
+
+
 def passes(m: Metrics) -> bool:
     return (
         m.n_trades >= 20
@@ -416,7 +429,7 @@ def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
     best_score = -1e18
 
     for i, p in enumerate(candidates):
-        m = simulate(d, **p)
+        m = sim(d, p)
         score = 0.0
         if m.n_trades >= 20:
             score += 50
@@ -446,7 +459,7 @@ def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
 
 def refine(d: pd.DataFrame, base: dict) -> tuple[dict, Metrics]:
     """Local neighborhood search around a promising config."""
-    best_p, best_m = base, simulate(d, **base)
+    best_p, best_m = base, sim(d, base)
     neighbors = []
     for rsi_buy in np.linspace(max(20, base["rsi_buy"] - 6), min(48, base["rsi_buy"] + 6), 7):
         for rsi_sell in np.linspace(max(45, base["rsi_sell"] - 8), min(75, base["rsi_sell"] + 8), 7):
@@ -466,7 +479,7 @@ def refine(d: pd.DataFrame, base: dict) -> tuple[dict, Metrics]:
         neighbors = [neighbors[i] for i in sorted(rng.choice(len(neighbors), 500, replace=False))]
 
     for p in neighbors:
-        m = simulate(d, **p)
+        m = sim(d, p)
         better = False
         if passes(m) and not passes(best_m):
             better = True
@@ -509,7 +522,23 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="fit on the whole CSV, ignoring the pre-registered holdout (breaks the protocol)",
     )
+    ap.add_argument(
+        "--spread-col",
+        default="spread",
+        help="per-bar spread column in points; '' disables the spread charge",
+    )
+    ap.add_argument("--commission-per-lot", type=float, default=0.0, help="per lot per side")
+    ap.add_argument("--slippage-points", type=float, default=0.0, help="per fill, in points")
+    ap.add_argument("--point-size", type=float, default=0.01, help="price per point (XAU: 0.01)")
     args = ap.parse_args(argv)
+
+    global COSTS
+    COSTS = {
+        "spread_col": args.spread_col or None,
+        "point_size": args.point_size,
+        "commission_per_lot": args.commission_per_lot,
+        "slippage_points": args.slippage_points,
+    }
 
     raw = load_h1()
     cutoff = None
@@ -526,6 +555,14 @@ def main(argv: list[str] | None = None) -> int:
 
     d = indicators(raw)
     print(f"Loaded H1 bars={len(d)} {d['time'].iloc[0]} → {d['time'].iloc[-1]}")
+    if COSTS.get("spread_col") and COSTS["spread_col"] in d.columns:
+        med = float(d[COSTS["spread_col"]].median())
+        print(
+            f"Costs: spread median {med:.0f} pts (${med * args.point_size:.2f}) "
+            f"+ ${args.commission_per_lot:.2f}/lot/side + {args.slippage_points:.0f} pts slippage"
+        )
+    else:
+        print(f"WARNING: no '{args.spread_col}' column — spread charge is 0 (frictionless)")
 
     print("--- search ---")
     best_p, best_m = search(d)
@@ -565,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
                         )
                     )
         for p in stage3:
-            m = simulate(d, **p)
+            m = sim(d, p)
             if passes(m) and (not passes(best_m) or m.profit_factor > best_m.profit_factor):
                 best_p, best_m = p, m
             elif not passes(best_m) and m.win_rate > best_m.win_rate and m.profit_factor > 1.2:
@@ -595,7 +632,7 @@ def main(argv: list[str] | None = None) -> int:
                         risk_pct=0.01,
                         cooldown=2,
                     )
-                    m = simulate(d, **p)
+                    m = sim(d, p)
                     if passes(m) and (not passes(best_m) or m.net_profit > best_m.net_profit):
                         best_p, best_m = p, m
         print("--- stage4 best ---")
@@ -624,6 +661,7 @@ def main(argv: list[str] | None = None) -> int:
                         "selection_cutoff": str(cutoff) if cutoff is not None else None,
                         "holdout_sealed": cutoff is not None,
                     },
+                    "costs": COSTS,
                     "timeframe": "H1",
                     "start_balance": START_BALANCE,
                 },
