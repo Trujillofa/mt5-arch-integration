@@ -220,6 +220,24 @@ def test_backtest_save_is_opt_in(tmp_path):
     assert written["params"]["mode"]
 
 
+def test_costs_reduce_pnl_and_default_to_frictionless():
+    """Cost params must be opt-in (defaults reproduce) and strictly hurt when set."""
+    import json
+
+    saved = json.loads(PARAMS_FILE.read_text())
+    params = normalize_params(saved["params"])
+    d = indicators(slice_to_window(load_h1(), saved["data"]))
+
+    free = simulate(d, **params)
+    assert free.net_profit == pytest.approx(saved["metrics"]["net_profit"], rel=1e-6)
+
+    # No spread column in the CSV yet -> spread term is 0; commission alone must bite.
+    costed = simulate(d, **params, commission_per_lot=3.0)
+    assert costed.net_profit < free.net_profit
+    assert costed.profit_factor < free.profit_factor
+    assert costed.n_trades == free.n_trades, "costs must not change which trades are taken"
+
+
 def test_metrics_helper_not_trivial():
     import numpy as np
 

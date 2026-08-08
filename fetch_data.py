@@ -72,6 +72,44 @@ def fetch_via_mt5(mt5) -> pd.DataFrame:
         mt5.shutdown()
 
 
+BRIDGE_HISTORY = (
+    WINEPREFIX
+    / "drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_arch"
+    / f"history_{SYMBOL}.csv"
+)
+
+
+def fetch_via_bridge_history(path: Path = BRIDGE_HISTORY) -> pd.DataFrame:
+    """Load the Mt5ArchBridge one-shot dump — same columns plus per-bar spread.
+
+    Preferred over fetch_via_wine_export: MqlRates.spread is the only source of
+    historical transaction cost, and the older Scripts/ExportXauHistory.mq5
+    dropped it.
+    """
+    if not path.is_file():
+        raise FileNotFoundError(f"Bridge history dump missing: {path}")
+    df = pd.read_csv(path)
+    df["time"] = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M", utc=True)
+    need = ["time", "timeframe", "symbol", "open", "high", "low", "close", "tick_volume", "spread"]
+    for c in need:
+        if c not in df.columns:
+            raise RuntimeError(f"bridge dump missing column {c}")
+    df = df[need].copy()
+    print(f"Bridge history dump: {path} size={path.stat().st_size}")
+    for tf in ("M15", "H1"):
+        sub = df[df["timeframe"] == tf]
+        if sub.empty:
+            print(f"  WARNING: dump has no {tf} rows")
+            continue
+        zero = int((sub["spread"] <= 0).sum())
+        print(
+            f"  {tf}: n={len(sub)} {sub['time'].min()} → {sub['time'].max()} "
+            f"spread pts median={sub['spread'].median():.0f} zero_bars={zero}"
+            f"{'  <-- broker backfilled no spread here' if zero else ''}"
+        )
+    return df
+
+
 def fetch_via_wine_export(path: Path = WINE_MT5_EXPORT) -> pd.DataFrame:
     """Load CSV written by ExportXauHistory.mq5 under Wine Vantage terminal."""
     if not path.is_file():
@@ -218,8 +256,16 @@ def main() -> int:
     df = None
     source = ""
 
+    # 0) Bridge one-shot dump — same OHLC plus per-bar spread (cost modelling)
+    if prefer in ("auto", "wine", "bridge") and BRIDGE_HISTORY.is_file():
+        try:
+            df = fetch_via_bridge_history()
+            source = f"bridge_history:{BRIDGE_HISTORY}"
+        except Exception as e:
+            print(f"Bridge history path failed: {e}")
+
     # 1) Wine MT5 script export (real broker OHLC under Wine)
-    if prefer in ("auto", "wine") and WINE_MT5_EXPORT.is_file():
+    if df is None and prefer in ("auto", "wine") and WINE_MT5_EXPORT.is_file():
         try:
             df = fetch_via_wine_export()
             source = f"wine_export:{WINE_MT5_EXPORT}"

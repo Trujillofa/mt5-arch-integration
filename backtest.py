@@ -183,8 +183,18 @@ def simulate(
     hours: tuple[int, ...] | None = None,
     cooldown: int = 2,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
 ) -> Metrics:
-    """Bar loop simulator with OHLC stop/target and RSI soft exit."""
+    """Bar loop simulator with OHLC stop/target and RSI soft exit.
+
+    Costs default to zero, i.e. frictionless — the historical behaviour. Pass
+    ``spread_col`` (per-bar spread in points, from MqlRates.spread) plus
+    ``commission_per_lot``/``slippage_points`` to charge realistic costs; each
+    closed trade is debited the round trip once, priced off its entry bar.
+    """
     n = len(d)
     close = d["close"].to_numpy(float)
     high = d["high"].to_numpy(float)
@@ -197,12 +207,17 @@ def simulate(
     trend = d[trend_col].to_numpy(float)
     macd_h = d["macd_hist"].to_numpy(float)
     hour = d["hour"].to_numpy(int)
+    if spread_col is not None and spread_col in d.columns:
+        spread_pts = np.nan_to_num(d[spread_col].to_numpy(float), nan=0.0)
+    else:
+        spread_pts = np.zeros(n)
 
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = tp = lots = 0.0
+    trade_cost = 0.0
     cool = 0
     warmup = 220
 
@@ -228,11 +243,12 @@ def simulate(
                 elif not np.isnan(rsi[i]) and rsi[i] <= (100 - rsi_sell):
                     exit_px = px
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 eq[i] = bal
 
@@ -305,6 +321,13 @@ def simulate(
         if lots < min_lot or min_lot_risk > risk_cash + 1e-9:
             continue
 
+        # Round trip charged once, priced off the entry bar: spread is crossed on
+        # entry, slippage assumed on both fills, commission per lot per side.
+        trade_cost = (
+            (spread_pts[i] + 2.0 * slippage_points) * point_size * CONTRACT_SIZE * lots
+            + 2.0 * commission_per_lot * lots
+        )
+
         if long_sig:
             pos = 1
             entry = px
@@ -317,7 +340,7 @@ def simulate(
             tp = entry - atr[i] * tp_atr
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal

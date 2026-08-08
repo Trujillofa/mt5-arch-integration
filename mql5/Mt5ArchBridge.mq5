@@ -10,9 +10,10 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.20"
+#property version   "1.21"
 #property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
 #property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
+#property description "v1.21: per-bar spread in candles + one-shot deep history dump"
 
 input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
 // Lean defaults — fewer files = less Wine I/O thrash
@@ -20,6 +21,12 @@ input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,XAUUSD.r,BTCUSD";
 input string InpTimeframes  = "H1,H4,D1";
 input int    InpCandleCount = 30;
 input bool   InpSingleWriter= true;    // Extra instances go standby (must stay true on Wine)
+// One-shot deep history dump (OHLC + per-bar spread) for offline cost modelling.
+// Runs once per marker file; delete mt5_arch\history_dump.done to re-run.
+input bool   InpDumpHistory   = true;
+input string InpHistorySymbol = "XAUUSD";
+input string InpHistoryTfs    = "M15,H1";
+input int    InpHistoryMonths = 60;
 
 string   g_dir = "mt5_arch";
 datetime g_last_write = 0;
@@ -43,9 +50,10 @@ int OnInit()
      }
 
    EventSetTimer((int)MathMax(3, InpTimerSec));
-   Print("Mt5ArchBridge WRITER v1.20 ON ", _Symbol,
+   Print("Mt5ArchBridge WRITER v1.21 ON ", _Symbol,
          " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
+   DumpHistoryOnce();
    return INIT_SUCCEEDED;
   }
 
@@ -355,7 +363,8 @@ void WriteCandles()
             jsn += "\"high\":" + DoubleToString(rates[k].high, digits) + ",";
             jsn += "\"low\":" + DoubleToString(rates[k].low, digits) + ",";
             jsn += "\"close\":" + DoubleToString(rates[k].close, digits) + ",";
-            jsn += "\"volume\":" + IntegerToString((long)rates[k].tick_volume);
+            jsn += "\"volume\":" + IntegerToString((long)rates[k].tick_volume) + ",";
+            jsn += "\"spread\":" + IntegerToString((long)rates[k].spread);
             jsn += "}";
            }
          jsn += "]}";
@@ -364,6 +373,95 @@ void WriteCandles()
      }
   }
 
+//+------------------------------------------------------------------+
+//| One-shot deep history dump: OHLC + per-bar spread (points).       |
+//| MqlRates carries .spread, which the old Scripts/ExportXauHistory  |
+//| discarded — without it the offline backtest is frictionless.      |
+//| Row-at-a-time FileWrite: string concat over ~100k rows is O(n^2)  |
+//| and would stall the EA thread under Wine.                         |
+//+------------------------------------------------------------------+
+void DumpHistoryOnce()
+  {
+   if(!InpDumpHistory)
+      return;
+   string marker = g_dir + "\\history_dump.done";
+   if(FileIsExist(marker, 0))
+      return;
+
+   string sym = InpHistorySymbol;
+   StringTrimLeft(sym); StringTrimRight(sym);
+   if(!SymbolSelect(sym, true))
+     {
+      Print("DumpHistory: SymbolSelect failed ", sym, " err=", GetLastError());
+      return;
+     }
+   int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+
+   string tfs[];
+   int nt = StringSplit(InpHistoryTfs, ',', tfs);
+   datetime to = TimeCurrent();
+   datetime from = to - (datetime)((long)InpHistoryMonths * 30L * 24L * 3600L);
+
+   string rel = g_dir + "\\history_" + sym + ".csv";
+   int h = FileOpen(rel, FILE_WRITE|FILE_CSV|FILE_ANSI|FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+     {
+      Print("DumpHistory: FileOpen failed err=", GetLastError());
+      return;
+     }
+   FileWrite(h, "time,timeframe,symbol,open,high,low,close,tick_volume,spread");
+
+   long total = 0;
+   for(int j=0; j<nt; j++)
+     {
+      string tf = tfs[j];
+      StringTrimLeft(tf); StringTrimRight(tf);
+      if(StringLen(tf) == 0) continue;
+      ENUM_TIMEFRAMES period = ParseTf(tf);
+
+      // Deep history may need a server download; first CopyRates can come back
+      // short or empty while it streams in.
+      MqlRates rates[];
+      ArraySetAsSeries(rates, false);
+      int n = 0;
+      for(int attempt=0; attempt<5; attempt++)
+        {
+         n = CopyRates(sym, period, from, to, rates);
+         if(n > 0) break;
+         Sleep(2000);
+        }
+      if(n <= 0)
+        {
+         Print("DumpHistory: no ", tf, " bars for ", sym, " err=", GetLastError());
+         continue;
+        }
+
+      for(int k=0; k<n; k++)
+        {
+         string line = TimeToString(rates[k].time, TIME_DATE|TIME_MINUTES);
+         line += "," + tf;
+         line += "," + sym;
+         line += "," + DoubleToString(rates[k].open, digits);
+         line += "," + DoubleToString(rates[k].high, digits);
+         line += "," + DoubleToString(rates[k].low, digits);
+         line += "," + DoubleToString(rates[k].close, digits);
+         line += "," + IntegerToString((long)rates[k].tick_volume);
+         line += "," + IntegerToString((long)rates[k].spread);
+         FileWrite(h, line);
+        }
+      total += n;
+      Print("DumpHistory ", tf, " bars=", n,
+            " from=", TimeToString(rates[0].time, TIME_DATE|TIME_MINUTES),
+            " to=", TimeToString(rates[n-1].time, TIME_DATE|TIME_MINUTES));
+     }
+   FileClose(h);
+
+   Put(marker, "dumped=" + IntegerToString(total) +
+       " symbol=" + sym + " at=" + TimeToString(TimeLocal(), TIME_DATE|TIME_SECONDS));
+   Print("DumpHistory done rows=", total, " -> Files/", rel);
+  }
+
+//+------------------------------------------------------------------+
 void WritePositions()
   {
    string j = "{\"positions\":[";
