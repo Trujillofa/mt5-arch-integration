@@ -1,5 +1,37 @@
 # XAU offline loop status
 
+## 2026-08-08 — Donchian null / max-stat (decisive for turtle / Donchian family)
+
+After costed multi-year left Donchian as the only sign-stable lane under spread,
+`scripts/xau_donchian_null_maxstat.py` scored the full ~1201-config Donchian grid
+(no early exit) on develop bars with saved costs, then re-ran the same search on
+40 return-shuffled price paths.
+
+| Field | Value |
+|-------|--------|
+| **window** | develop only, 25582 H1 bars (`time < 2026-01-01`), holdout sealed |
+| **costs** | measured spread; commission/slippage still 0 |
+| **grid** | 1201 configs (max_n=1200, seed=42, frozen_prepended=2) |
+| **real max PF (n≥20)** | 1.9955 · n_passers_soft **19** · n_passers_classic 1 |
+| **null (40 trials)** | max PF p50 **≈1.53** · null max **3.19** · n_passers_soft p50 **0** (null can put up to 308) |
+| **p(null ≥ real)** | p_max_pf **0.195** · p_n_passers **0.293** · p_n_passers_classic **0.341** |
+| **disposition** | **KILL_DONCHIAN_LINE** |
+| **live_go** | **false** |
+| **promote** | **no** |
+| **PAPER_GO** | **no** |
+| **next_step** | **RESEARCH_IDLE** (strategy-edge); virgin-only `WAIT_DATA` for process hygiene — not permission to mine Donchian on virgin |
+
+The gates measured the search, not the market. Do **not** retune Donchian/turtle
+champions, do not cross-instrument this family, do not promote, do not launder
+KILL into PASS_KEEP_FROZEN. bb_rsi already dead; Donchian now dead. No remaining
+interesting strategy lane from the frozen catalog for further edge research.
+
+Artifacts: `results/xau_donchian_null_maxstat.json`, `results/xau_donchian_null_maxstat.md`,
+`results/xau_donchian_null_skeptic.md`, `scripts/xau_donchian_null_maxstat.py`,
+`.grok/workflows/xau-donchian-null-maxstat.rhai`.
+
+---
+
 ## 2026-08-08 — costed frozen multi-year after bb_rsi kill
 
 After `KILL_BB_RSI_LINE`, lane sims were wired to charge the same round-trip costs as
