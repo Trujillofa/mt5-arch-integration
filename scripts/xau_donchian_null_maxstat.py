@@ -60,7 +60,7 @@ from xau_lane_deep_opt import (  # noqa: E402
 from xau_lane_deep_opt import (
     simulate_donchian as _simulate_donchian,
 )
-from xau_null_maxstat import scramble_ohlc  # noqa: E402
+from xau_null_core import scramble_ohlc  # noqa: E402
 
 from backtest import (  # noqa: E402
     develop_only,
@@ -74,9 +74,10 @@ CATALOG_PATH = ROOT / "results" / "xau_frozen_champions_catalog.json"
 OUT_JSON = ROOT / "results" / "xau_donchian_null_maxstat.json"
 OUT_MD = ROOT / "results" / "xau_donchian_null_maxstat.md"
 
-_SAVED = json.loads(PARAMS_PATH.read_text()) if PARAMS_PATH.is_file() else {}
-COSTS: dict[str, Any] = dict(_SAVED.get("costs") or {})
-COSTS.setdefault("point_size", 0.01)
+from xau_research_costs import load_research_costs  # noqa: E402
+
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS: dict[str, Any] = load_research_costs()
 
 # Worker globals (fork COW on Linux; re-init on spawn).
 _W: dict[str, Any] = {}

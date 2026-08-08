@@ -32,6 +32,7 @@ from htf_fib_core import (  # noqa: E402
     walk_swing_and_fibs,
 )
 from xau_new_design_search import extend_indicators  # noqa: E402
+from xau_research_costs import load_research_costs  # noqa: E402
 
 from backtest import (  # noqa: E402
     CONTRACT_SIZE,
@@ -44,6 +45,8 @@ from backtest import (  # noqa: E402
 OUT_DEEP = ROOT / "results" / "xau_lane_deep_opt.json"
 OUT_CHAMP = ROOT / "results" / "xau_lane_champions.json"
 HOLDOUT_START = pd.Timestamp("2026-01-01", tz="UTC")
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS: dict[str, Any] = load_research_costs()
 WARMUP = 220
 MIN_EVALS = 200
 
@@ -1330,12 +1333,14 @@ def run_eval(
     params: dict,
     pseudo_slice: slice | None = None,
 ) -> tuple[Metrics, Metrics | None]:
-    m = sim(d, **params)
+    # Merge research costs under params so explicit param keys still win.
+    kw = {**COSTS, **params}
+    m = sim(d, **kw)
     m_pv = None
     if pseudo_slice is not None:
         d_pv = d.iloc[pseudo_slice].reset_index(drop=True)
         if len(d_pv) > WARMUP + 50:
-            m_pv = sim(d_pv, **params)
+            m_pv = sim(d_pv, **kw)
     return m, m_pv
 
 
@@ -1996,6 +2001,7 @@ def main() -> int:
             "holdout_used": False,
             "safety": "offline research only; never --live",
             "doctrine": "never discard lane until develop opt budget exhausted",
+            "costs": COSTS,
             "develop_bars": len(develop),
             "pseudo_val_frac": 0.20,
             "total_seconds": round(time.time() - t_all, 2),

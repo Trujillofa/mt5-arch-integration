@@ -1,5 +1,68 @@
 # XAU offline loop status
 
+## 2026-08-08 — resume-edge: RAW $3 costs + prior_day_high_break null KILL
+
+Consolidated status after the **xau-resume-edge** fire (Vantage commission bake-in →
+next-design charter → family null scaffold → first low-knob family → full null).
+
+| Field | Value |
+|-------|--------|
+| **cost update** | Vantage research default **RAW ECN $3.00 / side / lot** (`commission_per_lot=3.0`); PRO $1.50 sensitivity only. Source: `results/xau_research_costs.json`. RT commission = `2 * 3.0 * lots` ($0.06 @ 0.01 lot, $6 @ 1.0 lot) + measured H1 spread. Slippage still 0. |
+| **next design family** | **`prior_day_high_break`** (charter-frozen; 1 free knob `sl_atr` ∈ {1.0, 1.5, 2.0}; cardinality **3**) |
+| **null disposition** | **`KILL_PRIOR_DAY_HIGH_BREAK`** — p_max_pf **0.463** · p_n_passers **1.000** · real max PF (n≥20) **1.077** · soft passers **0** (null can match/beat) |
+| **live_go** | **false** |
+| **promote** | **no** |
+| **PAPER_GO** | **no** |
+| **next_step** | **`RESEARCH_IDLE_PENDING_NEW_THESIS`** — null **KILL** (not PASS). Do **not** run costed walk-forward for this family. Do **not** retune knobs / free hours / frictionless rescue. A new family requires a **new charter freeze** (`NEXT_FAMILY` only after that freeze). |
+
+Dead lines (do not revive): `bb_rsi`, `Donchian`/`turtle`, `prior_day_high_break`.
+
+Key artifacts: `results/xau_research_costs.json`, `results/xau_cost_update_vantage.md`,
+`results/xau_next_design_charter.{json,md}`, `scripts/xau_null_core.py`,
+`scripts/xau_family_null_maxstat.py`, `scripts/xau_family_prior_day_high_break.py`,
+`results/xau_prior_day_high_break_null_maxstat.{json,md}`,
+`results/xau_prior_day_high_break_null_skeptic.md`,
+`.grok/workflows/xau-resume-edge.rhai`.
+
+---
+
+## 2026-08-08 — prior_day_high_break null / max-stat (charter family KILL)
+
+After `KILL_BB_RSI_LINE` and `KILL_DONCHIAN_LINE`, the frozen next-design charter
+(`results/xau_next_design_charter.json`) pre-registered `prior_day_high_break`
+(3-config grid: `sl_atr` ∈ {1.0, 1.5, 2.0}). Develop grid was scored under RAW
+costs; then `scripts/xau_family_null_maxstat.py --family prior_day_high_break`
+ran the full null max-stat protocol (no early exit).
+
+| Field | Value |
+|-------|--------|
+| **window** | develop only, 25582 H1 bars (`time < 2026-01-01`), holdout sealed |
+| **costs** | spread_col=spread, point_size=0.01, commission_per_lot=**3.0** (RAW ECN), slippage=0 |
+| **grid** | **3** configs (charter search_cardinality; full enumerate) |
+| **real max PF (n≥20)** | **1.0773** · n_passers_soft **0** · n_passers_classic **0** |
+| **null (40 trials)** | max PF p50 **≈1.05** · null max **1.31** · n_passers_soft p50 **0** (null max soft passers **2**) |
+| **p(null ≥ real)** | p_max_pf **0.463** · p_n_passers **1.000** · p_n_passers_classic **1.000** |
+| **disposition** | **KILL_PRIOR_DAY_HIGH_BREAK** |
+| **live_go** | **false** |
+| **promote** | **no** |
+| **PAPER_GO** | **no** |
+| **next_step** | **RESEARCH_IDLE** — do **not** retune, widen knobs, free hours/tp_rr, or re-run frictionless |
+
+KILL is a valid success of the scientific process under the charter kill rules.
+Real best-of-grid (PF≈1.08, zero soft passers under PF≥1.2 / n≥20 / NP>0) sits
+inside the return-shuffle null; null paths reach max PF **1.31** and up to **2**
+soft passers. Do **not** launder KILL into walk-forward or PASS_KEEP_FROZEN.
+A new family requires a **new** charter freeze (new family_id).
+
+Artifacts: `results/xau_prior_day_high_break_null_maxstat.json`,
+`results/xau_prior_day_high_break_null_maxstat.md`,
+`results/xau_prior_day_high_break_null_skeptic.md`,
+`results/xau_prior_day_high_break_develop_grid.json`,
+`scripts/xau_family_null_maxstat.py`, `scripts/xau_family_prior_day_high_break.py`,
+`results/xau_next_design_charter.json`.
+
+---
+
 ## 2026-08-08 — Charter Option B adopted
 
 **Charter:** Option B (explicit dual-layer) adopted — see [`docs/CHARTER-RESEARCH-LAYER.md`](../docs/CHARTER-RESEARCH-LAYER.md) and [`results/xau_charter_adopted.md`](xau_charter_adopted.md).

@@ -1,0 +1,460 @@
+{
+  "method": "return_shuffle_maxstat_family",
+  "family": "stub",
+  "family_source": "builtin:stub",
+  "kill_label": "KILL_STUB_LINE",
+  "timestamp_utc": "2026-08-08T18:23:29.042705+00:00",
+  "window": {
+    "holdout_start": "2026-01-01 00:00:00+00:00",
+    "bars": 25582,
+    "start": "2021-09-03T19:00:00+00:00",
+    "end": "2025-12-31T23:00:00+00:00"
+  },
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 3.0,
+    "slippage_points": 0.0
+  },
+  "grid": {
+    "max_n": 40,
+    "seed": 42,
+    "n_configs": 15
+  },
+  "gates": {
+    "classic": "n>=20, PF>1.5, WR>55, DD<10",
+    "soft": "PF>=1.5, n>=40, DD<=12, expectancy>=20",
+    "primary_n_passers": "soft",
+    "max_pf_min_trades": 20
+  },
+  "real": {
+    "n_configs": 15,
+    "min_trades_gate": 20,
+    "elapsed_s": 0.0920248031616211,
+    "best_by_pf": {
+      "index": 8,
+      "params": {
+        "k": 3,
+        "bias": 1.0
+      },
+      "profit_factor": 1.1133147345015193,
+      "net_profit": 3087.8329471451307,
+      "win_rate": 50.430023455824866,
+      "max_drawdown_pct": 11.08880302726479,
+      "n_trades": 1279,
+      "expectancy": 2.414255627165857,
+      "passes_classic": false,
+      "passes_soft": false
+    },
+    "best_by_pf_min_trades": {
+      "index": 8,
+      "params": {
+        "k": 3,
+        "bias": 1.0
+      },
+      "profit_factor": 1.1133147345015193,
+      "net_profit": 3087.8329471451307,
+      "win_rate": 50.430023455824866,
+      "max_drawdown_pct": 11.08880302726479,
+      "n_trades": 1279,
+      "expectancy": 2.414255627165857,
+      "passes_classic": false,
+      "passes_soft": false
+    },
+    "best_soft_passer": null,
+    "n_passers_classic": 0,
+    "n_passers_soft": 0,
+    "n_with_min_trades": 15,
+    "pf": {
+      "max_raw": 1.1133147345015193,
+      "max_min_trades": 1.1133147345015193,
+      "p50": 1.0434329189969906,
+      "p90": 1.0882295831886653,
+      "p99": 1.109947777794336,
+      "mean": 1.0470404147585284
+    },
+    "net_profit": {
+      "max_raw": 3087.8329471451307,
+      "max_min_trades": 3087.8329471451307,
+      "p50": 1224.0477769490426,
+      "mean": 1274.946289752405
+    },
+    "top20_by_pf_min_trades": [
+      {
+        "index": 8,
+        "params": {
+          "k": 3,
+          "bias": 1.0
+        },
+        "profit_factor": 1.1133147345015193,
+        "net_profit": 3087.8329471451307,
+        "win_rate": 50.430023455824866,
+        "max_drawdown_pct": 11.08880302726479,
+        "n_trades": 1279,
+        "expectancy": 2.414255627165857,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 5,
+        "params": {
+          "k": 2,
+          "bias": 1.0
+        },
+        "profit_factor": 1.089265043735925,
+        "net_profit": 2460.4933257508933,
+        "win_rate": 49.960906958561374,
+        "max_drawdown_pct": 15.310502061830894,
+        "n_trades": 1279,
+        "expectancy": 1.9237633508607452,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 11,
+        "params": {
+          "k": 5,
+          "bias": 1.0
+        },
+        "profit_factor": 1.0866763923677758,
+        "net_profit": 2392.1088420441165,
+        "win_rate": 49.804534792806884,
+        "max_drawdown_pct": 11.011224522602028,
+        "n_trades": 1279,
+        "expectancy": 1.8702962017545868,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 14,
+        "params": {
+          "k": 8,
+          "bias": 1.0
+        },
+        "profit_factor": 1.0765688544518393,
+        "net_profit": 2123.451682100786,
+        "win_rate": 49.569976544175134,
+        "max_drawdown_pct": 11.410000513454946,
+        "n_trades": 1279,
+        "expectancy": 1.660243692025634,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 10,
+        "params": {
+          "k": 5,
+          "bias": 0.0
+        },
+        "profit_factor": 1.0434329189969906,
+        "net_profit": 1224.0477769490426,
+        "win_rate": 49.022673964034404,
+        "max_drawdown_pct": 17.30457336861116,
+        "n_trades": 1279,
+        "expectancy": 0.9570350093424883,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 4,
+        "params": {
+          "k": 2,
+          "bias": 0.0
+        },
+        "profit_factor": 1.0434329189969906,
+        "net_profit": 1224.0477769490426,
+        "win_rate": 49.022673964034404,
+        "max_drawdown_pct": 17.30457336861116,
+        "n_trades": 1279,
+        "expectancy": 0.9570350093424883,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 7,
+        "params": {
+          "k": 3,
+          "bias": 0.0
+        },
+        "profit_factor": 1.0434329189969906,
+        "net_profit": 1224.0477769490426,
+        "win_rate": 49.022673964034404,
+        "max_drawdown_pct": 17.30457336861116,
+        "n_trades": 1279,
+        "expectancy": 0.9570350093424883,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 13,
+        "params": {
+          "k": 8,
+          "bias": 0.0
+        },
+        "profit_factor": 1.0434329189969906,
+        "net_profit": 1224.0477769490426,
+        "win_rate": 49.022673964034404,
+        "max_drawdown_pct": 17.30457336861116,
+        "n_trades": 1279,
+        "expectancy": 0.9570350093424883,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 3,
+        "params": {
+          "k": 2,
+          "bias": -1.0
+        },
+        "profit_factor": 1.0408810513224658,
+        "net_profit": 1153.5715901330227,
+        "win_rate": 48.94448788115715,
+        "max_drawdown_pct": 18.49018097012914,
+        "n_trades": 1279,
+        "expectancy": 0.901932439509791,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 0,
+        "params": {
+          "k": 1,
+          "bias": -1.0
+        },
+        "profit_factor": 1.0397181985840687,
+        "net_profit": 825.1884907888011,
+        "win_rate": 49.13928012519562,
+        "max_drawdown_pct": 17.07891971221527,
+        "n_trades": 639,
+        "expectancy": 1.2913747899668249,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 6,
+        "params": {
+          "k": 3,
+          "bias": -1.0
+        },
+        "profit_factor": 1.035400642674087,
+        "net_profit": 1001.6164038439861,
+        "win_rate": 48.94448788115715,
+        "max_drawdown_pct": 19.149904280969626,
+        "n_trades": 1279,
+        "expectancy": 0.7831246316215684,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 1,
+        "params": {
+          "k": 1,
+          "bias": 0.0
+        },
+        "profit_factor": 1.0215048500202315,
+        "net_profit": 450.8093975370971,
+        "win_rate": 49.76525821596244,
+        "max_drawdown_pct": 28.823579223774026,
+        "n_trades": 639,
+        "expectancy": 0.7054920149250345,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 12,
+        "params": {
+          "k": 8,
+          "bias": -1.0
+        },
+        "profit_factor": 1.0178103192898462,
+        "net_profit": 508.31551525701,
+        "win_rate": 48.631743549648164,
+        "max_drawdown_pct": 18.978299785579953,
+        "n_trades": 1279,
+        "expectancy": 0.3974319900367553,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 2,
+        "params": {
+          "k": 1,
+          "bias": 1.0
+        },
+        "profit_factor": 1.0109410058066146,
+        "net_profit": 230.56313236325911,
+        "win_rate": 49.60876369327074,
+        "max_drawdown_pct": 31.280249416389335,
+        "n_trades": 639,
+        "expectancy": 0.3608186734949282,
+        "passes_classic": false,
+        "passes_soft": false
+      },
+      {
+        "index": 9,
+        "params": {
+          "k": 5,
+          "bias": -1.0
+        },
+        "profit_factor": 0.9997934526355913,
+        "net_profit": -5.948088474198812,
+        "win_rate": 48.475371383893666,
+        "max_drawdown_pct": 22.15205253526258,
+        "n_trades": 1279,
+        "expectancy": -0.004650577384049111,
+        "passes_classic": false,
+        "passes_soft": false
+      }
+    ],
+    "max_pf": 1.1133147345015193,
+    "max_net": 3087.8329471451307,
+    "max_pf_raw": 1.1133147345015193,
+    "n_passers": 0,
+    "primary_n_passers": "n_passers_soft"
+  },
+  "null": {
+    "n_trials": 4,
+    "base_seed": 20260808,
+    "workers": 1,
+    "max_pf": {
+      "max": 1.1732355379561443,
+      "p50": 1.1120361017633544,
+      "p90": 1.1583280009220718,
+      "mean": 1.1061195164396387
+    },
+    "n_passers": {
+      "max": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "mean": 0.0
+    },
+    "n_passers_classic": {
+      "max": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "mean": 0.0
+    },
+    "n_passers_soft": {
+      "max": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "mean": 0.0
+    },
+    "p_max_pf": 0.6,
+    "p_n_passers": 1.0,
+    "p_n_passers_classic": 1.0,
+    "p_n_passers_soft": 1.0,
+    "trials": [
+      {
+        "trial": 0,
+        "seed": 20260808,
+        "max_pf": 1.1235437478425694,
+        "max_net": 2590.735265368945,
+        "n_passers": 0,
+        "n_passers_soft": 0,
+        "n_passers_classic": 0,
+        "best_by_pf_min_trades": {
+          "index": 1,
+          "params": {
+            "k": 1,
+            "bias": 0.0
+          },
+          "profit_factor": 1.1235437478425694,
+          "net_profit": 2590.735265368945,
+          "win_rate": 51.3302034428795,
+          "max_drawdown_pct": 20.093710077529327,
+          "n_trades": 639,
+          "expectancy": 4.054358787744828,
+          "passes_classic": false,
+          "passes_soft": false
+        },
+        "elapsed_s": 0.09011054039001465
+      },
+      {
+        "trial": 1,
+        "seed": 21260811,
+        "max_pf": 1.0271703242757015,
+        "max_net": 815.4865559977217,
+        "n_passers": 0,
+        "n_passers_soft": 0,
+        "n_passers_classic": 0,
+        "best_by_pf_min_trades": {
+          "index": 5,
+          "params": {
+            "k": 2,
+            "bias": 1.0
+          },
+          "profit_factor": 1.0271703242757015,
+          "net_profit": 815.4865559977217,
+          "win_rate": 51.21188428459734,
+          "max_drawdown_pct": 16.346793163676125,
+          "n_trades": 1279,
+          "expectancy": 0.6375969945251928,
+          "passes_classic": false,
+          "passes_soft": false
+        },
+        "elapsed_s": 0.09088683128356934
+      },
+      {
+        "trial": 2,
+        "seed": 22260814,
+        "max_pf": 1.1005284556841393,
+        "max_net": 2157.0555427541176,
+        "n_passers": 0,
+        "n_passers_soft": 0,
+        "n_passers_classic": 0,
+        "best_by_pf_min_trades": {
+          "index": 1,
+          "params": {
+            "k": 1,
+            "bias": 0.0
+          },
+          "profit_factor": 1.1005284556841393,
+          "net_profit": 2157.0555427541176,
+          "win_rate": 54.147104851330205,
+          "max_drawdown_pct": 12.333585861479726,
+          "n_trades": 639,
+          "expectancy": 3.37567377582804,
+          "passes_classic": false,
+          "passes_soft": false
+        },
+        "elapsed_s": 0.0963582992553711
+      },
+      {
+        "trial": 3,
+        "seed": 23260817,
+        "max_pf": 1.1732355379561443,
+        "max_net": 3466.879541660856,
+        "n_passers": 0,
+        "n_passers_soft": 0,
+        "n_passers_classic": 0,
+        "best_by_pf_min_trades": {
+          "index": 1,
+          "params": {
+            "k": 1,
+            "bias": 0.0
+          },
+          "profit_factor": 1.1732355379561443,
+          "net_profit": 3466.879541660856,
+          "win_rate": 53.364632237871675,
+          "max_drawdown_pct": 15.014569848919914,
+          "n_trades": 639,
+          "expectancy": 5.425476591018554,
+          "passes_classic": false,
+          "passes_soft": false
+        },
+        "elapsed_s": 0.09036731719970703
+      }
+    ]
+  },
+  "verdict": {
+    "disposition": "QUICK_SMOKE_ONLY",
+    "reason": "Quick mode \u2014 not a real disposition. Re-run without --quick.",
+    "fail_max_pf": true,
+    "fail_n_passers": true,
+    "promote": false,
+    "live_go": false
+  },
+  "elapsed_s": 0.9278881549835205,
+  "quick": true
+}

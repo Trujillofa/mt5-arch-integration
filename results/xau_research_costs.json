@@ -1,0 +1,15 @@
+{
+  "broker": "Vantage",
+  "spread_col": "spread",
+  "point_size": 0.01,
+  "commission_per_lot": 3.0,
+  "commission_account_type": "RAW_ECN",
+  "commission_notes": "per side per lot; RT = 2*commission_per_lot*lots",
+  "commission_alternatives": {
+    "RAW_ECN": 3.0,
+    "PRO_ECN": 1.5
+  },
+  "slippage_points": 0.0,
+  "slippage_notes": "still unmeasured; leave 0 until demo fills",
+  "default_reason": "RAW is the conservative research floor; switch to 1.5 for PRO sensitivity"
+}

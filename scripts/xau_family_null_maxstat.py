@@ -1,0 +1,854 @@
+#!/usr/bin/env python3
+"""Reusable null / max-stat harness for any XAU strategy family.
+
+Question: does best-of-grid on real develop bars sit outside the distribution of
+best-of-grid on return-shuffled bars (no predictive structure)?
+
+If not, the gates measured the search, not the market — KILL the family rather
+than tune it further.
+
+Protocol
+--------
+* Window: develop only (``time < holdout_start``). Holdout stays sealed.
+* Costs: ``load_research_costs()`` (Vantage RAW floor / research JSON).
+* Null: ``scramble_ohlc`` return-shuffle; re-prepare; re-score full grid.
+* Max-stat gated on ``n_trades >= 20`` so the PF=99 thin-sample cap cannot dominate.
+* Gates: classic ``passes`` always; optional soft (family or turtle expectancy).
+* Decision: KILL if ``p_max_pf > 0.05`` OR ``p_n_passers > 0.05``.
+
+Plugin API (family module or built-in)
+--------------------------------------
+Required:
+  * ``grid(*, max_n: int, seed: int) -> list[dict]``
+  * ``simulate(d, **params) -> Metrics``  (accepts cost kwargs)
+
+Optional:
+  * ``prepare(raw) -> DataFrame``  (default: identity / passthrough)
+  * ``classic_pass(m) -> bool``     (default: backtest.passes / hard classic)
+  * ``soft_pass(m) -> bool``        (if set, primary n_passers uses soft)
+  * ``use_soft_primary: bool``      (default True when soft_pass is provided)
+  * ``FAMILY`` / ``NAME`` str
+  * ``kill_label: str``             (default KILL_{FAMILY}_LINE)
+
+Built-ins: ``stub`` (cheap smoke family; no full bar walk).
+
+CLI
+---
+  python3 scripts/xau_family_null_maxstat.py --family stub --quick
+  python3 scripts/xau_family_null_maxstat.py --family NAME --n-null 40 --max-n 1200
+
+Writes:
+  results/xau_{family}_null_maxstat.json
+  results/xau_{family}_null_maxstat.md
+
+SAFETY: offline only — no live orders, no holdout selection.
+"""
+from __future__ import annotations
+
+import argparse
+import importlib
+import json
+import os
+import sys
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass
+from pathlib import Path
+from types import ModuleType
+from typing import Any, Callable
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPTS = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(SCRIPTS))
+
+from xau_null_core import (  # noqa: E402
+    MIN_TRADES_MAX_STAT,
+    dist_summary,
+    hard_pass_classic,
+    metrics_dict,
+    pvalue,
+    scramble_ohlc,
+    serializable_params,
+    soft_pass_expectancy,
+    subsample_grid,
+)
+from xau_research_costs import load_research_costs  # noqa: E402
+
+from backtest import (  # noqa: E402
+    Metrics,
+    develop_only,
+    holdout_start,
+    load_h1,
+    passes as backtest_passes,
+)
+
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS: dict[str, Any] = load_research_costs()
+
+# Worker globals (fork COW on Linux; re-init on spawn).
+_W: dict[str, Any] = {}
+
+SimulateFn = Callable[..., Metrics]
+PrepareFn = Callable[[pd.DataFrame], pd.DataFrame]
+PassFn = Callable[[Any], bool]
+
+
+@dataclass
+class FamilyPlugin:
+    name: str
+    grid: Callable[..., list[dict]]
+    simulate: SimulateFn
+    prepare: PrepareFn
+    classic_pass: PassFn
+    soft_pass: PassFn | None
+    use_soft_primary: bool
+    kill_label: str
+    source: str
+
+
+# ---------------------------------------------------------------------------
+# Built-in stub family (smoke only)
+# ---------------------------------------------------------------------------
+def _stub_prepare(raw: pd.DataFrame) -> pd.DataFrame:
+    return raw
+
+
+def _stub_grid(*, max_n: int = 1200, seed: int = 42) -> list[dict]:
+    """Tiny deterministic grid — cheap smoke, not a real family."""
+    full = [{"k": k, "bias": b} for k in (1, 2, 3, 5, 8) for b in (-1.0, 0.0, 1.0)]
+    return subsample_grid(full, max_n=max_n, seed=seed)
+
+
+def _stub_simulate(d: pd.DataFrame, **params: Any) -> Metrics:
+    """O(n) toy sim: sign of mean log-return * k + bias → synthetic trades.
+
+    Sensitive to path structure so return-shuffle nulls move the max-stat, but
+    cheap enough that ``--quick`` finishes in seconds.
+    """
+    k = float(params.get("k", 1))
+    bias = float(params.get("bias", 0.0))
+    c = d["close"].to_numpy(dtype=float)
+    if len(c) < 50:
+        return Metrics(0.0, 0.0, 0.0, 0.0, 0, 0, 0)
+    rets = np.diff(np.log(np.clip(c, 1e-12, None)))
+    # non-overlapping blocks → pseudo-trades
+    block = max(20, int(40 / max(k, 1.0)))
+    pnls: list[float] = []
+    for i in range(0, len(rets) - block, block):
+        chunk = rets[i : i + block]
+        signal = float(np.mean(chunk[: block // 2])) * k + bias * 1e-4
+        if abs(signal) < 1e-8:
+            continue
+        direction = 1.0 if signal > 0 else -1.0
+        # forward half of block
+        fwd = float(np.sum(chunk[block // 2 :]))
+        # cost drag (uses commission kwargs if present for path coverage)
+        cost = float(params.get("commission_per_lot", 0.0) or 0.0) * 0.01
+        pnl = direction * fwd * 10_000.0 - cost
+        pnls.append(pnl)
+    if not pnls:
+        return Metrics(0.0, 0.0, 0.0, 0.0, 0, 0, 0)
+    arr = np.asarray(pnls, dtype=float)
+    wins = arr[arr > 0]
+    losses = arr[arr <= 0]
+    gp = float(wins.sum()) if len(wins) else 0.0
+    gl = float(-losses.sum()) if len(losses) else 0.0
+    pf = (gp / gl) if gl > 1e-12 else (99.0 if gp > 0 else 0.0)
+    wr = 100.0 * float(len(wins)) / float(len(arr))
+    # crude equity DD
+    eq = np.cumsum(arr)
+    peak = np.maximum.accumulate(eq)
+    dd = float(np.max(peak - eq)) if len(eq) else 0.0
+    start = 10_000.0
+    dd_pct = 100.0 * dd / max(start, 1.0)
+    return Metrics(
+        net_profit=float(arr.sum()),
+        win_rate=wr,
+        profit_factor=min(pf, 99.0),
+        max_drawdown_pct=dd_pct,
+        n_trades=int(len(arr)),
+        wins=int(len(wins)),
+        losses=int(len(losses)),
+    )
+
+
+def _builtin_stub() -> FamilyPlugin:
+    return FamilyPlugin(
+        name="stub",
+        grid=_stub_grid,
+        simulate=_stub_simulate,
+        prepare=_stub_prepare,
+        classic_pass=lambda m: hard_pass_classic(metrics_dict(m)),
+        soft_pass=lambda m: soft_pass_expectancy(metrics_dict(m)),
+        use_soft_primary=True,
+        kill_label="KILL_STUB_LINE",
+        source="builtin:stub",
+    )
+
+
+def _builtin_prior_day_high_break() -> FamilyPlugin:
+    """Charter family: prior_day_high_break (results/xau_next_design_charter.json)."""
+    import xau_family_prior_day_high_break as mod
+
+    return _wrap_module("prior_day_high_break", mod, source="builtin:prior_day_high_break")
+
+
+BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
+    "stub": _builtin_stub,
+    "prior_day_high_break": _builtin_prior_day_high_break,
+}
+
+
+# ---------------------------------------------------------------------------
+# Plugin loader
+# ---------------------------------------------------------------------------
+def _identity_prepare(raw: pd.DataFrame) -> pd.DataFrame:
+    return raw
+
+
+def _default_classic(m: Any) -> bool:
+    try:
+        return bool(backtest_passes(m))
+    except Exception:
+        return hard_pass_classic(metrics_dict(m))
+
+
+def _wrap_module(name: str, mod: ModuleType, source: str) -> FamilyPlugin:
+    if not hasattr(mod, "grid") or not hasattr(mod, "simulate"):
+        raise SystemExit(
+            f"Family module {source!r} must provide grid(*, max_n, seed) and simulate(d, **params)"
+        )
+    prepare = getattr(mod, "prepare", None) or getattr(mod, "prepare_frame", None)
+    if prepare is None:
+        prepare = _identity_prepare
+    classic = getattr(mod, "classic_pass", None)
+    if classic is None:
+        classic = _default_classic
+    soft = getattr(mod, "soft_pass", None)
+    # optional: soft_pass_expectancy flag
+    if soft is None and bool(getattr(mod, "use_soft_expectancy", False)):
+        soft = lambda m: soft_pass_expectancy(metrics_dict(m))  # noqa: E731
+    use_soft = bool(getattr(mod, "use_soft_primary", soft is not None))
+    fam_name = str(getattr(mod, "FAMILY", None) or getattr(mod, "NAME", None) or name)
+    kill = str(getattr(mod, "kill_label", None) or f"KILL_{fam_name.upper()}_LINE")
+    return FamilyPlugin(
+        name=fam_name,
+        grid=mod.grid,
+        simulate=mod.simulate,
+        prepare=prepare,
+        classic_pass=classic,
+        soft_pass=soft,
+        use_soft_primary=use_soft and soft is not None,
+        kill_label=kill,
+        source=source,
+    )
+
+
+def load_family(name: str) -> FamilyPlugin:
+    """Resolve ``--family`` to a plugin: built-in, module path, or xau_family_*."""
+    key = name.strip()
+    if not key:
+        raise SystemExit("--family is required")
+
+    low = key.lower().replace("-", "_")
+    if low in BUILTINS:
+        return BUILTINS[low]()
+
+    # Path to a .py file
+    path = Path(key)
+    if path.suffix == ".py" and path.is_file():
+        import importlib.util as _ilu
+
+        spec = _ilu.spec_from_file_location(path.stem, path)
+        if spec is None or spec.loader is None:
+            raise SystemExit(f"Cannot load family from {path}")
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[path.stem] = mod
+        spec.loader.exec_module(mod)
+        return _wrap_module(path.stem, mod, source=str(path))
+
+    # Module import candidates (scripts/ on sys.path)
+    candidates = [
+        key,
+        low,
+        f"xau_family_{low}",
+        f"xau_families.{low}",
+        f"xau_families_{low}",
+    ]
+    # strip common prefixes if user passed xau_family_foo already
+    if low.startswith("xau_family_"):
+        candidates.append(low)
+
+    errors: list[str] = []
+    for mod_name in candidates:
+        try:
+            mod = importlib.import_module(mod_name)
+            return _wrap_module(low, mod, source=mod_name)
+        except ModuleNotFoundError as e:
+            errors.append(f"{mod_name}: {e}")
+            continue
+        except SystemExit:
+            raise
+        except Exception as e:
+            errors.append(f"{mod_name}: {type(e).__name__}: {e}")
+            continue
+
+    raise SystemExit(
+        f"Unknown family {name!r}. Built-ins: {sorted(BUILTINS)}. "
+        f"Tried imports: {candidates}. Errors: {errors[:5]}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Grid scoring
+# ---------------------------------------------------------------------------
+def score_grid(
+    d: pd.DataFrame,
+    candidates: list[dict],
+    *,
+    simulate_fn: SimulateFn,
+    classic_pass_fn: PassFn,
+    soft_pass_fn: PassFn | None,
+    costs: dict[str, Any],
+    progress_every: int = 0,
+    label: str = "",
+    min_trades: int = MIN_TRADES_MAX_STAT,
+) -> dict[str, Any]:
+    """Score every candidate (no early exit). Max-stat gated on n_trades."""
+    n = len(candidates)
+    pfs = np.empty(n, dtype=float)
+    nets = np.empty(n, dtype=float)
+    wrs = np.empty(n, dtype=float)
+    dds = np.empty(n, dtype=float)
+    ntr = np.empty(n, dtype=int)
+    exps = np.empty(n, dtype=float)
+    classic_mask = np.zeros(n, dtype=bool)
+    soft_mask = np.zeros(n, dtype=bool)
+
+    best_pf_i = 0
+    best_pf = -1.0
+    best_min_pf_i = -1
+    best_min_pf = -1.0
+    best_soft_i = -1
+    best_soft_exp = -1e18
+
+    t0 = time.time()
+    for i, p in enumerate(candidates):
+        m = simulate_fn(d, **{**costs, **p})
+        md = metrics_dict(m)
+        pfs[i] = float(md["profit_factor"])
+        nets[i] = float(md["net_profit"])
+        wrs[i] = float(md["win_rate"])
+        dds[i] = float(md["max_drawdown_pct"])
+        ntr[i] = int(md["n_trades"])
+        exps[i] = float(md["expectancy"])
+        classic_mask[i] = bool(classic_pass_fn(m))
+        soft_mask[i] = bool(soft_pass_fn(m)) if soft_pass_fn is not None else False
+
+        if pfs[i] > best_pf or (pfs[i] == best_pf and nets[i] > nets[best_pf_i]):
+            best_pf = float(pfs[i])
+            best_pf_i = i
+        if ntr[i] >= min_trades:
+            if pfs[i] > best_min_pf or (
+                pfs[i] == best_min_pf
+                and best_min_pf_i >= 0
+                and nets[i] > nets[best_min_pf_i]
+            ):
+                best_min_pf = float(pfs[i])
+                best_min_pf_i = i
+        if soft_mask[i] and (
+            exps[i] > best_soft_exp
+            or (exps[i] == best_soft_exp and pfs[i] > pfs[max(best_soft_i, 0)])
+        ):
+            best_soft_exp = exps[i]
+            best_soft_i = i
+
+        if progress_every and (i + 1) % progress_every == 0:
+            print(
+                f"  [{label}] {i + 1}/{n} "
+                f"best_PF@>={min_trades}={best_min_pf:.3f} "
+                f"classic={int(classic_mask[: i + 1].sum())} "
+                f"soft={int(soft_mask[: i + 1].sum())} "
+                f"({time.time() - t0:.0f}s)",
+                flush=True,
+            )
+
+    def _row(i: int) -> dict:
+        return {
+            "index": int(i),
+            "params": serializable_params(candidates[i]),
+            "profit_factor": float(pfs[i]),
+            "net_profit": float(nets[i]),
+            "win_rate": float(wrs[i]),
+            "max_drawdown_pct": float(dds[i]),
+            "n_trades": int(ntr[i]),
+            "expectancy": float(exps[i]),
+            "passes_classic": bool(classic_mask[i]),
+            "passes_soft": bool(soft_mask[i]),
+        }
+
+    eligible = ntr >= min_trades
+    max_pf_min = float(pfs[eligible].max()) if eligible.any() else 0.0
+    max_net_min = float(nets[eligible].max()) if eligible.any() else 0.0
+    top_min_idx = np.argsort(-np.where(eligible, pfs, -1e18))[:20]
+
+    n_classic = int(classic_mask.sum())
+    n_soft = int(soft_mask.sum()) if soft_pass_fn is not None else 0
+
+    return {
+        "n_configs": n,
+        "min_trades_gate": min_trades,
+        "elapsed_s": float(time.time() - t0),
+        "best_by_pf": _row(best_pf_i),
+        "best_by_pf_min_trades": _row(best_min_pf_i) if best_min_pf_i >= 0 else None,
+        "best_soft_passer": _row(best_soft_i) if best_soft_i >= 0 else None,
+        "n_passers_classic": n_classic,
+        "n_passers_soft": n_soft,
+        "n_with_min_trades": int(eligible.sum()),
+        "pf": {
+            "max_raw": float(pfs.max()) if n else 0.0,
+            "max_min_trades": max_pf_min,
+            "p50": float(np.median(pfs)) if n else 0.0,
+            "p90": float(np.quantile(pfs, 0.90)) if n else 0.0,
+            "p99": float(np.quantile(pfs, 0.99)) if n else 0.0,
+            "mean": float(pfs.mean()) if n else 0.0,
+        },
+        "net_profit": {
+            "max_raw": float(nets.max()) if n else 0.0,
+            "max_min_trades": max_net_min,
+            "p50": float(np.median(nets)) if n else 0.0,
+            "mean": float(nets.mean()) if n else 0.0,
+        },
+        "top20_by_pf_min_trades": [
+            _row(int(i)) for i in top_min_idx if eligible[int(i)]
+        ],
+        "max_pf": max_pf_min,
+        "max_net": max_net_min,
+        "max_pf_raw": float(pfs.max()) if n else 0.0,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Parallel null workers
+# ---------------------------------------------------------------------------
+def _init_worker(
+    raw_records: list,
+    candidates: list[dict],
+    costs: dict,
+    family_name: str,
+) -> None:
+    global COSTS
+    COSTS = dict(costs)
+    # ensure import path in spawn workers
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    if str(SCRIPTS) not in sys.path:
+        sys.path.insert(0, str(SCRIPTS))
+    plugin = load_family(family_name)
+    raw = pd.DataFrame.from_records(raw_records)
+    raw["time"] = pd.to_datetime(raw["time"], utc=True)
+    _W["raw"] = raw
+    _W["candidates"] = candidates
+    _W["costs"] = COSTS
+    _W["plugin"] = plugin
+
+
+def _null_trial(trial: int, base_seed: int) -> dict[str, Any]:
+    raw = _W["raw"]
+    candidates = _W["candidates"]
+    costs = _W["costs"]
+    plugin: FamilyPlugin = _W["plugin"]
+    rng = np.random.default_rng(base_seed + trial * 1_000_003)
+    scr = scramble_ohlc(raw, rng)
+    d = plugin.prepare(scr)
+    summary = score_grid(
+        d,
+        candidates,
+        simulate_fn=plugin.simulate,
+        classic_pass_fn=plugin.classic_pass,
+        soft_pass_fn=plugin.soft_pass,
+        costs=costs,
+        progress_every=0,
+        label=f"null{trial}",
+    )
+    n_passers_primary = (
+        summary["n_passers_soft"]
+        if plugin.use_soft_primary
+        else summary["n_passers_classic"]
+    )
+    return {
+        "trial": trial,
+        "seed": int(base_seed + trial * 1_000_003),
+        "max_pf": summary["max_pf"],
+        "max_net": summary["max_net"],
+        "n_passers": int(n_passers_primary),
+        "n_passers_soft": summary["n_passers_soft"],
+        "n_passers_classic": summary["n_passers_classic"],
+        "best_by_pf_min_trades": summary["best_by_pf_min_trades"],
+        "elapsed_s": summary["elapsed_s"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Report
+# ---------------------------------------------------------------------------
+def write_markdown(report: dict, path: Path) -> None:
+    real = report["real"]
+    null = report["null"]
+    verdict = report["verdict"]
+    fam = report["family"]
+    primary = report["gates"]["primary_n_passers"]
+    lines = [
+        f"# XAU family null / max-stat — `{fam}`",
+        "",
+        f"**Disposition:** `{verdict['disposition']}`",
+        "",
+        verdict["reason"],
+        "",
+        "## Protocol",
+        "",
+        f"- Family: `{fam}` (source={report['family_source']})",
+        f"- Window: develop only (`time < {report['window']['holdout_start']}`), "
+        f"{report['window']['bars']} H1 bars "
+        f"({report['window']['start']} → {report['window']['end']})",
+        f"- Grid: {report['grid']['n_configs']} configs "
+        f"(max_n={report['grid']['max_n']}, seed={report['grid']['seed']}) — no early exit",
+        f"- Null: {null['n_trials']} return-shuffle trials, base_seed={null['base_seed']}, "
+        f"workers={null['workers']}",
+        f"- Costs: `{json.dumps(report['costs'])}`",
+        f"- Classic gates: {report['gates']['classic']}",
+        f"- Soft gates: {report['gates'].get('soft') or 'n/a'}",
+        f"- Primary n_passers: **{primary}**",
+        f"- Max-stat min trades: {report['gates']['max_pf_min_trades']}",
+        "",
+        "## Real grid (develop, costed)",
+        "",
+        "Max-stat is gated on `n_trades >= 20` so the PF=99 thin-sample cap cannot dominate.",
+        "",
+        "| Stat | Value |",
+        "|---|---|",
+        f"| max PF (n≥20) | {real['max_pf']:.4f} |",
+        f"| max net (n≥20) | ${real['max_net']:.2f} |",
+        f"| max PF raw (incl. thin) | {real.get('max_pf_raw', real['max_pf']):.4f} |",
+        f"| n_passers (primary={primary}) | {real['n_passers']} |",
+        f"| n_passers_classic | {real['n_passers_classic']} |",
+        f"| n_passers_soft | {real['n_passers_soft']} |",
+        f"| n with ≥20 trades | {real.get('n_with_min_trades', '?')} |",
+        f"| PF p50 / p90 / p99 | {real['pf']['p50']:.3f} / {real['pf']['p90']:.3f} / {real['pf']['p99']:.3f} |",
+        f"| elapsed | {real['elapsed_s']:.0f}s |",
+        "",
+        "Best by PF among n≥20:",
+        "",
+        "```json",
+        json.dumps(real.get("best_by_pf_min_trades") or real["best_by_pf"], indent=2),
+        "```",
+        "",
+        "## Null distribution (best-of-grid per trial, n≥20 gated PF)",
+        "",
+        "| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
+        "|---|---|---|---|---|",
+        f"| max PF (n≥20) | {null['max_pf']['max']:.4f} | {null['max_pf']['p50']:.4f} | "
+        f"{null['max_pf']['p90']:.4f} | **{null['p_max_pf']:.3f}** |",
+        f"| n_passers (primary) | {null['n_passers']['max']} | {null['n_passers']['p50']:.1f} | "
+        f"{null['n_passers']['p90']:.1f} | **{null['p_n_passers']:.3f}** |",
+        f"| n_passers_classic | {null['n_passers_classic']['max']} | "
+        f"{null['n_passers_classic']['p50']:.1f} | {null['n_passers_classic']['p90']:.1f} | "
+        f"**{null['p_n_passers_classic']:.3f}** |",
+        "",
+        "## Decision rule",
+        "",
+        f"- Fail (`{report['kill_label']}`) if `p_max_pf > 0.05` **or** `p_n_passers > 0.05` —",
+        "  real best-of-grid is typical of noise under the same search.",
+        "- Weak if only one of the two fails; still no promote.",
+        "- Pass only if both p-values ≤ 0.05 **and** real n_passers > null p90 — still not",
+        "  a live go; only permission to keep researching the family.",
+        "",
+        f"Elapsed total: {report['elapsed_s']:.0f}s",
+        "",
+        f"promote=no | live_go=false | quick={report.get('quick', False)}",
+        "",
+    ]
+    path.write_text("\n".join(lines) + "\n")
+
+
+def out_paths(family: str) -> tuple[Path, Path]:
+    safe = family.lower().replace("-", "_").replace("/", "_").replace(".", "_")
+    # strip common prefixes for cleaner artifact names
+    for prefix in ("xau_family_", "xau_families_"):
+        if safe.startswith(prefix):
+            safe = safe[len(prefix) :]
+    base = ROOT / "results" / f"xau_{safe}_null_maxstat"
+    return base.with_suffix(".json"), base.with_suffix(".md")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--family",
+        required=True,
+        help="family name (builtin: stub) or module providing grid()+simulate()",
+    )
+    ap.add_argument("--n-null", type=int, default=40, help="null trials (default 40)")
+    ap.add_argument("--max-n", type=int, default=1200, help="grid subsample size")
+    ap.add_argument("--seed", type=int, default=42, help="grid subsample seed")
+    ap.add_argument("--null-seed", type=int, default=20260808, help="base seed for nulls")
+    ap.add_argument(
+        "--workers",
+        type=int,
+        default=max(1, min(8, (os.cpu_count() or 2) - 1)),
+        help="parallel null workers (default min(8, ncpu-1))",
+    )
+    ap.add_argument(
+        "--quick",
+        action="store_true",
+        help="smoke: max_n=40, n_null=4 (not for disposition)",
+    )
+    ap.add_argument("--progress-every", type=int, default=200)
+    ap.add_argument(
+        "--no-soft-primary",
+        action="store_true",
+        help="force primary n_passers = classic even if family defines soft_pass",
+    )
+    args = ap.parse_args(argv)
+
+    if args.quick:
+        args.max_n = min(args.max_n, 40)
+        args.n_null = min(args.n_null, 4)
+        print(
+            f"QUICK smoke mode: max_n={args.max_n} n_null={args.n_null} — "
+            "do not use for disposition",
+            flush=True,
+        )
+
+    args.workers = max(1, min(8, int(args.workers)))
+
+    plugin = load_family(args.family)
+    if args.no_soft_primary:
+        plugin.use_soft_primary = False
+
+    family_key = plugin.name
+    out_json, out_md = out_paths(family_key)
+
+    t_all = time.time()
+    cutoff = holdout_start()
+    if cutoff is None:
+        raise SystemExit("results/xau_holdout_lock.json missing holdout_start — refuse to run")
+
+    raw_full = load_h1()
+    raw = develop_only(raw_full, cutoff)
+    print(
+        f"Family: {plugin.name} ({plugin.source})",
+        flush=True,
+    )
+    print(
+        f"Develop window: {len(raw)} H1 bars  {raw['time'].iloc[0]} → {raw['time'].iloc[-1]}",
+        flush=True,
+    )
+    print(f"Costs: {COSTS}", flush=True)
+
+    # Build grid — family may already subsample; we enforce max_n after if needed
+    try:
+        candidates = plugin.grid(max_n=args.max_n, seed=args.seed)
+    except TypeError:
+        # allow grid() with no kwargs
+        candidates = plugin.grid()
+        candidates = subsample_grid(candidates, max_n=args.max_n, seed=args.seed)
+    if len(candidates) > args.max_n:
+        candidates = subsample_grid(candidates, max_n=args.max_n, seed=args.seed)
+
+    print(
+        f"Grid: {len(candidates)} configs (max_n={args.max_n}, seed={args.seed})",
+        flush=True,
+    )
+
+    # --- real ---
+    print(f"Scoring REAL {plugin.name} grid (no early exit)...", flush=True)
+    d_real = plugin.prepare(raw)
+    real = score_grid(
+        d_real,
+        candidates,
+        simulate_fn=plugin.simulate,
+        classic_pass_fn=plugin.classic_pass,
+        soft_pass_fn=plugin.soft_pass,
+        costs=COSTS,
+        progress_every=args.progress_every,
+        label="real",
+    )
+    primary_key = "n_passers_soft" if plugin.use_soft_primary else "n_passers_classic"
+    real["n_passers"] = int(real[primary_key])
+    real["primary_n_passers"] = primary_key
+
+    print(
+        f"REAL: max_PF(n≥20)={real['max_pf']:.4f} "
+        f"primary_passers={real['n_passers']} "
+        f"classic={real['n_passers_classic']} soft={real['n_passers_soft']} "
+        f"(raw max_PF={real['max_pf_raw']:.1f})",
+        flush=True,
+    )
+
+    # --- nulls ---
+    print(
+        f"Running {args.n_null} null trials with {args.workers} workers...",
+        flush=True,
+    )
+    raw_records = raw.to_dict(orient="records")
+    for rec in raw_records:
+        t = rec["time"]
+        rec["time"] = t.isoformat() if hasattr(t, "isoformat") else str(t)
+
+    # Workers re-load family by the CLI name (builtins + modules).
+    family_load_name = args.family
+
+    null_rows: list[dict] = []
+    if args.n_null > 0:
+        if args.workers <= 1:
+            _init_worker(raw_records, candidates, COSTS, family_load_name)
+            for trial in range(args.n_null):
+                row = _null_trial(trial, args.null_seed)
+                null_rows.append(row)
+                print(
+                    f"  null {trial + 1}/{args.n_null}: "
+                    f"max_PF={row['max_pf']:.3f} passers={row['n_passers']} "
+                    f"classic={row['n_passers_classic']} soft={row['n_passers_soft']} "
+                    f"({row['elapsed_s']:.0f}s)",
+                    flush=True,
+                )
+        else:
+            with ProcessPoolExecutor(
+                max_workers=args.workers,
+                initializer=_init_worker,
+                initargs=(raw_records, candidates, COSTS, family_load_name),
+            ) as pool:
+                futs = {
+                    pool.submit(_null_trial, trial, args.null_seed): trial
+                    for trial in range(args.n_null)
+                }
+                done = 0
+                for fut in as_completed(futs):
+                    row = fut.result()
+                    null_rows.append(row)
+                    done += 1
+                    print(
+                        f"  null done {done}/{args.n_null} (trial {row['trial']}): "
+                        f"max_PF={row['max_pf']:.3f} passers={row['n_passers']} "
+                        f"({row['elapsed_s']:.0f}s)",
+                        flush=True,
+                    )
+            null_rows.sort(key=lambda r: r["trial"])
+
+    null_max_pf = [r["max_pf"] for r in null_rows]
+    null_n_pass = [float(r["n_passers"]) for r in null_rows]
+    null_n_classic = [float(r["n_passers_classic"]) for r in null_rows]
+    null_n_soft = [float(r["n_passers_soft"]) for r in null_rows]
+
+    p_max_pf = pvalue(null_max_pf, real["max_pf"])
+    p_n_passers = pvalue(null_n_pass, float(real["n_passers"]))
+    p_n_classic = pvalue(null_n_classic, float(real["n_passers_classic"]))
+    p_n_soft = pvalue(null_n_soft, float(real["n_passers_soft"]))
+
+    fail_pf = p_max_pf > 0.05
+    fail_pass = p_n_passers > 0.05
+    null_pass_dist = dist_summary(null_n_pass)
+
+    if args.quick:
+        disposition = "QUICK_SMOKE_ONLY"
+        reason = "Quick mode — not a real disposition. Re-run without --quick."
+    elif fail_pf or fail_pass:
+        disposition = plugin.kill_label
+        reason = (
+            f"Real best-of-{plugin.name}-grid is not distinguishable from "
+            f"return-shuffled nulls (p_max_pf={p_max_pf:.3f}, "
+            f"p_n_passers={p_n_passers:.3f}). The gates measured the search, "
+            "not the market. Do not tune further; do not promote."
+        )
+    elif real["n_passers"] <= null_pass_dist.get("p90", 0):
+        disposition = "WEAK_FAIL"
+        reason = (
+            f"p-values cleared 0.05 but real n_passers={real['n_passers']} is not above "
+            f"null p90={null_pass_dist.get('p90', 0):.1f}. Still not evidence of signal; "
+            "keep promote=no."
+        )
+    else:
+        disposition = "PASS_KEEP_RESEARCHING"
+        reason = (
+            f"Real max-stat sits outside the null (p_max_pf={p_max_pf:.3f}, "
+            f"p_n_passers={p_n_passers:.3f}). Permission to continue the family "
+            "(cut knobs, cross-instrument) — still not live_go / promote."
+        )
+
+    report = {
+        "method": "return_shuffle_maxstat_family",
+        "family": plugin.name,
+        "family_source": plugin.source,
+        "kill_label": plugin.kill_label,
+        "timestamp_utc": pd.Timestamp.utcnow().isoformat(),
+        "window": {
+            "holdout_start": str(cutoff),
+            "bars": int(len(raw)),
+            "start": raw["time"].iloc[0].isoformat(),
+            "end": raw["time"].iloc[-1].isoformat(),
+        },
+        "costs": COSTS,
+        "grid": {
+            "max_n": args.max_n,
+            "seed": args.seed,
+            "n_configs": len(candidates),
+        },
+        "gates": {
+            "classic": "n>=20, PF>1.5, WR>55, DD<10",
+            "soft": (
+                "PF>=1.5, n>=40, DD<=12, expectancy>=20"
+                if plugin.soft_pass is not None
+                else None
+            ),
+            "primary_n_passers": primary_key.replace("n_passers_", ""),
+            "max_pf_min_trades": MIN_TRADES_MAX_STAT,
+        },
+        "real": real,
+        "null": {
+            "n_trials": args.n_null,
+            "base_seed": args.null_seed,
+            "workers": args.workers,
+            "max_pf": dist_summary(null_max_pf),
+            "n_passers": null_pass_dist,
+            "n_passers_classic": dist_summary(null_n_classic),
+            "n_passers_soft": dist_summary(null_n_soft),
+            "p_max_pf": p_max_pf,
+            "p_n_passers": p_n_passers,
+            "p_n_passers_classic": p_n_classic,
+            "p_n_passers_soft": p_n_soft,
+            "trials": null_rows,
+        },
+        "verdict": {
+            "disposition": disposition,
+            "reason": reason,
+            "fail_max_pf": fail_pf,
+            "fail_n_passers": fail_pass,
+            "promote": False,
+            "live_go": False,
+        },
+        "elapsed_s": float(time.time() - t_all),
+        "quick": bool(args.quick),
+    }
+
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    out_json.write_text(json.dumps(report, indent=2, default=str) + "\n")
+    write_markdown(report, out_md)
+
+    print(flush=True)
+    print(f"Disposition: {disposition}", flush=True)
+    print(reason, flush=True)
+    print(f"Wrote {out_json.relative_to(ROOT)} and {out_md.relative_to(ROOT)}", flush=True)
+    print(f"Total elapsed: {report['elapsed_s']:.0f}s", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

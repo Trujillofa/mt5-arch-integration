@@ -45,9 +45,10 @@ from xau_lane_deep_opt import (  # noqa: E402
 from backtest import Metrics, load_h1  # noqa: E402
 
 PARAMS_PATH = ROOT / "strategy_params.json"
-# Same costs the shipped baseline was fitted with (frictionless if absent).
-_SAVED = json.loads(PARAMS_PATH.read_text()) if PARAMS_PATH.is_file() else {}
-COSTS: dict[str, Any] = dict(_SAVED.get("costs") or {})
+from xau_research_costs import load_research_costs  # noqa: E402
+
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS: dict[str, Any] = load_research_costs()
 
 CATALOG_PATH = ROOT / "results" / "xau_frozen_champions_catalog.json"
 OUT_JSON = ROOT / "results" / "xau_frozen_multi_year_eval.json"
@@ -365,7 +366,7 @@ def main() -> int:
             "n_catalog_entries": len(entries),
             "simulators": "xau_lane_deep_opt.py (import reuse; same as deep opt / preregistered lineage)",
             "costs": COSTS,
-            "safety": "offline only; NEVER retune; NEVER --live; params only from frozen catalog; costs from strategy_params.json",
+            "safety": "offline only; NEVER retune; NEVER --live; params only from frozen catalog; costs from results/xau_research_costs.json (fallback strategy_params)",
             "hard_pass_classic": {
                 "rule": "PF>1.5 WR>55 DD<10 n>=20",
                 "gates": HARD_PASS_CLASSIC,

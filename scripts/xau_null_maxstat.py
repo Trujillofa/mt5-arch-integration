@@ -60,10 +60,13 @@ PARAMS_PATH = ROOT / "strategy_params.json"
 OUT_JSON = ROOT / "results" / "xau_null_maxstat.json"
 OUT_MD = ROOT / "results" / "xau_null_maxstat.md"
 
-_SAVED = json.loads(PARAMS_PATH.read_text())
-COSTS: dict[str, Any] = dict(_SAVED.get("costs") or {})
-# point_size is required by simulate; default matches backtest
-COSTS.setdefault("point_size", 0.01)
+sys.path.insert(0, str(ROOT / "scripts"))
+from xau_research_costs import load_research_costs  # noqa: E402
+from xau_null_core import scramble_ohlc as scramble_ohlc  # noqa: E402
+from xau_null_core import pvalue as _pvalue  # noqa: E402
+
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS: dict[str, Any] = load_research_costs()
 
 # Worker globals filled in each process (fork COW on Linux; re-init on spawn).
 _W: dict[str, Any] = {}
@@ -89,43 +92,7 @@ def metrics_dict(m) -> dict:
     }
 
 
-def scramble_ohlc(raw: pd.DataFrame, rng: np.random.Generator) -> pd.DataFrame:
-    """Shuffle log-returns of close; rebuild OHLC; keep time/spread fixed.
-
-    Destroys the timing link between indicator state and subsequent price moves
-    while preserving the marginal return distribution and each bar's relative
-    high/low geometry (scaled to the new close).
-    """
-    out = raw.copy()
-    c = out["close"].to_numpy(dtype=float)
-    h = out["high"].to_numpy(dtype=float)
-    l = out["low"].to_numpy(dtype=float)
-    o = out["open"].to_numpy(dtype=float)
-
-    up = np.maximum(h - c, 0.0)
-    dn = np.maximum(c - l, 0.0)
-    open_off = o - c
-
-    log_c = np.log(np.clip(c, 1e-12, None))
-    rets = np.diff(log_c)
-    rng.shuffle(rets)
-    new_c = np.empty_like(c)
-    new_c[0] = c[0]
-    new_c[1:] = c[0] * np.exp(np.cumsum(rets))
-
-    scale = new_c / np.clip(c, 1e-12, None)
-    new_o = new_c + open_off * scale
-    new_h = new_c + up * scale
-    new_l = new_c - dn * scale
-    # enforce OHLC consistency
-    new_h = np.maximum.reduce([new_h, new_o, new_c])
-    new_l = np.minimum.reduce([new_l, new_o, new_c])
-
-    out["open"] = new_o
-    out["high"] = new_h
-    out["low"] = new_l
-    out["close"] = new_c
-    return out
+# scramble_ohlc imported from xau_null_core (re-exported)
 
 
 def score_grid(
@@ -300,12 +267,7 @@ def _null_trial(trial: int, base_seed: int) -> dict[str, Any]:
     }
 
 
-def _pvalue(null_vals: list[float], real: float) -> float:
-    """One-sided: P(null >= real). Add-one smoothing so p never hits 0."""
-    if not null_vals:
-        return 1.0
-    hits = sum(1 for v in null_vals if v >= real)
-    return (hits + 1) / (len(null_vals) + 1)
+# _pvalue imported from xau_null_core as _pvalue
 
 
 def write_markdown(report: dict, path: Path) -> None:

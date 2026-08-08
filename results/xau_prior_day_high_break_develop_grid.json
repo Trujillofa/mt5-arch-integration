@@ -1,0 +1,211 @@
+{
+  "status": "DEVELOP_GRID_SCORED",
+  "family": "prior_day_high_break",
+  "display_name": "Prior-day high breakout (fixed geometry)",
+  "charter": "results/xau_next_design_charter.json",
+  "claim_edge": false,
+  "note": "Develop-only full grid with research costs (RAW $3 RT floor). No edge claim; null max-stat + costed WF still required.",
+  "window": {
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "bars": 25582,
+    "start": "2021-09-03T19:00:00+00:00",
+    "end": "2025-12-31T23:00:00+00:00",
+    "rule": "time < holdout_start"
+  },
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 3.0,
+    "slippage_points": 0.0
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "long_only": true,
+    "max_lots": 0.5,
+    "tp_rr": 2.0,
+    "hours": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16
+    ],
+    "atr_period": 14,
+    "cooldown": 0
+  },
+  "free_knobs": {
+    "sl_atr": [
+      1.0,
+      1.5,
+      2.0
+    ]
+  },
+  "grid": {
+    "n_configs": 3,
+    "search_cardinality": 3,
+    "early_exit": false
+  },
+  "results": [
+    {
+      "index": 0,
+      "params": {
+        "sl_atr": 1.0,
+        "tp_rr": 2.0,
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "hours": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "atr_period": 14,
+        "cooldown": 0,
+        "long_only": true
+      },
+      "metrics": {
+        "net_profit": 442.3825717156983,
+        "win_rate": 35.69131832797428,
+        "profit_factor": 1.0242175048210194,
+        "max_drawdown_pct": 29.68258984645702,
+        "n_trades": 311,
+        "wins": 111,
+        "losses": 200,
+        "expectancy": 1.4224519990858466,
+        "expectancy_sqrt_n": 25.085214240618573
+      },
+      "passes_soft": false,
+      "passes_classic": false
+    },
+    {
+      "index": 1,
+      "params": {
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "hours": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "atr_period": 14,
+        "cooldown": 0,
+        "long_only": true
+      },
+      "metrics": {
+        "net_profit": 1252.8604927644446,
+        "win_rate": 36.14035087719298,
+        "profit_factor": 1.0772545036841288,
+        "max_drawdown_pct": 28.293166609020926,
+        "n_trades": 285,
+        "wins": 103,
+        "losses": 182,
+        "expectancy": 4.396001728998051,
+        "expectancy_sqrt_n": 74.21305068777222
+      },
+      "passes_soft": false,
+      "passes_classic": false
+    },
+    {
+      "index": 2,
+      "params": {
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "hours": [
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "atr_period": 14,
+        "cooldown": 0,
+        "long_only": true
+      },
+      "metrics": {
+        "net_profit": 202.83593333937688,
+        "win_rate": 34.86590038314176,
+        "profit_factor": 1.0136726808356644,
+        "max_drawdown_pct": 26.388329256284376,
+        "n_trades": 261,
+        "wins": 91,
+        "losses": 170,
+        "expectancy": 0.77714916988267,
+        "expectancy_sqrt_n": 12.555229078637845
+      },
+      "passes_soft": false,
+      "passes_classic": false
+    }
+  ],
+  "summary": {
+    "max_pf": 1.0772545036841288,
+    "max_pf_params": {
+      "sl_atr": 1.5,
+      "tp_rr": 2.0,
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "hours": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "atr_period": 14,
+      "cooldown": 0,
+      "long_only": true
+    },
+    "max_pf_metrics": {
+      "net_profit": 1252.8604927644446,
+      "win_rate": 36.14035087719298,
+      "profit_factor": 1.0772545036841288,
+      "max_drawdown_pct": 28.293166609020926,
+      "n_trades": 285,
+      "wins": 103,
+      "losses": 182,
+      "expectancy": 4.396001728998051,
+      "expectancy_sqrt_n": 74.21305068777222
+    },
+    "n_passers": 0,
+    "n_passers_soft": 0,
+    "n_passers_classic": 0,
+    "passer_definition_soft": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.2,
+      "net_profit": "gt_0"
+    },
+    "elapsed_s": 0.16210126876831055
+  },
+  "safety": {
+    "offline_only": true,
+    "promote": "no",
+    "live_go": false,
+    "holdout_used_for_selection": false
+  }
+}

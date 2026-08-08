@@ -33,11 +33,11 @@ from backtest import (
 )
 
 PARAMS_PATH = ROOT / "strategy_params.json"
+sys.path.insert(0, str(ROOT / "scripts"))
+from xau_research_costs import load_research_costs  # noqa: E402
 
-# Charge the same costs the shipped baseline was fitted with; a frictionless
-# comparison against a costed baseline is not a comparison.
-_SAVED = json.loads(PARAMS_PATH.read_text())
-COSTS = _SAVED.get("costs", {})
+# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+COSTS = load_research_costs()
 
 
 def simulate(d, **kw):  # noqa: F811  (cost-aware wrapper over backtest.simulate)

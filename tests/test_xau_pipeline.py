@@ -224,7 +224,7 @@ def test_backtest_save_is_opt_in(tmp_path):
 
 
 def test_costs_reduce_pnl_and_default_to_frictionless():
-    """Cost params must be opt-in (defaults reproduce) and strictly hurt when set."""
+    """Stored costs reproduce metrics; commission strictly reduces PnL vs zero commission."""
     import json
 
     saved = json.loads(PARAMS_FILE.read_text())
@@ -232,10 +232,13 @@ def test_costs_reduce_pnl_and_default_to_frictionless():
     d = indicators(slice_to_window(load_h1(), saved["data"]))
 
     costs = saved.get("costs", {})
-    free = simulate(d, **params, **costs)
-    assert free.net_profit == pytest.approx(saved["metrics"]["net_profit"], rel=1e-6)
+    # Replay with the costs block recorded alongside metrics.
+    with_stored = simulate(d, **params, **costs)
+    assert with_stored.net_profit == pytest.approx(saved["metrics"]["net_profit"], rel=1e-6)
 
-    # Real spread is already charged; adding commission must bite further.
+    # Commission (when non-zero) must bite relative to a zero-commission baseline;
+    # spread may already be charged in both legs.
+    free = simulate(d, **params, **{**costs, "commission_per_lot": 0.0})
     costed = simulate(d, **params, **{**costs, "commission_per_lot": 3.0})
     assert costed.net_profit < free.net_profit
     assert costed.profit_factor < free.profit_factor
