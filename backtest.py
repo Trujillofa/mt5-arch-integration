@@ -378,7 +378,34 @@ def print_metrics(m: Metrics) -> None:
     print(f"Trades: {m.n_trades} (W={m.wins} L={m.losses})")
 
 
-def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
+def search_score(m: Metrics) -> float:
+    """Composite score used by ``search()`` to rank configs (higher is better)."""
+    score = 0.0
+    if m.n_trades >= 20:
+        score += 50
+    if m.profit_factor > 1.5:
+        score += 200 + m.profit_factor * 20
+    else:
+        score += m.profit_factor * 5
+    if m.win_rate > 55:
+        score += 200 + m.win_rate
+    else:
+        score += m.win_rate * 0.5
+    if m.max_drawdown_pct < 10:
+        score += 200 - m.max_drawdown_pct
+    else:
+        score -= m.max_drawdown_pct * 2
+    score += m.net_profit / 50.0
+    return score
+
+
+def build_search_candidates(max_n: int = 1200, seed: int = 42) -> list[dict]:
+    """Full combinatorial grid subsampled the same way ``search()`` does.
+
+    Deterministic for a given ``max_n``/``seed``. Seeds are prepended so the
+    high-priority configs always appear first (and early-exit behaviour of
+    ``search()`` stays unchanged).
+    """
     candidates: list[dict] = []
     for mode in ("bb_rsi", "rsi_cross", "macd_pullback"):
         for rsi_buy in (30, 32, 35, 38, 40, 42):
@@ -408,13 +435,11 @@ def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
                                             )
                                         )
 
-    # deterministic subsample for speed (~1200 evals)
-    rng = np.random.default_rng(42)
-    if len(candidates) > 1200:
-        pick = rng.choice(len(candidates), size=1200, replace=False)
+    rng = np.random.default_rng(seed)
+    if len(candidates) > max_n:
+        pick = rng.choice(len(candidates), size=max_n, replace=False)
         candidates = [candidates[i] for i in sorted(pick)]
 
-    # seed high-priority configs
     seeds = [
         dict(mode="bb_rsi", rsi_buy=35, rsi_sell=58, sl_atr=1.2, tp_atr=2.0, bb_col="bb_lo", trend_col="ema100", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.01, cooldown=2),
         dict(mode="bb_rsi", rsi_buy=32, rsi_sell=55, sl_atr=1.0, tp_atr=1.8, bb_col="bb_lo15", trend_col="ema100", use_macd_filter=True, hours=None, long_only=True, risk_pct=0.01, cooldown=1),
@@ -422,7 +447,11 @@ def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
         dict(mode="macd_pullback", rsi_buy=40, rsi_sell=60, sl_atr=1.2, tp_atr=2.4, bb_col="bb_lo", trend_col="ema100", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.01, cooldown=2),
         dict(mode="bb_rsi", rsi_buy=38, rsi_sell=52, sl_atr=1.0, tp_atr=1.5, bb_col="bb_lo", trend_col="ema50", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.008, cooldown=1),
     ]
-    candidates = seeds + candidates
+    return seeds + candidates
+
+
+def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
+    candidates = build_search_candidates()
 
     best_p = candidates[0]
     best_m = Metrics(0, 0, 0, 100, 0, 0, 0)
@@ -430,22 +459,7 @@ def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
 
     for i, p in enumerate(candidates):
         m = sim(d, p)
-        score = 0.0
-        if m.n_trades >= 20:
-            score += 50
-        if m.profit_factor > 1.5:
-            score += 200 + m.profit_factor * 20
-        else:
-            score += m.profit_factor * 5
-        if m.win_rate > 55:
-            score += 200 + m.win_rate
-        else:
-            score += m.win_rate * 0.5
-        if m.max_drawdown_pct < 10:
-            score += 200 - m.max_drawdown_pct
-        else:
-            score -= m.max_drawdown_pct * 2
-        score += m.net_profit / 50.0
+        score = search_score(m)
         if score > best_score:
             best_score = score
             best_p, best_m = p, m

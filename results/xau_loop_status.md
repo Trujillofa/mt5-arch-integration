@@ -1,5 +1,35 @@
 # XAU offline loop status
 
+## 2026-08-08 — null / max-stat test (decisive for bb_rsi family)
+
+After measured costs flipped walk-forward negative, the remaining question was
+whether the develop-window gate-passers were market signal or search artifacts.
+`scripts/xau_null_maxstat.py` scored the full ~1205-config grid (no early exit)
+on develop bars with saved costs, then re-ran the same search on 40
+return-shuffled price paths.
+
+| Field | Value |
+|-------|--------|
+| **window** | develop only, 25582 H1 bars (`time < 2026-01-01`), holdout sealed |
+| **costs** | measured spread; commission/slippage still 0 |
+| **grid** | 1205 configs (max_n=1200, seed=42 + 5 seeds) |
+| **real max PF (n≥20)** | 2.242 · n_passers **19** · early-exit eligible 10 |
+| **baseline replay** | PF 1.6713 · n=42 (still clears gates alone) |
+| **null (40 trials)** | max PF p50 **≈3.0** · n_passers p50 **≈22** (often *more* passers than real) |
+| **p(null ≥ real)** | p_max_pf **0.854** · p_n_passers **0.707** |
+| **disposition** | **KILL_BB_RSI_LINE** |
+| **live_go** | **false** |
+| **promote** | **no** |
+
+The gates measured the search, not the market. Do **not** tune `bb_rsi` further,
+do not cross-instrument this family, do not promote. Artifacts:
+`results/xau_null_maxstat.json`, `results/xau_null_maxstat.md`.
+
+Commission figure from Vantage is still useful as cost floor for *other* lanes
+(e.g. re-costed Donchian), not for rescuing this one.
+
+---
+
 ## 2026-08-08 — transaction costs added (out of band, not a research fire)
 
 The backtest was frictionless. `MqlRates.spread` was always available and the old
