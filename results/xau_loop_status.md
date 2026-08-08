@@ -1,5 +1,43 @@
 # XAU offline loop status
 
+## 2026-08-08 — costed frozen multi-year after bb_rsi kill
+
+After `KILL_BB_RSI_LINE`, lane sims were wired to charge the same round-trip costs as
+`backtest.simulate`, then the frozen 8×9 multi-year matrix was re-scored (no retune).
+
+| Field | Value |
+|-------|--------|
+| **fire** | costed frozen multi-year (wire costs → EVAL → SKEPTIC) |
+| **context** | bb_rsi null-killed; prior multi-year was frictionless / unfalsifiable |
+| **costs** | `spread_col=spread`, `point_size=0.01`, `commission_per_lot=0`, `slippage_points=0` (measured H1 median ~18 pts / ~$0.18 RT; commission/slip still unmeasured) |
+| **catalog** | 8 frozen configs × 9 windows = 72 cells; params from `xau_frozen_champions_catalog.json` only |
+| **hard_pass** | classic **2/72** (was 3/72 frictionless); soft expectancy **13/72** (unchanged count) |
+| **lost under costs** | vol_gate 2023 classic hard_pass (PF 1.51→1.384); pullback 2023 **sign flip**; vol_gate `develop_like` **dies** (PF<1 / NP−) |
+| **sign-stable 2023–2025 under spread** | **Donchian only** (baseline + refined exit_N8); ATR still collapses 2023; fib thin-n / peek weak |
+| **disposition** | **RESEARCH_ONLY** |
+| **live_go** | **false** |
+| **promote** | **no** |
+| **PAPER_GO** | **no** |
+| **next_step** | **Donchian null / max-stat** (spread-costed, develop-only, mirror bb_rsi null protocol). Fail → KILL_DONCHIAN_LINE / RESEARCH_IDLE; pass → keep frozen for virgin-only future eval (still promote=no until sealed virgin hard_pass). |
+
+Do **not** revive bb_rsi, re-mine 2026_to_peek, re-label IS years as OOS, or promote from this matrix.
+Costs reduced gate hits; they did not create independence.
+
+### Artifacts this fire
+
+| Path | Role |
+|------|------|
+| `results/xau_post_kill_plan.md` | Wire + re-eval plan |
+| `results/xau_frozen_multi_year_eval.json` | Costed cells + meta.costs |
+| `results/xau_frozen_multi_year_matrix.csv` | Compact costed matrix |
+| `results/xau_frozen_multi_year_costed_skeptic.md` | Hostile skeptic → promote=no; next Donchian null |
+| `results/xau_post_kill_summary.md` | Executive summary (kill + costed re-eval + next) |
+| `results/xau_loop_status.md` | This note |
+
+Code (left uncommitted for parent): `scripts/xau_lane_deep_opt.py`, `scripts/xau_frozen_multi_year_eval.py` (+ eval json/csv).
+
+---
+
 ## 2026-08-08 — null / max-stat test (decisive for bb_rsi family)
 
 After measured costs flipped walk-forward negative, the remaining question was

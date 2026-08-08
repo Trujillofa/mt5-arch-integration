@@ -184,6 +184,32 @@ def _apply_be(
     return sl, be_done
 
 
+def _spread_pts_array(d: pd.DataFrame, n: int, spread_col: str | None) -> np.ndarray:
+    """Per-bar spread in points; zeros when column missing (frictionless)."""
+    if spread_col is not None and spread_col in d.columns:
+        return np.nan_to_num(d[spread_col].to_numpy(float), nan=0.0)
+    return np.zeros(n)
+
+
+def _trade_cost(
+    spread_pts: np.ndarray,
+    i: int,
+    lots: float,
+    *,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
+) -> float:
+    """Round-trip cost priced off entry bar — same formula as backtest.simulate."""
+    return (
+        (float(spread_pts[i]) + 2.0 * float(slippage_points))
+        * float(point_size)
+        * CONTRACT_SIZE
+        * float(lots)
+        + 2.0 * float(commission_per_lot) * float(lots)
+    )
+
+
 # ---------------------------------------------------------------------------
 # Lane simulators (enhanced)
 # ---------------------------------------------------------------------------
@@ -208,6 +234,10 @@ def simulate_vol_gate(
     hours: tuple[int, ...] | None = None,
     failed_breakout_fade: bool = False,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
     **_extra: Any,
 ) -> Metrics:
     n = len(d)
@@ -232,11 +262,13 @@ def simulate_vol_gate(
     )
 
     atr_max = _pct_unit(atr_max_pct) or 0.55
+    spread_pts = _spread_pts_array(d, n, spread_col)
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = tp = lots = initial_risk = 0.0
+    trade_cost = 0.0
     cool = 0
     be_done = False
     entries_today = 0
@@ -280,11 +312,12 @@ def simulate_vol_gate(
                 exit_px = px
 
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 be_done = False
                 eq[i] = bal
@@ -352,6 +385,14 @@ def simulate_vol_gate(
         if lots_sz is None:
             continue
         lots = lots_sz
+        trade_cost = _trade_cost(
+            spread_pts,
+            i,
+            lots,
+            point_size=point_size,
+            commission_per_lot=commission_per_lot,
+            slippage_points=slippage_points,
+        )
         if long_sig:
             pos = 1
             entry = px
@@ -367,7 +408,7 @@ def simulate_vol_gate(
         entries_today += 1
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal
@@ -395,6 +436,10 @@ def simulate_donchian(
     risk_pct: float = 0.01,
     max_lots: float = 0.5,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
     **_extra: Any,
 ) -> Metrics:
     n = len(d)
@@ -427,11 +472,13 @@ def simulate_donchian(
     )
 
     atr_min = _pct_unit(atr_min_pct)
+    spread_pts = _spread_pts_array(d, n, spread_col)
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = lots = initial_risk = 0.0
+    trade_cost = 0.0
     cool = 0
     be_done = False
     partial_done = False
@@ -491,11 +538,13 @@ def simulate_donchian(
                     exit_px = px
 
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                # Full RT once per entry (partial legs already booked price-only).
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 be_done = False
                 partial_done = False
@@ -550,6 +599,14 @@ def simulate_donchian(
         if lots_sz is None:
             continue
         lots = lots_sz
+        trade_cost = _trade_cost(
+            spread_pts,
+            i,
+            lots,
+            point_size=point_size,
+            commission_per_lot=commission_per_lot,
+            slippage_points=slippage_points,
+        )
         if long_sig:
             pos = 1
             entry = px
@@ -564,7 +621,7 @@ def simulate_donchian(
         entries_today += 1
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal
@@ -590,6 +647,10 @@ def simulate_atr_trail(
     risk_pct: float = 0.01,
     max_lots: float = 0.5,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
     **_extra: Any,
 ) -> Metrics:
     n = len(d)
@@ -626,11 +687,13 @@ def simulate_atr_trail(
     init_sl_mult = trail_mult if trail_mult > 0 else float(sl_atr)
     risk_sl_mult = float(sl_atr) if float(sl_atr) > 0 else init_sl_mult
 
+    spread_pts = _spread_pts_array(d, n, spread_col)
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = lots = initial_risk = 0.0
+    trade_cost = 0.0
     cool = 0
     be_done = False
     entries_today = 0
@@ -658,11 +721,12 @@ def simulate_atr_trail(
             elif pos < 0 and high[i] >= sl:
                 exit_px = sl
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 be_done = False
                 eq[i] = bal
@@ -704,6 +768,14 @@ def simulate_atr_trail(
         if lots_sz is None:
             continue
         lots = lots_sz
+        trade_cost = _trade_cost(
+            spread_pts,
+            i,
+            lots,
+            point_size=point_size,
+            commission_per_lot=commission_per_lot,
+            slippage_points=slippage_points,
+        )
         pos = 1
         entry = px
         sl = entry - atr[i] * init_sl_mult
@@ -712,7 +784,7 @@ def simulate_atr_trail(
         entries_today += 1
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal
@@ -741,6 +813,10 @@ def simulate_htf_fib_enhanced(
     max_lots: float = 0.5,
     cooldown: int = 1,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
     **_extra: Any,
 ) -> Metrics:
     """Causal HTF fib (c+right stamp) with portable risk filters."""
@@ -842,11 +918,13 @@ def simulate_htf_fib_enhanced(
             if not prev:
                 signal[i] = -1
 
+    spread_pts = _spread_pts_array(df, n, spread_col)
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = tp = lots = initial_risk = 0.0
+    trade_cost = 0.0
     cool = 0
     be_done = False
     entries_today = 0
@@ -878,11 +956,12 @@ def simulate_htf_fib_enhanced(
                 elif low[i] <= tp:
                     exit_px = tp
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 be_done = False
                 eq[i] = bal
@@ -909,11 +988,12 @@ def simulate_htf_fib_enhanced(
                 continue
             if pos == s:
                 continue
-            pnl = (px - entry) * CONTRACT_SIZE * lots * pos
+            pnl = (px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
             bal += pnl
             pnls.append(pnl)
             pos = 0
             lots = 0.0
+            trade_cost = 0.0
             eq[i] = bal
 
         stop_dist = atr_v[i] * sl_m
@@ -921,6 +1001,14 @@ def simulate_htf_fib_enhanced(
         if lots_sz is None:
             continue
         lots = lots_sz
+        trade_cost = _trade_cost(
+            spread_pts,
+            i,
+            lots,
+            point_size=point_size,
+            commission_per_lot=commission_per_lot,
+            slippage_points=slippage_points,
+        )
         if s > 0:
             pos = 1
             entry = px
@@ -936,7 +1024,7 @@ def simulate_htf_fib_enhanced(
         entries_today += 1
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal
@@ -966,6 +1054,10 @@ def simulate_htf_pullback(
     risk_pct: float = 0.01,
     max_lots: float = 0.5,
     long_only: bool = True,
+    spread_col: str | None = None,
+    point_size: float = 0.01,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
     **_extra: Any,
 ) -> Metrics:
     """NEW: H4 up + pull to ema20/50 + RSI band + optional FVG-proxy."""
@@ -989,11 +1081,13 @@ def simulate_htf_pullback(
     atr_lo = _pct_unit(atr_pctile_lo) or 0.0
     atr_hi = _pct_unit(atr_pctile_hi) or 1.0
 
+    spread_pts = _spread_pts_array(d, n, spread_col)
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
     pos = 0
     entry = sl = tp = lots = initial_risk = 0.0
+    trade_cost = 0.0
     cool = 0
     be_done = False
     entries_today = 0
@@ -1020,11 +1114,12 @@ def simulate_htf_pullback(
                 elif not np.isnan(rsi[i]) and rsi[i] >= rsi_sell:
                     exit_px = px
             if exit_px is not None:
-                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos
+                pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
                 bal += pnl
                 pnls.append(pnl)
                 pos = 0
                 lots = 0.0
+                trade_cost = 0.0
                 cool = cooldown
                 be_done = False
                 eq[i] = bal
@@ -1088,6 +1183,14 @@ def simulate_htf_pullback(
         if lots_sz is None:
             continue
         lots = lots_sz
+        trade_cost = _trade_cost(
+            spread_pts,
+            i,
+            lots,
+            point_size=point_size,
+            commission_per_lot=commission_per_lot,
+            slippage_points=slippage_points,
+        )
         pos = 1
         entry = px
         sl = entry - stop_dist
@@ -1097,7 +1200,7 @@ def simulate_htf_pullback(
         entries_today += 1
 
     if pos != 0:
-        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos
+        pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
         eq[-1] = bal

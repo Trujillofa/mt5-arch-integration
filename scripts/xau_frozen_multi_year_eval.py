@@ -42,6 +42,11 @@ from xau_lane_deep_opt import (  # noqa: E402
     simulate_vol_gate,
 )
 
+PARAMS_PATH = ROOT / "strategy_params.json"
+# Same costs the shipped baseline was fitted with (frictionless if absent).
+_SAVED = json.loads(PARAMS_PATH.read_text()) if PARAMS_PATH.is_file() else {}
+COSTS: dict[str, Any] = dict(_SAVED.get("costs") or {})
+
 CATALOG_PATH = ROOT / "results" / "xau_frozen_champions_catalog.json"
 OUT_JSON = ROOT / "results" / "xau_frozen_multi_year_eval.json"
 OUT_CSV = ROOT / "results" / "xau_frozen_multi_year_matrix.csv"
@@ -199,8 +204,11 @@ def run_one(
     sim: Callable[..., Metrics],
     d: pd.DataFrame,
     params: dict[str, Any],
+    costs: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    m = sim(d, **params)
+    # Module COSTS default; explicit costs= overrides. Catalog params win on clash.
+    cost_kw = dict(COSTS if costs is None else costs)
+    m = sim(d, **{**cost_kw, **params})
     return metrics_dict(m)
 
 
@@ -218,6 +226,7 @@ def main() -> int:
             file=sys.stderr,
         )
 
+    print(f"costs={COSTS}", flush=True)
     print("Loading H1 + prepare_frame (same as xau_lane_deep_opt) ...", flush=True)
     raw = load_h1()
     d_all = prepare_frame(raw)
@@ -353,7 +362,8 @@ def main() -> int:
             "catalog": "results/xau_frozen_champions_catalog.json",
             "n_catalog_entries": len(entries),
             "simulators": "xau_lane_deep_opt.py (import reuse; same as deep opt / preregistered lineage)",
-            "safety": "offline only; NEVER retune; NEVER --live; params only from frozen catalog",
+            "costs": COSTS,
+            "safety": "offline only; NEVER retune; NEVER --live; params only from frozen catalog; costs from strategy_params.json",
             "hard_pass_classic": {
                 "rule": "PF>1.5 WR>55 DD<10 n>=20",
                 "gates": HARD_PASS_CLASSIC,
