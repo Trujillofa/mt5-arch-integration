@@ -4,6 +4,8 @@ Compact operating rules. `CLAUDE.md` holds the deep detail; where the two overla
 
 ## Two layers in one repo
 
+**Adopted charter:** [docs/CHARTER-RESEARCH-LAYER.md](docs/CHARTER-RESEARCH-LAYER.md) — **Option B (dual-layer)**, 2026-08-08. Merge allowed with hard boundaries; merge ≠ promote. See also [results/xau_charter_adopted.md](results/xau_charter_adopted.md).
+
 **1. Platform layer** (the repo's stated scope): Wine MT5 + file bridge (or RPyC/mt5linux) + thin Python CLI.
 
 - `src/mt5_arch/` — typed client + CLI (`config.py`, `client.py` RPyC backend, `file_bridge.py` EA backend, `models.py`, `cli.py`, `window_ops.py`).

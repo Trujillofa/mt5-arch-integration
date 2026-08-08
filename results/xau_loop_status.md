@@ -1,5 +1,22 @@
 # XAU offline loop status
 
+## 2026-08-08 — Charter Option B adopted
+
+**Charter:** Option B (explicit dual-layer) adopted — see [`docs/CHARTER-RESEARCH-LAYER.md`](../docs/CHARTER-RESEARCH-LAYER.md) and [`results/xau_charter_adopted.md`](xau_charter_adopted.md).
+
+Strategy disposition is **unchanged** by charter adoption:
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **RESEARCH_IDLE** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+
+Merge under dual-layer boundaries ≠ promote. No live orders without explicit consent.
+
+---
+
 ## 2026-08-08 — Donchian null / max-stat (decisive for turtle / Donchian family)
 
 After costed multi-year left Donchian as the only sign-stable lane under spread,
