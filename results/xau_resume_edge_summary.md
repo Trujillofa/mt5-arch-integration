@@ -5,6 +5,8 @@
 **Branch:** `research/algo-trading-btc-gold-forex`  
 **Safety:** offline only · promote=no · live_go=false · no `--live`
 
+**Commit:** `1e01392` (`1e013927245ff5a224c6bcd64ee289cab0a3090f`)
+
 ## Outcome
 
 | Field | Value |
@@ -48,4 +50,4 @@ Null **KILL** → no costed walk-forward for this family. Do not retune, free kn
 
 ## Git
 
-See commit on this branch with message covering RAW $3 + `prior_day_high_break` + `KILL_PRIOR_DAY_HIGH_BREAK`. Ordinary push only (no force).
+Commit **`1e01392`** — RAW $3 + `prior_day_high_break` + `KILL_PRIOR_DAY_HIGH_BREAK`. Ordinary push to `origin/research/algo-trading-btc-gold-forex` (no force).
