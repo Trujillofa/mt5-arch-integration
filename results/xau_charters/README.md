@@ -13,7 +13,8 @@
 
 | Path | Family | Status |
 |------|--------|--------|
-| `2026-08-10_tod_london_ny_flat_v1.json` | `tod_london_ny_flat` | FROZEN zero-knob session thesis; **not yet sealed-run** |
+| `2026-08-10_tod_london_ny_flat_v1.json` | `tod_london_ny_flat` | **PROTOCOL_NULL_INVALID** / SCREEN_FAIL (invalid day_block null + unproven London–NY claim). r1 not burned. |
+| `2026-08-10_server_hour_window_flat_v1.json` | `server_hour_window_flat` | FROZEN zero-knob **server-hour** thesis; null=`within_day_return_rotate`; n_null=999. Sealed run optional, not auto. |
 
 Required fields: `gates` (classic+soft), `null.method` + `null.n_trials` (≥199; 999 for 0–1 knobs), `rule.intraday_flat` or swap handling, `protocol_version: 2`.
 

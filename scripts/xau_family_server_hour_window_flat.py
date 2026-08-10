@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Zero-knob London–NY overlap long, force flat end of session.
+"""Zero-knob server-hour window long, force flat end of window.
 
-Charter: ``results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json``
+Charter: ``results/xau_charters/2026-08-10_server_hour_window_flat_v1.json``
 
-* Entry: long at close of server hour 13 if flat (one per day).
+* Entry: long at close of **server** hour 13 if flat (one per day).
 * SL 1.5 ATR / TP 2.0 ATR (fixed).
 * Exit: SL/TP or force flat at close of hour 16 same day (intraday flat).
 * Grid cardinality 1 (no free knobs).
+* Hours are server labels as stored — NOT claimed London–NY wall-clock overlap.
+* Null must be ``within_day_return_rotate`` (charter).
 
-SAFETY: offline only. Null for this family must be day_block_shuffle (charter).
+SAFETY: offline only.
 """
 from __future__ import annotations
 
@@ -24,9 +26,9 @@ from backtest import (
     metrics_from_pnls,
 )
 
-FAMILY = "tod_london_ny_flat"
+FAMILY = "server_hour_window_flat"
 NAME = FAMILY
-kill_label = "KILL_TOD_LONDON_NY_FLAT"
+kill_label = "KILL_SERVER_HOUR_WINDOW_FLAT"
 use_soft_primary = True
 
 ENTRY_HOUR = 13

@@ -34,13 +34,13 @@ MIN_TRADES_MAX_STAT = 20
 def _rebuild_ohlc_from_close(
     c: np.ndarray,
     h: np.ndarray,
-    l: np.ndarray,
+    lo: np.ndarray,
     o: np.ndarray,
     new_c: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Scale original bar geometry onto a new close path."""
     up = np.maximum(h - c, 0.0)
-    dn = np.maximum(c - l, 0.0)
+    dn = np.maximum(c - lo, 0.0)
     open_off = o - c
     scale = new_c / np.clip(c, 1e-12, None)
     new_o = new_c + open_off * scale
@@ -75,23 +75,35 @@ def apply_null_method(
     -------
     global_return_shuffle
         Shuffle all close-to-close log returns (legacy). Breaks session structure.
-    day_block_shuffle
-        Shuffle calendar-day blocks of OHLC (size ``block_days``) as units.
-        Preserves intra-day path shape and session geometry; destroys day order.
-    circular_day_shift
-        Circular-shift day blocks by a random offset (preserves adjacency better
-        than full shuffle; still kills absolute calendar alignment of signals).
+    within_day_return_rotate
+        **Preferred for server-hour / session rules.** Per calendar day, circularly
+        rotate the within-day close-to-close log-return sequence by k≥1, rebuild a
+        continuous price path (rebase from the day's first close), and re-attach
+        bar geometry. Timestamps and spreads stay fixed. Destroys hour↔return
+        association while preserving day bar counts and continuous daily geometry.
+    day_block_shuffle / circular_day_shift
+        **PROTOCOL_NULL_INVALID for session hypotheses** (variable-length days,
+        absolute-price blocks, hour misalignment). Kept only for legacy docs;
+        prefer within_day_return_rotate.
     """
     method = (method or "global_return_shuffle").strip().lower()
     if method in ("global_return_shuffle", "return_shuffle", "global"):
         return _null_global_return_shuffle(raw, rng)
+    if method in (
+        "within_day_return_rotate",
+        "within_day_hour_rotate",
+        "session_return_rotate",
+        "intraday_return_rotate",
+    ):
+        return _null_within_day_return_rotate(raw, rng)
     if method in ("day_block_shuffle", "block_shuffle", "block"):
         return _null_day_block_permute(raw, rng, block_days=block_days, circular=False)
     if method in ("circular_day_shift", "circular", "circular_shift"):
         return _null_day_block_permute(raw, rng, block_days=block_days, circular=True)
     raise ValueError(
         f"unknown null method {method!r}; "
-        "use global_return_shuffle | day_block_shuffle | circular_day_shift"
+        "use global_return_shuffle | within_day_return_rotate | "
+        "day_block_shuffle | circular_day_shift"
     )
 
 
@@ -99,7 +111,7 @@ def _null_global_return_shuffle(raw: pd.DataFrame, rng: np.random.Generator) -> 
     out = raw.copy()
     c = out["close"].to_numpy(dtype=float)
     h = out["high"].to_numpy(dtype=float)
-    l = out["low"].to_numpy(dtype=float)
+    lo = out["low"].to_numpy(dtype=float)
     o = out["open"].to_numpy(dtype=float)
 
     log_c = np.log(np.clip(c, 1e-12, None))
@@ -108,7 +120,7 @@ def _null_global_return_shuffle(raw: pd.DataFrame, rng: np.random.Generator) -> 
     new_c = np.empty_like(c)
     new_c[0] = c[0]
     new_c[1:] = c[0] * np.exp(np.cumsum(rets))
-    new_o, new_h, new_l = _rebuild_ohlc_from_close(c, h, l, o, new_c)
+    new_o, new_h, new_l = _rebuild_ohlc_from_close(c, h, lo, o, new_c)
     out["open"], out["high"], out["low"], out["close"] = new_o, new_h, new_l, new_c
     return out
 
@@ -116,7 +128,76 @@ def _null_global_return_shuffle(raw: pd.DataFrame, rng: np.random.Generator) -> 
 def _day_keys(times: pd.Series) -> np.ndarray:
     t = pd.to_datetime(times, utc=True)
     # calendar day in the series' timezone (broker/server stamps as stored)
-    return t.dt.strftime("%Y-%m-%d").to_numpy()
+    return np.asarray(t.dt.strftime("%Y-%m-%d").to_numpy())
+
+
+def _null_within_day_return_rotate(
+    raw: pd.DataFrame,
+    rng: np.random.Generator,
+) -> pd.DataFrame:
+    """Per-day circular rotation of within-day log-returns; continuous rebase.
+
+    For each calendar day with m bars and closes c[0..m-1]:
+      rets[i] = log(c[i+1]/c[i])  (m-1 returns)
+      rotate rets left by k ~ Uniform{1..m-2} when m>=3 else skip day
+      rebuild c' from c[0] with cumsum of rotated rets
+      rebuild OHLC geometry scaled onto c'
+
+    Timestamps and spreads are unchanged. No cross-day absolute-price paste.
+    """
+    out = raw.copy()
+    n = len(out)
+    if n == 0:
+        return out
+
+    c = out["close"].to_numpy(dtype=float)
+    h = out["high"].to_numpy(dtype=float)
+    lo = out["low"].to_numpy(dtype=float)
+    o = out["open"].to_numpy(dtype=float)
+    days = _day_keys(out["time"])
+
+    new_c = c.copy()
+    new_o = o.copy()
+    new_h = h.copy()
+    new_l = lo.copy()
+
+    # group indices per day preserving order
+    groups: dict[str, list[int]] = {}
+    order: list[str] = []
+    for i, d in enumerate(days):
+        ds = str(d)
+        if ds not in groups:
+            groups[ds] = []
+            order.append(ds)
+        groups[ds].append(i)
+
+    for d in order:
+        idxs = groups[d]
+        m = len(idxs)
+        if m < 3:
+            # cannot rotate returns meaningfully; leave day as-is
+            continue
+        ix = np.asarray(idxs, dtype=int)
+        cc = c[ix]
+        # within-day log returns
+        rets = np.diff(np.log(np.clip(cc, 1e-12, None)))
+        k = int(rng.integers(1, m - 1))  # 1..m-2 inclusive via high=m-1 exclusive in integers
+        # numpy integers(low, high) is [low, high)
+        rets_r = np.concatenate([rets[k:], rets[:k]])
+        cc_new = np.empty(m, dtype=float)
+        cc_new[0] = cc[0]  # rebase: keep day's first close
+        cc_new[1:] = cc[0] * np.exp(np.cumsum(rets_r))
+        oo, hh, ll = _rebuild_ohlc_from_close(cc, h[ix], lo[ix], o[ix], cc_new)
+        new_c[ix] = cc_new
+        new_o[ix] = oo
+        new_h[ix] = hh
+        new_l[ix] = ll
+
+    out["open"] = new_o
+    out["high"] = new_h
+    out["low"] = new_l
+    out["close"] = new_c
+    return out
 
 
 def _null_day_block_permute(
@@ -126,7 +207,11 @@ def _null_day_block_permute(
     block_days: int = 1,
     circular: bool = False,
 ) -> pd.DataFrame:
-    """Permute or circular-shift day blocks; keep time index and spread columns."""
+    """LEGACY — invalid for session-hour tests (see protocol v2.1).
+
+    Pastes absolute-price day blocks onto fixed timestamps without rebasing;
+    variable-length days misalign hours. Prefer ``within_day_return_rotate``.
+    """
     if block_days < 1:
         block_days = 1
     out = raw.copy()
@@ -135,7 +220,6 @@ def _null_day_block_permute(
         return out
 
     days = _day_keys(out["time"])
-    # group bar indices by day
     order: list[str] = []
     groups: dict[str, list[int]] = {}
     for i, d in enumerate(days):
@@ -144,7 +228,6 @@ def _null_day_block_permute(
             order.append(str(d))
         groups[d].append(i)
 
-    # pack into blocks of block_days consecutive calendar days in original order
     blocks: list[list[int]] = []
     for i in range(0, len(order), block_days):
         idxs: list[int] = []
@@ -163,13 +246,9 @@ def _null_day_block_permute(
         perm = rng.permutation(len(blocks))
         new_blocks = [blocks[int(j)] for j in perm]
 
-    # Map new OHLC sequence onto original time positions: take OHLC from permuted
-    # bars in order, assign to fixed timestamps (spread stays with calendar time).
     src_idx = np.concatenate([np.asarray(b, dtype=int) for b in new_blocks])
-    # length may match; if not (shouldn't), clip
     src_idx = src_idx[:n]
     if len(src_idx) < n:
-        # pad with last
         pad = np.full(n - len(src_idx), src_idx[-1], dtype=int)
         src_idx = np.concatenate([src_idx, pad])
 
@@ -185,8 +264,10 @@ def null_invariants_ok(
     scrambled: pd.DataFrame,
     *,
     method: str,
+    entry_hour: int | None = None,
+    flat_hour: int | None = None,
 ) -> dict[str, bool]:
-    """Cheap checks that a null transform preserved intended structure."""
+    """Checks that a null transform preserved intended structure."""
     method = method.lower()
     checks: dict[str, bool] = {
         "same_length": len(raw) == len(scrambled),
@@ -207,12 +288,107 @@ def null_invariants_ok(
                 equal_nan=True,
             )
         )
+
+    raw_days = _day_keys(raw["time"])
+    scr_days = _day_keys(scrambled["time"])
+    # per-day bar counts must match *by calendar day* (not just multiset)
+    if len(raw_days) == len(scr_days):
+        raw_by = pd.Series(1, index=range(len(raw))).groupby(raw_days).size()
+        scr_by = pd.Series(1, index=range(len(scrambled))).groupby(scr_days).size()
+        checks["per_day_bar_count_equal"] = bool(raw_by.equals(scr_by))
+    else:
+        checks["per_day_bar_count_equal"] = False
+
+    if method in (
+        "within_day_return_rotate",
+        "within_day_hour_rotate",
+        "session_return_rotate",
+        "intraday_return_rotate",
+    ):
+        # continuous within-day: no huge artificial jump mid-day beyond original max jump*factor
+        checks["within_day_path_continuous"] = _within_day_jumps_bounded(raw, scrambled)
+        # destroy hour-path association: close series at fixed hours should differ on some days
+        if entry_hour is not None:
+            checks["entry_hour_closes_moved"] = _hour_closes_differ(
+                raw, scrambled, hour=int(entry_hour)
+            )
+        else:
+            checks["entry_hour_closes_moved"] = True
+        if flat_hour is not None and entry_hour is not None:
+            checks["session_path_association_broken"] = _session_path_differs(
+                raw, scrambled, entry_hour=int(entry_hour), flat_hour=int(flat_hour)
+            )
+        else:
+            checks["session_path_association_broken"] = True
+
     if method in ("day_block_shuffle", "block_shuffle", "block", "circular_day_shift", "circular"):
-        # each calendar day in scrambled should have same bar count as some day in raw
-        raw_counts = pd.Series(_day_keys(raw["time"])).value_counts().sort_values().to_numpy()
-        scr_counts = pd.Series(_day_keys(scrambled["time"])).value_counts().sort_values().to_numpy()
+        # document that multiset-only check is weak (timestamps fixed)
+        raw_counts = pd.Series(raw_days).value_counts().sort_values().to_numpy()
+        scr_counts = pd.Series(scr_days).value_counts().sort_values().to_numpy()
         checks["day_bar_count_multiset"] = bool(np.array_equal(raw_counts, scr_counts))
+        checks["protocol_session_valid"] = False  # explicitly invalid for hour rules
+
     return checks
+
+
+def _within_day_jumps_bounded(raw: pd.DataFrame, scr: pd.DataFrame, factor: float = 5.0) -> bool:
+    """True if max |Δlog c| within each day is not wildly above original (no paste gaps)."""
+    rd = _day_keys(raw["time"])
+    rc = raw["close"].to_numpy(float)
+    sc = scr["close"].to_numpy(float)
+    for d in np.unique(rd):
+        ix = np.where(rd == d)[0]
+        if len(ix) < 2:
+            continue
+        r_j = np.abs(np.diff(np.log(np.clip(rc[ix], 1e-12, None))))
+        s_j = np.abs(np.diff(np.log(np.clip(sc[ix], 1e-12, None))))
+        if r_j.size == 0:
+            continue
+        if float(s_j.max()) > float(r_j.max()) * factor + 1e-12 and not np.isclose(
+            float(s_j.max()), float(r_j.max()), rtol=1e-6, atol=1e-9
+        ):
+            return False
+    return True
+
+
+def _hour_closes_differ(raw: pd.DataFrame, scr: pd.DataFrame, *, hour: int) -> bool:
+    t = pd.to_datetime(raw["time"], utc=True)
+    h = t.dt.hour.to_numpy()
+    mask = h == int(hour)
+    if not mask.any():
+        return True
+    rc = raw["close"].to_numpy(float)[mask]
+    sc = scr["close"].to_numpy(float)[mask]
+    return bool(np.mean(np.abs(rc - sc) > 1e-9) > 0.1)  # >10% of hour bars moved
+
+
+def _session_path_differs(
+    raw: pd.DataFrame,
+    scr: pd.DataFrame,
+    *,
+    entry_hour: int,
+    flat_hour: int,
+) -> bool:
+    """Fraction of days where close path over [entry, flat] hours differs."""
+    t = pd.to_datetime(raw["time"], utc=True)
+    days = t.dt.strftime("%Y-%m-%d").to_numpy()
+    hours = t.dt.hour.to_numpy()
+    rc = raw["close"].to_numpy(float)
+    sc = scr["close"].to_numpy(float)
+    changed = 0
+    total = 0
+    for d in np.unique(days):
+        ix = np.where(
+            (days == d) & (hours >= entry_hour) & (hours <= flat_hour)
+        )[0]
+        if len(ix) < 2:
+            continue
+        total += 1
+        if not np.allclose(rc[ix], sc[ix], rtol=0, atol=1e-9):
+            changed += 1
+    if total == 0:
+        return True
+    return (changed / total) > 0.5
 
 
 def pvalue(null_vals: list[float], real: float) -> float:

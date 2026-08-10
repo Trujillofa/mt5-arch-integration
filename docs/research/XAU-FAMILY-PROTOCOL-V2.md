@@ -1,12 +1,20 @@
-# XAU family research protocol v2 (Phase 0)
+# XAU family research protocol v2.1
 
 **Date:** 2026-08-10  
 **Status:** active for new families  
-**Does not change:** PR #1 scope (review separately); standing KILLs for bb_rsi / Donchian / prior_day_high_break
+**PR #1 note:** Protocol work is on the same branch as draft PR #1 — scope **did expand**; do not claim separation.
 
 ## Why
 
 Prior null harnesses mixed module-local soft gates with hard-coded report strings, used n_null=40 (coarse under add-one smoothing), defaulted to global return shuffle (invalid for pure session claims), and overwrote a single “next charter” path.
+
+### v2.1 correction (post review)
+
+* **`day_block_shuffle` is PROTOCOL_NULL_INVALID** for server-hour rules (variable-length absolute-price paste).
+* Session null = **`within_day_return_rotate`** (rebase within day; preserve bar counts; break hour↔path association).
+* Clock: server hours as stored; **no London–NY claim** without external offset proof.
+* Strict charter/runtime equality; blocking fixtures; slip sensitivity in report.
+* `tod_london_ny_flat` v1 = `PROTOCOL_NULL_INVALID` / `SCREEN_FAIL`; r1 not burned.
 
 ## Rules
 

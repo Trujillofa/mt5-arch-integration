@@ -22,9 +22,10 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+from collections.abc import Callable
 from datetime import date
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CHARTERS_DIR = ROOT / "results" / "xau_charters"
@@ -122,7 +123,17 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
         )
     method = str(null.get("method") or null.get("null_method") or "")
     if not method:
-        errs.append("null.method required (e.g. global_return_shuffle, day_block_shuffle, circular_day_shift)")
+        errs.append(
+            "null.method required (e.g. within_day_return_rotate, global_return_shuffle)"
+        )
+    if (
+        method in ("day_block_shuffle", "circular_day_shift", "block_shuffle", "circular")
+        and float(charter.get("protocol_version") or 0) >= 2.1
+    ):
+        errs.append(
+            f"null.method={method!r} is PROTOCOL_NULL_INVALID for session-hour "
+            "families under protocol ≥2.1; use within_day_return_rotate"
+        )
     if not (charter.get("gates") or charter.get("passer_definition_soft")):
         errs.append("gates or passer_definition_soft required")
     costs = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
@@ -131,10 +142,15 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
     # Intraday flat or swap handling
     rule = charter.get("rule") or {}
     exits = str(rule.get("exit") or "") + str(rule.get("intraday_flat") or "")
-    if not rule.get("intraday_flat") and "swap" not in exits.lower() and "flat" not in exits.lower():
-        # soft warning encoded as error for new protocol families
-        if charter.get("protocol_version", 0) >= 2:
-            errs.append("rule.intraday_flat true required (or explicit swap handling) under protocol v2")
+    if (
+        float(charter.get("protocol_version") or 0) >= 2
+        and not rule.get("intraday_flat")
+        and "swap" not in exits.lower()
+        and "flat" not in exits.lower()
+    ):
+        errs.append(
+            "rule.intraday_flat true required (or explicit swap handling) under protocol v2"
+        )
     return errs
 
 
@@ -312,11 +328,10 @@ def make_pass_fns(charter: dict[str, Any]) -> tuple[Callable[[Any], bool], Calla
                 md["max_drawdown_pct"]
             ) > float(soft_spec["max_drawdown_pct_max"]):
                 return False
-            if soft_spec.get("expectancy_min") is not None and float(md["expectancy"]) < float(
-                soft_spec["expectancy_min"]
-            ):
-                return False
-            return True
+            return not (
+                soft_spec.get("expectancy_min") is not None
+                and float(md["expectancy"]) < float(soft_spec["expectancy_min"])
+            )
 
         soft_fn = _soft
 

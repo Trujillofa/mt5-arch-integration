@@ -51,11 +51,12 @@ import json
 import os
 import sys
 import time
+from collections.abc import Callable
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -65,20 +66,7 @@ SCRIPTS = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-from xau_null_core import (  # noqa: E402
-    MIN_TRADES_MAX_STAT,
-    apply_null_method,
-    dist_summary,
-    hard_pass_classic,
-    metrics_dict,
-    pvalue,
-    scramble_ohlc,
-    serializable_params,
-    soft_pass_expectancy,
-    subsample_grid,
-)
-from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
-from xau_charter_protocol import (  # noqa: E402
+from xau_charter_protocol import (  # noqa: E402, I001
     MIN_NULL_TRIALS_PROTOCOL,
     build_provenance,
     gates_from_charter,
@@ -86,14 +74,26 @@ from xau_charter_protocol import (  # noqa: E402
     make_pass_fns,
     null_spec_from_charter,
 )
+from xau_null_core import (  # noqa: E402, I001
+    MIN_TRADES_MAX_STAT,
+    apply_null_method,
+    dist_summary,
+    hard_pass_classic,
+    metrics_dict,
+    pvalue,
+    serializable_params,
+    soft_pass_expectancy,
+    subsample_grid,
+)
+from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402, I001
 
-from backtest import (  # noqa: E402
+from backtest import (  # noqa: E402, I001
+    CSV_PATH,
     Metrics,
     develop_only,
     holdout_start,
     load_h1,
     passes as backtest_passes,
-    CSV_PATH,
 )
 
 # Account-matched research costs (Standard STP: commission 0 + measured spread).
@@ -214,10 +214,19 @@ def _builtin_tod_london_ny_flat() -> FamilyPlugin:
     return _wrap_module("tod_london_ny_flat", mod, source="xau_family_tod_london_ny_flat")
 
 
+def _builtin_server_hour_window_flat() -> FamilyPlugin:
+    import xau_family_server_hour_window_flat as mod  # type: ignore
+
+    return _wrap_module(
+        "server_hour_window_flat", mod, source="xau_family_server_hour_window_flat"
+    )
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
     "tod_london_ny_flat": _builtin_tod_london_ny_flat,
+    "server_hour_window_flat": _builtin_server_hour_window_flat,
 }
 
 
@@ -370,14 +379,16 @@ def score_grid(
         if pfs[i] > best_pf or (pfs[i] == best_pf and nets[i] > nets[best_pf_i]):
             best_pf = float(pfs[i])
             best_pf_i = i
-        if ntr[i] >= min_trades:
-            if pfs[i] > best_min_pf or (
+        if ntr[i] >= min_trades and (
+            pfs[i] > best_min_pf
+            or (
                 pfs[i] == best_min_pf
                 and best_min_pf_i >= 0
                 and nets[i] > nets[best_min_pf_i]
-            ):
-                best_min_pf = float(pfs[i])
-                best_min_pf_i = i
+            )
+        ):
+            best_min_pf = float(pfs[i])
+            best_min_pf_i = i
         if soft_mask[i] and (
             exps[i] > best_soft_exp
             or (exps[i] == best_soft_exp and pfs[i] > pfs[max(best_soft_i, 0)])
@@ -657,6 +668,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="allow n_null below protocol floor (smoke/quick only; not for disposition)",
     )
+    ap.add_argument(
+        "--strict-charter",
+        action="store_true",
+        help="require --charter; refuse family/null/cost mismatches; no CLI null overrides",
+    )
+    ap.add_argument(
+        "--allow-charter-override",
+        action="store_true",
+        help="allow CLI --n-null/--null-method to differ from charter (marks non-dispositional)",
+    )
     ap.add_argument("--seed", type=int, default=42, help="grid subsample seed")
     ap.add_argument("--null-seed", type=int, default=20260808, help="base seed for nulls")
     ap.add_argument(
@@ -684,28 +705,95 @@ def main(argv: list[str] | None = None) -> int:
     block_days = 1
     gate_desc_classic = "n>=20, PF>1.5, WR>55, DD<10"
     gate_desc_soft: str | None = "PF>=1.5, n>=40, DD<=12, expectancy>=20"
+    non_dispositional = False
+    slip_sensitivity_pts: list[float] = []
+
+    if args.strict_charter and not args.charter:
+        raise SystemExit("--strict-charter requires --charter")
+
+    cli_n_null = args.n_null  # None unless user passed --n-null
+    cli_null_method = args.null_method
 
     if args.charter:
         charter_path = Path(args.charter)
         charter = load_charter(charter_path)
+        if charter.get("disposition") in (
+            "PROTOCOL_NULL_INVALID",
+            "SCREEN_FAIL",
+            "SUPERSEDED",
+        ):
+            raise SystemExit(
+                f"charter disposition={charter.get('disposition')!r} — refuse run"
+            )
         ns = null_spec_from_charter(charter)
-        null_method = str(args.null_method or ns["method"])
+        charter_n_null = int(ns["n_trials"])
+        charter_method = str(ns["method"])
         block_days = int(ns["block_days"])
-        if args.n_null is None:
-            args.n_null = int(ns["n_trials"])
+        null_method = charter_method
+        args.n_null = charter_n_null if cli_n_null is None else int(cli_n_null)
         gmeta = gates_from_charter(charter)
         gate_desc_classic = gmeta["description"]["classic"]
         gate_desc_soft = gmeta["description"]["soft"]
+        # family id must match charter
+        fid = str(charter.get("family_id") or "")
+        cli = args.family.strip().replace("-", "_")
+        if cli.startswith("xau_family_"):
+            cli = cli[len("xau_family_") :]
+        if cli != fid:
+            if args.strict_charter:
+                raise SystemExit(
+                    f"family mismatch: --family={args.family!r} "
+                    f"charter.family_id={fid!r}"
+                )
+            print(
+                f"WARNING: --family={args.family!r} != charter.family_id={fid!r}",
+                flush=True,
+            )
+            non_dispositional = True
+        # costs equality (always when charter present)
+        fixed_costs = (charter.get("fixed") or {}).get("costs") or {}
+        for k in ("spread_col", "point_size", "commission_per_lot", "slippage_points"):
+            if k in fixed_costs and k in COSTS:
+                a, b = fixed_costs[k], COSTS[k]
+                if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                    if abs(float(a) - float(b)) > 1e-12:
+                        raise SystemExit(f"cost mismatch {k}: charter={a} loaded={b}")
+                elif a != b:
+                    raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
+        # CLI overrides vs charter
+        if cli_null_method and str(cli_null_method) != charter_method:
+            if args.strict_charter and not args.allow_charter_override:
+                raise SystemExit(
+                    f"--null-method={cli_null_method!r} != charter {charter_method!r}"
+                )
+            null_method = str(cli_null_method)
+            non_dispositional = True
+        if cli_n_null is not None and int(cli_n_null) != charter_n_null:
+            if args.quick:
+                pass
+            elif args.strict_charter and not args.allow_charter_override:
+                raise SystemExit(
+                    f"--n-null={cli_n_null} != charter n_trials={charter_n_null}"
+                )
+            else:
+                non_dispositional = True
+        slip_sensitivity_pts = list(
+            (charter.get("success") or {})
+            .get("slippage_sensitivity", {})
+            .get("points")
+            or []
+        )
 
     if args.n_null is None:
         args.n_null = MIN_NULL_TRIALS_PROTOCOL
-    if args.null_method:
+    if args.null_method and not args.charter:
         null_method = str(args.null_method)
 
     if args.quick:
         args.max_n = min(args.max_n, 40)
         args.n_null = min(int(args.n_null), 4)
         args.allow_low_n_null = True
+        non_dispositional = True
         print(
             f"QUICK smoke mode: max_n={args.max_n} n_null={args.n_null} — "
             "do not use for disposition",
@@ -734,10 +822,7 @@ def main(argv: list[str] | None = None) -> int:
     family_key = plugin.name
     if args.out_dir:
         out_dir = Path(args.out_dir)
-        if not out_dir.is_absolute():
-            out_dir = (ROOT / out_dir).resolve()
-        else:
-            out_dir = out_dir.resolve()
+        out_dir = (ROOT / out_dir).resolve() if not out_dir.is_absolute() else out_dir.resolve()
         out_dir.mkdir(parents=True, exist_ok=True)
         out_json = out_dir / "null_maxstat.json"
         out_md = out_dir / "null_maxstat.md"
@@ -809,6 +894,28 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
 
+    # Frozen slippage sensitivity (report-only; no rescue tuning)
+    slip_report: list[dict[str, Any]] = []
+    if slip_sensitivity_pts and candidates:
+        base_p = dict(candidates[0])
+        for sp in slip_sensitivity_pts:
+            c2 = dict(COSTS)
+            c2["slippage_points"] = float(sp)
+            m = plugin.simulate(d_real, **{**c2, **base_p})
+            md = metrics_dict(m)
+            slip_report.append(
+                {
+                    "slippage_points": float(sp),
+                    "net_profit": md["net_profit"],
+                    "profit_factor": md["profit_factor"],
+                    "n_trades": md["n_trades"],
+                    "max_drawdown_pct": md["max_drawdown_pct"],
+                    "soft_pass": bool(plugin.soft_pass(m)) if plugin.soft_pass else None,
+                    "classic_pass": bool(plugin.classic_pass(m)),
+                }
+            )
+        print(f"Slippage sensitivity (frozen report-only): {slip_report}", flush=True)
+
     # --- nulls ---
     print(
         f"Running {args.n_null} null trials ({null_method}) with {args.workers} workers...",
@@ -860,7 +967,7 @@ def main(argv: list[str] | None = None) -> int:
                 for fut in as_completed(futs):
                     row = fut.result()
                     null_rows.append(row)
-                    done += 1
+                    done += 1  # noqa: SIM113
                     print(
                         f"  null done {done}/{args.n_null} (trial {row['trial']}): "
                         f"max_PF={row['max_pf']:.3f} passers={row['n_passers']} "
@@ -883,9 +990,13 @@ def main(argv: list[str] | None = None) -> int:
     fail_pass = p_n_passers > 0.05
     null_pass_dist = dist_summary(null_n_pass)
 
-    if args.quick:
-        disposition = "QUICK_SMOKE_ONLY"
-        reason = "Quick mode — not a real disposition. Re-run without --quick."
+    if args.quick or non_dispositional:
+        disposition = "QUICK_SMOKE_ONLY" if args.quick else "NON_DISPOSITIONAL_OVERRIDE"
+        reason = (
+            "Quick mode — not a real disposition. Re-run without --quick."
+            if args.quick
+            else "CLI overrides diverged from frozen charter — not a disposition."
+        )
     elif fail_pf or fail_pass:
         disposition = plugin.kill_label
         reason = (
@@ -943,6 +1054,12 @@ def main(argv: list[str] | None = None) -> int:
             "commission/spread account-matched for Standard STP; "
             "slippage_points=0 is unmeasured; swap not modeled"
         ),
+        "slippage_sensitivity": {
+            "role": "report_only_frozen",
+            "no_rescue_tuning": True,
+            "points": slip_sensitivity_pts,
+            "rows": slip_report,
+        },
         "grid": {
             "max_n": args.max_n,
             "seed": args.seed,

@@ -1,5 +1,21 @@
 # XAU offline loop status
 
+## 2026-08-10 — protocol v2.1 correction wave (do not burn r1)
+
+Review blocked Phase 0 on four points; correction shipped without running sealed r1.
+
+| Field | Value |
+|-------|--------|
+| **TOD v1** | `PROTOCOL_NULL_INVALID` / exploratory `SCREEN_FAIL` — see `results/xau_tod_v1_disposition.md`. **r1 not burned.** |
+| **Null fix** | New method `within_day_return_rotate` (per-day return rotation + price rebase). `day_block_shuffle` marked session-invalid. |
+| **Clock** | No London–NY claim; superseding family is **server-hour labels only**. |
+| **Strict charter** | Family id / null method / n_trials / costs equality; sealed cycle blocks fixture skips. Slip sensitivity rows generated in report. |
+| **Superseding freeze** | `results/xau_charters/2026-08-10_server_hour_window_flat_v1.json` + `scripts/xau_family_server_hour_window_flat.py` |
+| **PR #1 honesty** | Protocol commits landed on the same branch as draft PR #1 head — **scope expanded**; review as such (not a clean research-only PR). |
+| **next_step** | Optional sealed run of `server_hour_window_flat` when ready (still not automatic). promote=no / live_go=false. |
+
+---
+
 ## 2026-08-10 — protocol v2 Phase 0 (harden + freeze TOD charter)
 
 Owner-required protocol hardening **before** any next sealed thesis run.

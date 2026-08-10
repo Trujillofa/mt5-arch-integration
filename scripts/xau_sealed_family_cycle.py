@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
-"""Sealed family research cycle (protocol v2).
+"""Sealed family research cycle (protocol v2.1).
 
 1. Validate frozen charter (immutable path).
-2. Run synthetic fixture smoke (no real market data).
-3. One-shot: develop grid + null on real develop window (no intermediate edits).
-4. Append program-level attempt ledger.
-5. Refuse overwrite of run directory.
-
-Does **not** peek at real-grid results mid-run for retuning — single process.
+2. Enforce family_id / null / costs equality with CLI.
+3. Run synthetic fixtures (blocking — family smoke must pass).
+4. One-shot: develop grid + null on real develop window.
+5. Append program-level attempt ledger.
+6. Refuse overwrite of run directory.
 
 Usage::
 
   python3 scripts/xau_sealed_family_cycle.py \\
-    --charter results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json \\
-    --family tod_london_ny_flat \\
+    --charter results/xau_charters/2026-08-10_server_hour_window_flat_v1.json \\
+    --family server_hour_window_flat \\
     --run-id r1
 
-SAFETY: offline only. No --live. Do not attach to PR #1 scope without review.
+SAFETY: offline only. No --live.
 """
 from __future__ import annotations
 
@@ -44,73 +43,129 @@ from xau_charter_protocol import (  # noqa: E402
     run_output_dir,
     validate_charter,
 )
-from xau_research_costs import RESEARCH_COSTS_PATH  # noqa: E402
+from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
+
 from backtest import CSV_PATH  # noqa: E402
 
 
-def _run_synthetic_fixture(family: str) -> dict[str, Any]:
-    """Import family and run a tiny synthetic bar path if provided."""
-    # Prefer family module hook; else shared fixture check on null_core.
-    from xau_null_core import apply_null_method, null_invariants_ok
+def _assert_family_matches_charter(family_cli: str, charter: dict[str, Any]) -> str:
+    fid = str(charter.get("family_id") or "").strip()
+    if not fid:
+        raise SystemExit("charter missing family_id")
+    # normalize CLI: allow xau_family_<id> or bare id
+    cli = family_cli.strip().replace("-", "_")
+    if cli.startswith("xau_family_"):
+        cli = cli[len("xau_family_") :]
+    if cli != fid:
+        raise SystemExit(
+            f"charter/runtime family mismatch: --family={family_cli!r} "
+            f"vs charter.family_id={fid!r}"
+        )
+    return fid
+
+
+def _assert_costs_match_charter(charter: dict[str, Any]) -> dict[str, Any]:
+    """Loaded research costs must match charter fixed.costs on sim keys."""
+    fixed = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
+    loaded = load_research_costs()
+    for k in ("spread_col", "point_size", "commission_per_lot", "slippage_points"):
+        if k not in fixed:
+            continue
+        if k not in loaded:
+            raise SystemExit(f"loaded costs missing {k}")
+        a, b = fixed[k], loaded[k]
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            if abs(float(a) - float(b)) > 1e-12:
+                raise SystemExit(
+                    f"cost mismatch {k}: charter={a} loaded={b}. "
+                    "Update results/xau_research_costs.json or freeze a new charter."
+                )
+        elif a != b:
+            raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
+    return loaded
+
+
+def _run_synthetic_fixture(family: str, charter: dict[str, Any]) -> dict[str, Any]:
+    """Blocking fixture: null invariants + family.simulate must succeed."""
+    import importlib
+
     import numpy as np
     import pandas as pd
+    from xau_null_core import apply_null_method, null_invariants_ok
 
     rng = np.random.default_rng(0)
-    n = 48
-    # 2 days of H1-ish bars
-    times = pd.date_range("2024-01-02", periods=n, freq="h", tz="UTC")
-    close = 2000.0 + np.cumsum(rng.normal(0, 0.5, size=n))
-    raw = pd.DataFrame(
-        {
-            "time": times,
-            "open": close,
-            "high": close + 0.5,
-            "low": close - 0.5,
-            "close": close,
-            "spread": np.full(n, 18.0),
-            "timeframe": "H1",
-        }
+    # 4 full days × 23 bars (hours 1..23) to mimic develop day length
+    rows = []
+    price = 2000.0
+    for day in range(4):
+        for hour in range(1, 24):
+            ret = float(rng.normal(0, 0.002))
+            price = price * float(np.exp(ret))
+            ts = pd.Timestamp(f"2024-01-{2 + day:02d} {hour:02d}:00:00", tz="UTC")
+            rows.append(
+                {
+                    "time": ts,
+                    "open": price,
+                    "high": price * 1.0005,
+                    "low": price * 0.9995,
+                    "close": price,
+                    "spread": 18.0,
+                    "timeframe": "H1",
+                }
+            )
+    raw = pd.DataFrame(rows)
+
+    ns = null_spec_from_charter(charter)
+    method = str(ns["method"])
+    rule = charter.get("rule") or {}
+    entry_h = rule.get("entry_hour") or (rule.get("entry_hours_server") or [None])[0]
+    flat_h = rule.get("flat_hour") or rule.get("flat_hour_server")
+    if flat_h is None:
+        active = rule.get("session_active_hours_server") or []
+        flat_h = active[-1] if active else None
+
+    scr = apply_null_method(raw, rng, method=method, block_days=int(ns.get("block_days") or 1))
+    inv = null_invariants_ok(
+        raw,
+        scr,
+        method=method,
+        entry_hour=int(entry_h) if entry_h is not None else None,
+        flat_hour=int(flat_h) if flat_h is not None else None,
     )
-    for method in ("global_return_shuffle", "day_block_shuffle", "circular_day_shift"):
-        scr = apply_null_method(raw, rng, method=method, block_days=1)
-        inv = null_invariants_ok(raw, scr, method=method)
-        if not all(inv.values()):
-            raise SystemExit(f"synthetic null invariant fail method={method}: {inv}")
+    required = [k for k, v in inv.items() if k != "protocol_session_valid"]
+    bad = {k: inv[k] for k in required if not inv.get(k)}
+    if bad:
+        raise SystemExit(f"synthetic null invariant fail method={method}: {bad} full={inv}")
 
-    # optional family.simulate smoke
+    # family smoke — must not be skipped
+    mod_name = f"xau_family_{family}" if not family.startswith("xau_family_") else family
     try:
-        import importlib
+        mod = importlib.import_module(mod_name)
+    except ModuleNotFoundError:
+        mod = importlib.import_module(family)
+    if not hasattr(mod, "simulate") or not hasattr(mod, "prepare"):
+        raise SystemExit(f"family {family!r} missing prepare/simulate")
+    d = mod.prepare(raw)
+    params: dict[str, Any] = {}
+    if hasattr(mod, "build_grid"):
+        g = mod.build_grid()
+        if g:
+            params = dict(g[0])
+    elif hasattr(mod, "grid"):
+        g = mod.grid(max_n=1, seed=0)
+        if g:
+            params = dict(g[0])
+    costs = load_research_costs()
+    m = mod.simulate(d, **{**costs, **params})
+    _ = m.n_trades
 
-        mod_name = f"xau_family_{family}" if not family.startswith("xau_family_") else family
-        try:
-            mod = importlib.import_module(mod_name)
-        except ModuleNotFoundError:
-            mod = importlib.import_module(family)
-        if hasattr(mod, "simulate") and hasattr(mod, "prepare"):
-            d = mod.prepare(raw)
-            # one empty/default param dict
-            params = {}
-            if hasattr(mod, "build_grid"):
-                g = mod.build_grid()
-                if g:
-                    params = dict(g[0])
-            elif hasattr(mod, "grid"):
-                g = mod.grid(max_n=1, seed=0)
-                if g:
-                    params = dict(g[0])
-            m = mod.simulate(d, **params)
-            _ = m
-    except Exception as e:
-        # fixture still passes null invariants; family smoke is best-effort
-        return {"null_invariants": "ok", "family_smoke": f"skip:{type(e).__name__}:{e}"}
-
-    return {"null_invariants": "ok", "family_smoke": "ok"}
+    return {"null_invariants": inv, "family_smoke": "ok", "null_method": method}
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--charter", required=True, help="immutable charter JSON")
-    ap.add_argument("--family", required=True, help="family module / builtin name")
+    ap.add_argument("--family", required=True, help="must equal charter.family_id")
     ap.add_argument("--run-id", default="r1")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument(
@@ -118,28 +173,32 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="only synthetic fixtures + charter validate (no real data null)",
     )
-    ap.add_argument(
-        "--allow-low-n-null",
-        action="store_true",
-        help="pass through to null harness (smoke only)",
-    )
     args = ap.parse_args(argv)
 
     charter_path = Path(args.charter)
     charter = load_charter(charter_path)
-    errs = validate_charter(charter)
-    if errs and not args.dry_fixture_only:
-        # allow dry fixture on incomplete drafts
-        raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
-    if errs:
-        print("WARNING charter validation:", errs, flush=True)
+    if charter.get("disposition") in (
+        "PROTOCOL_NULL_INVALID",
+        "SCREEN_FAIL",
+        "SUPERSEDED",
+    ):
+        raise SystemExit(
+            f"charter disposition={charter.get('disposition')!r} — refuse sealed run. "
+            "Freeze a new charter version."
+        )
 
-    family_id = str(charter.get("family_id") or args.family)
+    errs = validate_charter(charter)
+    if errs:
+        raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
+
+    family_id = _assert_family_matches_charter(args.family, charter)
+    _assert_costs_match_charter(charter)
+
     n_attempts = count_attempts(family_id)
     print(f"Program attempts for {family_id!r} so far: {n_attempts}", flush=True)
 
-    print("Synthetic fixture smoke...", flush=True)
-    fixture = _run_synthetic_fixture(args.family)
+    print("Synthetic fixture smoke (blocking)...", flush=True)
+    fixture = _run_synthetic_fixture(family_id, charter)
     print(f"  fixture: {fixture}", flush=True)
 
     if args.dry_fixture_only:
@@ -156,25 +215,20 @@ def main(argv: list[str] | None = None) -> int:
     n_null = int(ns["n_trials"])
     null_method = str(ns["method"])
 
-    # Single sealed invocation — no intermediate file edits by this script.
+    # Single sealed invocation — no CLI null overrides (charter is sole source).
     cmd = [
         sys.executable,
         str(SCRIPTS / "xau_family_null_maxstat.py"),
         "--family",
-        args.family,
+        family_id,
         "--charter",
         str(charter_path),
         "--out-dir",
         str(out_dir),
-        "--n-null",
-        str(n_null),
-        "--null-method",
-        null_method,
         "--workers",
         str(args.workers),
+        "--strict-charter",
     ]
-    if args.allow_low_n_null:
-        cmd.append("--allow-low-n-null")
 
     print("Sealed real grid + null (single command):", " ".join(cmd), flush=True)
     t0 = time.time()
@@ -186,7 +240,6 @@ def main(argv: list[str] | None = None) -> int:
     if result_json.is_file():
         report = json.loads(result_json.read_text())
         disposition = str(report.get("verdict", {}).get("disposition") or "UNKNOWN")
-        # write provenance alongside
         prov = build_provenance(
             charter_path=charter_path,
             costs_path=RESEARCH_COSTS_PATH,
@@ -219,7 +272,7 @@ def main(argv: list[str] | None = None) -> int:
         }
     )
     print(f"Disposition: {disposition} (exit={proc.returncode})", flush=True)
-    print(f"Attempt ledger: results/xau_family_attempts.jsonl", flush=True)
+    print("Attempt ledger: results/xau_family_attempts.jsonl", flush=True)
     return int(proc.returncode)
 
 
