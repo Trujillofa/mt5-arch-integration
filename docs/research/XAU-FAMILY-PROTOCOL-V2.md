@@ -19,6 +19,16 @@
 ## Screen-fail rule (deterministic)
 
 > If the real develop grid has **zero primary passers**, terminate as **`SCREEN_FAIL`**
+> **without null trials**. Correct p-value logic: every null trial has
+> `n_passers ≥ 0 = real`, so `hits = n_null` and
+> `p_n_passers = (n_null+1)/(n_null+1) = 1.0`. **`p_max_pf` is not_evaluated**
+> (not reported as 1.0). Accounting fields:
+> `n_null_planned`, `n_null_executed=0`, `attempt_type=DETERMINISTIC_SCREEN`,
+> `family_screen_attempt=true`, `sealed_null_attempt=false`.
+
+## Screen-fail rule (deterministic)
+
+> If the real develop grid has **zero primary passers**, terminate as **`SCREEN_FAIL`**
 > **without null trials**. Under add-one smoothing, `p_n_passers` is necessarily
 > **1.0** when passers=0 and nulls are skipped (and always fails a 0.05 bar if
 > nulls were run with zero real passers). This is arithmetic, not optional stopping.

@@ -40,6 +40,7 @@ from xau_charter_protocol import (  # noqa: E402
     build_provenance,
     count_attempts,
     ensure_fresh_run_dir,
+    is_charter_runnable,
     load_charter,
     null_spec_from_charter,
     run_output_dir,
@@ -179,7 +180,6 @@ def main(argv: list[str] | None = None) -> int:
 
     charter_path = Path(args.charter)
     charter = load_charter(charter_path)
-    from xau_charter_protocol import is_charter_runnable
 
     ok_run, why = is_charter_runnable(charter_path)
     if not ok_run:
@@ -218,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(str(e)) from e
 
     ns = null_spec_from_charter(charter)
-    n_null = int(ns["n_trials"])
+    n_null_planned = int(ns["n_trials"])
     null_method = str(ns["method"])
 
     # Single sealed invocation — no CLI null overrides (charter is sole source).
@@ -243,15 +243,51 @@ def main(argv: list[str] | None = None) -> int:
 
     result_json = out_dir / "null_maxstat.json"
     disposition = "FAILED_RUN"
+    n_null_executed = 0
+    attempt_type = "FAILED_RUN"
+    family_screen_attempt = True
+    sealed_null_attempt = False
     if result_json.is_file():
         report = json.loads(result_json.read_text())
         disposition = str(report.get("verdict", {}).get("disposition") or "UNKNOWN")
+        null_block = report.get("null") or {}
+        acct = report.get("attempt_accounting") or {}
+        # Prefer executed count from completed report (screen may skip nulls).
+        def _int_field(*vals: Any, default: int = 0) -> int:
+            for v in vals:
+                if v is not None:
+                    return int(v)
+            return default
+
+        n_null_executed = _int_field(
+            acct.get("n_null_executed"),
+            null_block.get("n_null_executed"),
+            null_block.get("n_trials"),
+            default=0,
+        )
+        n_null_planned_rep = _int_field(
+            acct.get("n_null_planned"),
+            null_block.get("n_null_planned"),
+            default=n_null_planned,
+        )
+        attempt_type = str(
+            acct.get("attempt_type")
+            or (
+                "DETERMINISTIC_SCREEN"
+                if disposition == "SCREEN_FAIL"
+                else "SEALED_NULL"
+            )
+        )
+        family_screen_attempt = bool(acct.get("family_screen_attempt", True))
+        sealed_null_attempt = bool(
+            acct.get("sealed_null_attempt", n_null_executed > 0)
+        )
         prov = build_provenance(
             charter_path=charter_path,
             costs_path=RESEARCH_COSTS_PATH,
             data_path=CSV_PATH,
-            null_seed=int(report.get("null", {}).get("base_seed") or 0),
-            n_null=n_null,
+            null_seed=int(null_block.get("base_seed") or 0),
+            n_null=n_null_executed,
             out_dir=out_dir,
             require_clean_tree=True,
             extra={
@@ -260,6 +296,13 @@ def main(argv: list[str] | None = None) -> int:
                 "family_id": family_id,
                 "sealed_cycle_elapsed_s": elapsed,
                 "fixture": fixture,
+                "n_null_planned": n_null_planned_rep,
+                "n_null_executed": n_null_executed,
+                "null_trials_executed": n_null_executed,
+                "attempt_type": attempt_type,
+                "family_screen_attempt": family_screen_attempt,
+                "sealed_null_attempt": sealed_null_attempt,
+                "r1_burned": bool(n_null_executed > 0),
             },
         )
         (out_dir / "provenance.json").write_text(json.dumps(prov, indent=2) + "\n")
@@ -272,7 +315,13 @@ def main(argv: list[str] | None = None) -> int:
             "output_dir": str(out_dir),
             "disposition": disposition,
             "null_method": null_method,
-            "n_null": n_null,
+            "n_null_planned": n_null_planned,
+            "n_null_executed": n_null_executed,
+            "null_trials_executed": n_null_executed,
+            "attempt_type": attempt_type,
+            "family_screen_attempt": family_screen_attempt,
+            "sealed_null_attempt": sealed_null_attempt,
+            "r1_burned": bool(n_null_executed > 0),
             "exit_code": proc.returncode,
             "elapsed_s": elapsed,
             "attempt_index": n_attempts + 1,

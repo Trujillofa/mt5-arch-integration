@@ -565,9 +565,10 @@ def write_markdown(report: dict, path: Path) -> None:
         f"({report['window']['start']} → {report['window']['end']})",
         f"- Grid: {report['grid']['n_configs']} configs "
         f"(max_n={report['grid']['max_n']}, seed={report['grid']['seed']}) — no early exit",
-        f"- Null: method=`{null.get('method', 'global_return_shuffle')}`, "
-        f"{null['n_trials']} trials, base_seed={null['base_seed']}, "
-        f"workers={null['workers']}",
+        f"- Null planned/executed: "
+        f"{null.get('n_null_planned', null.get('n_trials'))}/"
+        f"{null.get('n_null_executed', null.get('n_trials'))} "
+        f"(method=`{null.get('method', '?')}`)",
         f"- Costs: `{json.dumps(report['costs'])}` "
         f"(slippage may be 0/unmeasured — not fully live-matched)",
         f"- Classic gates (from charter if provided): {report['gates']['classic']}",
@@ -575,6 +576,7 @@ def write_markdown(report: dict, path: Path) -> None:
         f"- Primary n_passers: **{primary}**",
         f"- Max-stat min trades: {report['gates']['max_pf_min_trades']}",
         f"- Charter: {report.get('charter_path') or 'none (legacy module gates)'}",
+        f"- Attempt type: `{ (report.get('attempt_accounting') or {}).get('attempt_type') }`",
         "",
         "## Real grid (develop, costed)",
         "",
@@ -598,22 +600,46 @@ def write_markdown(report: dict, path: Path) -> None:
         json.dumps(real.get("best_by_pf_min_trades") or real["best_by_pf"], indent=2),
         "```",
         "",
-        "## Null distribution (best-of-grid per trial, n≥20 gated PF)",
-        "",
-        "| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
-        "|---|---|---|---|---|",
-        f"| max PF (n≥20) | {null['max_pf']['max']:.4f} | {null['max_pf']['p50']:.4f} | "
-        f"{null['max_pf']['p90']:.4f} | **{null['p_max_pf']:.3f}** |",
-        f"| n_passers (primary) | {null['n_passers']['max']} | {null['n_passers']['p50']:.1f} | "
-        f"{null['n_passers']['p90']:.1f} | **{null['p_n_passers']:.3f}** |",
-        f"| n_passers_classic | {null['n_passers_classic']['max']} | "
-        f"{null['n_passers_classic']['p50']:.1f} | {null['n_passers_classic']['p90']:.1f} | "
-        f"**{null['p_n_passers_classic']:.3f}** |",
-        "",
+    ]
+    if null.get("skipped_reason"):
+        lines += [
+            "## Null distribution",
+            "",
+            f"**Skipped:** `{null.get('skipped_reason')}` "
+            f"(planned={null.get('n_null_planned')}, executed={null.get('n_null_executed')}).",
+            "",
+            f"- p_n_passers: **{null.get('p_n_passers')}** "
+            f"({null.get('p_n_passers_status')})",
+            f"- p_max_pf: **{null.get('p_max_pf')}** ({null.get('p_max_pf_status')})",
+            "",
+        ]
+    else:
+        nmp = null.get("max_pf") or {}
+        nnp = null.get("n_passers") or {}
+        nnc = null.get("n_passers_classic") or {}
+        lines += [
+            "## Null distribution (best-of-grid per trial, n≥20 gated PF)",
+            "",
+            "| Stat | null max | null p50 | null p90 | p(null ≥ real) |",
+            "|---|---|---|---|---|",
+            f"| max PF (n≥20) | {nmp.get('max', float('nan')):.4f} | "
+            f"{nmp.get('p50', float('nan')):.4f} | "
+            f"{nmp.get('p90', float('nan')):.4f} | **{null.get('p_max_pf')}** |",
+            f"| n_passers (primary) | {nnp.get('max', float('nan'))} | "
+            f"{nnp.get('p50', float('nan')):.1f} | "
+            f"{nnp.get('p90', float('nan')):.1f} | **{null.get('p_n_passers')}** |",
+            f"| n_passers_classic | {nnc.get('max', float('nan'))} | "
+            f"{nnc.get('p50', float('nan')):.1f} | "
+            f"{nnc.get('p90', float('nan')):.1f} | "
+            f"**{null.get('p_n_passers_classic')}** |",
+            "",
+        ]
+    lines += [
         "## Decision rule",
         "",
         f"- Fail (`{report['kill_label']}`) if `p_max_pf > 0.05` **or** `p_n_passers > 0.05` —",
         "  real best-of-grid is typical of noise under the same search.",
+        "- **SCREEN_FAIL** if real primary passers=0 (null not run; p_n_passers implied 1.0).",
         "- Weak if only one of the two fails; still no promote.",
         "- Pass only if both p-values ≤ 0.05 **and** real n_passers > null p90 — still not",
         "  a live go; only permission to keep researching the family.",
@@ -938,21 +964,29 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(f"Slippage sensitivity (frozen report-only): {slip_report}", flush=True)
 
-    # --- Deterministic SCREEN_FAIL: zero primary passers ⇒ p_n_passers = 1.0 ---
-    # Protocol: do not run null trials (arithmetic, not optional early-exit tuning).
+    # Planned vs executed null counts (screen shortcut must not claim 999 ran).
+    n_null_planned = int(args.n_null)
+
+    # --- Deterministic SCREEN_FAIL: zero primary passers ---
+    # Real passers=0 ⇒ every null trial has n_passers ≥ 0 = real, so hits=n_null
+    # and p_n_passers=(n_null+1)/(n_null+1)=1.0 for any finite planned n_null.
+    # Skipping trials is arithmetic, not optional early-exit tuning.
     screen_fail_zero_passers = (
         int(real["n_passers"]) == 0
         and not args.quick
         and not non_dispositional
     )
+    n_null_executed = n_null_planned
     if screen_fail_zero_passers:
+        n_null_executed = 0
+        args.n_null = 0
         print(
             "SCREEN_FAIL ZERO_PRIMARY_PASSERS: real primary passers=0 ⇒ "
-            "p_n_passers is necessarily 1.0 under add-one smoothing. "
-            "Skipping null trials (protocol rule).",
+            "for any planned n_null, every null count ≥ 0 hits the threshold, "
+            "so p_n_passers=(n_null+1)/(n_null+1)=1.0. "
+            f"Skipping null trials (planned={n_null_planned}, executed=0).",
             flush=True,
         )
-        args.n_null = 0
 
     # --- nulls ---
     if int(args.n_null) > 0:
@@ -1039,13 +1073,16 @@ def main(argv: list[str] | None = None) -> int:
     elif screen_fail_zero_passers:
         disposition = "SCREEN_FAIL"
         reason = (
-            "ZERO_PRIMARY_PASSERS: real grid primary passers=0. Under add-one "
-            "smoothing p_n_passers=(0+1)/(n_null+1) is always >0.05 for finite n_null "
-            "and equals 1.0 when nulls are skipped by protocol. Deterministic "
-            "arithmetic — null trials not run. Do not retune; freeze a new family_id."
+            "ZERO_PRIMARY_PASSERS: real grid primary passers=0. For any planned "
+            "n_null, each null trial has n_passers ≥ 0 = real, so hits=n_null and "
+            "p_n_passers=(n_null+1)/(n_null+1)=1.0 under add-one smoothing. "
+            f"Null trials not executed (planned={n_null_planned}, executed=0). "
+            "p_max_pf not evaluated. Do not retune; freeze a new family_id."
         )
         p_n_passers = 1.0
-        p_max_pf = 1.0
+        p_max_pf = None  # not evaluated — no null PF distribution
+        fail_pf = False
+        fail_pass = True
     elif fail_pf or fail_pass:
         disposition = plugin.kill_label
         reason = (
@@ -1069,12 +1106,17 @@ def main(argv: list[str] | None = None) -> int:
             "(cut knobs, cross-instrument) — still not live_go / promote."
         )
 
+    attempt_type = (
+        "DETERMINISTIC_SCREEN"
+        if screen_fail_zero_passers
+        else ("QUICK_SMOKE" if args.quick else "SEALED_NULL")
+    )
     provenance = build_provenance(
         charter_path=charter_path or Path("none"),
         costs_path=RESEARCH_COSTS_PATH,
         data_path=CSV_PATH,
         null_seed=int(args.null_seed),
-        n_null=int(args.n_null),
+        n_null=int(n_null_executed),
         out_dir=out_json.parent,
         require_clean_tree=bool(args.strict_charter and not args.quick),
         extra={
@@ -1082,6 +1124,14 @@ def main(argv: list[str] | None = None) -> int:
             "block_days": block_days,
             "family": plugin.name,
             "disposition": disposition,
+            "n_null_planned": int(n_null_planned),
+            "n_null_executed": int(n_null_executed),
+            "attempt_type": attempt_type,
+            "family_screen_attempt": True,  # real develop grid was evaluated
+            "sealed_null_attempt": bool(
+                n_null_executed > 0 and not args.quick and not non_dispositional
+            ),
+            "null_trials_executed": int(n_null_executed),
         },
     )
 
@@ -1092,7 +1142,7 @@ def main(argv: list[str] | None = None) -> int:
         "kill_label": plugin.kill_label,
         "charter_path": str(charter_path) if charter_path else None,
         "provenance": provenance,
-        "timestamp_utc": pd.Timestamp.utcnow().isoformat(),
+        "timestamp_utc": pd.Timestamp.now(tz='UTC').isoformat(),
         "window": {
             "holdout_start": str(cutoff),
             "bars": int(len(raw)),
@@ -1126,27 +1176,49 @@ def main(argv: list[str] | None = None) -> int:
         "screen": {
             "zero_primary_passers": bool(screen_fail_zero_passers),
             "rule": (
-                "If real primary passers==0, SCREEN_FAIL without null trials "
-                "(p_n_passers necessarily 1.0 under add-one when n_null=0 / always >0.05)"
+                "If real primary passers==0, SCREEN_FAIL without null trials. "
+                "Reason: every null n_passers ≥ 0 = real, so hits=n_null and "
+                "p_n_passers=(n_null+1)/(n_null+1)=1.0 for any planned n_null."
             ),
+        },
+        "attempt_accounting": {
+            "attempt_type": attempt_type,
+            "family_screen_attempt": True,
+            "sealed_null_attempt": bool(
+                n_null_executed > 0 and not args.quick and not non_dispositional
+            ),
+            "n_null_planned": int(n_null_planned),
+            "n_null_executed": int(n_null_executed),
+            "null_trials_executed": int(n_null_executed),
+            "r1_style_null_burned": bool(n_null_executed > 0 and not args.quick),
         },
         "null": {
             "method": null_method,
             "block_days": block_days,
-            "n_trials": int(args.n_null) if not screen_fail_zero_passers else 0,
+            "n_trials": int(n_null_executed),
+            "n_null_planned": int(n_null_planned),
+            "n_null_executed": int(n_null_executed),
             "skipped_reason": (
                 "ZERO_PRIMARY_PASSERS" if screen_fail_zero_passers else None
             ),
             "base_seed": args.null_seed,
             "workers": args.workers,
-            "max_pf": dist_summary(null_max_pf),
-            "n_passers": null_pass_dist,
-            "n_passers_classic": dist_summary(null_n_classic),
-            "n_passers_soft": dist_summary(null_n_soft),
-            "p_max_pf": p_max_pf,
+            "max_pf": dist_summary(null_max_pf) if null_rows else None,
+            "n_passers": null_pass_dist if null_rows else None,
+            "n_passers_classic": dist_summary(null_n_classic) if null_rows else None,
+            "n_passers_soft": dist_summary(null_n_soft) if null_rows else None,
+            "p_max_pf": p_max_pf,  # None when screen-fail (not evaluated)
             "p_n_passers": p_n_passers,
-            "p_n_passers_classic": p_n_classic,
-            "p_n_passers_soft": p_n_soft,
+            "p_n_passers_classic": p_n_classic if null_rows else None,
+            "p_n_passers_soft": p_n_soft if null_rows else None,
+            "p_max_pf_status": (
+                "not_evaluated" if screen_fail_zero_passers else "evaluated"
+            ),
+            "p_n_passers_status": (
+                "implied_1.0_zero_real_passers"
+                if screen_fail_zero_passers
+                else "evaluated"
+            ),
             "trials": null_rows,
         },
         "verdict": {
@@ -1156,6 +1228,9 @@ def main(argv: list[str] | None = None) -> int:
             "fail_n_passers": fail_pass,
             "promote": False,
             "live_go": False,
+            "screen_status": (
+                "ZERO_PRIMARY_PASSERS" if screen_fail_zero_passers else None
+            ),
         },
         "elapsed_s": float(time.time() - t_all),
         "quick": bool(args.quick),
@@ -1168,7 +1243,11 @@ def main(argv: list[str] | None = None) -> int:
     print(flush=True)
     print(f"Disposition: {disposition}", flush=True)
     print(reason, flush=True)
-    print(f"Wrote {out_json.relative_to(ROOT)} and {out_md.relative_to(ROOT)}", flush=True)
+    try:
+        jrel, mrel = out_json.relative_to(ROOT), out_md.relative_to(ROOT)
+    except ValueError:
+        jrel, mrel = out_json, out_md
+    print(f"Wrote {jrel} and {mrel}", flush=True)
     print(f"Total elapsed: {report['elapsed_s']:.0f}s", flush=True)
     return 0
 

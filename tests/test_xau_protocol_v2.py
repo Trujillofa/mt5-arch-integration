@@ -259,9 +259,15 @@ def test_v2_screen_fail_in_registry():
     rec = registry_disposition(sha)
     assert rec is not None
     assert rec["disposition"] == "SCREEN_FAIL"
-    assert rec.get("screen_status") == "ZERO_PRIMARY_PASSERS"
     assert rec.get("r1_burned") is False
-    assert rec.get("p_n_passers_implied") == 1.0
+    # original closeout record (may be followed by accounting clarifications)
+    from xau_charter_protocol import DISPOSITION_REGISTRY, _parse_jsonl_strict
+
+    rows = [r for r in _parse_jsonl_strict(DISPOSITION_REGISTRY) if r.get("charter_sha256") == sha]
+    assert any(r.get("screen_status") == "ZERO_PRIMARY_PASSERS" for r in rows)
+    assert any(r.get("p_n_passers_implied") == 1.0 for r in rows)
+    assert any(r.get("family_screen_attempt") is True for r in rows)
+    assert any(r.get("sealed_null_attempt") is False for r in rows)
     ok, why = is_charter_runnable(
         ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json"
     )
@@ -295,3 +301,153 @@ def test_dirty_registry_in_dispositional_globs():
     from xau_charter_protocol import DISPOSITIONAL_PATH_GLOBS
 
     assert "results/xau_charter_disposition_registry.jsonl" in DISPOSITIONAL_PATH_GLOBS
+
+
+def test_screen_fail_zero_passers_accounting(tmp_path: Path):
+    """End-to-end: zero primary passers ⇒ executed nulls=0, p_max_pf not_evaluated."""
+    import xau_family_null_maxstat as harness
+
+    out = tmp_path / "screen_out"
+    out.mkdir()
+    # server_hour fixed rule has 0 soft passers on develop (same geometry as v2)
+    rc = harness.main(
+        [
+            "--family",
+            "server_hour_window_flat",
+            "--n-null",
+            "999",
+            "--out-dir",
+            str(out),
+            "--workers",
+            "1",
+        ]
+    )
+    assert rc == 0
+    report = json.loads((out / "null_maxstat.json").read_text())
+    assert report["verdict"]["disposition"] == "SCREEN_FAIL"
+    assert report["verdict"].get("screen_status") == "ZERO_PRIMARY_PASSERS"
+    assert report["null"]["n_null_planned"] == 999
+    assert report["null"]["n_null_executed"] == 0
+    assert report["null"]["n_trials"] == 0
+    assert report["null"]["p_n_passers"] == 1.0
+    assert report["null"]["p_max_pf"] is None
+    assert report["null"]["p_max_pf_status"] == "not_evaluated"
+    assert report["null"]["p_n_passers_status"] == "implied_1.0_zero_real_passers"
+    assert "hits=n_null" in report["verdict"]["reason"] or "(n_null+1)/(n_null+1)" in report[
+        "verdict"
+    ]["reason"]
+    acct = report["attempt_accounting"]
+    assert acct["attempt_type"] == "DETERMINISTIC_SCREEN"
+    assert acct["family_screen_attempt"] is True
+    assert acct["sealed_null_attempt"] is False
+    assert acct["null_trials_executed"] == 0
+    # harness provenance must match executed, not planned
+    assert report["provenance"]["n_null"] == 0
+    assert report["provenance"]["n_null_executed"] == 0
+    assert report["provenance"]["n_null_planned"] == 999
+
+
+def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkeypatch):
+    """Outer provenance/ledger must not invent n_null=999 after screen skip."""
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run"
+    out.mkdir()
+    # Fake completed harness report as if screen-fail happened
+    report = {
+        "verdict": {"disposition": "SCREEN_FAIL", "screen_status": "ZERO_PRIMARY_PASSERS"},
+        "null": {
+            "base_seed": 1,
+            "n_trials": 0,
+            "n_null_planned": 999,
+            "n_null_executed": 0,
+        },
+        "attempt_accounting": {
+            "attempt_type": "DETERMINISTIC_SCREEN",
+            "family_screen_attempt": True,
+            "sealed_null_attempt": False,
+            "n_null_planned": 999,
+            "n_null_executed": 0,
+            "null_trials_executed": 0,
+        },
+    }
+    (out / "null_maxstat.json").write_text(json.dumps(report))
+
+    captured: dict = {}
+
+    def fake_build_provenance(**kwargs):
+        captured.update(kwargs)
+        return {"n_null": kwargs.get("n_null"), "extra": kwargs.get("extra")}
+
+    def fake_append(record, path=None):
+        captured["ledger"] = record
+
+    monkeypatch.setattr(sealed, "build_provenance", fake_build_provenance)
+    monkeypatch.setattr(sealed, "append_attempt", fake_append)
+    monkeypatch.setattr(sealed, "ensure_fresh_run_dir", lambda p: p)
+    monkeypatch.setattr(sealed, "run_output_dir", lambda *a, **k: out)
+    monkeypatch.setattr(sealed, "assert_charter_path_for_sealed", lambda p: {})
+    monkeypatch.setattr(sealed, "assert_clean_dispositional_tree", lambda: {})
+    fake_charter = {
+        "family_id": "server_hour_window_flat",
+        "null": {"method": "within_day_ohlc_increment_rotate_v1", "n_trials": 999},
+        "fixed": {
+            "costs": {
+                "spread_col": "spread",
+                "point_size": 0.01,
+                "commission_per_lot": 0.0,
+                "slippage_points": 0.0,
+            }
+        },
+        "protocol_version": 2.2,
+        "thesis_class": "server_hour_window_fixed",
+        "rule": {"entry_hour": 13, "intraday_flat": True},
+        "gates": {
+            "soft": {
+                "n_trades_min": 20,
+                "profit_factor_min": 1.1,
+                "net_profit_gt": 0.0,
+            },
+            "primary_n_passers": "soft",
+        },
+        "n_free_knobs": 0,
+    }
+    monkeypatch.setattr(
+        sealed, "is_charter_runnable", lambda p: (True, "ok"), raising=False
+    )
+    monkeypatch.setattr(sealed, "load_charter", lambda p: fake_charter)
+    monkeypatch.setattr(sealed, "validate_charter", lambda c: [])
+    monkeypatch.setattr(sealed, "_assert_costs_match_charter", lambda c: {})
+    monkeypatch.setattr(sealed, "_run_synthetic_fixture", lambda f, c: {"ok": True})
+    monkeypatch.setattr(sealed, "count_attempts", lambda f: 0)
+    monkeypatch.setattr(
+        sealed.subprocess,
+        "run",
+        lambda *a, **k: type("R", (), {"returncode": 0})(),
+    )
+
+    # Use a path that won't hit registry if is_charter_runnable not patched
+    rc = sealed.main(
+        [
+            "--charter",
+            str(tmp_path / "dummy_charter.json"),
+            "--family",
+            "server_hour_window_flat",
+            "--run-id",
+            "test_screen",
+        ]
+    )
+    assert rc == 0
+    assert captured.get("n_null") == 0
+    extra = captured.get("extra") or {}
+    assert extra.get("n_null_planned") == 999
+    assert extra.get("n_null_executed") == 0
+    assert extra.get("attempt_type") == "DETERMINISTIC_SCREEN"
+    assert extra.get("sealed_null_attempt") is False
+    assert extra.get("r1_burned") is False
+    led = captured.get("ledger") or {}
+    assert led.get("n_null_executed") == 0
+    assert led.get("n_null_planned") == 999
+    assert led.get("attempt_type") == "DETERMINISTIC_SCREEN"
+    assert led.get("family_screen_attempt") is True
+    assert led.get("sealed_null_attempt") is False
