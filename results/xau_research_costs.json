@@ -1,15 +1,21 @@
 {
   "broker": "Vantage",
+  "login": 27496181,
+  "server": "VantageMarkets-Live 5",
+  "leverage": "500:1",
+  "account_type": "STANDARD_STP",
   "spread_col": "spread",
   "point_size": 0.01,
-  "commission_per_lot": 3.0,
-  "commission_account_type": "RAW_ECN",
-  "commission_notes": "per side per lot; RT = 2*commission_per_lot*lots",
+  "commission_per_lot": 0.0,
+  "commission_account_type": "STANDARD_STP",
+  "commission_notes": "Standard STP: no separate commission; trading cost is in the spread. per-side commission fields for ECN types are alternatives only. RT spread cost = (spread_pts + 2*slippage_points)*point_size*CONTRACT_SIZE*lots; RT commission = 2*commission_per_lot*lots when commission_per_lot>0.",
   "commission_alternatives": {
-    "RAW_ECN": 3.0,
-    "PRO_ECN": 1.5
+    "STANDARD_STP": 0.0,
+    "PRO_ECN": 1.5,
+    "RAW_ECN": 3.0
   },
   "slippage_points": 0.0,
-  "slippage_notes": "still unmeasured; leave 0 until demo fills",
-  "default_reason": "RAW is the conservative research floor; switch to 1.5 for PRO sensitivity"
+  "slippage_notes": "still unmeasured; leave 0 until demo fills on this account",
+  "default_reason": "Live account 27496181 is Standard STP on VantageMarkets-Live 5. Measured H1 spread in xauusd_data.csv already comes from this terminal. Do not charge RAW/PRO commission on top unless modeling a different account type.",
+  "spread_source": "Vantage live terminal 27496181 bridge dump (MqlRates.spread)"
 }

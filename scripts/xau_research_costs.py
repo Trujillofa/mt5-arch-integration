@@ -40,7 +40,7 @@ def load_research_costs_full() -> dict[str, Any]:
     return {
         "spread_col": "spread",
         "point_size": 0.01,
-        "commission_per_lot": 3.0,
+        "commission_per_lot": 0.0,  # Standard STP default; ECN types set commission > 0
         "slippage_points": 0.0,
     }
 
@@ -51,11 +51,14 @@ def load_research_costs() -> dict[str, Any]:
     Prefer ``results/xau_research_costs.json``; fall back to
     ``strategy_params.json`` costs. Only keys accepted by the simulators are
     returned so the dict can be splatted as ``**costs``.
+
+    Live research account (Vantage 27496181) is **Standard STP**: commission 0;
+    cost is measured spread. RAW/PRO ECN commission figures are stress alternatives.
     """
     raw = load_research_costs_full()
     out: dict[str, Any] = {k: raw[k] for k in SIM_COST_KEYS if k in raw}
     out.setdefault("point_size", 0.01)
-    out.setdefault("commission_per_lot", 3.0)
+    out.setdefault("commission_per_lot", 0.0)
     out.setdefault("slippage_points", 0.0)
     return out
 

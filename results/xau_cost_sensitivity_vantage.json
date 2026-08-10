@@ -1,57 +1,44 @@
 {
   "broker": "Vantage",
-  "source": "results/xau_research_costs.json",
-  "params_source": "strategy_params.json",
+  "login": 27496181,
+  "server": "VantageMarkets-Live 5",
+  "account_type_live": "STANDARD_STP",
   "params_mode": "bb_rsi",
-  "note": "Dead bb_rsi baseline re-scored only — no re-search. Commission is account-type (per side per lot); RT = 2 * commission_per_lot * lots. Spread still charged via spread_col.",
+  "note": "Same dead bb_rsi params; compare cost assumptions only. Live account is STANDARD_STP.",
   "window": {
     "csv": "xauusd_data.csv",
     "sha256": "529b8f5759fd6bb27244c3bb7945e47be5bb3a287a89ffeeca5d50317652d22a",
+    "timeframe": "H1",
     "bars": 25582,
     "start": "2021-09-03T19:00:00+00:00",
     "end": "2025-12-31T23:00:00+00:00",
-    "selection_cutoff": "2026-01-01 00:00:00+00:00"
+    "selection_cutoff": "2026-01-01 00:00:00+00:00",
+    "holdout_sealed": true
   },
-  "fixed_costs": {
-    "spread_col": "spread",
-    "point_size": 0.01,
-    "slippage_points": 0.0
-  },
-  "rt_commission_usd": {
-    "formula": "2 * commission_per_lot * lots",
-    "RAW_ECN": {"0.01_lot": 0.06, "1.0_lot": 6.0},
-    "PRO_ECN": {"0.01_lot": 0.03, "1.0_lot": 3.0}
-  },
-  "metrics_spread_only": {
-    "commission_per_lot": 0.0,
-    "net_profit": 1188.2678393647006,
-    "win_rate": 59.523809523809526,
-    "profit_factor": 1.671255765551878,
-    "max_drawdown_pct": 3.8383133455421437,
-    "n_trades": 42
-  },
-  "metrics_with_pro_commission": {
-    "commission_per_lot": 1.5,
-    "commission_account_type": "PRO_ECN",
-    "net_profit": 1159.8928753627,
-    "win_rate": 59.523809523809526,
-    "profit_factor": 1.6521871862240032,
-    "max_drawdown_pct": 3.862152256724938,
-    "n_trades": 42
-  },
-  "metrics_with_raw_commission": {
-    "commission_per_lot": 3.0,
-    "commission_account_type": "RAW_ECN",
-    "net_profit": 1138.5628753626995,
-    "win_rate": 59.523809523809526,
-    "profit_factor": 1.637237669289281,
-    "max_drawdown_pct": 3.8835938211420196,
-    "n_trades": 42
-  },
-  "delta_raw_vs_spread_only": {
-    "net_profit": -49.7049640020011,
-    "profit_factor": -0.034018096262597,
-    "max_drawdown_pct": 0.0452804755998759,
-    "n_trades": 0
+  "scenarios": {
+    "standard_stp_spread_only": {
+      "commission_per_lot": 0.0,
+      "net_profit": 1188.2678393647006,
+      "profit_factor": 1.671255765551878,
+      "max_drawdown_pct": 3.8383133455421437,
+      "n_trades": 42,
+      "win_rate": 59.523809523809526
+    },
+    "pro_ecn_stress": {
+      "commission_per_lot": 1.5,
+      "net_profit": 1159.8928753627,
+      "profit_factor": 1.6521871862240032,
+      "max_drawdown_pct": 3.862152256724938,
+      "n_trades": 42,
+      "win_rate": 59.523809523809526
+    },
+    "raw_ecn_stress": {
+      "commission_per_lot": 3.0,
+      "net_profit": 1138.5628753626995,
+      "profit_factor": 1.637237669289281,
+      "max_drawdown_pct": 3.8835938211420196,
+      "n_trades": 42,
+      "win_rate": 59.523809523809526
+    }
   }
 }

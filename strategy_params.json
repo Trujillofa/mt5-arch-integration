@@ -1,9 +1,9 @@
 {
   "metrics": {
-    "net_profit": 1138.5628753626995,
+    "net_profit": 1188.2678393647006,
     "win_rate": 59.523809523809526,
-    "profit_factor": 1.637237669289281,
-    "max_drawdown_pct": 3.8835938211420196,
+    "profit_factor": 1.671255765551878,
+    "max_drawdown_pct": 3.8383133455421437,
     "n_trades": 42
   },
   "params": {
@@ -43,8 +43,10 @@
   "costs": {
     "spread_col": "spread",
     "point_size": 0.01,
-    "commission_per_lot": 3.0,
-    "slippage_points": 0.0
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "commission_account_type": "STANDARD_STP",
+    "account_note": "Vantage 27496181 Standard STP Live 5 \u2014 commission 0; measured spread"
   },
   "timeframe": "H1",
   "start_balance": 10000.0

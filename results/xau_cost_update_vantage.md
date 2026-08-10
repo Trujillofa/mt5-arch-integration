@@ -1,68 +1,52 @@
-# Vantage research costs update (XAU)
+# Vantage research costs — account-matched
 
-**Date:** 2026-08-08  
-**Safety:** offline only — no re-search of bb_rsi / Donchian grids; no `--live`.
+**Date:** 2026-08-10  
+**Live account:** MT5 login **27496181** · **Standard STP** · leverage **500:1** · server **VantageMarkets-Live 5**
 
-## Source of truth
+## Default (matches live account)
 
-| Artifact | Role |
-|---|---|
-| [`results/xau_research_costs.json`](xau_research_costs.json) | Research cost defaults (broker account-type commission + measured spread column) |
-| [`scripts/xau_research_costs.py`](../scripts/xau_research_costs.py) | `load_research_costs()` → simulate kwargs; falls back to `strategy_params.json` costs |
-| `strategy_params.json` → `costs` | Shipped baseline costs; `commission_per_lot` now **3.0** (RAW floor) |
+| Field | Value |
+|-------|--------|
+| Account type | **STANDARD_STP** |
+| Commission | **$0** per side per lot (no separate commission) |
+| Spread | **Measured** from this terminal (`xauusd_data.csv` / bridge dump) |
+| H1 spread | median **18 pts** · p90 **21** · max **50** |
+| Slippage | **0** (still unmeasured; demo fills only) |
 
-## Owner-provided Vantage commission (account-type, not symbol-specific)
+Standard STP pays the broker in the **spread**, not a ticket commission. Charging RAW/PRO commission *on top of* this account’s measured spread would **double-count** relative to how 27496181 is billed.
 
-| Account type | Commission (per side per lot) | Research use |
-|---|---|---|
-| **RAW ECN** | **$3.00** | Default / conservative floor |
-| **PRO ECN** | **$1.50** | Sensitivity only |
+Source of truth: [`results/xau_research_costs.json`](xau_research_costs.json)  
+Loader: [`scripts/xau_research_costs.py`](../scripts/xau_research_costs.py)
 
-Slippage remains **0** until demo fills measure it.
-
-## Round-trip formula
-
-`backtest.simulate` (and the lane sims) charge once per closed trade:
+## Round-trip cost in `simulate()`
 
 ```
-trade_cost =
-  (spread_pts + 2 * slippage_points) * point_size * CONTRACT_SIZE * lots
-  + 2 * commission_per_lot * lots
+RT = (spread_pts + 2*slippage_points) * point_size * CONTRACT_SIZE * lots
+   + 2 * commission_per_lot * lots
 ```
 
-Commission term only:
+On Standard STP: `commission_per_lot = 0` → RT is spread (and optional slip) only.
 
-```
-RT_commission_usd = 2 * commission_per_lot * lots
-```
+## Alternatives (stress / other account types — not this login)
 
-| Lots | RAW ECN RT | PRO ECN RT |
-|---|---|---|
-| 0.01 | **$0.06** | $0.03 |
-| 1.00 | **$6.00** | $3.00 |
+| Account type | commission_per_lot (per side) | When to use |
+|--------------|-------------------------------|-------------|
+| **STANDARD_STP** (live) | **0.0** | Default for research on 27496181 |
+| PRO ECN | 1.5 | What-if if you moved to PRO |
+| RAW ECN | 3.0 | What-if if you moved to RAW (usually tighter spread + commission) |
 
-Spread is still charged from the per-bar `spread` column (`point_size=0.01`, XAU contract size 100).
+RAW/PRO are **not** this account. ECN would typically show a *different* spread distribution than the Standard dump already in the CSV.
 
-## What changed
+## Dead bb_rsi baseline (docs only, fit window, no re-search)
 
-1. Wrote `results/xau_research_costs.json` (RAW default 3.0).
-2. Set `strategy_params.json` `costs.commission_per_lot` → **3.0** (other cost fields unchanged).
-3. Re-scored the **existing** bb_rsi params on their fit window under RAW commission and updated `metrics` so the reproduction tests stay consistent (no param re-search).
-4. Documented 0 / PRO / RAW metrics in [`xau_cost_sensitivity_vantage.json`](xau_cost_sensitivity_vantage.json).
-5. Pointed walk-forward / null-maxstat / Donchian-null / frozen multi-year / lane deep-opt at `load_research_costs()`.
+| Scenario | PF | Net |
+|----------|-----|-----|
+| **Standard STP (live-matched)** | 1.6713 | $1188 |
+| + PRO $1.50 stress | 1.6522 | $1160 |
+| + RAW $3.00 stress | 1.6372 | $1139 |
 
-## Dead baseline under RAW (documentation only)
+See `results/xau_cost_sensitivity_vantage.json`.
 
-bb_rsi is already null-killed (`KILL_BB_RSI_LINE`). Re-score on the recorded fit window:
+## History note
 
-| Commission | Net profit | PF | WR | DD% | n |
-|---|---|---|---|---|---|
-| 0 (spread only) | 1188.27 | 1.671 | 59.52 | 3.84 | 42 |
-| 1.5 PRO | 1159.89 | 1.652 | 59.52 | 3.86 | 42 |
-| **3.0 RAW** | **1138.56** | **1.637** | 59.52 | 3.88 | 42 |
-
-Trade count is unchanged (costs do not alter entries). RAW costs ~$50 of the fit-window NP vs spread-only; classic gates still print green on this dead baseline — that is **not** a promote signal.
-
-## Default reason
-
-RAW ($3/side) is the **conservative research floor**. Use PRO ($1.5) only for explicit sensitivity comparisons, not as the default for new offline work.
+2026-08-08 resume-edge temporarily set research default to RAW $3 as a conservative floor before the live account type was confirmed. **Corrected 2026-08-10** to Standard STP / commission 0 after owner reported account type on VantageMarkets-Live 5.

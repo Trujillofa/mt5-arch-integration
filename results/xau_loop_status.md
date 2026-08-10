@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-08-10 — cost model matched to live Standard STP
+
+Live account confirmed: **MT5 27496181 · Standard STP · 500:1 · VantageMarkets-Live 5**.
+
+| Field | Value |
+|-------|--------|
+| **commission** | **$0** (Standard STP — no ticket commission) |
+| **spread** | measured from this terminal (H1 median 18 pts) |
+| **research default** | `results/xau_research_costs.json` → `commission_per_lot=0`, `account_type=STANDARD_STP` |
+| **RAW $3 / PRO $1.50** | stress alternatives only (other account types), not this login |
+| **correction** | 2026-08-08 resume-edge had defaulted to RAW $3 before account type was known — **over-costed** relative to 27496181 |
+| **strategy disposition** | unchanged: dead families stay dead; `RESEARCH_IDLE_PENDING_NEW_THESIS` |
+| **promote / live_go** | **no / false** |
+
+Null kills already run under commission 0 or 3 still stand as process outcomes; any *new* family search should use Standard STP costs (spread + commission 0). Re-running old nulls under RAW was a conservative stress, not live-matched.
+
+---
+
 ## 2026-08-08 — resume-edge: RAW $3 costs + prior_day_high_break null KILL
 
 Consolidated status after the **xau-resume-edge** fire (Vantage commission bake-in →
