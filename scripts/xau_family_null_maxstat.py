@@ -68,6 +68,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402, I001
     MIN_NULL_TRIALS_PROTOCOL,
+    assert_clean_dispositional_tree,
     build_provenance,
     gates_from_charter,
     is_charter_runnable,
@@ -75,6 +76,7 @@ from xau_charter_protocol import (  # noqa: E402, I001
     make_pass_fns,
     null_spec_from_charter,
     validate_charter,
+    CharterError,
 )
 from xau_null_core import (  # noqa: E402, I001
     MIN_TRADES_MAX_STAT,
@@ -729,6 +731,11 @@ def main(argv: list[str] | None = None) -> int:
                 print("WARNING charter validation:", verrs, flush=True)
             else:
                 raise SystemExit("charter validation failed:\n- " + "\n- ".join(verrs))
+        if args.strict_charter and not args.quick:
+            try:
+                assert_clean_dispositional_tree()
+            except CharterError as e:
+                raise SystemExit(str(e)) from e
         ns = null_spec_from_charter(charter)
         charter_n_null = int(ns["n_trials"])
         charter_method = str(ns["method"])
@@ -1036,6 +1043,7 @@ def main(argv: list[str] | None = None) -> int:
         null_seed=int(args.null_seed),
         n_null=int(args.n_null),
         out_dir=out_json.parent,
+        require_clean_tree=bool(args.strict_charter and not args.quick),
         extra={
             "null_method": null_method,
             "block_days": block_days,

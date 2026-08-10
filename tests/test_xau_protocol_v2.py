@@ -16,6 +16,8 @@ sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402
     CharterError,
+    RegistryError,
+    _parse_jsonl_strict,
     charter_file_sha256,
     gates_from_charter,
     is_charter_runnable,
@@ -24,6 +26,7 @@ from xau_charter_protocol import (  # noqa: E402
     write_charter_once,
 )
 from xau_null_core import (  # noqa: E402
+    _null_within_day_return_rotate,
     apply_null_method,
     null_invariants_ok,
     pvalue,
@@ -83,13 +86,53 @@ def test_tod_charter_restored_byte_sha_and_registry():
     assert "registry" in why or "PROTOCOL" in why
 
 
-def test_server_hour_charter_frozen_valid():
-    p = ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v1.json"
-    ch = json.loads(p.read_text())
-    assert ch["family_id"] == "server_hour_window_flat"
-    assert ch["null"]["method"] == "within_day_return_rotate"
-    assert ch["clock_contract"]["london_ny_overlap_claimed"] is False
-    assert validate_charter(ch) == []
+def test_server_hour_v1_superseded_v2_canonical():
+    v1 = ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v1.json"
+    v2 = ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json"
+    assert charter_file_sha256(v1).startswith("6b5811ee")
+    ok1, why1 = is_charter_runnable(v1)
+    assert ok1 is False and "SUPERSEDED" in why1
+    ch2 = json.loads(v2.read_text())
+    assert ch2["protocol_version"] == 2.2
+    assert ch2["null"]["method"] == "within_day_ohlc_increment_rotate_v1"
+    assert "k∈{0" in ch2["null"]["k_domain"] or "0" in ch2["null"]["k_domain"]
+    assert "open_prev_close_gap_multiset" in ch2["null"]["invariants"]
+    assert validate_charter(ch2) == []
+    assert is_charter_runnable(v2)[0] is True
+
+
+def test_session_charter_rejects_noncanonical_null():
+    v2 = json.loads(
+        (ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json").read_text()
+    )
+    bad = dict(v2)
+    bad["null"] = dict(v2["null"])
+    bad["null"]["method"] = "global_return_shuffle"
+    errs = validate_charter(bad)
+    assert any("global_return_shuffle" in e for e in errs)
+    assert any("within_day_ohlc_increment_rotate_v1" in e for e in errs)
+
+
+def test_registry_terminal_is_monotonic(tmp_path: Path):
+    reg = tmp_path / "reg.jsonl"
+    sha = "abc" * 16
+    rows = [
+        {"charter_sha256": sha, "disposition": "PROTOCOL_NULL_INVALID"},
+        {"charter_sha256": sha, "disposition": "PASS"},
+    ]
+    reg.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    rec = registry_disposition(sha, path=reg)
+    assert rec is not None
+    assert rec["disposition"] == "PROTOCOL_NULL_INVALID"
+
+
+def test_registry_malformed_fails_closed(tmp_path: Path):
+    reg = tmp_path / "reg.jsonl"
+    reg.write_text("{not json\n")
+    with pytest.raises(RegistryError):
+        _parse_jsonl_strict(reg)
+    with pytest.raises(RegistryError):
+        registry_disposition("x", path=reg)
 
 
 def test_legacy_prior_day_charter_not_deleted():
@@ -110,9 +153,9 @@ def test_within_day_v22_preserves_ohlc_continuity_and_gaps():
     raw = _days_ohlc(5)
     # force a non-identity-heavy seed
     rng = np.random.default_rng(99)
-    scr = apply_null_method(raw, rng, method="within_day_return_rotate")
+    scr = apply_null_method(raw, rng, method="within_day_ohlc_increment_rotate_v1")
     inv = null_invariants_ok(
-        raw, scr, method="within_day_return_rotate", entry_hour=13, flat_hour=16
+        raw, scr, method="within_day_ohlc_increment_rotate_v1", entry_hour=13, flat_hour=16
     )
     assert inv["same_length"]
     assert inv["time_unchanged"]
@@ -150,8 +193,6 @@ def test_within_day_identity_k0_recovers_ohlc():
             return low  # always 0 when low=0
 
     # Monkeypatch via fixed seed that is not reliable; call internal with forced k
-    from xau_null_core import _null_within_day_return_rotate
-
     class R:
         def integers(self, low, high=None):
             return 0 if high is None else low
@@ -169,7 +210,7 @@ def test_within_day_k_domain_includes_zero():
     seen_identity = False
     for seed in range(200):
         scr = apply_null_method(
-            raw, np.random.default_rng(seed), method="within_day_return_rotate"
+            raw, np.random.default_rng(seed), method="within_day_ohlc_increment_rotate_v1"
         )
         if np.allclose(raw["close"].to_numpy(float), scr["close"].to_numpy(float)):
             seen_identity = True

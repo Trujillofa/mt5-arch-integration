@@ -50,9 +50,61 @@ DEFAULT_CLASSIC_GATES = {
 MIN_NULL_TRIALS_PROTOCOL = 199
 PREFERRED_NULL_TRIALS_LOW_KNOB = 999
 
+# Terminal dispositions are monotonic: once seen for a SHA, later non-terminal
+# records cannot reverse them (append-only integrity).
+TERMINAL_DISPOSITIONS = frozenset(
+    {
+        "PROTOCOL_NULL_INVALID",
+        "SCREEN_FAIL",
+        "SUPERSEDED",
+        "KILL",
+        "KILL_BB_RSI_LINE",
+        "KILL_DONCHIAN_LINE",
+        "KILL_PRIOR_DAY_HIGH_BREAK",
+        "KILL_SERVER_HOUR_WINDOW_FLAT",
+        "KILL_TOD_LONDON_NY_FLAT",
+    }
+)
+
+# Session / server-hour families must preregister this exact algorithm id (v2.2+).
+CANONICAL_SESSION_NULL = "within_day_ohlc_increment_rotate_v1"
+SESSION_NULL_ALIASES = frozenset(
+    {
+        CANONICAL_SESSION_NULL,
+        # accepted only when charter.protocol_version < 2.2 and notes declare v2.2 algo
+        "within_day_return_rotate",
+    }
+)
+SESSION_THESIS_CLASSES = frozenset(
+    {
+        "server_hour_window_fixed",
+        "time_of_day_fixed",
+        "session_or_breakout_fixed",
+        "session_window_fixed",
+    }
+)
+
+# Tracked paths that must be clean for dispositional sealed runs.
+DISPOSITIONAL_PATH_GLOBS = (
+    "scripts/xau_null_core.py",
+    "scripts/xau_charter_protocol.py",
+    "scripts/xau_family_null_maxstat.py",
+    "scripts/xau_sealed_family_cycle.py",
+    "scripts/xau_family_*.py",
+    "scripts/xau_research_costs.py",
+    "results/xau_research_costs.json",
+    "results/xau_charters/*.json",
+    "results/xau_holdout_lock.json",
+    "backtest.py",
+)
+
 
 class CharterError(RuntimeError):
     """Invalid or conflicting charter operation."""
+
+
+class RegistryError(RuntimeError):
+    """Corrupt or inconsistent append-only registry / ledger."""
 
 
 def sha256_file(path: Path) -> str | None:
@@ -77,6 +129,60 @@ def git_head(repo: Path = ROOT) -> str | None:
         return None
 
 
+def git_dirty_tracked_paths(repo: Path = ROOT) -> list[str]:
+    """Return tracked paths with staged or unstaged modifications (fail-closed for sealed runs)."""
+    try:
+        out = subprocess.check_output(
+            ["git", "-C", str(repo), "status", "--porcelain", "-uno"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except (subprocess.CalledProcessError, FileNotFoundError, OSError) as e:
+        raise CharterError(f"cannot determine git dirty state: {e}") from e
+    dirty: list[str] = []
+    for line in out.splitlines():
+        if len(line) < 4:
+            continue
+        # XY<path> or XY orig -> path
+        path = line[3:].strip()
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1].strip()
+        # only tracked changes: first two cols not ??
+        xy = line[:2]
+        if xy == "??":
+            continue
+        dirty.append(path)
+    return dirty
+
+
+def assert_clean_dispositional_tree(repo: Path = ROOT) -> dict[str, Any]:
+    """Refuse dispositional runs if protocol/family/cost/charter tracked files are dirty."""
+    dirty = git_dirty_tracked_paths(repo)
+    if not dirty:
+        return {"clean": True, "dirty_paths": [], "code_commit": git_head(repo)}
+    # filter to dispositional paths
+    import fnmatch
+
+    relevant: list[str] = []
+    for p in dirty:
+        for pat in DISPOSITIONAL_PATH_GLOBS:
+            if fnmatch.fnmatch(p, pat) or p == pat:
+                relevant.append(p)
+                break
+    if relevant:
+        raise CharterError(
+            "dispositional run refused: dirty tracked protocol/family/cost files:\n  - "
+            + "\n  - ".join(sorted(set(relevant)))
+            + "\nCommit or stash before sealed/--strict-charter runs."
+        )
+    return {
+        "clean": True,
+        "dirty_paths": dirty,
+        "dirty_ignored_unrelated": True,
+        "code_commit": git_head(repo),
+    }
+
+
 def charter_path(family_id: str, *, day: str | None = None, version: int = 1) -> Path:
     """``results/xau_charters/YYYY-MM-DD_<family>_vN.json``."""
     d = day or date.today().isoformat()
@@ -95,41 +201,90 @@ def charter_file_sha256(path: Path | str) -> str:
     return sha256_file(Path(path)) or ""
 
 
-def registry_disposition(charter_sha256: str, path: Path = DISPOSITION_REGISTRY) -> dict[str, Any] | None:
-    """Latest append-only disposition record for a charter SHA, if any."""
-    if not path.is_file() or not charter_sha256:
-        return None
-    latest = None
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line:
+def _parse_jsonl_strict(path: Path) -> list[dict[str, Any]]:
+    """Parse JSONL fail-closed: any malformed non-empty line raises RegistryError."""
+    if not path.is_file():
+        return []
+    rows: list[dict[str, Any]] = []
+    for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+        if not line.strip():
             continue
         try:
             rec = json.loads(line)
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as e:
+            raise RegistryError(
+                f"corrupt JSONL {path} line {lineno}: {e}. "
+                "Refuse to continue (fail closed)."
+            ) from e
+        if not isinstance(rec, dict):
+            raise RegistryError(f"corrupt JSONL {path} line {lineno}: expected object")
+        rows.append(rec)
+    return rows
+
+
+def _is_terminal_disposition(d: str | None) -> bool:
+    if not d:
+        return False
+    if d in TERMINAL_DISPOSITIONS:
+        return True
+    # any KILL_* label is terminal
+    return d.startswith("KILL")
+
+
+def registry_disposition(charter_sha256: str, path: Path = DISPOSITION_REGISTRY) -> dict[str, Any] | None:
+    """Effective disposition for a charter SHA (monotonic terminal states).
+
+    Walks append-only history fail-closed. Once a **terminal** disposition is
+    recorded for the SHA, later non-terminal records (e.g. PASS) are ignored for
+    runnability — they do not reverse the terminal state.
+    """
+    if not charter_sha256:
+        return None
+    rows = _parse_jsonl_strict(path)
+    terminal: dict[str, Any] | None = None
+    latest: dict[str, Any] | None = None
+    for rec in rows:
+        if rec.get("charter_sha256") != charter_sha256:
             continue
-        if rec.get("charter_sha256") == charter_sha256:
-            latest = rec
-    return latest
+        latest = rec
+        d = str(rec.get("disposition") or "")
+        if _is_terminal_disposition(d):
+            terminal = rec
+    # terminal wins if any
+    return terminal if terminal is not None else latest
 
 
 def is_charter_runnable(path: Path | str) -> tuple[bool, str]:
-    """False if registry marks this charter SHA as invalid/superseded."""
+    """False if registry marks this charter SHA as invalid/superseded/killed."""
     p = Path(path)
-    sha = charter_file_sha256(p)
-    rec = registry_disposition(sha)
+    try:
+        sha = charter_file_sha256(p)
+    except Exception as e:
+        return False, f"cannot hash charter: {e}"
+    try:
+        rec = registry_disposition(sha)
+    except RegistryError as e:
+        return False, str(e)
     if rec is None:
-        # also refuse if in-file disposition present (legacy mistake)
         try:
             ch = load_charter(p)
         except Exception as e:
             return False, f"cannot load charter: {e}"
         d = ch.get("disposition")
-        if d in ("PROTOCOL_NULL_INVALID", "SCREEN_FAIL", "SUPERSEDED"):
+        if _is_terminal_disposition(str(d) if d else None) or d in (
+            "PROTOCOL_NULL_INVALID",
+            "SCREEN_FAIL",
+            "SUPERSEDED",
+        ):
             return False, f"in-file disposition={d!r} (prefer registry; do not mutate freezes)"
         return True, "ok"
-    d = rec.get("disposition")
-    if d in ("PROTOCOL_NULL_INVALID", "SCREEN_FAIL", "SUPERSEDED", "KILL"):
+    d = str(rec.get("disposition") or "")
+    if _is_terminal_disposition(d) or d in (
+        "PROTOCOL_NULL_INVALID",
+        "SCREEN_FAIL",
+        "SUPERSEDED",
+        "KILL",
+    ):
         return False, f"registry disposition={d!r} for sha={sha[:12]}…"
     return True, "ok"
 
@@ -168,16 +323,44 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
     method = str(null.get("method") or null.get("null_method") or "")
     if not method:
         errs.append(
-            "null.method required (e.g. within_day_return_rotate, global_return_shuffle)"
+            "null.method required (e.g. within_day_ohlc_increment_rotate_v1)"
         )
-    if (
-        method in ("day_block_shuffle", "circular_day_shift", "block_shuffle", "circular")
-        and float(charter.get("protocol_version") or 0) >= 2.1
-    ):
+    forbidden = {str(x) for x in (null.get("forbidden_methods") or [])}
+    if method in forbidden:
+        errs.append(f"null.method={method!r} is listed in null.forbidden_methods")
+    if method in ("day_block_shuffle", "circular_day_shift", "block_shuffle", "circular"):
         errs.append(
             f"null.method={method!r} is PROTOCOL_NULL_INVALID for session-hour "
-            "families under protocol ≥2.1; use within_day_return_rotate"
+            f"families; use {CANONICAL_SESSION_NULL}"
         )
+
+    thesis = str(charter.get("thesis_class") or "")
+    is_session = thesis in SESSION_THESIS_CLASSES or bool(
+        (charter.get("rule") or {}).get("entry_hour") is not None
+        or (charter.get("rule") or {}).get("entry_hours_server")
+    )
+    proto = float(charter.get("protocol_version") or 0)
+    if is_session:
+        if proto >= 2.2:
+            if method != CANONICAL_SESSION_NULL:
+                errs.append(
+                    f"session family requires null.method={CANONICAL_SESSION_NULL!r} "
+                    f"(protocol ≥2.2); got {method!r}"
+                )
+        elif proto >= 2.1:
+            # transitional: allow legacy name only if notes pin v2.2 algorithm
+            notes = str(null.get("notes") or "")
+            if method not in SESSION_NULL_ALIASES:
+                errs.append(
+                    f"session family null.method={method!r} not in {sorted(SESSION_NULL_ALIASES)}"
+                )
+            if method == "within_day_return_rotate" and "OHLC" not in notes and "ohlc" not in notes.lower():
+                errs.append(
+                    "legacy null.method=within_day_return_rotate requires notes that "
+                    "preregister complete OHLC-increment algorithm (or bump to "
+                    f"{CANONICAL_SESSION_NULL} under protocol 2.2)"
+                )
+
     if not (charter.get("gates") or charter.get("passer_definition_soft")):
         errs.append("gates or passer_definition_soft required")
     costs = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
@@ -187,7 +370,7 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
     rule = charter.get("rule") or {}
     exits = str(rule.get("exit") or "") + str(rule.get("intraday_flat") or "")
     if (
-        float(charter.get("protocol_version") or 0) >= 2
+        proto >= 2
         and not rule.get("intraday_flat")
         and "swap" not in exits.lower()
         and "flat" not in exits.lower()
@@ -223,11 +406,27 @@ def build_provenance(
     n_null: int,
     out_dir: Path,
     extra: dict[str, Any] | None = None,
+    require_clean_tree: bool = False,
 ) -> dict[str, Any]:
+    dirty_info: dict[str, Any]
+    if require_clean_tree:
+        dirty_info = assert_clean_dispositional_tree()
+    else:
+        try:
+            dirty = git_dirty_tracked_paths()
+        except CharterError:
+            dirty = ["<git unavailable>"]
+        dirty_info = {
+            "clean": len(dirty) == 0,
+            "dirty_paths": dirty,
+            "code_commit": git_head(),
+        }
     prov = {
         "charter_path": str(charter_path.relative_to(ROOT)) if charter_path.is_relative_to(ROOT) else str(charter_path),
         "charter_sha256": sha256_file(charter_path),
-        "code_commit": git_head(),
+        "code_commit": dirty_info.get("code_commit") or git_head(),
+        "tree_clean": bool(dirty_info.get("clean")),
+        "dirty_paths": dirty_info.get("dirty_paths") or [],
         "data_path": str(data_path.relative_to(ROOT)) if data_path.is_relative_to(ROOT) else str(data_path),
         "data_sha256": sha256_file(data_path),
         "costs_path": str(costs_path.relative_to(ROOT)) if costs_path.is_relative_to(ROOT) else str(costs_path),
@@ -250,17 +449,10 @@ def append_attempt(record: dict[str, Any], path: Path = ATTEMPTS_PATH) -> None:
 
 
 def count_attempts(family_id: str | None = None, path: Path = ATTEMPTS_PATH) -> int:
-    if not path.is_file():
-        return 0
+    """Count attempts fail-closed: corrupt ledger lines raise RegistryError."""
+    rows = _parse_jsonl_strict(path)
     n = 0
-    for line in path.read_text().splitlines():
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            rec = json.loads(line)
-        except json.JSONDecodeError:
-            continue
+    for rec in rows:
         if family_id is None or rec.get("family_id") == family_id:
             n += 1
     return n

@@ -1,53 +1,47 @@
-# XAU family research protocol v2.2
+# XAU family research protocol v2.2 (enforcement complete)
 
 **Date:** 2026-08-10  
-**Status:** active for new families  
-**PR #1:** Draft head includes protocol work — **scope expanded**; review as joint research+protocol.
+**Status:** active  
+**PR #1:** Draft head includes protocol work — **scope expanded** (v2 / v2.1 / v2.2). Not a clean research-only PR.
 
-## Standing research disposition
+## Active freeze
 
-| Item | Status |
-|------|--------|
-| bb_rsi / Donchian / prior_day_high_break | KILL (prior work) |
-| `tod_london_ny_flat` v1 | **PROTOCOL_NULL_INVALID** (registry; charter file immutable) |
-| r1 sealed run | **not burned** |
-| promote / live_go | no / false |
+| Charter | Status |
+|---------|--------|
+| `…/server_hour_window_flat_v2.json` | **FROZEN** protocol 2.2 · null=`within_day_ohlc_increment_rotate_v1` · n_null=999 |
+| `…/server_hour_window_flat_v1.json` | **SUPERSEDED** (registry; file immutable; SHA `6b5811ee…`) |
+| `…/tod_london_ny_flat_v1.json` | **PROTOCOL_NULL_INVALID** (registry; file immutable; SHA `e7cd953f…`) |
 
-Invalidation of freezes: append-only `results/xau_charter_disposition_registry.jsonl` keyed by **charter SHA-256**. Do **not** edit frozen charter JSON for disposition.
+r1 **not burned**. promote=no / live_go=false.
 
-## Null methods (v2.2)
+## Canonical session null
 
-| Method | Use |
-|--------|-----|
-| **`within_day_return_rotate`** | **Required for server-hour / session rules.** Per day: rotate complete normalized OHLC bar increments; k ∈ {0,…,m−1} includes identity; rebase continuous path; preserve open/ref and TR/ref multisets. |
-| `global_return_shuffle` | Legacy global close-return shuffle (non-session claims only). |
-| `day_block_shuffle` / `circular_day_shift` | **PROTOCOL_NULL_INVALID** for hour rules (absolute-price paste, hour misalign). |
+**`within_day_ohlc_increment_rotate_v1`**
 
-## Charter rules
+1. Per calendar day, `ref_0 = open[0]`, `ref_j = close[j-1]`.  
+2. `inc_j = (open,high,low,close)/ref_j`.  
+3. Circular rotate by `k ∈ {0,…,m−1}` (**identity included**).  
+4. Rebuild continuous path from day open; timestamps/spreads fixed.  
 
-1. Write-once under `results/xau_charters/YYYY-MM-DD_<family>_vN.json`.
-2. Gates, null method, n_trials (≥199; 999 for 0–1 knobs) from charter only under sealed/`--strict-charter`.
-3. Family id, costs, null method/count must match runtime; fixture smoke is **blocking**.
-4. Intraday flat (or explicit swap handling); slip sensitivity report-only.
-5. Clock: server hours as stored unless external offset proven.
+Invariants: open/ref multiset, TR/ref multiset, per-day bar counts, continuity.
 
-## Active freeze (optional next sealed run)
+**Invalid for session families:** `day_block_shuffle`, `circular_day_shift`, `global_return_shuffle`, and bare `within_day_return_rotate` under protocol ≥2.2 (name without preregistered OHLC algorithm).
 
-`results/xau_charters/2026-08-10_server_hour_window_flat_v1.json`  
-— server-hour labels only; **not** London–NY claim; null=`within_day_return_rotate`; n_null=999.
+## Enforcement
+
+| Guard | Behavior |
+|-------|----------|
+| Session thesis | Must set `null.method=within_day_ohlc_increment_rotate_v1` (protocol ≥2.2) |
+| `null.forbidden_methods` | Method listed there is rejected |
+| Registry JSONL | Fail closed on malformed lines; terminal dispositions are **monotonic** |
+| Dispositional tree | Sealed / `--strict-charter` refuse dirty tracked protocol/family/cost/charter files |
+| Provenance | Records `code_commit` + `tree_clean` / `dirty_paths` |
+
+## Optional sealed run (after review)
 
 ```bash
-# Only when ready to spend an attempt — not automatic
 python3 scripts/xau_sealed_family_cycle.py \
-  --charter results/xau_charters/2026-08-10_server_hour_window_flat_v1.json \
+  --charter results/xau_charters/2026-08-10_server_hour_window_flat_v2.json \
   --family server_hour_window_flat \
   --run-id r1
 ```
-
-## Superseded / invalid candidates
-
-| Family | Note |
-|--------|------|
-| Multi-instrument | Deferred (data) |
-| EMA20 + H4 pullback | Removed (dead htf_pullback) |
-| tod_london_ny_flat | Registry INVALID — do not run |

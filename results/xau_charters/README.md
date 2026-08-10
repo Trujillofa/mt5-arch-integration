@@ -14,7 +14,8 @@
 | Path | Family | Status |
 |------|--------|--------|
 | `2026-08-10_tod_london_ny_flat_v1.json` | `tod_london_ny_flat` | Freeze **immutable** (SHA `e7cd953f…`). Disposition in **registry only** → PROTOCOL_NULL_INVALID. r1 not burned. |
-| `2026-08-10_server_hour_window_flat_v1.json` | `server_hour_window_flat` | FROZEN server-hour thesis; null=`within_day_return_rotate` **v2.2**; n_null=999. Sealed run optional. |
+| `2026-08-10_server_hour_window_flat_v1.json` | `server_hour_window_flat` | **SUPERSEDED** (registry SHA `6b5811ee…`) — stale null algorithm preregistration. |
+| `2026-08-10_server_hour_window_flat_v2.json` | `server_hour_window_flat` | **FROZEN** protocol 2.2 · `within_day_ohlc_increment_rotate_v1` · n_null=999. Sealed r1 optional. |
 
 Append-only dispositions: `../xau_charter_disposition_registry.jsonl` (keyed by charter SHA).
 

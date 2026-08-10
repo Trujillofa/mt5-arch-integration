@@ -1,5 +1,20 @@
 # XAU offline loop status
 
+## 2026-08-10 — protocol v2.2.1 preregistration + enforcement (still no r1)
+
+| Field | Value |
+|-------|--------|
+| **v1 server_hour charter** | Registry **SUPERSEDED** (SHA `6b5811ee…`) — preregistered close-return algorithm ≠ v2.2 runtime |
+| **v2 freeze** | `results/xau_charters/2026-08-10_server_hour_window_flat_v2.json` · method **`within_day_ohlc_increment_rotate_v1`** · full algorithm + k-domain + OHLC invariants |
+| **session null policy** | Canonical method required; `forbidden_methods` enforced; noncanonical rejected |
+| **registry integrity** | Malformed JSONL → fail closed; terminal dispositions monotonic |
+| **dirty tree** | Sealed / strict-charter refuse dirty tracked protocol/family/cost files |
+| **r1** | **not burned** |
+| **next** | External review of v2 freeze, then optional sealed r1 on **v2 only** |
+| **promote / live_go** | no / false |
+
+---
+
 ## 2026-08-10 — protocol v2.2 correction (still do not burn r1)
 
 Review of v2.1 found OHLC-inconsistent within-day null and forced non-identity k.

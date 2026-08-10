@@ -35,6 +35,7 @@ sys.path.insert(0, str(SCRIPTS))
 from xau_charter_protocol import (  # noqa: E402
     CharterError,
     append_attempt,
+    assert_clean_dispositional_tree,
     build_provenance,
     count_attempts,
     ensure_fresh_run_dir,
@@ -187,6 +188,13 @@ def main(argv: list[str] | None = None) -> int:
     if errs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
 
+    # Dispositional path: refuse dirty tracked protocol/family/cost/charter files
+    if not args.dry_fixture_only:
+        try:
+            assert_clean_dispositional_tree()
+        except CharterError as e:
+            raise SystemExit(str(e)) from e
+
     family_id = _assert_family_matches_charter(args.family, charter)
     _assert_costs_match_charter(charter)
 
@@ -243,6 +251,7 @@ def main(argv: list[str] | None = None) -> int:
             null_seed=int(report.get("null", {}).get("base_seed") or 0),
             n_null=n_null,
             out_dir=out_dir,
+            require_clean_tree=True,
             extra={
                 "disposition": disposition,
                 "null_method": null_method,

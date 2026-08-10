@@ -75,22 +75,21 @@ def apply_null_method(
     -------
     global_return_shuffle
         Shuffle all close-to-close log returns (legacy). Breaks session structure.
-    within_day_return_rotate
-        **Preferred for server-hour / session rules.** Per calendar day, circularly
-        rotate the within-day close-to-close log-return sequence by k≥1, rebuild a
-        continuous price path (rebase from the day's first close), and re-attach
-        bar geometry. Timestamps and spreads stay fixed. Destroys hour↔return
-        association while preserving day bar counts and continuous daily geometry.
+    within_day_ohlc_increment_rotate_v1  (canonical session null, protocol ≥2.2)
+        Per calendar day: form complete normalized OHLC increments
+        (open,high,low,close)/ref with ref_0=day open and ref_j=close[j-1];
+        circularly rotate by k∈{0,…,m−1} (identity included); rebuild continuous
+        path from day open. Preserves open/ref and TR/ref multisets. Aliases:
+        within_day_return_rotate (legacy name only — algorithm is v1 OHLC increments).
     day_block_shuffle / circular_day_shift
-        **PROTOCOL_NULL_INVALID for session hypotheses** (variable-length days,
-        absolute-price blocks, hour misalignment). Kept only for legacy docs;
-        prefer within_day_return_rotate.
+        **PROTOCOL_NULL_INVALID for session hypotheses.**
     """
     method = (method or "global_return_shuffle").strip().lower()
     if method in ("global_return_shuffle", "return_shuffle", "global"):
         return _null_global_return_shuffle(raw, rng)
     if method in (
-        "within_day_return_rotate",
+        "within_day_ohlc_increment_rotate_v1",
+        "within_day_return_rotate",  # alias → v1 OHLC-increment algorithm
         "within_day_hour_rotate",
         "session_return_rotate",
         "intraday_return_rotate",
@@ -333,6 +332,7 @@ def null_invariants_ok(
         checks["per_day_bar_count_equal"] = False
 
     if method in (
+        "within_day_ohlc_increment_rotate_v1",
         "within_day_return_rotate",
         "within_day_hour_rotate",
         "session_return_rotate",
