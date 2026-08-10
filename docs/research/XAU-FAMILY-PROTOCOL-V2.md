@@ -4,15 +4,24 @@
 **Status:** active  
 **PR #1:** Draft head includes protocol work — **scope expanded** (v2 / v2.1 / v2.2). Not a clean research-only PR.
 
-## Active freeze
+## Standing loop disposition
+
+**`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** · promote=no · live_go=false · r1 unburned
+
+## Freezes (registry)
 
 | Charter | Status |
 |---------|--------|
-| `…/server_hour_window_flat_v2.json` | **FROZEN** protocol 2.2 · null=`within_day_ohlc_increment_rotate_v1` · n_null=999 |
-| `…/server_hour_window_flat_v1.json` | **SUPERSEDED** (registry; file immutable; SHA `6b5811ee…`) |
-| `…/tod_london_ny_flat_v1.json` | **PROTOCOL_NULL_INVALID** (registry; file immutable; SHA `e7cd953f…`) |
+| `…/server_hour_window_flat_v2.json` | **SCREEN_FAIL** ZERO_PRIMARY_PASSERS (SHA `26ff7532…`) — r1 not burned |
+| `…/server_hour_window_flat_v1.json` | **SUPERSEDED** (SHA `6b5811ee…`) |
+| `…/tod_london_ny_flat_v1.json` | **PROTOCOL_NULL_INVALID** (SHA `e7cd953f…`) |
 
-r1 **not burned**. promote=no / live_go=false.
+## Screen-fail rule (deterministic)
+
+> If the real develop grid has **zero primary passers**, terminate as **`SCREEN_FAIL`**
+> **without null trials**. Under add-one smoothing, `p_n_passers` is necessarily
+> **1.0** when passers=0 and nulls are skipped (and always fails a 0.05 bar if
+> nulls were run with zero real passers). This is arithmetic, not optional stopping.
 
 ## Canonical session null
 
@@ -37,11 +46,14 @@ Invariants: open/ref multiset, TR/ref multiset, per-day bar counts, continuity.
 | Dispositional tree | Sealed / `--strict-charter` refuse dirty tracked protocol/family/cost/charter files |
 | Provenance | Records `code_commit` + `tree_clean` / `dirty_paths` |
 
-## Optional sealed run (after review)
+## Next family (not server-hour / TOD)
 
-```bash
-python3 scripts/xau_sealed_family_cycle.py \
-  --charter results/xau_charters/2026-08-10_server_hour_window_flat_v2.json \
-  --family server_hour_window_flat \
-  --run-id r1
-```
+New `family_id` · freeze under `results/xau_charters/` · git-tracked · match HEAD ·  
+freeze **before** inspecting real grid · null only if primary passers ≥ 1.
+
+## Sealed path requirements
+
+- Charter under `results/xau_charters/`
+- Git-tracked and byte-identical to `HEAD` blob
+- Clean dispositional tree (includes disposition registry)
+- Charter runnable (registry not terminal)

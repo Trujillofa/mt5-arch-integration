@@ -35,6 +35,7 @@ sys.path.insert(0, str(SCRIPTS))
 from xau_charter_protocol import (  # noqa: E402
     CharterError,
     append_attempt,
+    assert_charter_path_for_sealed,
     assert_clean_dispositional_tree,
     build_provenance,
     count_attempts,
@@ -188,9 +189,10 @@ def main(argv: list[str] | None = None) -> int:
     if errs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
 
-    # Dispositional path: refuse dirty tracked protocol/family/cost/charter files
+    # Dispositional path: sealed path under charters/ + HEAD blob + clean tree
     if not args.dry_fixture_only:
         try:
+            assert_charter_path_for_sealed(charter_path)
             assert_clean_dispositional_tree()
         except CharterError as e:
             raise SystemExit(str(e)) from e

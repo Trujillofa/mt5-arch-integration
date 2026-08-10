@@ -98,7 +98,9 @@ def test_server_hour_v1_superseded_v2_canonical():
     assert "k∈{0" in ch2["null"]["k_domain"] or "0" in ch2["null"]["k_domain"]
     assert "open_prev_close_gap_multiset" in ch2["null"]["invariants"]
     assert validate_charter(ch2) == []
-    assert is_charter_runnable(v2)[0] is True
+    # v2 closed SCREEN_FAIL in registry (zero primary passers) — not runnable
+    ok2, why2 = is_charter_runnable(v2)
+    assert ok2 is False and "SCREEN_FAIL" in why2
 
 
 def test_session_charter_rejects_noncanonical_null():
@@ -250,3 +252,46 @@ def test_sealed_fixture_blocks_family_mismatch():
     )
     with pytest.raises(SystemExit):
         _assert_family_matches_charter("tod_london_ny_flat", ch)
+
+
+def test_v2_screen_fail_in_registry():
+    sha = "26ff7532a4cae730f370d350d39df383e83b01f85e0f5de3e1eac9ae283a464e"
+    rec = registry_disposition(sha)
+    assert rec is not None
+    assert rec["disposition"] == "SCREEN_FAIL"
+    assert rec.get("screen_status") == "ZERO_PRIMARY_PASSERS"
+    assert rec.get("r1_burned") is False
+    assert rec.get("p_n_passers_implied") == 1.0
+    ok, why = is_charter_runnable(
+        ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json"
+    )
+    assert ok is False and "SCREEN_FAIL" in why
+
+
+def test_external_charter_path_refused(tmp_path: Path):
+    from xau_charter_protocol import assert_charter_path_for_sealed
+
+    p = tmp_path / "evil.json"
+    p.write_text("{}")
+    with pytest.raises(CharterError, match="under"):
+        assert_charter_path_for_sealed(p)
+
+
+def test_untracked_charter_refused(tmp_path: Path, monkeypatch):
+    """Charter under charters/ but not git-tracked must be refused."""
+    from xau_charter_protocol import CHARTERS_DIR, assert_charter_path_for_sealed
+
+    p = CHARTERS_DIR / "_test_untracked_do_not_commit.json"
+    p.write_text('{"family_id":"x"}')
+    try:
+        with pytest.raises(CharterError, match="not git-tracked"):
+            assert_charter_path_for_sealed(p)
+    finally:
+        if p.exists():
+            p.unlink()
+
+
+def test_dirty_registry_in_dispositional_globs():
+    from xau_charter_protocol import DISPOSITIONAL_PATH_GLOBS
+
+    assert "results/xau_charter_disposition_registry.jsonl" in DISPOSITIONAL_PATH_GLOBS

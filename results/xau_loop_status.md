@@ -1,5 +1,24 @@
 # XAU offline loop status
 
+## 2026-08-10 — server_hour v2 SCREEN_FAIL · RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **v2 charter** | SHA `26ff7532…` · registry **SCREEN_FAIL** / `ZERO_PRIMARY_PASSERS` |
+| **real grid (develop)** | PF **0.8511** · NP **−5052.80** · DD **58.54%** · n **1114** · primary passers **0** |
+| **p_n_passers_implied** | **1.0** (arithmetic; nulls not needed) |
+| **r1_burned** | **false** |
+| **protocol rule** | Real primary passers == 0 → **SCREEN_FAIL without null trials** |
+| **next family** | New `family_id` only; freeze before grid peek; null only if ≥1 primary passer |
+
+Do not run: r1, walk-forward, holdout eval, retune, paper, live on closed freezes.
+
+---
+
 ## 2026-08-10 — protocol v2.2.1 preregistration + enforcement (still no r1)
 
 | Field | Value |

@@ -68,6 +68,8 @@ sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402, I001
     MIN_NULL_TRIALS_PROTOCOL,
+    CharterError,
+    assert_charter_path_for_sealed,
     assert_clean_dispositional_tree,
     build_provenance,
     gates_from_charter,
@@ -76,7 +78,6 @@ from xau_charter_protocol import (  # noqa: E402, I001
     make_pass_fns,
     null_spec_from_charter,
     validate_charter,
-    CharterError,
 )
 from xau_null_core import (  # noqa: E402, I001
     MIN_TRADES_MAX_STAT,
@@ -723,6 +724,11 @@ def main(argv: list[str] | None = None) -> int:
         ok_run, why = is_charter_runnable(charter_path)
         if not ok_run:
             raise SystemExit(f"charter not runnable: {why}")
+        if args.strict_charter and not args.quick:
+            try:
+                assert_charter_path_for_sealed(charter_path)
+            except CharterError as e:
+                raise SystemExit(str(e)) from e
         charter = load_charter(charter_path)
         # Same enforcement as sealed cycle: full charter validation
         verrs = validate_charter(charter)
@@ -932,11 +938,28 @@ def main(argv: list[str] | None = None) -> int:
             )
         print(f"Slippage sensitivity (frozen report-only): {slip_report}", flush=True)
 
-    # --- nulls ---
-    print(
-        f"Running {args.n_null} null trials ({null_method}) with {args.workers} workers...",
-        flush=True,
+    # --- Deterministic SCREEN_FAIL: zero primary passers ⇒ p_n_passers = 1.0 ---
+    # Protocol: do not run null trials (arithmetic, not optional early-exit tuning).
+    screen_fail_zero_passers = (
+        int(real["n_passers"]) == 0
+        and not args.quick
+        and not non_dispositional
     )
+    if screen_fail_zero_passers:
+        print(
+            "SCREEN_FAIL ZERO_PRIMARY_PASSERS: real primary passers=0 ⇒ "
+            "p_n_passers is necessarily 1.0 under add-one smoothing. "
+            "Skipping null trials (protocol rule).",
+            flush=True,
+        )
+        args.n_null = 0
+
+    # --- nulls ---
+    if int(args.n_null) > 0:
+        print(
+            f"Running {args.n_null} null trials ({null_method}) with {args.workers} workers...",
+            flush=True,
+        )
     raw_records = raw.to_dict(orient="records")
     for rec in raw_records:
         t = rec["time"]
@@ -1013,6 +1036,16 @@ def main(argv: list[str] | None = None) -> int:
             if args.quick
             else "CLI overrides diverged from frozen charter — not a disposition."
         )
+    elif screen_fail_zero_passers:
+        disposition = "SCREEN_FAIL"
+        reason = (
+            "ZERO_PRIMARY_PASSERS: real grid primary passers=0. Under add-one "
+            "smoothing p_n_passers=(0+1)/(n_null+1) is always >0.05 for finite n_null "
+            "and equals 1.0 when nulls are skipped by protocol. Deterministic "
+            "arithmetic — null trials not run. Do not retune; freeze a new family_id."
+        )
+        p_n_passers = 1.0
+        p_max_pf = 1.0
     elif fail_pf or fail_pass:
         disposition = plugin.kill_label
         reason = (
@@ -1090,10 +1123,20 @@ def main(argv: list[str] | None = None) -> int:
             "source": "charter" if charter is not None else "module_or_default",
         },
         "real": real,
+        "screen": {
+            "zero_primary_passers": bool(screen_fail_zero_passers),
+            "rule": (
+                "If real primary passers==0, SCREEN_FAIL without null trials "
+                "(p_n_passers necessarily 1.0 under add-one when n_null=0 / always >0.05)"
+            ),
+        },
         "null": {
             "method": null_method,
             "block_days": block_days,
-            "n_trials": args.n_null,
+            "n_trials": int(args.n_null) if not screen_fail_zero_passers else 0,
+            "skipped_reason": (
+                "ZERO_PRIMARY_PASSERS" if screen_fail_zero_passers else None
+            ),
             "base_seed": args.null_seed,
             "workers": args.workers,
             "max_pf": dist_summary(null_max_pf),

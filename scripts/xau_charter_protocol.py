@@ -94,6 +94,7 @@ DISPOSITIONAL_PATH_GLOBS = (
     "scripts/xau_research_costs.py",
     "results/xau_research_costs.json",
     "results/xau_charters/*.json",
+    "results/xau_charter_disposition_registry.jsonl",
     "results/xau_holdout_lock.json",
     "backtest.py",
 )
@@ -171,7 +172,7 @@ def assert_clean_dispositional_tree(repo: Path = ROOT) -> dict[str, Any]:
                 break
     if relevant:
         raise CharterError(
-            "dispositional run refused: dirty tracked protocol/family/cost files:\n  - "
+            "dispositional run refused: dirty tracked protocol/family/cost/registry files:\n  - "
             + "\n  - ".join(sorted(set(relevant)))
             + "\nCommit or stash before sealed/--strict-charter runs."
         )
@@ -180,6 +181,67 @@ def assert_clean_dispositional_tree(repo: Path = ROOT) -> dict[str, Any]:
         "dirty_paths": dirty,
         "dirty_ignored_unrelated": True,
         "code_commit": git_head(repo),
+    }
+
+
+def assert_charter_path_for_sealed(path: Path | str, repo: Path = ROOT) -> dict[str, Any]:
+    """Sealed charters must live under results/xau_charters/, be git-tracked, match HEAD.
+
+    Refuses:
+    - paths outside ``results/xau_charters/``
+    - untracked charter files
+    - working-tree bytes that differ from ``git show HEAD:<path>``
+    """
+    p = Path(path).resolve()
+    charters = CHARTERS_DIR.resolve()
+    try:
+        rel = p.relative_to(charters)
+    except ValueError as e:
+        raise CharterError(
+            f"sealed charter must resolve under {CHARTERS_DIR} (got {p})"
+        ) from e
+    if ".." in rel.parts:
+        raise CharterError(f"sealed charter path escapes charters dir: {p}")
+
+    rel_repo = p.relative_to(repo.resolve())
+    rel_s = rel_repo.as_posix()
+
+    # Must be tracked
+    try:
+        tracked = subprocess.check_output(
+            ["git", "-C", str(repo), "ls-files", "--error-unmatch", rel_s],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except subprocess.CalledProcessError as e:
+        raise CharterError(
+            f"sealed charter is not git-tracked: {rel_s}. "
+            "Commit the freeze before a dispositional run."
+        ) from e
+    if not tracked:
+        raise CharterError(f"sealed charter is not git-tracked: {rel_s}")
+
+    # Working tree must match HEAD blob
+    try:
+        head_bytes = subprocess.check_output(
+            ["git", "-C", str(repo), "show", f"HEAD:{rel_s}"],
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError as e:
+        raise CharterError(
+            f"cannot read HEAD blob for {rel_s} (not on HEAD?). Commit the freeze first."
+        ) from e
+    work_bytes = p.read_bytes()
+    if work_bytes != head_bytes:
+        raise CharterError(
+            f"sealed charter working tree differs from HEAD:{rel_s}. "
+            "Commit or restore before dispositional run."
+        )
+    return {
+        "path": rel_s,
+        "charter_sha256": hashlib.sha256(work_bytes).hexdigest(),
+        "matches_head": True,
+        "tracked": True,
     }
 
 
