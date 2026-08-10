@@ -227,11 +227,22 @@ def _builtin_server_hour_window_flat() -> FamilyPlugin:
     )
 
 
+def _builtin_early_server_range_break_flat() -> FamilyPlugin:
+    import xau_family_early_server_range_break_flat as mod  # type: ignore
+
+    return _wrap_module(
+        "early_server_range_break_flat",
+        mod,
+        source="xau_family_early_server_range_break_flat",
+    )
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
     "tod_london_ny_flat": _builtin_tod_london_ny_flat,
     "server_hour_window_flat": _builtin_server_hour_window_flat,
+    "early_server_range_break_flat": _builtin_early_server_range_break_flat,
 }
 
 
