@@ -1,0 +1,3748 @@
+{
+  "created": "2026-08-06T17:06:45Z",
+  "safety": "offline research only; never --live; develop only; holdout unused",
+  "holdout_start": "2026-01-01 00:00:00+00:00",
+  "holdout_used": false,
+  "develop_bars": 8114,
+  "preregistered": {
+    "objective": "raise develop n while keeping quality floors (sample death fix path)",
+    "develop_hard_floors": {
+      "profit_factor": 1.4,
+      "max_drawdown_pct": 12.0,
+      "n_trades_min": 40,
+      "n_trades_target": 60,
+      "win_rate_diagnostic_floor": 45.0,
+      "expectancy_min": 10.0
+    },
+    "score": "primary = n_trades * 8 + expectancy_sqrt_n * 0.35 + PF*20; hard floor fail \u2192 -1000",
+    "future_virgin_holdout": {
+      "require_virgin_bars_after": "2026-08-06 (last peeked data end)",
+      "gates": {
+        "profit_factor": 1.5,
+        "win_rate": 55.0,
+        "max_drawdown_pct": 10.0,
+        "n_trades": 20
+      },
+      "forbid_retune_on_holdout": true
+    },
+    "safety": "offline research only; never --live; holdout unused this fire"
+  },
+  "baseline": {
+    "params": {
+      "risk_pct": 0.01,
+      "long_only": true,
+      "entry_N": 24,
+      "atr_min_pct": 0.55,
+      "trail_atr": 3.5,
+      "sl_atr": 1.5,
+      "h4_bias": true,
+      "be_at_r": null,
+      "hours": null,
+      "require_ema_stack": false,
+      "rsi_max": 70.0,
+      "mid_channel_k": null,
+      "max_entries_per_day": 2,
+      "ema_trend": "ema100",
+      "cooldown": 2
+    },
+    "metrics": {
+      "net_profit": 4876.934090687071,
+      "win_rate": 52.63157894736842,
+      "profit_factor": 2.48037848511361,
+      "max_drawdown_pct": 9.244685825186588,
+      "n_trades": 38,
+      "wins": 20,
+      "losses": 18,
+      "expectancy": 128.3403708075545,
+      "expectancy_sqrt_n": 791.1431789523198,
+      "score_expectancy_sqrt": 889.3105323626123
+    },
+    "score": 679.2770232424549,
+    "gate_eval": {
+      "hard_pass_trade_count": false,
+      "n_target_hit": false,
+      "checks": {
+        "pf": true,
+        "dd": true,
+        "n_min": false,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": true
+    }
+  },
+  "n_ablations": 52,
+  "ablations_ranked": [
+    {
+      "tag": "pack_entry20_no_atr_floor",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "atr_min_pct": 0.0,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 85.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12304.029389723073,
+        "win_rate": 47.674418604651166,
+        "profit_factor": 2.3221218520676548,
+        "max_drawdown_pct": 10.866976945130435,
+        "n_trades": 86,
+        "wins": 41,
+        "losses": 45,
+        "expectancy": 143.07010918282643,
+        "expectancy_sqrt_n": 1326.777610670449,
+        "score_expectancy_sqrt": 1515.4098058230022
+      },
+      "score": 1521.8548946732408,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pack_freq_entry12_atr35_noh4",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 85.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 10733.539087203291,
+        "win_rate": 51.724137931034484,
+        "profit_factor": 2.308411889334486,
+        "max_drawdown_pct": 9.959354477469061,
+        "n_trades": 87,
+        "wins": 45,
+        "losses": 42,
+        "expectancy": 123.37401249658956,
+        "expectancy_sqrt_n": 1150.7561798562072,
+        "score_expectancy_sqrt": 1319.5515967862657
+      },
+      "score": 1452.2682916083954,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pack_freq_entry10_atr30",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.3,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 4660.952568707713,
+        "win_rate": 45.18518518518518,
+        "profit_factor": 1.5495125225293076,
+        "max_drawdown_pct": 14.300375274548344,
+        "n_trades": 135,
+        "wins": 61,
+        "losses": 74,
+        "expectancy": 34.525574583020095,
+        "expectancy_sqrt_n": 401.1509261348367,
+        "score_expectancy_sqrt": 459.6517683361393
+      },
+      "score": 1405.9875893029225,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pack_entry15_atr50_stack_off",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.5,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 8115.123047378396,
+        "win_rate": 44.776119402985074,
+        "profit_factor": 2.3589426226508126,
+        "max_drawdown_pct": 13.864526705694868,
+        "n_trades": 67,
+        "wins": 30,
+        "losses": 37,
+        "expectancy": 121.1212395131104,
+        "expectancy_sqrt_n": 991.4200735812651,
+        "score_expectancy_sqrt": 1109.5979839563088
+      },
+      "score": 1136.4102195569258,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_freq_entry15_atr40",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 6964.665844685313,
+        "win_rate": 44.73684210526316,
+        "profit_factor": 1.9798638770444703,
+        "max_drawdown_pct": 14.508639916637078,
+        "n_trades": 76,
+        "wins": 34,
+        "losses": 42,
+        "expectancy": 91.64034006164884,
+        "expectancy_sqrt_n": 798.9019629608584,
+        "score_expectancy_sqrt": 890.5718450087211
+      },
+      "score": 1096.1192895164547,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_balanced_n60_path",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.45,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 5284.388918527864,
+        "win_rate": 44.44444444444444,
+        "profit_factor": 1.8429864085494863,
+        "max_drawdown_pct": 13.213620423921563,
+        "n_trades": 81,
+        "wins": 36,
+        "losses": 45,
+        "expectancy": 65.23936936454153,
+        "expectancy_sqrt_n": 587.1543242808738,
+        "score_expectancy_sqrt": 668.7177776514987
+      },
+      "score": 1093.8294805643784,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "pack_entry20_atr45_rsi80",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "atr_min_pct": 0.45,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 6458.962828102514,
+        "win_rate": 45.45454545454545,
+        "profit_factor": 2.050481059917998,
+        "max_drawdown_pct": 13.956098973690418,
+        "n_trades": 66,
+        "wins": 30,
+        "losses": 36,
+        "expectancy": 97.8630731530684,
+        "expectancy_sqrt_n": 795.0433646912261,
+        "score_expectancy_sqrt": 886.9766262043734
+      },
+      "score": 1033.6204681736974,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_max=85.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 85.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8038.132407472348,
+        "win_rate": 51.851851851851855,
+        "profit_factor": 2.827997416668885,
+        "max_drawdown_pct": 8.708293431943744,
+        "n_trades": 54,
+        "wins": 28,
+        "losses": 26,
+        "expectancy": 148.85430384208053,
+        "expectancy_sqrt_n": 1093.8512712909207,
+        "score_expectancy_sqrt": 1236.7478876343584
+      },
+      "score": 1031.7892173599234,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_max=90.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8038.132407472348,
+        "win_rate": 51.851851851851855,
+        "profit_factor": 2.827997416668885,
+        "max_drawdown_pct": 8.708293431943744,
+        "n_trades": 54,
+        "wins": 28,
+        "losses": 26,
+        "expectancy": 148.85430384208053,
+        "expectancy_sqrt_n": 1093.8512712909207,
+        "score_expectancy_sqrt": 1236.7478876343584
+      },
+      "score": 1031.7892173599234,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_max=100.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 100.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8038.132407472348,
+        "win_rate": 51.851851851851855,
+        "profit_factor": 2.827997416668885,
+        "max_drawdown_pct": 8.708293431943744,
+        "n_trades": 54,
+        "wins": 28,
+        "losses": 26,
+        "expectancy": 148.85430384208053,
+        "expectancy_sqrt_n": 1093.8512712909207,
+        "score_expectancy_sqrt": 1236.7478876343584
+      },
+      "score": 1031.7892173599234,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "pack_entry18_atr50_trail3",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.5,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 75.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5804.215169229097,
+        "win_rate": 48.38709677419355,
+        "profit_factor": 2.29064870542954,
+        "max_drawdown_pct": 13.050672891415024,
+        "n_trades": 62,
+        "wins": 30,
+        "losses": 32,
+        "expectancy": 93.6163736972435,
+        "expectancy_sqrt_n": 737.1360636285275,
+        "score_expectancy_sqrt": 833.5417549111842
+      },
+      "score": 1015.8258324142654,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_max=80.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 7498.921786622396,
+        "win_rate": 48.148148148148145,
+        "profit_factor": 2.625673565076585,
+        "max_drawdown_pct": 9.607814663881433,
+        "n_trades": 54,
+        "wins": 26,
+        "losses": 28,
+        "expectancy": 138.8689219744888,
+        "expectancy_sqrt_n": 1020.4739999036035,
+        "score_expectancy_sqrt": 1153.5956257125322
+      },
+      "score": 996.6685891340168,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.3",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.3,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6879.98873228295,
+        "win_rate": 47.16981132075472,
+        "profit_factor": 2.276998806879222,
+        "max_drawdown_pct": 11.683299547415471,
+        "n_trades": 53,
+        "wins": 25,
+        "losses": 28,
+        "expectancy": 129.81110815628207,
+        "expectancy_sqrt_n": 945.039132227012,
+        "score_expectancy_sqrt": 1065.1939734837372
+      },
+      "score": 949.103559739868,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "rsi_max=75.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 75.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6868.064221934369,
+        "win_rate": 51.02040816326531,
+        "profit_factor": 2.620153536342672,
+        "max_drawdown_pct": 11.059642325568744,
+        "n_trades": 49,
+        "wins": 25,
+        "losses": 24,
+        "expectancy": 140.16457595784428,
+        "expectancy_sqrt_n": 981.15203170491,
+        "score_expectancy_sqrt": 1106.3051375242296
+      },
+      "score": 936.4869240429156,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=10",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6707.7643488460735,
+        "win_rate": 48.07692307692308,
+        "profit_factor": 2.3467970769847897,
+        "max_drawdown_pct": 11.357092450161373,
+        "n_trades": 52,
+        "wins": 25,
+        "losses": 27,
+        "expectancy": 128.99546824703987,
+        "expectancy_sqrt_n": 930.1995501343782,
+        "score_expectancy_sqrt": 1049.248560649726
+      },
+      "score": 935.5834275751888,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=12",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6497.751151390887,
+        "win_rate": 49.01960784313726,
+        "profit_factor": 2.4021058066185814,
+        "max_drawdown_pct": 11.91801631760597,
+        "n_trades": 51,
+        "wins": 25,
+        "losses": 26,
+        "expectancy": 127.40688532138994,
+        "expectancy_sqrt_n": 909.8671528262729,
+        "score_expectancy_sqrt": 1027.1206293179378
+      },
+      "score": 919.473131135476,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=15",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6031.948222925706,
+        "win_rate": 50.0,
+        "profit_factor": 2.394194939953129,
+        "max_drawdown_pct": 12.11738786658367,
+        "n_trades": 50,
+        "wins": 25,
+        "losses": 25,
+        "expectancy": 120.63896445851412,
+        "expectancy_sqrt_n": 853.0462984393823,
+        "score_expectancy_sqrt": 963.1846966594138
+      },
+      "score": 882.0740708187566,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.35",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5303.403629074582,
+        "win_rate": 48.0,
+        "profit_factor": 2.115065701351243,
+        "max_drawdown_pct": 10.191083107610272,
+        "n_trades": 50,
+        "wins": 24,
+        "losses": 26,
+        "expectancy": 106.06807258149163,
+        "expectancy_sqrt_n": 750.0145338975965,
+        "score_expectancy_sqrt": 848.0330647812974
+      },
+      "score": 837.8404371819295,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "sl_atr=1.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.0,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8278.205829184855,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.4731584415770613,
+        "max_drawdown_pct": 13.844436984087812,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 217.8475218206541,
+        "expectancy_sqrt_n": 1342.9023140233296,
+        "score_expectancy_sqrt": 1465.0328936709182
+      },
+      "score": 832.4835576680426,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=18",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5320.629062345587,
+        "win_rate": 52.17391304347826,
+        "profit_factor": 2.2836530353389164,
+        "max_drawdown_pct": 12.228486410968408,
+        "n_trades": 46,
+        "wins": 24,
+        "losses": 22,
+        "expectancy": 115.6658491814258,
+        "expectancy_sqrt_n": 784.4839569268295,
+        "score_expectancy_sqrt": 882.9617516265489
+      },
+      "score": 812.3092798158882,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.4",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4871.898103607532,
+        "win_rate": 46.93877551020408,
+        "profit_factor": 1.9632493545378493,
+        "max_drawdown_pct": 10.388930340730877,
+        "n_trades": 49,
+        "wins": 23,
+        "losses": 26,
+        "expectancy": 99.4264919103578,
+        "expectancy_sqrt_n": 695.9854433725046,
+        "score_expectancy_sqrt": 786.3329099856664
+      },
+      "score": 803.5788733072089,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.45",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.45,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4769.605024312363,
+        "win_rate": 47.82608695652174,
+        "profit_factor": 2.0325926510312526,
+        "max_drawdown_pct": 10.916600228861718,
+        "n_trades": 46,
+        "wins": 22,
+        "losses": 24,
+        "expectancy": 103.68706574592093,
+        "expectancy_sqrt_n": 703.2398948708404,
+        "score_expectancy_sqrt": 793.3488474402137
+      },
+      "score": 782.4818664685428,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=20",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4769.335142096097,
+        "win_rate": 51.16279069767442,
+        "profit_factor": 2.2602549400013534,
+        "max_drawdown_pct": 9.27119054654644,
+        "n_trades": 43,
+        "wins": 22,
+        "losses": 21,
+        "expectancy": 110.91477074642086,
+        "expectancy_sqrt_n": 727.3167906067047,
+        "score_expectancy_sqrt": 820.8373039829262
+      },
+      "score": 771.4593269333346,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "h4_bias=False",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5274.515004072338,
+        "win_rate": 53.84615384615385,
+        "profit_factor": 2.560899090623358,
+        "max_drawdown_pct": 9.461210696206718,
+        "n_trades": 39,
+        "wins": 21,
+        "losses": 18,
+        "expectancy": 135.2439744633933,
+        "expectancy_sqrt_n": 844.5983498193352,
+        "score_expectancy_sqrt": 948.9432737295898
+      },
+      "score": 711.5725542899579,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "baseline_champion",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "ema_trend=ema200",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema200",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=1",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "cooldown=4",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 4
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=1",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 1,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=3",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=4",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 4,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "be_at_r=1.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": 1.5,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "mid_channel_k=0.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": 0.5,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "mid_channel_k=1.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": 1.0,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4876.934090687071,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.48037848511361,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 128.3403708075545,
+        "expectancy_sqrt_n": 791.1431789523198,
+        "score_expectancy_sqrt": 889.3105323626123
+      },
+      "score": 679.2770232424549,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "ema_trend=ema50",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema50",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4777.689815579239,
+        "win_rate": 51.282051282051285,
+        "profit_factor": 2.4078415426680495,
+        "max_drawdown_pct": 9.350233693350296,
+        "n_trades": 39,
+        "wins": 20,
+        "losses": 19,
+        "expectancy": 122.50486706613432,
+        "expectancy_sqrt_n": 765.0426496220707,
+        "score_expectancy_sqrt": 860.881395456832
+      },
+      "score": 675.6986563768783,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.5,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4607.324746994306,
+        "win_rate": 51.282051282051285,
+        "profit_factor": 2.292742513045056,
+        "max_drawdown_pct": 9.244685825186588,
+        "n_trades": 39,
+        "wins": 20,
+        "losses": 19,
+        "expectancy": 118.13653197421299,
+        "expectancy_sqrt_n": 737.7624057166885,
+        "score_expectancy_sqrt": 829.7451027497932
+      },
+      "score": 662.1449397316851,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "be_at_r=1.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": 1.0,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4463.619280665343,
+        "win_rate": 50.0,
+        "profit_factor": 2.4285658524974068,
+        "max_drawdown_pct": 9.45276837998779,
+        "n_trades": 38,
+        "wins": 19,
+        "losses": 19,
+        "expectancy": 117.46366528066692,
+        "expectancy_sqrt_n": 724.0946630962038,
+        "score_expectancy_sqrt": 816.3183918919817
+      },
+      "score": 650.6406419402729,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "trail_atr=3.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 2990.7577186524513,
+        "win_rate": 45.0,
+        "profit_factor": 1.983393908553448,
+        "max_drawdown_pct": 9.433969496896166,
+        "n_trades": 40,
+        "wins": 18,
+        "losses": 22,
+        "expectancy": 74.76894296631129,
+        "expectancy_sqrt_n": 472.88031603353977,
+        "score_expectancy_sqrt": 540.0156961449972
+      },
+      "score": 635.0835659693323,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=30",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4370.423525826615,
+        "win_rate": 54.54545454545455,
+        "profit_factor": 2.6107231739109795,
+        "max_drawdown_pct": 8.71817841988718,
+        "n_trades": 33,
+        "wins": 18,
+        "losses": 15,
+        "expectancy": 132.43707654020045,
+        "expectancy_sqrt_n": 760.7930829095334,
+        "score_expectancy_sqrt": 854.5842245910308
+      },
+      "score": 626.1962777548224,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "trail_atr=4.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 4.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4225.240140601731,
+        "win_rate": 54.054054054054056,
+        "profit_factor": 2.1385514255214115,
+        "max_drawdown_pct": 10.578194683445979,
+        "n_trades": 37,
+        "wins": 20,
+        "losses": 17,
+        "expectancy": 114.19567947572246,
+        "expectancy_sqrt_n": 694.62520023687,
+        "score_expectancy_sqrt": 779.5189733772128
+      },
+      "score": 624.1422499993499,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=40",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 40,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4119.758763155194,
+        "win_rate": 57.142857142857146,
+        "profit_factor": 2.79912039300919,
+        "max_drawdown_pct": 8.882485773317814,
+        "n_trades": 28,
+        "wins": 16,
+        "losses": 12,
+        "expectancy": 147.13424154125693,
+        "expectancy_sqrt_n": 778.5612249205493,
+        "score_expectancy_sqrt": 872.0450153551271
+      },
+      "score": 593.676424213928,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "sl_atr=2.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 2.0,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3466.603181067003,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.522626393100772,
+        "max_drawdown_pct": 7.136795042416587,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 91.22639950176324,
+        "expectancy_sqrt_n": 562.3572945291113,
+        "score_expectancy_sqrt": 643.5292301889605
+      },
+      "score": 585.9436127578745,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.6",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.6,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3720.7475167520224,
+        "win_rate": 48.57142857142857,
+        "profit_factor": 2.224801770688202,
+        "max_drawdown_pct": 9.45276837998779,
+        "n_trades": 35,
+        "wins": 17,
+        "losses": 18,
+        "expectancy": 106.30707190720064,
+        "expectancy_sqrt_n": 628.9211189107068,
+        "score_expectancy_sqrt": 708.8024894304301
+      },
+      "score": 581.8259022000316,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "require_ema_stack=True",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": true,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3649.843378975066,
+        "win_rate": 50.0,
+        "profit_factor": 2.234597492230406,
+        "max_drawdown_pct": 10.274002513989618,
+        "n_trades": 34,
+        "wins": 17,
+        "losses": 17,
+        "expectancy": 107.34833467573723,
+        "expectancy_sqrt_n": 625.9429754859775,
+        "score_expectancy_sqrt": 705.084980106622
+      },
+      "score": 572.2704250544509,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "entry_N=55",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 55,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3790.8813100569596,
+        "win_rate": 60.869565217391305,
+        "profit_factor": 3.3670100976080186,
+        "max_drawdown_pct": 5.33397548946645,
+        "n_trades": 23,
+        "wins": 14,
+        "losses": 9,
+        "expectancy": 164.82092652421562,
+        "expectancy_sqrt_n": 790.4533951264427,
+        "score_expectancy_sqrt": 888.344562966275
+      },
+      "score": 565.9077033469848,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.65",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.65,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3528.5950506377244,
+        "win_rate": 47.05882352941177,
+        "profit_factor": 2.1683519056899727,
+        "max_drawdown_pct": 9.472060188882345,
+        "n_trades": 34,
+        "wins": 16,
+        "losses": 18,
+        "expectancy": 103.78220737169778,
+        "expectancy_sqrt_n": 605.1490587252291,
+        "score_expectancy_sqrt": 681.7817754435503
+      },
+      "score": 562.4551591740069,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "trail_atr=2.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 1391.8436561676126,
+        "win_rate": 42.22222222222222,
+        "profit_factor": 1.4908770072442412,
+        "max_drawdown_pct": 9.328465101289353,
+        "n_trades": 45,
+        "wins": 19,
+        "losses": 26,
+        "expectancy": 30.929859025946946,
+        "expectancy_sqrt_n": 207.48380194950843,
+        "score_expectancy_sqrt": 247.2450027602672
+      },
+      "score": 552.1886407222222,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "sl_atr=2.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 2.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 2769.0902727954676,
+        "win_rate": 52.63157894736842,
+        "profit_factor": 2.652568935405106,
+        "max_drawdown_pct": 5.712472803658251,
+        "n_trades": 38,
+        "wins": 20,
+        "losses": 18,
+        "expectancy": 72.87079665251231,
+        "expectancy_sqrt_n": 449.2057592922517,
+        "score_expectancy_sqrt": 523.6079217332716
+      },
+      "score": 541.964297188345,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "trail_atr=2.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 2.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 872.9660857255612,
+        "win_rate": 40.816326530612244,
+        "profit_factor": 1.372531136670256,
+        "max_drawdown_pct": 9.74445895849172,
+        "n_trades": 49,
+        "wins": 20,
+        "losses": 29,
+        "expectancy": 17.815634402562473,
+        "expectancy_sqrt_n": 124.70944081793732,
+        "score_expectancy_sqrt": 156.20948393956067
+      },
+      "score": 518.0842143431132,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "tag": "rsi_max=65.0",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 65.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 1972.5147137461572,
+        "win_rate": 45.45454545454545,
+        "profit_factor": 2.07315627287028,
+        "max_drawdown_pct": 12.897911447883992,
+        "n_trades": 22,
+        "wins": 10,
+        "losses": 12,
+        "expectancy": 89.65975971573442,
+        "expectancy_sqrt_n": 420.5415499926626,
+        "score_expectancy_sqrt": 467.31621352870394
+      },
+      "score": 348.4613571769395,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": false,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "tag": "trail_atr=1.5",
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.55,
+        "trail_atr": 1.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 70.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 49.08337143424296,
+        "win_rate": 37.254901960784316,
+        "profit_factor": 1.0273455437365386,
+        "max_drawdown_pct": 8.837280556579605,
+        "n_trades": 51,
+        "wins": 19,
+        "losses": 32,
+        "expectancy": 0.9624190477302542,
+        "expectancy_sqrt_n": 6.873046747631976,
+        "score_expectancy_sqrt": 9.26404923343502
+      },
+      "score": -53.58041141693529,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": false,
+        "checks": {
+          "pf": false,
+          "dd": true,
+          "n_min": true,
+          "expectancy": false
+        },
+        "wr_diagnostic_ok": false
+      }
+    }
+  ],
+  "factor_deltas": [
+    [
+      "pack_entry20_no_atr_floor",
+      842.5778714307859
+    ],
+    [
+      "pack_freq_entry12_atr35_noh4",
+      772.9912683659405
+    ],
+    [
+      "trail_atr=1.5",
+      -732.8574346593902
+    ],
+    [
+      "pack_freq_entry10_atr30",
+      726.7105660604676
+    ],
+    [
+      "pack_entry15_atr50_stack_off",
+      457.13319631447087
+    ],
+    [
+      "pack_freq_entry15_atr40",
+      416.8422662739998
+    ],
+    [
+      "pack_balanced_n60_path",
+      414.5524573219235
+    ],
+    [
+      "pack_entry20_atr45_rsi80",
+      354.3434449312425
+    ],
+    [
+      "rsi_max=85.0",
+      352.51219411746854
+    ],
+    [
+      "rsi_max=90.0",
+      352.51219411746854
+    ],
+    [
+      "rsi_max=100.0",
+      352.51219411746854
+    ],
+    [
+      "pack_entry18_atr50_trail3",
+      336.5488091718105
+    ],
+    [
+      "rsi_max=65.0",
+      -330.8156660655154
+    ],
+    [
+      "rsi_max=80.0",
+      317.39156589156187
+    ],
+    [
+      "atr_min_pct=0.3",
+      269.82653649741314
+    ],
+    [
+      "rsi_max=75.0",
+      257.2099008004607
+    ],
+    [
+      "entry_N=10",
+      256.3064043327339
+    ],
+    [
+      "entry_N=12",
+      240.19610789302112
+    ],
+    [
+      "entry_N=15",
+      202.79704757630168
+    ],
+    [
+      "trail_atr=2.0",
+      -161.19280889934168
+    ],
+    [
+      "atr_min_pct=0.35",
+      158.56341393947457
+    ],
+    [
+      "sl_atr=1.0",
+      153.20653442558773
+    ],
+    [
+      "sl_atr=2.5",
+      -137.31272605410993
+    ],
+    [
+      "entry_N=18",
+      133.0322565734333
+    ],
+    [
+      "trail_atr=2.5",
+      -127.0883825202327
+    ],
+    [
+      "atr_min_pct=0.4",
+      124.30185006475403
+    ],
+    [
+      "atr_min_pct=0.65",
+      -116.82186406844801
+    ],
+    [
+      "entry_N=55",
+      -113.36931989547008
+    ],
+    [
+      "require_ema_stack=True",
+      -107.00659818800398
+    ],
+    [
+      "atr_min_pct=0.45",
+      103.20484322608786
+    ],
+    [
+      "atr_min_pct=0.6",
+      -97.45112104242332
+    ],
+    [
+      "sl_atr=2.0",
+      -93.33341048458044
+    ],
+    [
+      "entry_N=20",
+      92.18230369087973
+    ],
+    [
+      "entry_N=40",
+      -85.60059902852686
+    ],
+    [
+      "trail_atr=4.0",
+      -55.13477324310497
+    ],
+    [
+      "entry_N=30",
+      -53.0807454876325
+    ],
+    [
+      "trail_atr=3.0",
+      -44.19345727312259
+    ],
+    [
+      "h4_bias=False",
+      32.295531047503005
+    ],
+    [
+      "be_at_r=1.0",
+      -28.63638130218203
+    ],
+    [
+      "atr_min_pct=0.5",
+      -17.132083510769803
+    ],
+    [
+      "ema_trend=ema50",
+      -3.5783668655766405
+    ],
+    [
+      "ema_trend=ema200",
+      0.0
+    ],
+    [
+      "cooldown=0",
+      0.0
+    ],
+    [
+      "cooldown=1",
+      0.0
+    ],
+    [
+      "cooldown=4",
+      0.0
+    ],
+    [
+      "max_entries_per_day=1",
+      0.0
+    ],
+    [
+      "max_entries_per_day=3",
+      0.0
+    ],
+    [
+      "max_entries_per_day=4",
+      0.0
+    ],
+    [
+      "be_at_r=1.5",
+      0.0
+    ],
+    [
+      "mid_channel_k=0.5",
+      0.0
+    ],
+    [
+      "mid_channel_k=1.0",
+      0.0
+    ]
+  ],
+  "n_secondary": 200,
+  "secondary_top": [
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12039.52965989846,
+        "win_rate": 51.16279069767442,
+        "profit_factor": 2.448941002112278,
+        "max_drawdown_pct": 9.955513872728575,
+        "n_trades": 86,
+        "wins": 44,
+        "losses": 42,
+        "expectancy": 139.99453092905188,
+        "expectancy_sqrt_n": 1298.2558712919008,
+        "score_expectancy_sqrt": 1485.4841070723157
+      },
+      "score": 1511.7636715933954,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 11110.121815900317,
+        "win_rate": 51.80722891566265,
+        "profit_factor": 2.447329680206134,
+        "max_drawdown_pct": 10.427221327209137,
+        "n_trades": 83,
+        "wins": 43,
+        "losses": 40,
+        "expectancy": 133.85688934819657,
+        "expectancy_sqrt_n": 1219.494299517613,
+        "score_expectancy_sqrt": 1395.0807674194589
+      },
+      "score": 1450.8708165942903,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 10514.156431537718,
+        "win_rate": 50.57471264367816,
+        "profit_factor": 2.2737807576055604,
+        "max_drawdown_pct": 9.984849637150148,
+        "n_trades": 87,
+        "wins": 44,
+        "losses": 43,
+        "expectancy": 120.85237277629561,
+        "expectancy_sqrt_n": 1127.2358903497006,
+        "score_expectancy_sqrt": 1292.7695571080055
+      },
+      "score": 1441.1497410898835,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.35,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 4406.8155713012275,
+        "win_rate": 46.82539682539682,
+        "profit_factor": 1.5690055658937563,
+        "max_drawdown_pct": 10.624818181876721,
+        "n_trades": 126,
+        "wins": 59,
+        "losses": 67,
+        "expectancy": 34.97472675635895,
+        "expectancy_sqrt_n": 392.59033415499204,
+        "score_expectancy_sqrt": 471.2106122846637
+      },
+      "score": 1420.8548839851346,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 7510.914127154036,
+        "win_rate": 47.11538461538461,
+        "profit_factor": 1.9468913951366142,
+        "max_drawdown_pct": 11.449395768575991,
+        "n_trades": 104,
+        "wins": 49,
+        "losses": 55,
+        "expectancy": 72.22032814571187,
+        "expectancy_sqrt_n": 736.5057249861181,
+        "score_expectancy_sqrt": 859.5955225025929
+      },
+      "score": 1403.8239729194142,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.3,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 7132.285341398006,
+        "win_rate": 46.601941747572816,
+        "profit_factor": 1.8710589996791598,
+        "max_drawdown_pct": 11.581794514374353,
+        "n_trades": 103,
+        "wins": 48,
+        "losses": 55,
+        "expectancy": 69.24548875143695,
+        "expectancy_sqrt_n": 702.7649567101466,
+        "score_expectancy_sqrt": 819.984408472809
+      },
+      "score": 1378.7117682561145,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 9303.902858575124,
+        "win_rate": 48.23529411764706,
+        "profit_factor": 2.17000723971192,
+        "max_drawdown_pct": 10.987354980813056,
+        "n_trades": 85,
+        "wins": 41,
+        "losses": 44,
+        "expectancy": 109.4576806891191,
+        "expectancy_sqrt_n": 1009.1499533055027,
+        "score_expectancy_sqrt": 1157.9988476333706
+      },
+      "score": 1369.6416570369156,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 6683.205723576013,
+        "win_rate": 45.19230769230769,
+        "profit_factor": 1.8424188286061742,
+        "max_drawdown_pct": 11.346035527804473,
+        "n_trades": 104,
+        "wins": 47,
+        "losses": 57,
+        "expectancy": 64.26159349592321,
+        "expectancy_sqrt_n": 655.3422384205592,
+        "score_expectancy_sqrt": 766.5185923943519
+      },
+      "score": 1365.0502172550794,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 9744.851870122246,
+        "win_rate": 47.5,
+        "profit_factor": 2.2709241186807905,
+        "max_drawdown_pct": 11.462794150440239,
+        "n_trades": 80,
+        "wins": 38,
+        "losses": 42,
+        "expectancy": 121.81064837652806,
+        "expectancy_sqrt_n": 1089.5075606129647,
+        "score_expectancy_sqrt": 1245.3820707697046
+      },
+      "score": 1364.1946472893758,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.4,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 3746.0285431003313,
+        "win_rate": 44.26229508196721,
+        "profit_factor": 1.4959083077429987,
+        "max_drawdown_pct": 10.997991769401395,
+        "n_trades": 122,
+        "wins": 54,
+        "losses": 68,
+        "expectancy": 30.705151992625666,
+        "expectancy_sqrt_n": 339.1494888461573,
+        "score_expectancy_sqrt": 408.4134702510564
+      },
+      "score": 1360.974215304969,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": false
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.3,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 4049.7361979250954,
+        "win_rate": 45.6,
+        "profit_factor": 1.516119298765287,
+        "max_drawdown_pct": 13.083202342876433,
+        "n_trades": 125,
+        "wins": 57,
+        "losses": 68,
+        "expectancy": 32.39788958340076,
+        "expectancy_sqrt_n": 362.21941718008225,
+        "score_expectancy_sqrt": 424.7508857068609
+      },
+      "score": 1354.268450252528,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 9212.894537016988,
+        "win_rate": 50.617283950617285,
+        "profit_factor": 2.258554538775998,
+        "max_drawdown_pct": 10.472683686948743,
+        "n_trades": 81,
+        "wins": 41,
+        "losses": 40,
+        "expectancy": 113.73943872860478,
+        "expectancy_sqrt_n": 1023.654948557443,
+        "score_expectancy_sqrt": 1172.6944483517952
+      },
+      "score": 1343.579268140795,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 8840.101745601965,
+        "win_rate": 48.80952380952381,
+        "profit_factor": 2.1643374062978733,
+        "max_drawdown_pct": 10.637633577256672,
+        "n_trades": 84,
+        "wins": 41,
+        "losses": 43,
+        "expectancy": 105.23930649526149,
+        "expectancy_sqrt_n": 964.5341761983871,
+        "score_expectancy_sqrt": 1107.5005091128796
+      },
+      "score": 1341.2747272514125,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.3,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 6716.807754743483,
+        "win_rate": 48.0,
+        "profit_factor": 1.8350093871802562,
+        "max_drawdown_pct": 11.74405547415226,
+        "n_trades": 100,
+        "wins": 48,
+        "losses": 52,
+        "expectancy": 67.16807754743483,
+        "expectancy_sqrt_n": 671.6807754743484,
+        "score_expectancy_sqrt": 783.1660132163457
+      },
+      "score": 1338.9565367070618,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.3,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 10317.597713752888,
+        "win_rate": 51.19047619047619,
+        "profit_factor": 2.183463465191027,
+        "max_drawdown_pct": 13.854441189858344,
+        "n_trades": 84,
+        "wins": 43,
+        "losses": 41,
+        "expectancy": 122.82854421134391,
+        "expectancy_sqrt_n": 1125.7422026994268,
+        "score_expectancy_sqrt": 1268.91971420062
+      },
+      "score": 1338.677369791815,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "atr_min_pct": 0.3,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 9354.993288895395,
+        "win_rate": 50.63291139240506,
+        "profit_factor": 2.183675557316145,
+        "max_drawdown_pct": 11.41332799068385,
+        "n_trades": 79,
+        "wins": 40,
+        "losses": 39,
+        "expectancy": 118.41763656829615,
+        "expectancy_sqrt_n": 1052.5189762580362,
+        "score_expectancy_sqrt": 1202.2115257289709
+      },
+      "score": 1337.6050857255896,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.3,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 4198.21869123265,
+        "win_rate": 46.28099173553719,
+        "profit_factor": 1.5253019677880142,
+        "max_drawdown_pct": 13.129045091022428,
+        "n_trades": 121,
+        "wins": 56,
+        "losses": 65,
+        "expectancy": 34.696022241592146,
+        "expectancy_sqrt_n": 381.65624465751364,
+        "score_expectancy_sqrt": 445.72305690451765
+      },
+      "score": 1328.9061082573194,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 6935.380598190834,
+        "win_rate": 47.916666666666664,
+        "profit_factor": 1.9566005697761109,
+        "max_drawdown_pct": 11.258049455203254,
+        "n_trades": 96,
+        "wins": 46,
+        "losses": 50,
+        "expectancy": 72.24354789782119,
+        "expectancy_sqrt_n": 707.8393182319129,
+        "score_expectancy_sqrt": 823.88058425594
+      },
+      "score": 1324.2295787586002,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.3,
+        "trail_atr": 2.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3454.059892280387,
+        "win_rate": 45.038167938931295,
+        "profit_factor": 1.4258874899608764,
+        "max_drawdown_pct": 14.362578918378514,
+        "n_trades": 131,
+        "wins": 59,
+        "losses": 72,
+        "expectancy": 26.36686940672051,
+        "expectancy_sqrt_n": 301.7826139835562,
+        "score_expectancy_sqrt": 342.72088580268905
+      },
+      "score": 1322.1791068811256,
+      "gate_eval": {
+        "hard_pass_trade_count": false,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": false,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "atr_min_pct": 0.35,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": true,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 9128.26420567219,
+        "win_rate": 48.05194805194805,
+        "profit_factor": 2.29144296783702,
+        "max_drawdown_pct": 11.019067409301474,
+        "n_trades": 77,
+        "wins": 37,
+        "losses": 40,
+        "expectancy": 118.54888578795052,
+        "expectancy_sqrt_n": 1040.262250954282,
+        "score_expectancy_sqrt": 1188.7371980427397
+      },
+      "score": 1317.203289247461,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 10,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 9557.963592760867,
+        "win_rate": 50.70422535211268,
+        "profit_factor": 2.5367168161181866,
+        "max_drawdown_pct": 8.789416801231805,
+        "n_trades": 71,
+        "wins": 36,
+        "losses": 35,
+        "expectancy": 134.6192055318432,
+        "expectancy_sqrt_n": 1134.3215881573221,
+        "score_expectancy_sqrt": 1291.8468853086058
+      },
+      "score": 1311.326528105035,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.45,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 9213.946570150501,
+        "win_rate": 51.351351351351354,
+        "profit_factor": 2.3677968696179423,
+        "max_drawdown_pct": 10.237382506820754,
+        "n_trades": 74,
+        "wins": 38,
+        "losses": 36,
+        "expectancy": 124.51279148852029,
+        "expectancy_sqrt_n": 1071.0995322917083,
+        "score_expectancy_sqrt": 1221.7908174628587
+      },
+      "score": 1306.3802393959618,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 18,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 80.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8633.58690213039,
+        "win_rate": 50.0,
+        "profit_factor": 2.155913473111682,
+        "max_drawdown_pct": 11.064347289530005,
+        "n_trades": 78,
+        "wins": 39,
+        "losses": 39,
+        "expectancy": 110.68701156577423,
+        "expectancy_sqrt_n": 977.5612171573827,
+        "score_expectancy_sqrt": 1117.8197555306876
+      },
+      "score": 1295.6005644886213,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.55,
+        "trail_atr": 3.5,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 3,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 9263.407326861152,
+        "win_rate": 51.42857142857143,
+        "profit_factor": 2.584195783554666,
+        "max_drawdown_pct": 8.625062047675753,
+        "n_trades": 70,
+        "wins": 36,
+        "losses": 34,
+        "expectancy": 132.33439038373075,
+        "expectancy_sqrt_n": 1107.1889456982287,
+        "score_expectancy_sqrt": 1261.744474037313
+      },
+      "score": 1291.834119934085,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    },
+    {
+      "params": {
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 12,
+        "atr_min_pct": 0.4,
+        "trail_atr": 3.0,
+        "sl_atr": 1.5,
+        "h4_bias": false,
+        "be_at_r": null,
+        "hours": null,
+        "require_ema_stack": false,
+        "rsi_max": 90.0,
+        "mid_channel_k": null,
+        "max_entries_per_day": 2,
+        "ema_trend": "ema100",
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 5566.233673254416,
+        "win_rate": 46.0,
+        "profit_factor": 1.7272093469117111,
+        "max_drawdown_pct": 11.257532340789036,
+        "n_trades": 100,
+        "wins": 46,
+        "losses": 54,
+        "expectancy": 55.66233673254416,
+        "expectancy_sqrt_n": 556.6233673254417,
+        "score_expectancy_sqrt": 652.1094284447976
+      },
+      "score": 1285.024702234683,
+      "gate_eval": {
+        "hard_pass_trade_count": true,
+        "n_target_hit": true,
+        "checks": {
+          "pf": true,
+          "dd": true,
+          "n_min": true,
+          "expectancy": true
+        },
+        "wr_diagnostic_ok": true
+      }
+    }
+  ],
+  "best_develop_candidate": {
+    "source": "ablation",
+    "tag": "pack_entry20_no_atr_floor",
+    "params": {
+      "risk_pct": 0.01,
+      "long_only": true,
+      "entry_N": 20,
+      "atr_min_pct": 0.0,
+      "trail_atr": 3.5,
+      "sl_atr": 1.5,
+      "h4_bias": true,
+      "be_at_r": null,
+      "hours": null,
+      "require_ema_stack": false,
+      "rsi_max": 85.0,
+      "mid_channel_k": null,
+      "max_entries_per_day": 2,
+      "ema_trend": "ema100",
+      "cooldown": 2
+    },
+    "metrics": {
+      "net_profit": 12304.029389723073,
+      "win_rate": 47.674418604651166,
+      "profit_factor": 2.3221218520676548,
+      "max_drawdown_pct": 10.866976945130435,
+      "n_trades": 86,
+      "wins": 41,
+      "losses": 45,
+      "expectancy": 143.07010918282643,
+      "expectancy_sqrt_n": 1326.777610670449,
+      "score_expectancy_sqrt": 1515.4098058230022
+    },
+    "score": 1521.8548946732408,
+    "gate_eval": {
+      "hard_pass_trade_count": true,
+      "n_target_hit": true,
+      "checks": {
+        "pf": true,
+        "dd": true,
+        "n_min": true,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": true
+    }
+  },
+  "best_gate_pass_candidate": {
+    "source": "ablation",
+    "tag": "pack_entry20_no_atr_floor",
+    "params": {
+      "risk_pct": 0.01,
+      "long_only": true,
+      "entry_N": 20,
+      "atr_min_pct": 0.0,
+      "trail_atr": 3.5,
+      "sl_atr": 1.5,
+      "h4_bias": true,
+      "be_at_r": null,
+      "hours": null,
+      "require_ema_stack": false,
+      "rsi_max": 85.0,
+      "mid_channel_k": null,
+      "max_entries_per_day": 2,
+      "ema_trend": "ema100",
+      "cooldown": 2
+    },
+    "metrics": {
+      "net_profit": 12304.029389723073,
+      "win_rate": 47.674418604651166,
+      "profit_factor": 2.3221218520676548,
+      "max_drawdown_pct": 10.866976945130435,
+      "n_trades": 86,
+      "wins": 41,
+      "losses": 45,
+      "expectancy": 143.07010918282643,
+      "expectancy_sqrt_n": 1326.777610670449,
+      "score_expectancy_sqrt": 1515.4098058230022
+    },
+    "score": 1521.8548946732408,
+    "gate_eval": {
+      "hard_pass_trade_count": true,
+      "n_target_hit": true,
+      "checks": {
+        "pf": true,
+        "dd": true,
+        "n_min": true,
+        "expectancy": true
+      },
+      "wr_diagnostic_ok": true
+    }
+  },
+  "n_gate_pass_ablation": 16,
+  "n_gate_pass_secondary": 113,
+  "seconds": 6.57,
+  "disposition": {
+    "lane": "atr_trail_breakout",
+    "status": "KEEP_OPTIMIZING",
+    "live_go": false,
+    "kill": false,
+    "note": "Trade-count path on develop only; virgin holdout still required for promote"
+  }
+}

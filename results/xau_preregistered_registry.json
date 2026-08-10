@@ -1,0 +1,569 @@
+{
+  "protocol": {
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_rule": "NEVER used for selection; single evaluation after all configs frozen",
+    "develop_end": "2025-12-31T23:59:59+00:00",
+    "max_configs_per_family": 6,
+    "hard_gates": {
+      "profit_factor": 1.5,
+      "win_rate": 55.0,
+      "max_drawdown_pct": 10.0,
+      "n_trades": 20
+    },
+    "holdout_soft_note": "if holdout n_trades < 20 report as UNDERPOWERED not pass",
+    "primary_metric_window": "holdout only for promotion; develop/train is diagnostic"
+  },
+  "families": [
+    {
+      "id": "vol_gate_sparse",
+      "name": "Sparse vol-gated BB reclaim mean reversion",
+      "thesis": "Only residual non-negative clean OOS shape was vol_gate_bb; sparse pre-registered calm-regime MR with fixed SL/TP and bb_lo15+ema200, varying only atr_max_pct and rsi_buy. Literature/prior: BB reclaim + low-vol filter; not selected from holdout.",
+      "mode": "vol_gate_bb",
+      "side": "long_only",
+      "frozen": true,
+      "configs": [
+        {
+          "id": "vol_gate_sparse_a035_r30",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.35,
+            "rsi_buy": 30.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Strictest calm-only gate (atr_pctile<0.35) + classic RSI 30 oversold reclaim; fixed R:R 1.5/2.5, bb_lo15, ema200, cooldown=2."
+        },
+        {
+          "id": "vol_gate_sparse_a035_r35",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.35,
+            "rsi_buy": 35.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Strict vol gate with slightly looser RSI entry (35) for sample size on sparse calm bars; SL/TP/bb/trend/cooldown frozen."
+        },
+        {
+          "id": "vol_gate_sparse_a040_r30",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.4,
+            "rsi_buy": 30.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "atr_max_pct=0.40 matches LOW-vol label boundary from design specs; RSI 30 classic; pre-registered anchor for sparse MR."
+        },
+        {
+          "id": "vol_gate_sparse_a040_r35",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.4,
+            "rsi_buy": 35.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Same 0.40 vol gate with rsi_buy=35 (prior shortlist used 35); fixed risk geometry, not holdout-tuned."
+        },
+        {
+          "id": "vol_gate_sparse_a050_r30",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.5,
+            "rsi_buy": 30.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Allow LOW+MED calm (atr_pctile<0.50) with strict RSI 30; literature default for sparse MR when n may be thin."
+        },
+        {
+          "id": "vol_gate_sparse_a050_r35",
+          "family": "vol_gate_sparse",
+          "params": {
+            "mode": "vol_gate_bb",
+            "atr_max_pct": 0.5,
+            "rsi_buy": 35.0,
+            "rsi_sell": 50.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.5,
+            "bb_col": "bb_lo15",
+            "trend_col": "ema200",
+            "require_uptrend": true,
+            "use_macd_filter": false,
+            "exit_on_vol_spike": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Widest pre-registered calm gate in family (0.50) + rsi 35; still freezes bb_lo15/ema200/sl1.5/tp2.5/cooldown2."
+        }
+      ]
+    },
+    {
+      "id": "donchian_turtle",
+      "name": "Donchian turtle channel trend-follow",
+      "thesis": "Classic turtle system: enter on entry-channel breakout, exit on exit-channel break (no fixed wide TP); ATR initial stop; optional EMA200 filter and high-vol gate. Hand-chosen from original Turtle System 1/2 literature, not holdout scan.",
+      "mode": "donchian_turtle",
+      "side": "long_only",
+      "frozen": true,
+      "configs": [
+        {
+          "id": "donch_turtle_s1_sl20",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 20,
+            "exit_N": 10,
+            "atr_sl": 2.0,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": null,
+            "trend_filter": false,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Turtle System 1 classic: 20-bar entry / 10-bar exit channel, 2 ATR stop, no trend filter."
+        },
+        {
+          "id": "donch_turtle_s1_sl25_ema",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 20,
+            "exit_N": 10,
+            "atr_sl": 2.5,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": null,
+            "trend_filter": true,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "System 1 with wider 2.5 ATR stop and long-only EMA200 bias filter (common modern turtle variant)."
+        },
+        {
+          "id": "donch_turtle_s2_sl20",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 55,
+            "exit_N": 20,
+            "atr_sl": 2.0,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": null,
+            "trend_filter": false,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Turtle System 2 classic: 55-bar entry / 20-bar exit, 2 ATR stop, raw channel."
+        },
+        {
+          "id": "donch_turtle_s2_sl25_ema",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 55,
+            "exit_N": 20,
+            "atr_sl": 2.5,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": null,
+            "trend_filter": true,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "System 2 with 2.5 ATR stop and EMA200 filter; fewer false breaks against major trend."
+        },
+        {
+          "id": "donch_turtle_s1_sl20_ema_vol",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 20,
+            "exit_N": 10,
+            "atr_sl": 2.0,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": 0.5,
+            "trend_filter": true,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "System 1 + EMA200 + atr_min_pct>=0.5 expansion filter (thesis: breakouts need vol participation)."
+        },
+        {
+          "id": "donch_turtle_s2_sl20_ema_vol",
+          "family": "donchian_turtle",
+          "params": {
+            "mode": "donchian_turtle",
+            "entry_N": 55,
+            "exit_N": 20,
+            "atr_sl": 2.0,
+            "atr_tp": null,
+            "exit_on_exit_channel": true,
+            "atr_min_pct": 0.5,
+            "trend_filter": true,
+            "trend_col": "ema200",
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "System 2 + EMA200 + atr_min_pct 0.5; sparse long-horizon turtle under expansion regimes only."
+        }
+      ]
+    },
+    {
+      "id": "htf_fib_xau",
+      "name": "HTF Fib golden-zone (H4 pivots on XAU H1)",
+      "thesis": "Adapt scripts/htf_fib_offline_backtest.py to XAUUSD H1: H4 confirmed pivots, Fib 61.8–78.6 zone, require_ema200_bias, flat_only (no reverse). Configs only toggle RSI SMA filter and ATR exit geometry; literature defaults from ForexHtfFib Path A / offline surrogate.",
+      "mode": "htf_fib",
+      "side": "both_flat_only",
+      "frozen": true,
+      "configs": [
+        {
+          "id": "htf_fib_xau_filt_on_sl15_tp20",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": true,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "Offline script defaults: RSI SMA filter ON, SL 1.5 ATR / TP 2.0 ATR, EMA200 bias, flat_only."
+        },
+        {
+          "id": "htf_fib_xau_filt_on_sl15_tp30",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": true,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 1.5,
+            "tp_atr": 3.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "Filter ON, asymmetric TP 3.0 for trend continuation after golden-zone entry; SL remains 1.5."
+        },
+        {
+          "id": "htf_fib_xau_filt_on_sl20_tp30",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": true,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 2.0,
+            "tp_atr": 3.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "Filter ON with Path-A-style wider XAU exits (SL 2 / TP 3); require_ema200_bias true, flat_only."
+        },
+        {
+          "id": "htf_fib_xau_filt_off_sl15_tp20",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": false,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 1.5,
+            "tp_atr": 2.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "RSI SMA filter OFF (matches InpUseRsiMaFilter=false Path A default); script-default SL/TP 1.5/2.0."
+        },
+        {
+          "id": "htf_fib_xau_filt_off_sl15_tp30",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": false,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 1.5,
+            "tp_atr": 3.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "Filter OFF, tight SL 1.5 / wider TP 3.0; bias still required; flat_only no reverse chaining."
+        },
+        {
+          "id": "htf_fib_xau_filt_off_sl20_tp30",
+          "family": "htf_fib_xau",
+          "params": {
+            "mode": "htf_fib",
+            "symbol": "XAUUSD",
+            "timeframe": "H1",
+            "htf": "H4",
+            "pivot_left": 5,
+            "pivot_right": 5,
+            "fib_lo": 0.618,
+            "fib_hi": 0.786,
+            "use_rsi_ma_filter": false,
+            "rsi_long_max": 35.0,
+            "rsi_short_min": 65.0,
+            "sl_atr": 2.0,
+            "tp_atr": 3.0,
+            "require_ema200_bias": true,
+            "flat_only": true,
+            "risk_pct": 0.01
+          },
+          "rationale": "Filter OFF + Path A XAU exit defaults SL 2 / TP 3; primary literature-aligned fib_xau config."
+        }
+      ]
+    },
+    {
+      "id": "atr_trail_breakout",
+      "name": "Donch breakout with ATR trail (no fixed wide TP)",
+      "thesis": "High-vol trend direction from redesign notes: N-bar breakout only when atr_pctile elevated; initial risk + trail by ATR instead of wide fixed TP (prior atr_breakout failed late OOS with fixed TP 4). Pre-registered entry_N / atr_min_pct / trail_atr only.",
+      "mode": "atr_trail_breakout",
+      "side": "long_only",
+      "frozen": true,
+      "configs": [
+        {
+          "id": "atr_trail_n20_v055_t25",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 20,
+            "donch_n": 20,
+            "atr_min_pct": 0.55,
+            "trail_atr": 2.5,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "20-bar Donch breakout, MED+ expansion gate 0.55, trail 2.5 ATR; no fixed TP."
+        },
+        {
+          "id": "atr_trail_n20_v055_t30",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 20,
+            "donch_n": 20,
+            "atr_min_pct": 0.55,
+            "trail_atr": 3.0,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Same 20/0.55 entry with wider 3.0 ATR trail (lets winners breathe on XAU expansion)."
+        },
+        {
+          "id": "atr_trail_n20_v065_t25",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 20,
+            "donch_n": 20,
+            "atr_min_pct": 0.65,
+            "trail_atr": 2.5,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Stricter HIGH-vol gate atr_min_pct=0.65 on 20-bar break; trail 2.5; literature expansion-only thesis."
+        },
+        {
+          "id": "atr_trail_n24_v055_t25",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 24,
+            "donch_n": 24,
+            "atr_min_pct": 0.55,
+            "trail_atr": 2.5,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "entry_N=24 (prior atr_breakout literature default) + 0.55 vol gate + 2.5 trail."
+        },
+        {
+          "id": "atr_trail_n24_v055_t30",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 24,
+            "donch_n": 24,
+            "atr_min_pct": 0.55,
+            "trail_atr": 3.0,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "24-bar break + MED expansion + loose 3.0 trail; pre-registered neighbor of n24/v055/t25."
+        },
+        {
+          "id": "atr_trail_n24_v065_t30",
+          "family": "atr_trail_breakout",
+          "params": {
+            "mode": "atr_trail_breakout",
+            "entry_N": 24,
+            "donch_n": 24,
+            "atr_min_pct": 0.65,
+            "trail_atr": 3.0,
+            "sl_atr": 2.0,
+            "tp_atr": null,
+            "use_fixed_tp": false,
+            "ema_trend": "ema100",
+            "require_uptrend": true,
+            "long_only": true,
+            "cooldown": 2,
+            "risk_pct": 0.01
+          },
+          "rationale": "Strictest trail-breakout cell: N=24, atr_min 0.65, trail 3.0; sparse high-vol only."
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "safety": "offline research only; never --live; never open a large grid; holdout locked",
+    "selection_policy": "Configs are hand-chosen defaults from literature/prior research and redesign notes in results/xau_new_design_summary.md. Holdout window is NEVER used for selection. Total configs capped at 24 (max 6 per family).",
+    "data_csv": "xauusd_data.csv",
+    "references": [
+      "results/xau_new_design_summary.md",
+      "results/xau_regime_analysis.json",
+      "scripts/xau_new_design_search.py",
+      "scripts/htf_fib_offline_backtest.py"
+    ]
+  }
+}

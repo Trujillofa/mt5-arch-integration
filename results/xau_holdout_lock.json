@@ -1,0 +1,28 @@
+{
+  "holdout_start": "2026-01-01T00:00:00+00:00",
+  "develop_end": "2025-12-31T23:59:59+00:00",
+  "data_csv": "xauusd_data.csv",
+  "data_max_time": "2026-08-06T18:00:00+00:00",
+  "data_h1_min_time": "2024-08-16T19:00:00+00:00",
+  "data_h1_max_time": "2026-08-06T18:00:00+00:00",
+  "data_h1_bars": 11637,
+  "data_total_rows": 58150,
+  "registry_path": "results/xau_preregistered_registry.json",
+  "registry_fingerprint": {
+    "algo": "sha256",
+    "sha256": "eb9ec45fc4f6a0c7d71d6f6117f297459fa9c0c4f80b9f1f384fe1640c999b16",
+    "crc32": "98d64a86",
+    "bytes": 19801,
+    "n_families": 4,
+    "n_configs_total": 24,
+    "configs_per_family": {
+      "vol_gate_sparse": 6,
+      "donchian_turtle": 6,
+      "htf_fib_xau": 6,
+      "atr_trail_breakout": 6
+    }
+  },
+  "holdout_rule": "NEVER used for selection; single evaluation after all configs frozen",
+  "safety": "offline only; never --live; never open a large grid",
+  "locked_at_note": "Pre-registration lock: registry frozen before any holdout evaluation."
+}

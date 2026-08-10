@@ -1,0 +1,152 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2,
+  "frozen_at": "2026-08-10",
+  "charter_version": 1,
+  "family_id": "tod_london_ny_flat",
+  "display_name": "Zero-knob London\u2013NY overlap long, intraday flat",
+  "thesis_class": "time_of_day_fixed",
+  "hypothesis": "On XAUUSD H1, a fixed long-only participation in the broker-server London\u2013NY overlap window extracts positive expectancy after Standard STP spread costs because liquidity and directional follow-through cluster in that session; the rule has zero free parameters so null max-stat tests the session claim rather than a search.",
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "multi_symbol_in_scope": false,
+    "multi_symbol_blocked_reason": "Only XAU historical CSV with spread exists; multi-instrument is future work"
+  },
+  "rule": {
+    "direction": "long_only",
+    "entry": "At most one long per calendar day: enter at the close of the first H1 bar whose server hour is in entry_hours and which is the session open bar (hour == entry_hours[0]) if flat.",
+    "entry_hours_server": [
+      13
+    ],
+    "session_active_hours_server": [
+      13,
+      14,
+      15,
+      16
+    ],
+    "server_clock": "as stamped in xauusd_data.csv time column (broker/server)",
+    "dst_policy": "Hours are fixed integers on the stored server clock; no local DST conversion. If broker DST shifts the wall clock, the rule still uses numeric hour fields as stored \u2014 accepted fixed mapping for this freeze.",
+    "exit": "Intraday flat: force close at the close of the last bar with hour==16 same day, or on SL/TP if hit earlier. No overnight holds \u2192 swap not charged.",
+    "intraday_flat": true,
+    "sl": "1.5 * ATR(14) below entry",
+    "tp": "2.0 * ATR(14) above entry",
+    "sl_atr_fixed": 1.5,
+    "tp_atr_fixed": 2.0,
+    "atr_period": 14,
+    "cooldown": 0,
+    "one_position_at_a_time": true
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "long_only": true,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0
+    },
+    "cost_label": "account_matched_spread_commission_only"
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "classic": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.5,
+      "profit_factor_strict_gt": true,
+      "win_rate_min": 55.0,
+      "win_rate_strict_gt": true,
+      "max_drawdown_pct_max": 10.0,
+      "max_drawdown_strict_lt": true
+    },
+    "soft": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.1,
+      "net_profit_gt": 0.0,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft"
+  },
+  "null": {
+    "method": "day_block_shuffle",
+    "n_trials": 999,
+    "block_days": 1,
+    "min_null_trials": 999,
+    "notes": "Session thesis: preserve intra-day OHLC path and hour structure by shuffling whole calendar days. Global return shuffle is FORBIDDEN for this family because it destroys session geometry.",
+    "invariants": [
+      "time_unchanged",
+      "spread_calendar_aligned",
+      "day_bar_count_multiset"
+    ],
+    "forbidden_methods": [
+      "global_return_shuffle"
+    ]
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 999,
+      "early_exit_search": false,
+      "costs_required": true,
+      "window": "develop_only"
+    },
+    "walk_forward": {
+      "costed": true,
+      "only_after_null_pass": true
+    },
+    "slippage_sensitivity": {
+      "points": [
+        0,
+        5,
+        10,
+        20
+      ],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    }
+  },
+  "kill": {
+    "on_null_fail": "KILL_TOD_LONDON_NY_FLAT",
+    "on_wf_fail": "KILL_TOD_LONDON_NY_FLAT",
+    "refine_loops": false,
+    "after_kill": "stop; new family_id + new charter freeze required"
+  },
+  "explicitly_forbidden": [
+    "revive bb_rsi / Donchian / prior_day_high_break",
+    "free any knob without new charter version",
+    "global_return_shuffle null for this family",
+    "overnight holds",
+    "holdout selection",
+    "frictionless eval",
+    "early-exit search",
+    "inspect real-grid then edit code before null completes",
+    "attach this family work to PR #1 without separate review"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "htf_pullback_ema_overlap"
+  ],
+  "candidates_not_selected": {
+    "multi_instrument": "not ready \u2014 single-symbol data/harness only",
+    "fixed_hours_ema_trend": "removed \u2014 overlaps dead htf_pullback under costs"
+  },
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false,
+    "pre_register_only": true
+  }
+}

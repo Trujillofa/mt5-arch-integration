@@ -1,0 +1,412 @@
+{
+  "meta": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "split": "2026-01-02 18:18:00+00:00",
+    "safety": "offline research only; never --live; never place orders",
+    "evidence": [
+      "results/xau_regime_analysis.json",
+      "results/xau_retrain_walkforward_summary.md",
+      "results/xau_oos_holdout.json",
+      "backtest.py",
+      "scripts/htf_fib_offline_backtest.py"
+    ],
+    "regime_shift": {
+      "atr_mean_oos_over_train": 2.44,
+      "ret_std_oos_over_train": 1.85,
+      "bb_width_oos_over_train": 1.76,
+      "frac_close_gt_ema200_train": 0.687,
+      "frac_close_gt_ema200_oos": 0.482,
+      "baseline_bb_rsi_oos": {
+        "pf": 0.59,
+        "wr": 42.9,
+        "n": 7,
+        "note": "mean-reversion edge collapsed; train-only retrain overfit (OOS PF 0.14)"
+      }
+    },
+    "gates_target": {
+      "train": {
+        "profit_factor": 1.5,
+        "win_rate_pct": 55.0,
+        "max_drawdown_pct": 10.0,
+        "n_trades_min": 20
+      },
+      "oos_preferred": {
+        "n_trades_min": 10,
+        "same_gates_as_train": true
+      }
+    },
+    "shared_indicators": {
+      "ema": [20, 50, 100, 200],
+      "rsi": 14,
+      "atr": 14,
+      "bb": {"period": 20, "std": 2.0},
+      "macd": {"fast": 12, "slow": 26, "signal": 9},
+      "atr_pctile": {
+        "definition": "percentile rank of atr[i] within atr[i-lookback+1:i+1] inclusive, scale 0–100",
+        "lookback_default": 500,
+        "labels": {
+          "LOW": "atr_pctile < 40",
+          "MED": "40 <= atr_pctile < 70",
+          "HIGH": "atr_pctile >= 70"
+        }
+      },
+      "donchian": {
+        "definition": "donchian_hi = rolling max(high, N); donchian_lo = rolling min(low, N)"
+      }
+    },
+    "shared_execution": {
+      "bar": "closed H1 only; no same-bar open entry",
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "contract_size_xau": 100.0,
+      "one_position": true,
+      "cooldown_bars_after_exit": [1, 2, 3],
+      "warmup_bars": 220
+    }
+  },
+  "families": [
+    {
+      "id": "vol_gate_meanrev",
+      "name": "Volatility-gated BB/RSI mean reversion",
+      "thesis": "Baseline bb_rsi worked on train (ATR~10, frac>EMA200~0.69) but failed OOS when ATR ~2.4× and trend filter weakened. Edge is train-like calm: only take BB reclaim mean-reversion when atr_pctile is LOW/MED so stops are not blown by expansion regimes. Suppress MR entirely in HIGH vol instead of retuning RSI/SL on the same broken setup.",
+      "entry_rules": {
+        "side": "long_only_default",
+        "long": [
+          "atr_pctile < atr_pctile_max (default 55; allow MED but not HIGH)",
+          "close > trend_col (default ema200; optional ema100)",
+          "low <= bb_lo and close > bb_lo and close < bb_mid (reclaim lower band)",
+          "rsi <= rsi_buy + 10 (default rsi_buy=30 → rsi<=40)",
+          "optional: macd_hist > 0 if use_macd_filter"
+        ],
+        "short_optional": [
+          "only if long_only=false",
+          "atr_pctile < atr_pctile_max",
+          "close < trend_col",
+          "high >= bb_up and close < bb_up and close > bb_mid",
+          "rsi >= 100 - rsi_buy - 10"
+        ],
+        "implement_note": "Same reclaim logic as backtest.simulate mode=bb_rsi plus hard atr_pctile gate before signal."
+      },
+      "exit_rules": {
+        "sl_atr": 1.5,
+        "tp_atr": 2.0,
+        "soft_exit_long": "rsi >= rsi_sell (default 50–60) close at bar close",
+        "soft_exit_short": "rsi <= 100 - rsi_sell",
+        "hard_invalidation_exit": "if atr_pctile crosses above atr_pctile_max while in trade, optional flatten at close (param: exit_on_vol_spike true/false)"
+      },
+      "filters": {
+        "vol_percentile": "require atr_pctile < atr_pctile_max (LOW or MED)",
+        "trend": "close > ema200 (or chosen trend_col) for longs",
+        "session": "optional hours in {7..16} UTC if n_trades excessive"
+      },
+      "param_grid": {
+        "atr_lookback": [300, 500],
+        "atr_pctile_max": [40, 50, 55],
+        "rsi_buy": [28, 30, 35],
+        "rsi_sell": [50, 55, 60],
+        "sl_atr": [1.2, 1.5],
+        "tp_atr": [1.8, 2.0, 2.5],
+        "bb_col": ["bb_lo", "bb_lo15"],
+        "trend_col": ["ema200", "ema100"],
+        "require_uptrend": [true],
+        "cooldown": [1, 2],
+        "exit_on_vol_spike": [false, true]
+      },
+      "invalidation": [
+        "atr_pctile >= atr_pctile_max (do not open MR trades in HIGH vol)",
+        "close < ema200 when require_uptrend (no long MR against long-term bias)",
+        "bb_width extremely expanded vs recent median (optional: bb_width_pctile > 80 skip)",
+        "do not promote if train gates fail or OOS n < 10"
+      ]
+    },
+    {
+      "id": "atr_breakout_trend",
+      "name": "ATR-aware N-bar breakout with EMA trend",
+      "thesis": "2026 OOS is high-vol expansion (ATR 2.4×, return std 1.85×, less sticky EMA200 bull). Mean reversion is misaligned; trade WITH expansion: break N-bar highs only when atr_pctile is HIGH/MED and price is above a trend EMA, with wider ATR stops so noise does not stop out the move.",
+      "entry_rules": {
+        "side": "long_primary",
+        "long": [
+          "atr_pctile >= atr_pctile_min (default 60; prefer HIGH expansion)",
+          "close > ema_trend (default ema50 or ema100)",
+          "close > max(high[i-N:i])  i.e. close breaks prior N-bar high (exclude current bar)",
+          "optional confirmation: close > open (bullish close) or macd_hist > 0",
+          "rsi not overbought extreme: rsi < rsi_max (default 75) to avoid late chase"
+        ],
+        "short_optional": [
+          "if long_only=false: symmetric break of N-bar low with close < ema_trend and atr_pctile high"
+        ],
+        "implement_note": "donchian_hi_prev = rolling_max(high, N).shift(1); long if close > donchian_hi_prev and filters pass."
+      },
+      "exit_rules": {
+        "sl_atr": 2.0,
+        "tp_atr": 3.0,
+        "trail_optional": "after +1R, trail SL to entry or to close - trail_atr*ATR",
+        "soft_exit": "close < ema20 (trend failure) or rsi soft_exit_level (optional)",
+        "time_stop_bars": "optional max_hold in {24, 48, 72} H1 bars"
+      },
+      "filters": {
+        "vol_percentile": "atr_pctile >= atr_pctile_min (trade expansion, not calm chop)",
+        "trend": "close > ema50 (or ema100); optional ema20 > ema50 stack",
+        "session": "optional London/NY hours 7–16 or 12–20 server"
+      },
+      "param_grid": {
+        "N": [10, 20, 24],
+        "atr_lookback": [300, 500],
+        "atr_pctile_min": [55, 60, 70],
+        "ema_trend": ["ema50", "ema100"],
+        "require_ema_stack": [false, true],
+        "rsi_max": [70, 75, 80],
+        "sl_atr": [1.8, 2.0, 2.5],
+        "tp_atr": [2.5, 3.0, 4.0],
+        "trail_atr": [null, 1.5, 2.0],
+        "cooldown": [2, 3],
+        "long_only": [true]
+      },
+      "invalidation": [
+        "atr_pctile < atr_pctile_min (no breakout entries in LOW vol)",
+        "close below ema_trend (no long breakout against local trend)",
+        "rsi >= rsi_max (late momentum)",
+        "inside-bar / failed break (close back inside N-range next bar → skip re-entry until new extreme)",
+        "if train MaxDD > 10% or PF < 1.5 after grid, abandon family"
+      ]
+    },
+    {
+      "id": "ema_pullback_trend",
+      "name": "EMA pullback continuation (trend, not fade)",
+      "thesis": "When a bullish structure still exists (EMA stack or close>ema200), buy shallow pullbacks to ema20/ema50 with RSI not oversold-extreme (continuation, not deep dip-buy). Works across dual regimes if pullbacks are measured in ATR and mid-vol filter avoids both dead chop and chaotic spikes. Aligns with macd_pullback mode spirit in backtest.py but with explicit structure + optional atr_pctile mid band.",
+      "entry_rules": {
+        "side": "long_only_default",
+        "long": [
+          "structure: close > ema200 OR (ema20 > ema50 and ema50 > ema100) per stack_mode",
+          "pullback: low <= ema_pull + atr_buffer*ATR and close >= ema_pull - 0.25*ATR (touch/near pullback MA)",
+          "recovery: close > open OR close > prior close (reclaim after touch)",
+          "rsi in [rsi_lo, rsi_hi] e.g. 40–60 (not extreme; not deep MR)",
+          "optional: macd_hist rising (macd_hist[i] > macd_hist[i-1]) or hist cross up through 0",
+          "optional: atr_pctile in [pct_lo, pct_hi] mid band (default 30–75)"
+        ],
+        "short_optional": [
+          "mirror under close < ema200 with pullback to ema20/50 from below"
+        ],
+        "implement_note": "ema_pull in {ema20, ema50}; prefer touch of ema20 in strong trend, ema50 in broader trend."
+      },
+      "exit_rules": {
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "soft_exit": "rsi >= rsi_sell (default 65–70) or close < ema_pull (structure break)",
+        "sl_placement": "entry - sl_atr*ATR, or min(low of pullback bar, ema_pull) - 0.2*ATR if tighter and still >= 1.0 ATR"
+      },
+      "filters": {
+        "vol_percentile": "optional mid: 30 <= atr_pctile <= 75 (skip dead + panic)",
+        "trend": "ema stack or close > ema200 required",
+        "session": "optional"
+      },
+      "param_grid": {
+        "ema_pull": ["ema20", "ema50"],
+        "stack_mode": ["close_gt_ema200", "ema20_gt_ema50_gt_ema100"],
+        "atr_buffer": [0.0, 0.25, 0.5],
+        "rsi_lo": [35, 40, 45],
+        "rsi_hi": [55, 60, 65],
+        "rsi_sell": [65, 70],
+        "atr_pctile_lo": [0, 30],
+        "atr_pctile_hi": [75, 100],
+        "sl_atr": [1.2, 1.5, 2.0],
+        "tp_atr": [2.0, 2.5, 3.0],
+        "use_macd_rising": [false, true],
+        "cooldown": [1, 2]
+      },
+      "invalidation": [
+        "no structure (close < ema200 and stack broken)",
+        "rsi < rsi_lo (too deep — becomes mean-rev, use other family)",
+        "rsi > rsi_hi at entry (already extended)",
+        "atr_pctile outside mid band if mid filter enabled",
+        "consecutive lower lows breaking ema50 after entry → soft exit only, no add"
+      ]
+    },
+    {
+      "id": "dual_regime_switch",
+      "name": "Dual-regime switch (breakout if HIGH vol else mean-rev)",
+      "thesis": "Single-mode bb_rsi cannot span train calm and 2026 expansion. Explicit switch: if atr_pctile HIGH → atr_breakout_trend rules with wide stops; else → vol_gate_meanrev (or milder BB reclaim). One position engine, two entry modules, shared risk. Addresses structural regime shift without continuous param thrashing.",
+      "entry_rules": {
+        "side": "long_only_default",
+        "regime_split": "HIGH if atr_pctile >= high_thresh else LOW_MED",
+        "mode_high_vol": {
+          "name": "breakout_module",
+          "rules": [
+            "atr_pctile >= high_thresh (default 65)",
+            "close > max(high.shift(1).rolling(N))",
+            "close > ema50",
+            "rsi < 78"
+          ]
+        },
+        "mode_low_med_vol": {
+          "name": "meanrev_module",
+          "rules": [
+            "atr_pctile < high_thresh",
+            "close > ema200",
+            "low <= bb_lo and close > bb_lo and close < bb_mid",
+            "rsi <= rsi_buy + 10"
+          ]
+        },
+        "conflict": "never fire both; HIGH module has priority if both true (should not overlap by construction)"
+      },
+      "exit_rules": {
+        "by_mode": {
+          "breakout_module": {"sl_atr": 2.0, "tp_atr": 3.0, "soft": "close < ema20"},
+          "meanrev_module": {"sl_atr": 1.5, "tp_atr": 2.0, "soft": "rsi >= rsi_sell"}
+        },
+        "note": "store entry_mode on fill; apply that mode's SL/TP/soft for the life of the trade"
+      },
+      "filters": {
+        "vol_percentile": "defines module; no third 'off' state by default (optional off if atr_pctile in [high_thresh-5, high_thresh+5] deadband)",
+        "trend": "breakout: ema50; meanrev: ema200",
+        "session": "optional shared hours filter"
+      },
+      "param_grid": {
+        "high_thresh": [60, 65, 70],
+        "N": [10, 20],
+        "rsi_buy": [30, 35],
+        "rsi_sell": [50, 55, 60],
+        "sl_atr_bo": [1.8, 2.0, 2.5],
+        "tp_atr_bo": [2.5, 3.0, 4.0],
+        "sl_atr_mr": [1.2, 1.5],
+        "tp_atr_mr": [1.8, 2.0, 2.5],
+        "deadband": [0, 5],
+        "cooldown": [2],
+        "atr_lookback": [500]
+      },
+      "invalidation": [
+        "module-specific invalidations inherit from atr_breakout_trend / vol_gate_meanrev",
+        "optional deadband: do not trade when |atr_pctile - high_thresh| < deadband",
+        "if one module produces >80% of trades and fails OOS alone, switch is not dual — redesign weights",
+        "WF fold pass rate 0 and holdout fail → do not live-promote"
+      ]
+    },
+    {
+      "id": "htf_fib_proxy",
+      "name": "HTF Fib golden-zone proxy (H4 pivots on H1)",
+      "thesis": "Alternate structural thesis from scripts/htf_fib_offline_backtest.py: confirmed H4 swing pivots define directional Fib 61.8–78.6 golden zone; enter with trend (EMA200 bias) when H1 closes in zone with RSI not extreme. Less dependent on train-like BB width; can work in dual regimes if swings are valid. Existing offline path is sparse/strict — specs relax RSI-MA and widen ATR exits for XAU high vol.",
+      "entry_rules": {
+        "side": "both_allowed_long_bias",
+        "structure": [
+          "Build H4 OHLC from H1 resample 4h",
+          "Confirmed pivots left=right=P (default 5) on H4 high/low",
+          "Walk swings → direction +1/-1, f618, f786 as in walk_swing_and_fibs",
+          "Map fib state forward onto H1 bars"
+        ],
+        "long": [
+          "direction == +1",
+          "close > ema200",
+          "min(f618,f786) <= close <= max(f618,f786) (in golden zone)",
+          "rsi <= rsi_long_max (default 40; grid 35–45)",
+          "optional use_rsi_ma: rsi > sma(rsi,14)",
+          "edge trigger: prior bar was not already a valid long signal (first touch / re-entry edge)"
+        ],
+        "short": [
+          "direction == -1",
+          "close < ema200",
+          "in golden zone",
+          "rsi >= rsi_short_min (default 60)",
+          "optional rsi < rsi_ma"
+        ],
+        "implement_note": "Port run_backtest() from htf_fib_offline_backtest.py; add atr_pctile optional filter and XAU contract sizing."
+      },
+      "exit_rules": {
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "xau_high_vol_alts": {"sl_atr": 2.0, "tp_atr": 3.0},
+        "soft_exit": "leave zone against direction for 2 consecutive closes, or RSI soft cross",
+        "reverse_on_flip": "if opposite fib signal, exit and reverse (as offline script) or flat-only (prefer flat-only for risk control)"
+      },
+      "filters": {
+        "vol_percentile": "optional skip if atr_pctile > 90 (chaos) or < 15 (dead)",
+        "trend": "EMA200 hard bias (require_bias=true)",
+        "session": "optional"
+      },
+      "param_grid": {
+        "pivot_lr": [3, 5],
+        "rsi_long_max": [35, 40, 45],
+        "rsi_short_min": [55, 60, 65],
+        "use_rsi_ma_filter": [false, true],
+        "sl_atr": [1.5, 2.0],
+        "tp_atr": [2.0, 2.5, 3.0],
+        "require_bias": [true],
+        "flat_only_no_reverse": [true],
+        "atr_pctile_max_chaos": [90, 100],
+        "cooldown": [1, 2]
+      },
+      "invalidation": [
+        "no valid swing / fib (direction==0 or nan fibs) — no trade",
+        "close on wrong side of ema200 vs direction",
+        "outside golden zone",
+        "RSI outside allowed band",
+        "offline/EURUSD-style ultra-strict confluence yielding n_trades << 20 on train → relax RSI-MA first, do not force live"
+      ]
+    },
+    {
+      "id": "donchian_channel",
+      "name": "Donchian channel trend-follow with ATR stops",
+      "thesis": "Classic channel breakout is the simplest high-vol compatible trend family: buy strength above upper Donchian, exit on opposite channel or ATR stop. Distinct from atr_breakout_trend by using channel mid/exit rules (Turtle-style) rather than fixed TP only, and by optional ATR-expansion confirmation. Suited when frac>EMA200 is unstable but short-term range expansion carries.",
+      "entry_rules": {
+        "side": "long_primary",
+        "long": [
+          "close > donchian_hi_entry where entry_N default 20: close breaks prior entry_N high",
+          "optional: atr_pctile >= 50 (expansion bias)",
+          "optional: close > ema100 filter to reduce pure whipsaw",
+          "optional: ADX-proxy simple: (ema20-ema50)/atr > adx_proxy_min OR |close-close.shift(20)|/atr > 3"
+        ],
+        "short_optional": [
+          "close < donchian_lo_entry (prior entry_N low) with mirror filters"
+        ],
+        "implement_note": "donchian_hi_entry = high.rolling(entry_N).max().shift(1); exit_channel = low.rolling(exit_N).min().shift(1) for longs."
+      },
+      "exit_rules": {
+        "channel_exit": "long exits when close < donchian_lo_exit (exit_N default 10) OR low <= SL",
+        "sl_atr": 2.0,
+        "tp_atr": null,
+        "tp_note": "prefer channel/trail over fixed TP; optional tp_atr 4.0 as cap",
+        "trail": "SL = max(SL, close - trail_atr*ATR) once in profit by 1R"
+      },
+      "filters": {
+        "vol_percentile": "optional atr_pctile >= 50",
+        "trend": "optional close > ema100",
+        "session": "optional"
+      },
+      "param_grid": {
+        "entry_N": [15, 20, 30],
+        "exit_N": [8, 10, 15],
+        "atr_pctile_min": [0, 50, 60],
+        "use_ema100_filter": [false, true],
+        "sl_atr": [1.8, 2.0, 2.5],
+        "tp_atr": [null, 3.5, 4.0],
+        "trail_atr": [1.5, 2.0],
+        "cooldown": [1, 2],
+        "long_only": [true]
+      },
+      "invalidation": [
+        "atr_pctile < atr_pctile_min when filter on",
+        "whipsaw regime: too many channel flips within 48 bars → widen entry_N or stand down",
+        "if train WR < 45% and PF < 1.2, channel too noisy for this XAU sample",
+        "never trade without closed-bar confirmation (no stop-entry on high alone)"
+      ]
+    }
+  ],
+  "validation_plan": {
+    "order": [
+      "Implement atr_pctile + donchian helpers on indicators() in offline backtest only",
+      "Grid each family on train split only (<2026-01-02); select by gates then train net",
+      "Evaluate frozen params on holdout OOS; require n>=10 preferred",
+      "Walk-forward (expanding) with per-fold train-only select; fold pass rate target >=50%",
+      "Compare families; do not blend until single family passes",
+      "No strategy_params promotion; no --live"
+    ],
+    "priority_if_capacity_limited": [
+      "dual_regime_switch",
+      "vol_gate_meanrev",
+      "atr_breakout_trend",
+      "ema_pullback_trend",
+      "donchian_channel",
+      "htf_fib_proxy"
+    ]
+  }
+}

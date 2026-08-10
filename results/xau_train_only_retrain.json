@@ -1,0 +1,83 @@
+{
+  "best_params": {
+    "mode": "bb_rsi",
+    "rsi_buy": 25.0,
+    "rsi_sell": 60.0,
+    "sl_atr": 1.0,
+    "tp_atr": 1.5,
+    "bb_col": "bb_lo",
+    "trend_col": "ema200",
+    "use_macd_filter": false,
+    "hours": null,
+    "long_only": true,
+    "risk_pct": 0.01,
+    "cooldown": 2,
+    "require_uptrend": true
+  },
+  "train_metrics": {
+    "net_profit": 2141.6652227146096,
+    "win_rate": 68.96551724137932,
+    "profit_factor": 3.1907128259296793,
+    "max_drawdown_pct": 2.5854408482232314,
+    "n_trades": 29,
+    "wins": 20,
+    "losses": 9
+  },
+  "oos_metrics": {
+    "net_profit": 530.5008098073607,
+    "win_rate": 71.42857142857143,
+    "profit_factor": 3.875082022602832,
+    "max_drawdown_pct": 1.5261143721334762,
+    "n_trades": 7,
+    "wins": 5,
+    "losses": 2
+  },
+  "baseline_train": {
+    "net_profit": 557.0905623505731,
+    "win_rate": 54.54545454545455,
+    "profit_factor": 1.3594492840898158,
+    "max_drawdown_pct": 3.8383133455421437,
+    "n_trades": 33,
+    "wins": 18,
+    "losses": 15
+  },
+  "baseline_oos": {
+    "net_profit": 563.0929460199933,
+    "win_rate": 66.66666666666667,
+    "profit_factor": 2.5408954902782646,
+    "max_drawdown_pct": 1.9572491113557837,
+    "n_trades": 12,
+    "wins": 8,
+    "losses": 4
+  },
+  "oos_gates_pass": false,
+  "search_size": 324,
+  "split": "2025-02-14 05:00:00+00:00",
+  "train_gates_pass": true,
+  "n_passers_train": 46,
+  "search_seconds": 15.364243793999776,
+  "baseline_params": {
+    "mode": "bb_rsi",
+    "rsi_buy": 30.0,
+    "rsi_sell": 58.0,
+    "sl_atr": 1.0,
+    "tp_atr": 1.2,
+    "bb_col": "bb_lo15",
+    "trend_col": "ema200",
+    "use_macd_filter": false,
+    "hours": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "long_only": true,
+    "risk_pct": 0.01,
+    "cooldown": 2
+  }
+}

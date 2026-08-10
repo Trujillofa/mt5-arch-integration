@@ -1,0 +1,41 @@
+{
+  "split": "2026-01-02 18:18:00+00:00",
+  "params": {
+    "mode": "bb_rsi",
+    "rsi_buy": 30.0,
+    "rsi_sell": 50.0,
+    "sl_atr": 1.5,
+    "tp_atr": 2.0,
+    "bb_col": "bb_lo",
+    "trend_col": "ema200",
+    "use_macd_filter": false,
+    "hours": null,
+    "long_only": true,
+    "risk_pct": 0.01,
+    "cooldown": 2
+  },
+  "in_sample": {
+    "net_profit": 1255.6459927155515,
+    "win_rate": 62.5,
+    "profit_factor": 1.8373143889787396,
+    "max_drawdown_pct": 3.5557257333827557,
+    "n_trades": 40,
+    "wins": 25,
+    "losses": 15
+  },
+  "oos": {
+    "net_profit": -136.08699992195488,
+    "win_rate": 42.857142857142854,
+    "profit_factor": 0.5880233830292173,
+    "max_drawdown_pct": 2.759854840640006,
+    "n_trades": 7,
+    "wins": 3,
+    "losses": 4
+  },
+  "oos_gates_pass": false,
+  "gates": {
+    "pf": 1.5,
+    "wr": 55.0,
+    "dd": 10.0
+  }
+}

@@ -183,20 +183,21 @@ Install top-level launchers (app menu + Desktop + `~/.local/bin/mt5-*`):
 
 ```bash
 ./scripts/17-install-desktop-launchers.sh
-# then open launcher and search: FP Markets MT5 | Vantage | WSFmarkets
-# or: mt5-fpmarkets   /   mt5-vantage   /   mt5-wsf
+# then open launcher and search: Exness MT5 | FP Markets MT5 | Vantage | WSFmarkets
+# or: mt5-exness | mt5-fpmarkets | mt5-vantage | mt5-wsf
 ```
 
 Each launcher sets the correct `WINEPREFIX` and runs `terminal64.exe /portable`
 (not a fragile Wine `.lnk`).
 
-### Multi-broker Wine prefixes (WSF + Vantage + FP Markets)
+### Multi-broker Wine prefixes (Exness + WSF + Vantage + FP Markets)
 
 | Broker | Installer | Prefix | Login (example) | Server |
 |--------|-----------|--------|-----------------|--------|
 | WSF | `wsfmarkets5setup.exe` | `~/.mt5-wsf` | **149736** (demo) | `WSFmarkets-Server` |
 | Vantage | `vantageinternational5setup.exe` | `~/.mt5-vantage` | **27496181** (live) | **`VantageMarkets-Live 5`** (not `VantageInternational-Live 5`) |
 | FP Markets SC | `fpmarketssc5setup.exe` | `~/.mt5-fpmarkets` | **84076984** (live) | **`FPMarketsSC-Live`** |
+| Exness | `exness5setup.exe` | `~/.mt5-exness` | Set your account login | Select the exact server shown by Exness |
 
 Broker terminals install under brand folders; scripts expect `…/MetaTrader 5` — create a symlink:
 
@@ -207,6 +208,8 @@ ln -s "WSFmarkets MT5 Terminal" ~/.mt5-wsf/drive_c/Program\ Files/MetaTrader\ 5
 ln -s "Vantage International MT5" ~/.mt5-vantage/drive_c/Program\ Files/MetaTrader\ 5
 # FP Markets SC
 ln -s "FP Markets MT5 Terminal" ~/.mt5-fpmarkets/drive_c/Program\ Files/MetaTrader\ 5
+# Exness
+ln -s "MetaTrader 5 EXNESS" ~/.mt5-exness/drive_c/Program\ Files/MetaTrader\ 5
 ```
 
 Switch + force-login (password never printed):

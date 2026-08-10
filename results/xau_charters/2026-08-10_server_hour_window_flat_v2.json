@@ -1,0 +1,158 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-08-10",
+  "charter_version": 2,
+  "family_id": "server_hour_window_flat",
+  "display_name": "Zero-knob server-hour window long, intraday flat (v2)",
+  "thesis_class": "server_hour_window_fixed",
+  "hypothesis": "On XAUUSD H1 as stamped by the Vantage terminal clock in xauusd_data.csv, a fixed long-only rule that enters at server hour 13 and forces flat by server hour 16 has no free parameters. Any edge would have to come from that server-hour window's return distribution after Standard STP spread costs. Hours are pure server labels \u2014 not claimed London\u2013NY wall-clock overlap.",
+  "clock_contract": {
+    "source": "MqlRates time via Mt5ArchBridge TimeToString; fetch_data tags as UTC without conversion",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "hours_present_develop_note": "develop bars show server hours 1..23 (hour 0 typically absent)"
+  },
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "multi_symbol_in_scope": false
+  },
+  "rule": {
+    "direction": "long_only",
+    "entry": "long at close of first bar with server hour==entry_hour if flat (one per calendar day)",
+    "entry_hour": 13,
+    "entry_hours_server": [
+      13
+    ],
+    "flat_hour": 16,
+    "flat_hour_server": 16,
+    "session_active_hours_server": [
+      13,
+      14,
+      15,
+      16
+    ],
+    "intraday_flat": true,
+    "exit": "SL/TP or force flat at close of bar with hour>=flat_hour same day; no overnight",
+    "sl_atr_fixed": 1.5,
+    "tp_atr_fixed": 2.0,
+    "atr_period": 14
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "long_only": true,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0
+    }
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "classic": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.5,
+      "profit_factor_strict_gt": true,
+      "win_rate_min": 55.0,
+      "win_rate_strict_gt": true,
+      "max_drawdown_pct_max": 10.0,
+      "max_drawdown_strict_lt": true
+    },
+    "soft": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.1,
+      "net_profit_gt": 0.0,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft"
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "implementation_id": "within_day_ohlc_increment_rotate_v1",
+    "n_trials": 999,
+    "min_null_trials": 999,
+    "k_domain": "per_day Uniform{0,1,...,m-1} including identity k=0",
+    "algorithm": "For each calendar day with m bars: (1) ref_0 = open[0], ref_j = close[j-1] for j>0; (2) inc_j = (open,high,low,close)/ref_j componentwise; (3) circularly rotate the m increments by k\u2208{0..m-1}; (4) rebuild continuous OHLC path from the original day open by chaining rotated increments so each bar unit's open/ref and true-range/ref ratios are preserved as a multiset. Timestamps and spreads remain fixed. No absolute-price day-block paste; no foreign-hour geometry on a new close.",
+    "notes": "Canonical session null for protocol 2.2. Replaces stale v1 preregistration that described close-to-close log-return rotate rebased from first close (never executed after v2.2 runtime fix).",
+    "invariants": [
+      "time_unchanged",
+      "spread_calendar_aligned",
+      "per_day_bar_count_equal",
+      "within_day_path_continuous",
+      "open_prev_close_gap_multiset",
+      "true_range_prev_multiset",
+      "entry_hour_closes_moved",
+      "session_path_association_broken"
+    ],
+    "forbidden_methods": [
+      "day_block_shuffle",
+      "circular_day_shift",
+      "global_return_shuffle",
+      "within_day_return_rotate"
+    ]
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 999,
+      "early_exit_search": false,
+      "costs_required": true
+    },
+    "slippage_sensitivity": {
+      "points": [
+        0,
+        5,
+        10,
+        20
+      ],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    },
+    "walk_forward": {
+      "only_after_null_pass": true,
+      "costed": true
+    }
+  },
+  "kill": {
+    "on_null_fail": "KILL_SERVER_HOUR_WINDOW_FLAT",
+    "on_wf_fail": "KILL_SERVER_HOUR_WINDOW_FLAT",
+    "refine_loops": false
+  },
+  "explicitly_forbidden": [
+    "run under superseded v1 charter SHA",
+    "claim London\u2013NY wall-clock overlap without external offset proof",
+    "day_block_shuffle or global_return_shuffle null",
+    "CLI null overrides under sealed cycle",
+    "dispositional run with dirty tracked protocol/family/cost files",
+    "overnight holds"
+  ],
+  "supersedes": {
+    "path": "results/xau_charters/2026-08-10_server_hour_window_flat_v1.json",
+    "sha256": "6b5811eedf11838e85733179fcecacacd0a58a978860f1811a6aba4a0be8e064",
+    "reason": "stale statistical procedure vs v2.2 OHLC-increment runtime"
+  },
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "mt5_backend": "file",
+  "mt5_login": 27496181,
+  "mt5_password": null,
+  "mt5_server": "VantageMarkets-Live 5",
+  "mt5_rpyc_host": "localhost",
+  "mt5_rpyc_port": 18812,
+  "mt5_bridge_dir": null,
+  "mt5_bridge_max_age": 60.0,
+  "wineprefix": "/home/yderf/.mt5-vantage",
+  "mt5_terminal_path": null
+}

@@ -1,0 +1,109 @@
+{
+  "status": "FROZEN",
+  "frozen_at": "2026-08-08",
+  "charter_version": 1,
+  "md_path": "results/xau_next_design_charter.md",
+  "thesis_class": "session_or_breakout_fixed",
+  "thesis_pick": "breakout_fixed",
+  "family_id": "prior_day_high_break",
+  "display_name": "Prior-day high breakout (fixed geometry)",
+  "hypothesis": "Long H1 closes through the prior calendar day's high extract continuation from short-covering and mean-reversion inventory that underprices range expansion after a confirmed break of yesterday's auction high.",
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "multi_symbol_later": true,
+    "multi_symbol_in_scope": false
+  },
+  "rule": {
+    "entry": "long when H1 close first crosses above prior calendar day high (close[i] > prior_day_high and close[i-1] <= prior_day_high)",
+    "prior_day_high": "max(high) over all H1 bars on server calendar day D-1",
+    "session_hours_server": [8, 9, 10, 11, 12, 13, 14, 15, 16],
+    "session_hours_fixed": true,
+    "one_position_at_a_time": true,
+    "exit": "fixed SL/TP only; no trail, no time stop, no signal flip",
+    "atr_period": 14,
+    "sl": "sl_atr * ATR(14) at entry",
+    "tp": "tp_rr * sl_atr * ATR(14) at entry",
+    "tp_rr_fixed": 2.0,
+    "cooldown": 0
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "long_only": true,
+    "max_lots": 0.5,
+    "tp_rr": 2.0,
+    "hours": [8, 9, 10, 11, 12, 13, 14, 15, 16],
+    "atr_period": 14,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "broker": "Vantage",
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "commission_per_lot": 3.0,
+      "commission_account_type": "RAW_ECN",
+      "commission_notes": "per side per lot; RT = 2*commission_per_lot*lots",
+      "slippage_points": 0.0
+    }
+  },
+  "free_knobs": [
+    {
+      "name": "sl_atr",
+      "allowed_values": [1.0, 1.5, 2.0],
+      "type": "float"
+    }
+  ],
+  "n_free_knobs": 1,
+  "search_cardinality": 3,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false,
+    "holdout_rule": "NEVER used for selection; single evaluation only after family survives null + costed WF and params are frozen"
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 40,
+      "early_exit_search": false,
+      "costs_required": true,
+      "window": "develop_only"
+    },
+    "walk_forward": {
+      "costed": true,
+      "aggregate_net_profit": "must_be_positive",
+      "window": "develop_only"
+    },
+    "all_required": true
+  },
+  "passer_definition_soft": {
+    "n_trades_min": 20,
+    "profit_factor_min": 1.2,
+    "net_profit": "gt_0",
+    "used_for": "null_n_passers_count_only"
+  },
+  "kill": {
+    "on_null_fail": "KILL_PRIOR_DAY_HIGH_BREAK",
+    "on_wf_fail": "KILL_PRIOR_DAY_HIGH_BREAK",
+    "refine_loops": false,
+    "after_kill": "stop; new family requires new charter freeze with new family_id"
+  },
+  "explicitly_forbidden": [
+    "re-grid bb_rsi / rsi_cross",
+    "re-grid or revive Donchian / turtle",
+    "early-exit search",
+    "frictionless eval (no spread and/or commission while claiming pass)",
+    "holdout mining or selection on time >= holdout_start",
+    "live orders or --live",
+    "expand knobs beyond free_knobs without new charter",
+    "label develop folds as OOS holdout"
+  ],
+  "dead_lines_do_not_revive": ["bb_rsi", "Donchian"],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false,
+    "pre_register_only": true
+  }
+}

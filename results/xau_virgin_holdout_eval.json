@@ -1,0 +1,16 @@
+{
+  "skipped": true,
+  "reason": "insufficient bars after last_peeked_end",
+  "frontier": {
+    "before_max": "2026-08-06 18:00:00+00:00",
+    "after_max": "2026-08-06 20:00:00+00:00",
+    "n_h1": 11637,
+    "virgin_start": "2026-08-06 19:00:00+00:00",
+    "n_virgin_bars": 2,
+    "virgin_available": false,
+    "refresh_ok": true
+  },
+  "n_evaluated": 0,
+  "catalog_n_entries": 8,
+  "safety": "offline only; no retune; virgin not evaluated"
+}

@@ -1,0 +1,18 @@
+{
+  "login": 84076984,
+  "balance": 3346.16,
+  "equity": 2291.04,
+  "margin": 164.53,
+  "free_margin": 2126.51,
+  "margin_level": 1392.48,
+  "currency": "USD",
+  "leverage": 500,
+  "server": "FPMarketsSC-Live",
+  "name": "[redacted]",
+  "company": "First Prudential Markets Limited",
+  "trade_mode": 2,
+  "trade_allowed": true,
+  "algo_allowed": true,
+  "terminal_connected": true,
+  "terminal_connected_raw": true
+}

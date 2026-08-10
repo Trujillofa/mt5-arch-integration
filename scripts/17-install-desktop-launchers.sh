@@ -31,6 +31,17 @@ script_dir = Path(sys.argv[1]).resolve()
 force_so = script_dir / "wine-net" / "force_src_bind.so"
 
 BRANDS = {
+    "exness": {
+        "name": "Exness MT5",
+        "comment": "Exness MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-exness",
+        "dir": Path.home()
+        / ".mt5-exness/drive_c/Program Files/MetaTrader 5 EXNESS",
+        "ico": Path.home()
+        / ".mt5-exness/drive_c/Program Files/MetaTrader 5 EXNESS/Terminal.ico",
+        "icon_name": "exness-mt5",
+        "desktop_name": "exness-mt5.desktop",
+    },
     "fpmarkets": {
         "name": "FP Markets MT5",
         "comment": "FP Markets SC MetaTrader 5 (Wine)",
@@ -164,5 +175,5 @@ subprocess.run(
 subprocess.run(
     ["update-desktop-database", str(apps)], check=False, capture_output=True
 )
-print("done — search app launcher for: FP Markets MT5")
+print("done — search app launcher for: Exness MT5 | FP Markets MT5 | Vantage | WSFmarkets")
 PY

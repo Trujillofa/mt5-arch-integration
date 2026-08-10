@@ -1,49 +1,198 @@
 //+------------------------------------------------------------------+
 //| Mt5ArchBridge.mq5                                                |
 //| File bridge for Linux/Wine (MetaTrader5 Python IPC often fails)  |
-//| Attach to a chart and enable Algo Trading (green).               |
+//|                                                                  |
+//| FREEZE FIX (v1.20):                                              |
+//|  • Attach to ONE chart only                                      |
+//|  • Timer-only writes (no OnTick storm)                           |
+//|  • File lock so extra instances stay standby                     |
+//|  • Default 5s interval, leaner symbol/TF set                     |
+//| v1.22: ResolveSymbol bare + m/.r/.m/#/pro for raw brokers        |
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.03"
-#property description "Writes account/symbols/candles JSON under MQL5/Files/mt5_arch/"
+#property version   "1.22"
+#property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
+#property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
+#property description "v1.21: per-bar spread in candles + one-shot deep history dump"
+#property description "v1.22: ResolveSymbol — bare then m/.r/.m/#/pro (Exness raw etc.)"
 
-input int    InpTimerSec    = 1;       // Snapshot interval (seconds) — more reliable than ms under Wine
-input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,USDCHF";
-input string InpTimeframes  = "M15,H1,H4,D1";
-input int    InpCandleCount = 50;
+input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
+// Lean defaults — bare names; ResolveSymbol maps to broker suffixes (EURUSDm, XAUUSD.r, …)
+input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD";
+input string InpTimeframes  = "H1,H4,D1";
+input int    InpCandleCount = 30;
+input bool   InpSingleWriter= true;    // Extra instances go standby (must stay true on Wine)
+// One-shot deep history dump (OHLC + per-bar spread) for offline cost modelling.
+// Runs once per marker file; delete mt5_arch\history_dump.done to re-run.
+input bool   InpDumpHistory   = true;
+input string InpHistorySymbol = "XAUUSD";
+input string InpHistoryTfs    = "M15,H1";
+input int    InpHistoryMonths = 60;
 
-string g_dir = "mt5_arch";
+string   g_dir = "mt5_arch";
 datetime g_last_write = 0;
+bool     g_is_writer = false;
+string   g_lock_rel;
 
+//+------------------------------------------------------------------+
+//| Resolve broker-specific symbol names.                            |
+//| Tries bare name, then common suffixes: m, .r, .m, #, pro.        |
+//| Returns the name that SymbolSelect succeeded on, or "" if none.  |
+//| symbols.json / candle files use the *resolved* broker name.      |
+//+------------------------------------------------------------------+
+string ResolveSymbol(const string requested)
+  {
+   string base = requested;
+   StringTrimLeft(base);
+   StringTrimRight(base);
+   if(StringLen(base) == 0)
+      return "";
+
+   // Already-correct name (standard brokers or explicit EURUSDm / XAUUSD.r)
+   if(SymbolSelect(base, true))
+      return base;
+
+   // Short safe list: Exness raw (m), FP Markets (.r), some ECN (.m / #), pro
+   string suffixes[5];
+   suffixes[0] = "m";
+   suffixes[1] = ".r";
+   suffixes[2] = ".m";
+   suffixes[3] = "#";
+   suffixes[4] = "pro";
+   for(int i = 0; i < 5; i++)
+     {
+      string candidate = base + suffixes[i];
+      if(SymbolSelect(candidate, true))
+         return candidate;
+     }
+   return "";
+  }
+
+//+------------------------------------------------------------------+
 int OnInit()
   {
    FolderCreate(g_dir);
-   // Second-based timer is more reliable under Wine than EventSetMillisecondTimer
-   EventSetTimer((int)MathMax(1, InpTimerSec));
-   Print("Mt5ArchBridge ON -> Files/", g_dir, " timer=", InpTimerSec, "s");
+   g_lock_rel = g_dir + "\\writer.lock";
+
+   g_is_writer = ClaimWriterLock();
+   if(!g_is_writer)
+     {
+      Print("Mt5ArchBridge STANDBY on ", _Symbol, " chart=", ChartID(),
+            " — another chart owns the bridge. REMOVE this EA from this chart.");
+      // Still set a slow timer to reclaim if owner dies
+      EventSetTimer(30);
+      return INIT_SUCCEEDED;
+     }
+
+   EventSetTimer((int)MathMax(3, InpTimerSec));
+   Print("Mt5ArchBridge WRITER v1.22 ON ", _Symbol,
+         " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
+   DumpHistoryOnce();
    return INIT_SUCCEEDED;
   }
 
+//+------------------------------------------------------------------+
 void OnDeinit(const int reason)
   {
    EventKillTimer();
+   if(g_is_writer)
+      ReleaseWriterLock();
   }
 
+//+------------------------------------------------------------------+
 void OnTimer()
   {
+   if(!g_is_writer)
+     {
+      // Try to become writer if lock is stale / missing
+      if(ClaimWriterLock())
+        {
+         g_is_writer = true;
+         EventKillTimer();
+         EventSetTimer((int)MathMax(3, InpTimerSec));
+         Print("Mt5ArchBridge: claimed writer lock after standby");
+         WriteAll();
+        }
+      return;
+     }
+   // Refresh lock heartbeat
+   TouchWriterLock();
    WriteAll();
   }
 
+//+------------------------------------------------------------------+
+//| NO OnTick writes — tick storms + multi-EA = Wine freeze          |
+//+------------------------------------------------------------------+
 void OnTick()
   {
-   // Backup path if timer stalls under Wine (at most once per second)
-   datetime now = TimeLocal();
-   if(now != g_last_write)
-      WriteAll();
   }
 
+//+------------------------------------------------------------------+
+bool ClaimWriterLock()
+  {
+   if(!InpSingleWriter)
+      return true;
+
+   // Stale lock: older than 60s → steal
+   if(FileIsExist(g_lock_rel, 0))
+     {
+      int hr = FileOpen(g_lock_rel, FILE_READ|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
+      if(hr != INVALID_HANDLE)
+        {
+         string line = FileReadString(hr);
+         FileClose(hr);
+         // format: chartId|unixTime
+         string parts[];
+         int n = StringSplit(line, '|', parts);
+         long owner = (n >= 1) ? StringToInteger(parts[0]) : 0;
+         long ts    = (n >= 2) ? StringToInteger(parts[1]) : 0;
+         long now   = (long)TimeLocal();
+         if(owner == ChartID())
+            return true;
+         if(ts > 0 && (now - ts) < 60)
+            return false; // live owner
+         // stale — fall through and take
+        }
+     }
+
+   int hw = FileOpen(g_lock_rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
+   if(hw == INVALID_HANDLE)
+      return false;
+   FileWriteString(hw, IntegerToString(ChartID()) + "|" + IntegerToString((long)TimeLocal()));
+   FileClose(hw);
+   return true;
+  }
+
+//+------------------------------------------------------------------+
+void TouchWriterLock()
+  {
+   int hw = FileOpen(g_lock_rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
+   if(hw == INVALID_HANDLE)
+      return;
+   FileWriteString(hw, IntegerToString(ChartID()) + "|" + IntegerToString((long)TimeLocal()));
+   FileClose(hw);
+  }
+
+//+------------------------------------------------------------------+
+void ReleaseWriterLock()
+  {
+   if(!FileIsExist(g_lock_rel, 0))
+      return;
+   int hr = FileOpen(g_lock_rel, FILE_READ|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
+   if(hr != INVALID_HANDLE)
+     {
+      string line = FileReadString(hr);
+      FileClose(hr);
+      string parts[];
+      StringSplit(line, '|', parts);
+      if(ArraySize(parts) >= 1 && StringToInteger(parts[0]) == ChartID())
+         FileDelete(g_lock_rel);
+     }
+  }
+
+//+------------------------------------------------------------------+
 void WriteAll()
   {
    g_last_write = TimeLocal();
@@ -52,15 +201,14 @@ void WriteAll()
    WriteSymbols();
    WriteCandles();
    WritePositions();
-   int h = FileOpen(g_dir + "\\heartbeat.txt", FILE_WRITE|FILE_TXT|FILE_ANSI);
-   if(h != INVALID_HANDLE)
-     {
-      FileWriteString(h, IntegerToString((long)TimeLocal()) + " connected=" +
-         (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0"));
-      FileClose(h);
-     }
+   Put(g_dir + "\\heartbeat.txt",
+       IntegerToString((long)TimeLocal()) + " connected=" +
+       (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0") +
+       " writer_chart=" + IntegerToString(ChartID()) +
+       " symbol=" + _Symbol);
   }
 
+//+------------------------------------------------------------------+
 string Esc(const string s)
   {
    string o = s;
@@ -69,12 +217,22 @@ string Esc(const string s)
    return o;
   }
 
+//+------------------------------------------------------------------+
+//| Simple direct write + share flags; throttle error spam           |
+//+------------------------------------------------------------------+
 void Put(const string rel, const string body)
   {
-   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI);
+   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
    if(h == INVALID_HANDLE)
      {
-      Print("Write fail ", rel, " err=", GetLastError());
+      static datetime s_last_err = 0;
+      datetime now = TimeLocal();
+      if(now - s_last_err >= 60)
+        {
+         s_last_err = now;
+         Print("Write fail ", rel, " err=", GetLastError(),
+               " — remove EXTRA Mt5ArchBridge from other charts");
+        }
       return;
      }
    FileWriteString(h, body);
@@ -105,14 +263,12 @@ bool IsEffectivelyConnected()
 
 void WriteAccount()
   {
-   // Prefer trade-server fields; zeros + empty currency usually mean not fully connected
    long login = AccountInfoInteger(ACCOUNT_LOGIN);
    double balance = AccountInfoDouble(ACCOUNT_BALANCE);
    double equity = AccountInfoDouble(ACCOUNT_EQUITY);
    string currency = AccountInfoString(ACCOUNT_CURRENCY);
    int leverage = (int)AccountInfoInteger(ACCOUNT_LEVERAGE);
    bool connected = IsEffectivelyConnected();
-   // Periodic diagnostics when still offline (avoid spam: once per 30s via last write stamp)
    static datetime s_last_diag = 0;
    datetime now = TimeLocal();
    if(!connected && (now - s_last_diag) >= 30)
@@ -169,11 +325,12 @@ void WriteSymbols()
    bool first = true;
    for(int i=0; i<n; i++)
      {
-      string sym = parts[i];
-      StringTrimLeft(sym);
-      StringTrimRight(sym);
+      string requested = parts[i];
+      StringTrimLeft(requested);
+      StringTrimRight(requested);
+      if(StringLen(requested) == 0) continue;
+      string sym = ResolveSymbol(requested);
       if(StringLen(sym) == 0) continue;
-      if(!SymbolSelect(sym, true)) continue;
       if(!first) j += ",";
       first = false;
       string mode_s = "FULL";
@@ -221,10 +378,11 @@ void WriteCandles()
    int nt = StringSplit(InpTimeframes, ',', tfs);
    for(int i=0; i<ns; i++)
      {
-      string sym = syms[i];
-      StringTrimLeft(sym); StringTrimRight(sym);
-      if(StringLen(sym)==0) continue;
-      if(!SymbolSelect(sym, true)) continue;
+      string requested = syms[i];
+      StringTrimLeft(requested); StringTrimRight(requested);
+      if(StringLen(requested)==0) continue;
+      string sym = ResolveSymbol(requested);
+      if(StringLen(sym) == 0) continue;
       int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
       for(int j=0; j<nt; j++)
         {
@@ -243,7 +401,8 @@ void WriteCandles()
             jsn += "\"high\":" + DoubleToString(rates[k].high, digits) + ",";
             jsn += "\"low\":" + DoubleToString(rates[k].low, digits) + ",";
             jsn += "\"close\":" + DoubleToString(rates[k].close, digits) + ",";
-            jsn += "\"volume\":" + IntegerToString((long)rates[k].tick_volume);
+            jsn += "\"volume\":" + IntegerToString((long)rates[k].tick_volume) + ",";
+            jsn += "\"spread\":" + IntegerToString((long)rates[k].spread);
             jsn += "}";
            }
          jsn += "]}";
@@ -252,6 +411,97 @@ void WriteCandles()
      }
   }
 
+//+------------------------------------------------------------------+
+//| One-shot deep history dump: OHLC + per-bar spread (points).       |
+//| MqlRates carries .spread, which the old Scripts/ExportXauHistory  |
+//| discarded — without it the offline backtest is frictionless.      |
+//| Row-at-a-time FileWrite: string concat over ~100k rows is O(n^2)  |
+//| and would stall the EA thread under Wine.                         |
+//+------------------------------------------------------------------+
+void DumpHistoryOnce()
+  {
+   if(!InpDumpHistory)
+      return;
+   string marker = g_dir + "\\history_dump.done";
+   if(FileIsExist(marker, 0))
+      return;
+
+   string requested = InpHistorySymbol;
+   StringTrimLeft(requested); StringTrimRight(requested);
+   string sym = ResolveSymbol(requested);
+   if(StringLen(sym) == 0)
+     {
+      Print("DumpHistory: ResolveSymbol failed for ", requested,
+            " (tried bare + m/.r/.m/#/pro) err=", GetLastError());
+      return;
+     }
+   int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+
+   string tfs[];
+   int nt = StringSplit(InpHistoryTfs, ',', tfs);
+   datetime to = TimeCurrent();
+   datetime from = to - (datetime)((long)InpHistoryMonths * 30L * 24L * 3600L);
+
+   string rel = g_dir + "\\history_" + sym + ".csv";
+   int h = FileOpen(rel, FILE_WRITE|FILE_CSV|FILE_ANSI|FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+     {
+      Print("DumpHistory: FileOpen failed err=", GetLastError());
+      return;
+     }
+   FileWrite(h, "time,timeframe,symbol,open,high,low,close,tick_volume,spread");
+
+   long total = 0;
+   for(int j=0; j<nt; j++)
+     {
+      string tf = tfs[j];
+      StringTrimLeft(tf); StringTrimRight(tf);
+      if(StringLen(tf) == 0) continue;
+      ENUM_TIMEFRAMES period = ParseTf(tf);
+
+      // Deep history may need a server download; first CopyRates can come back
+      // short or empty while it streams in.
+      MqlRates rates[];
+      ArraySetAsSeries(rates, false);
+      int n = 0;
+      for(int attempt=0; attempt<5; attempt++)
+        {
+         n = CopyRates(sym, period, from, to, rates);
+         if(n > 0) break;
+         Sleep(2000);
+        }
+      if(n <= 0)
+        {
+         Print("DumpHistory: no ", tf, " bars for ", sym, " err=", GetLastError());
+         continue;
+        }
+
+      for(int k=0; k<n; k++)
+        {
+         string line = TimeToString(rates[k].time, TIME_DATE|TIME_MINUTES);
+         line += "," + tf;
+         line += "," + sym;
+         line += "," + DoubleToString(rates[k].open, digits);
+         line += "," + DoubleToString(rates[k].high, digits);
+         line += "," + DoubleToString(rates[k].low, digits);
+         line += "," + DoubleToString(rates[k].close, digits);
+         line += "," + IntegerToString((long)rates[k].tick_volume);
+         line += "," + IntegerToString((long)rates[k].spread);
+         FileWrite(h, line);
+        }
+      total += n;
+      Print("DumpHistory ", tf, " bars=", n,
+            " from=", TimeToString(rates[0].time, TIME_DATE|TIME_MINUTES),
+            " to=", TimeToString(rates[n-1].time, TIME_DATE|TIME_MINUTES));
+     }
+   FileClose(h);
+
+   Put(marker, "dumped=" + IntegerToString(total) +
+       " symbol=" + sym + " at=" + TimeToString(TimeLocal(), TIME_DATE|TIME_SECONDS));
+   Print("DumpHistory done rows=", total, " -> Files/", rel);
+  }
+
+//+------------------------------------------------------------------+
 void WritePositions()
   {
    string j = "{\"positions\":[";

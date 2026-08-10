@@ -1,0 +1,271 @@
+{
+  "n_candidates": 2,
+  "criteria": "train_gates AND (shortlist oos PF>1.2 & n>=8 OR fixed WF meanPF>1.2 & n>=8) AND (wf soft_pass_rate>=0.5 OR fixed sum_NP>0 with mean_PF>1.2)",
+  "candidates": [
+    {
+      "id": "vol_gate_bb",
+      "tag": "family_best:vol_gate_bb",
+      "train_gates": true,
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "vol_gate_bb",
+        "atr_max_pct": 0.4,
+        "rsi_buy": 35.0,
+        "rsi_sell": 50.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.5,
+        "bb_col": "bb_lo15",
+        "trend_col": "ema200",
+        "require_uptrend": true,
+        "cooldown": 1,
+        "exit_on_vol_spike": true
+      },
+      "shortlist_oos": {
+        "net_profit": 102.73792919409243,
+        "win_rate": 62.5,
+        "profit_factor": 1.1944239933759884,
+        "max_drawdown_pct": 2.6291125726782694,
+        "n_trades": 16,
+        "wins": 10,
+        "losses": 6
+      },
+      "fixed_aggregate_oos": {
+        "n_folds": 4,
+        "sum_net_profit": 492.65173573785887,
+        "total_trades": 41,
+        "mean_win_rate": 63.41463414634146,
+        "mean_profit_factor": 2.074986839341762,
+        "fold_pass_rate": 0.75,
+        "fold_hard_pass_rate": 0.0,
+        "folds_soft_pass": [
+          false,
+          true,
+          true,
+          true
+        ],
+        "folds_hard_pass": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "min_oos_drawdown_pct": 1.4187288031627525,
+        "max_oos_drawdown_pct": 2.625449170391247,
+        "per_fold_net_profit": [
+          -237.91343361111967,
+          376.4286241063196,
+          237.24357335805962,
+          116.89297188459932
+        ],
+        "per_fold_trades": [
+          7,
+          7,
+          14,
+          13
+        ],
+        "per_fold_profit_factor": [
+          0.36387366470411525,
+          5.112563811381942,
+          1.5514424300121192,
+          1.272067451268871
+        ],
+        "per_fold_win_rate": [
+          42.857142857142854,
+          85.71428571428571,
+          64.28571428571429,
+          61.53846153846154
+        ]
+      },
+      "qualify_reason": "soft_pass_rate=0.75>=0.5",
+      "refit_aggregate_oos": {
+        "n_folds": 4,
+        "sum_net_profit": 396.1564254911459,
+        "total_trades": 40,
+        "mean_win_rate": 62.5,
+        "mean_profit_factor": 2.069406668006269,
+        "fold_pass_rate": 0.75,
+        "fold_hard_pass_rate": 0.0,
+        "folds_soft_pass": [
+          false,
+          true,
+          true,
+          true
+        ],
+        "folds_hard_pass": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "min_oos_drawdown_pct": 1.4187288031627525,
+        "max_oos_drawdown_pct": 3.0989798564528974,
+        "per_fold_net_profit": [
+          -309.89798564529247,
+          376.4286241063196,
+          236.92357335806355,
+          92.70221367205522
+        ],
+        "per_fold_trades": [
+          7,
+          7,
+          13,
+          13
+        ],
+        "per_fold_profit_factor": [
+          0.32292036372329913,
+          5.112563811381942,
+          1.6378796160739657,
+          1.2042628808458675
+        ],
+        "per_fold_win_rate": [
+          28.571428571428573,
+          85.71428571428571,
+          69.23076923076923,
+          61.53846153846154
+        ]
+      }
+    },
+    {
+      "id": "ema_pullback",
+      "tag": "family_best:ema_pullback",
+      "train_gates": true,
+      "params": {
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "long_only": true,
+        "hours": null,
+        "mode": "ema_pullback",
+        "ema_pull": "ema20",
+        "stack_mode": "ema20_gt_ema50_gt_ema100",
+        "atr_buffer": 0.5,
+        "rsi_lo": 40.0,
+        "rsi_hi": 55.0,
+        "rsi_sell": 70.0,
+        "atr_pctile_lo": 0.0,
+        "atr_pctile_hi": 0.75,
+        "sl_atr": 2.0,
+        "tp_atr": 3.0,
+        "use_macd_rising": false,
+        "cooldown": 2
+      },
+      "shortlist_oos": {
+        "net_profit": -449.42157659888517,
+        "win_rate": 32.142857142857146,
+        "profit_factor": 0.7078999985384792,
+        "max_drawdown_pct": 10.463790229211527,
+        "n_trades": 28,
+        "wins": 9,
+        "losses": 19
+      },
+      "fixed_aggregate_oos": {
+        "n_folds": 4,
+        "sum_net_profit": 2226.1639729572203,
+        "total_trades": 100,
+        "mean_win_rate": 49.0,
+        "mean_profit_factor": 1.4998230101712924,
+        "fold_pass_rate": 0.5,
+        "fold_hard_pass_rate": 0.5,
+        "folds_soft_pass": [
+          false,
+          true,
+          true,
+          false
+        ],
+        "folds_hard_pass": [
+          false,
+          true,
+          true,
+          false
+        ],
+        "min_oos_drawdown_pct": 3.6297455683113196,
+        "max_oos_drawdown_pct": 8.778845719618284,
+        "per_fold_net_profit": [
+          1041.8161475236734,
+          915.4768551754273,
+          925.8724092985267,
+          -657.0014390404071
+        ],
+        "per_fold_trades": [
+          31,
+          23,
+          27,
+          19
+        ],
+        "per_fold_profit_factor": [
+          1.7642866443348686,
+          1.950429037612198,
+          1.8632813109430408,
+          0.4212950477950618
+        ],
+        "per_fold_win_rate": [
+          54.83870967741935,
+          56.52173913043478,
+          55.55555555555556,
+          21.05263157894737
+        ]
+      },
+      "qualify_reason": "soft_pass_rate=0.50>=0.5",
+      "refit_aggregate_oos": {
+        "n_folds": 4,
+        "sum_net_profit": 2347.659135122905,
+        "total_trades": 115,
+        "mean_win_rate": 48.69565217391305,
+        "mean_profit_factor": 1.4420319557404897,
+        "fold_pass_rate": 0.5,
+        "fold_hard_pass_rate": 0.5,
+        "folds_soft_pass": [
+          false,
+          true,
+          true,
+          false
+        ],
+        "folds_hard_pass": [
+          false,
+          true,
+          true,
+          false
+        ],
+        "min_oos_drawdown_pct": 3.6297455683113196,
+        "max_oos_drawdown_pct": 8.778845719618284,
+        "per_fold_net_profit": [
+          1163.311309689358,
+          915.4768551754273,
+          925.8724092985267,
+          -657.0014390404071
+        ],
+        "per_fold_trades": [
+          46,
+          23,
+          27,
+          19
+        ],
+        "per_fold_profit_factor": [
+          1.5331224266116583,
+          1.950429037612198,
+          1.8632813109430408,
+          0.4212950477950618
+        ],
+        "per_fold_win_rate": [
+          52.17391304347826,
+          56.52173913043478,
+          55.55555555555556,
+          21.05263157894737
+        ]
+      }
+    }
+  ],
+  "rejected": [
+    {
+      "id": "atr_breakout",
+      "reason": "train_gates=false"
+    },
+    {
+      "id": "dual_regime",
+      "reason": "train_gates=false"
+    }
+  ],
+  "source_wf": "results/xau_new_design_walkforward.json"
+}

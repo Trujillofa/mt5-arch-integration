@@ -1,0 +1,3066 @@
+{
+  "created": "2026-08-06T17:03:48Z",
+  "safety": "offline research only; never --live; develop only; holdout unused",
+  "holdout_start": "2026-01-01 00:00:00+00:00",
+  "holdout_used": false,
+  "develop_bars": 8114,
+  "preregistered_gates": {
+    "objective": "expectancy_sqrt_n primary; WR is diagnostic only",
+    "hard_gates_develop_diagnostic": {
+      "profit_factor": 1.5,
+      "expectancy": 20.0,
+      "expectancy_sqrt_n": 150.0,
+      "max_drawdown_pct": 12.0,
+      "n_trades": 40,
+      "win_rate_floor_diagnostic_only": 35.0,
+      "note": "WR>55 classic hard gate is MISMATCHED for turtles; not used for pass/fail here"
+    },
+    "future_virgin_holdout_gates": {
+      "profit_factor": 1.4,
+      "expectancy": 15.0,
+      "expectancy_sqrt_n": 80.0,
+      "max_drawdown_pct": 12.0,
+      "n_trades": 20,
+      "win_rate": null,
+      "win_rate_note": "WR not a hard gate for turtle promote claims; report only",
+      "require_virgin_bars": true,
+      "forbid_retune_on_holdout": true
+    },
+    "safety": "offline research only; never --live; no holdout-guided search"
+  },
+  "baseline": {
+    "params": {
+      "atr_min_pct": null,
+      "hours": null,
+      "failed_breakout_fade": false,
+      "max_entries_per_day": 2,
+      "exit_on_exit_channel": true,
+      "risk_pct": 0.01,
+      "long_only": true,
+      "entry_N": 20,
+      "exit_N": 10,
+      "atr_sl": 1.5,
+      "h4_bias": false,
+      "mid_channel_k": null,
+      "be_at_r": null,
+      "partial_tp": false,
+      "cooldown": 2
+    },
+    "metrics": {
+      "net_profit": 15179.994138903112,
+      "win_rate": 43.41085271317829,
+      "profit_factor": 2.2706596798272645,
+      "max_drawdown_pct": 9.218730967358095,
+      "n_trades": 129,
+      "wins": 56,
+      "losses": 73,
+      "expectancy": 117.67437316979156,
+      "expectancy_sqrt_n": 1336.5239597614902,
+      "score_expectancy_sqrt": 1560.333781695188
+    },
+    "gate_eval": {
+      "hard_pass_expectancy": true,
+      "checks": {
+        "pf": true,
+        "expectancy": true,
+        "expectancy_sqrt_n": true,
+        "dd": true,
+        "n": true
+      },
+      "wr_diagnostic_ok": true,
+      "wr_not_a_hard_gate": true
+    }
+  },
+  "n_ablations": 47,
+  "ablations_ranked": [
+    {
+      "tag": "exit_channel_off_be_1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": false,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 17783.524666851656,
+        "win_rate": 4.3478260869565215,
+        "profit_factor": 64.26060008070505,
+        "max_drawdown_pct": 21.46830927894918,
+        "n_trades": 23,
+        "wins": 1,
+        "losses": 22,
+        "expectancy": 773.1967246457242,
+        "expectancy_sqrt_n": 3708.1212257781085,
+        "score_expectancy_sqrt": 3910.7321913242627
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": false
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_sl=1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 23239.257478444124,
+        "win_rate": 35.333333333333336,
+        "profit_factor": 2.252614421693285,
+        "max_drawdown_pct": 13.031353615044889,
+        "n_trades": 150,
+        "wins": 53,
+        "losses": 97,
+        "expectancy": 154.92838318962748,
+        "expectancy_sqrt_n": 1897.4774274448714,
+        "score_expectancy_sqrt": 2211.443826100374
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_N=8",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 17252.3542142016,
+        "win_rate": 44.3609022556391,
+        "profit_factor": 2.4087147216931517,
+        "max_drawdown_pct": 7.915486518697993,
+        "n_trades": 133,
+        "wins": 59,
+        "losses": 74,
+        "expectancy": 129.7169489789594,
+        "expectancy_sqrt_n": 1495.9688336895674,
+        "score_expectancy_sqrt": 1747.7539821924847
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_N=20",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 20,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 14768.1482388592,
+        "win_rate": 37.142857142857146,
+        "profit_factor": 2.4698226188316785,
+        "max_drawdown_pct": 12.146636370156026,
+        "n_trades": 105,
+        "wins": 39,
+        "losses": 66,
+        "expectancy": 140.6490308462781,
+        "expectancy_sqrt_n": 1441.2236943617445,
+        "score_expectancy_sqrt": 1661.4065229283992
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "baseline_champion",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=3",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 3,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "mid_channel_k=0.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": 0.5,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "mid_channel_k=1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": 1.0,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "failed_breakout_fade=True",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": true,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "cooldown=0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 0
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "cooldown=1",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 1
+      },
+      "metrics": {
+        "net_profit": 15179.994138903112,
+        "win_rate": 43.41085271317829,
+        "profit_factor": 2.2706596798272645,
+        "max_drawdown_pct": 9.218730967358095,
+        "n_trades": 129,
+        "wins": 56,
+        "losses": 73,
+        "expectancy": 117.67437316979156,
+        "expectancy_sqrt_n": 1336.5239597614902,
+        "score_expectancy_sqrt": 1560.333781695188
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "cooldown=4",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 4
+      },
+      "metrics": {
+        "net_profit": 14949.623532525642,
+        "win_rate": 44.09448818897638,
+        "profit_factor": 2.2774075283472315,
+        "max_drawdown_pct": 9.291883828892635,
+        "n_trades": 127,
+        "wins": 56,
+        "losses": 71,
+        "expectancy": 117.71357112224915,
+        "expectancy_sqrt_n": 1326.5645754906946,
+        "score_expectancy_sqrt": 1547.5959825724735
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "mid_channel_k=1.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": 1.5,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 14777.558004337961,
+        "win_rate": 43.30708661417323,
+        "profit_factor": 2.2722776215408476,
+        "max_drawdown_pct": 9.445987435807476,
+        "n_trades": 127,
+        "wins": 55,
+        "losses": 72,
+        "expectancy": 116.358724443606,
+        "expectancy_sqrt_n": 1311.2962288423485,
+        "score_expectancy_sqrt": 1530.0998682196855
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_N=15",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 15,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 14057.528333759763,
+        "win_rate": 40.869565217391305,
+        "profit_factor": 2.27913023877552,
+        "max_drawdown_pct": 11.718538035468974,
+        "n_trades": 115,
+        "wins": 47,
+        "losses": 68,
+        "expectancy": 122.2393768153023,
+        "expectancy_sqrt_n": 1310.8712763205426,
+        "score_expectancy_sqrt": 1520.7773340741726
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "max_entries_per_day=1",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 14083.166871308309,
+        "win_rate": 42.96875,
+        "profit_factor": 2.2240747005954686,
+        "max_drawdown_pct": 10.519515144274308,
+        "n_trades": 128,
+        "wins": 55,
+        "losses": 73,
+        "expectancy": 110.02474118209616,
+        "expectancy_sqrt_n": 1244.78784941048,
+        "score_expectancy_sqrt": 1454.188555810766
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_N=12",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 13491.750884346251,
+        "win_rate": 41.46341463414634,
+        "profit_factor": 2.1682465171448158,
+        "max_drawdown_pct": 9.698316879679883,
+        "n_trades": 123,
+        "wins": 51,
+        "losses": 72,
+        "expectancy": 109.68903158005082,
+        "expectancy_sqrt_n": 1216.5102090912492,
+        "score_expectancy_sqrt": 1417.6807929027495
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "entry_N=30",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12446.019043792068,
+        "win_rate": 43.24324324324324,
+        "profit_factor": 2.372909804720218,
+        "max_drawdown_pct": 9.681593762143462,
+        "n_trades": 111,
+        "wins": 48,
+        "losses": 63,
+        "expectancy": 112.12629769182044,
+        "expectancy_sqrt_n": 1181.3238490703113,
+        "score_expectancy_sqrt": 1372.4927341885154
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "h4_bias=True",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": true,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12714.0051867149,
+        "win_rate": 42.73504273504273,
+        "profit_factor": 2.262872992370229,
+        "max_drawdown_pct": 8.676573965999241,
+        "n_trades": 117,
+        "wins": 50,
+        "losses": 67,
+        "expectancy": 108.66671099756324,
+        "expectancy_sqrt_n": 1175.4101953132226,
+        "score_expectancy_sqrt": 1368.2783550327122
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "entry_N=24",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12839.673254857666,
+        "win_rate": 41.666666666666664,
+        "profit_factor": 2.2826876207368327,
+        "max_drawdown_pct": 10.167731659373487,
+        "n_trades": 120,
+        "wins": 50,
+        "losses": 70,
+        "expectancy": 106.99727712381387,
+        "expectancy_sqrt_n": 1172.0964454468867,
+        "score_expectancy_sqrt": 1366.83267544366
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_at_r=2.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 2.0,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 13315.042562861361,
+        "win_rate": 40.90909090909091,
+        "profit_factor": 2.2407603270003107,
+        "max_drawdown_pct": 9.395576614827233,
+        "n_trades": 132,
+        "wins": 54,
+        "losses": 78,
+        "expectancy": 100.87153456713152,
+        "expectancy_sqrt_n": 1158.9256991466266,
+        "score_expectancy_sqrt": 1358.9751360873984
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "hours_london_ny",
+      "params": {
+        "atr_min_pct": null,
+        "hours": [
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 10859.792007246206,
+        "win_rate": 46.464646464646464,
+        "profit_factor": 2.5523129503537074,
+        "max_drawdown_pct": 9.516885646457098,
+        "n_trades": 99,
+        "wins": 46,
+        "losses": 53,
+        "expectancy": 109.69486876006269,
+        "expectancy_sqrt_n": 1091.4501633132181,
+        "score_expectancy_sqrt": 1265.4822576591014
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "entry_N=15",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 13420.064890603398,
+        "win_rate": 38.21656050955414,
+        "profit_factor": 1.9594872263080367,
+        "max_drawdown_pct": 13.27936248983723,
+        "n_trades": 157,
+        "wins": 60,
+        "losses": 97,
+        "expectancy": 85.47812032231464,
+        "expectancy_sqrt_n": 1071.0377777894987,
+        "score_expectancy_sqrt": 1255.3872724182893
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "hours_london_ny_late",
+      "params": {
+        "atr_min_pct": null,
+        "hours": [
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20
+        ],
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 10215.71595106641,
+        "win_rate": 44.339622641509436,
+        "profit_factor": 2.323482582467157,
+        "max_drawdown_pct": 10.235618158854336,
+        "n_trades": 106,
+        "wins": 47,
+        "losses": 59,
+        "expectancy": 96.37467878364538,
+        "expectancy_sqrt_n": 992.2380477128398,
+        "score_expectancy_sqrt": 1154.7867358381773
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_N=5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 5,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12369.399562674858,
+        "win_rate": 46.06060606060606,
+        "profit_factor": 2.1733546434694824,
+        "max_drawdown_pct": 7.545871963796988,
+        "n_trades": 165,
+        "wins": 76,
+        "losses": 89,
+        "expectancy": 74.96605795560521,
+        "expectancy_sqrt_n": 962.9564499454382,
+        "score_expectancy_sqrt": 1150.174264130916
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_at_r=1.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.5,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11138.084054332758,
+        "win_rate": 37.22627737226277,
+        "profit_factor": 2.1703225873411096,
+        "max_drawdown_pct": 9.570860077908648,
+        "n_trades": 137,
+        "wins": 51,
+        "losses": 86,
+        "expectancy": 81.2998836082683,
+        "expectancy_sqrt_n": 951.5907404112139,
+        "score_expectancy_sqrt": 1123.37162990049
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "entry_N=55",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 55,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8683.928228066909,
+        "win_rate": 46.236559139784944,
+        "profit_factor": 2.4044433025542404,
+        "max_drawdown_pct": 7.819322051921963,
+        "n_trades": 93,
+        "wins": 43,
+        "losses": 50,
+        "expectancy": 93.37557234480546,
+        "expectancy_sqrt_n": 900.481409301136,
+        "score_expectancy_sqrt": 1045.097161690286
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.4",
+      "params": {
+        "atr_min_pct": 0.4,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8326.409008646406,
+        "win_rate": 43.75,
+        "profit_factor": 2.1863565467327746,
+        "max_drawdown_pct": 9.101687507976761,
+        "n_trades": 96,
+        "wins": 42,
+        "losses": 54,
+        "expectancy": 86.73342717340006,
+        "expectancy_sqrt_n": 849.8105608707008,
+        "score_expectancy_sqrt": 986.6860216797725
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_sl=2.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 2.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8573.174532802925,
+        "win_rate": 44.8,
+        "profit_factor": 2.04278316931505,
+        "max_drawdown_pct": 8.316322760297092,
+        "n_trades": 125,
+        "wins": 56,
+        "losses": 69,
+        "expectancy": 68.5853962624234,
+        "expectancy_sqrt_n": 766.8080415326937,
+        "score_expectancy_sqrt": 904.614470732456
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "partial_tp_r=2.0_frac=0.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 2.0,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 9896.030806326538,
+        "win_rate": 59.16230366492147,
+        "profit_factor": 2.0214629706997966,
+        "max_drawdown_pct": 7.809619854181083,
+        "n_trades": 191,
+        "wins": 113,
+        "losses": 78,
+        "expectancy": 51.81167961427507,
+        "expectancy_sqrt_n": 716.0516584649371,
+        "score_expectancy_sqrt": 870.0739881045157
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.5",
+      "params": {
+        "atr_min_pct": 0.5,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6712.334345644624,
+        "win_rate": 42.857142857142854,
+        "profit_factor": 2.148517685746802,
+        "max_drawdown_pct": 10.73576089800357,
+        "n_trades": 84,
+        "wins": 36,
+        "losses": 48,
+        "expectancy": 79.90874221005504,
+        "expectancy_sqrt_n": 732.37571973258,
+        "score_expectancy_sqrt": 848.5076643393398
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "pack_turtle_classic_strict",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 2.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 7861.103731568319,
+        "win_rate": 44.0,
+        "profit_factor": 1.969854523887845,
+        "max_drawdown_pct": 9.254043455451958,
+        "n_trades": 125,
+        "wins": 55,
+        "losses": 70,
+        "expectancy": 62.88882985254655,
+        "expectancy_sqrt_n": 703.1184928785608,
+        "score_expectancy_sqrt": 830.9301073814825
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "partial_tp_r=1.5_frac=0.33",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.33
+      },
+      "metrics": {
+        "net_profit": 9314.305382570583,
+        "win_rate": 57.84313725490196,
+        "profit_factor": 2.01279906032681,
+        "max_drawdown_pct": 9.224257846347072,
+        "n_trades": 204,
+        "wins": 118,
+        "losses": 86,
+        "expectancy": 45.65835971848325,
+        "expectancy_sqrt_n": 652.131816188424,
+        "score_expectancy_sqrt": 798.7526193754584
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_min_pct=0.55",
+      "params": {
+        "atr_min_pct": 0.55,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5601.143283397058,
+        "win_rate": 40.0,
+        "profit_factor": 1.965996377418026,
+        "max_drawdown_pct": 12.387604098088097,
+        "n_trades": 85,
+        "wins": 34,
+        "losses": 51,
+        "expectancy": 65.89580333408304,
+        "expectancy_sqrt_n": 607.5292883876075,
+        "score_expectancy_sqrt": 703.1574841104602
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_sl=2.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 2.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 6186.56452182337,
+        "win_rate": 47.5,
+        "profit_factor": 2.0785285870482375,
+        "max_drawdown_pct": 8.344409402331038,
+        "n_trades": 120,
+        "wins": 57,
+        "losses": 63,
+        "expectancy": 51.554704348528084,
+        "expectancy_sqrt_n": 564.7534903439703,
+        "score_expectancy_sqrt": 673.263475672486
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "partial_tp_r=1.5_frac=0.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 7708.681590815169,
+        "win_rate": 57.84313725490196,
+        "profit_factor": 1.8758394463863506,
+        "max_drawdown_pct": 8.680214248447804,
+        "n_trades": 204,
+        "wins": 118,
+        "losses": 86,
+        "expectancy": 37.7876548569371,
+        "expectancy_sqrt_n": 539.7156652865918,
+        "score_expectancy_sqrt": 664.2117768675766
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "partial_tp_r=1.5_frac=0.67",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.67
+      },
+      "metrics": {
+        "net_profit": 6605.518578800218,
+        "win_rate": 57.84313725490196,
+        "profit_factor": 1.7757818042518707,
+        "max_drawdown_pct": 8.901197436522475,
+        "n_trades": 204,
+        "wins": 118,
+        "losses": 86,
+        "expectancy": 32.3799930333344,
+        "expectancy_sqrt_n": 462.47880552854747,
+        "score_expectancy_sqrt": 571.6845148273283
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "atr_sl=3.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 3.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 5059.814467845467,
+        "win_rate": 48.717948717948715,
+        "profit_factor": 2.1484164676066406,
+        "max_drawdown_pct": 6.701541032140361,
+        "n_trades": 117,
+        "wins": 57,
+        "losses": 60,
+        "expectancy": 43.246277502952715,
+        "expectancy_sqrt_n": 467.7800130295224,
+        "score_expectancy_sqrt": 563.2539408916904
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "pack_partial_exit8_atr2",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 8,
+        "atr_sl": 2.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 5689.058142253449,
+        "win_rate": 59.067357512953365,
+        "profit_factor": 1.7914034522766982,
+        "max_drawdown_pct": 6.9179520595060024,
+        "n_trades": 193,
+        "wins": 114,
+        "losses": 79,
+        "expectancy": 29.47698519302305,
+        "expectancy_sqrt_n": 409.50736577191395,
+        "score_expectancy_sqrt": 507.49164433423255
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": true,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": true,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_at_r=1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 4495.400501046335,
+        "win_rate": 23.80952380952381,
+        "profit_factor": 1.5491337135827044,
+        "max_drawdown_pct": 17.303308712381384,
+        "n_trades": 168,
+        "wins": 40,
+        "losses": 128,
+        "expectancy": 26.758336315751997,
+        "expectancy_sqrt_n": 346.82767836635804,
+        "score_expectancy_sqrt": 373.22410320936393
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "partial_tp_r=1.0_frac=0.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.0,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 3679.335485267089,
+        "win_rate": 51.515151515151516,
+        "profit_factor": 1.4524754525316967,
+        "max_drawdown_pct": 12.846653529575988,
+        "n_trades": 264,
+        "wins": 136,
+        "losses": 128,
+        "expectancy": 13.936876838132914,
+        "expectancy_sqrt_n": 226.4474453473464,
+        "score_expectancy_sqrt": 285.75973540540053
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_1.0_plus_partial_1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.0,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 3679.335485267089,
+        "win_rate": 51.515151515151516,
+        "profit_factor": 1.4524754525316967,
+        "max_drawdown_pct": 12.846653529575988,
+        "n_trades": 264,
+        "wins": 136,
+        "losses": 128,
+        "expectancy": 13.936876838132914,
+        "expectancy_sqrt_n": 226.4474453473464,
+        "score_expectancy_sqrt": 285.75973540540053
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "h4_bias=True_be_1.0",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": true,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 3104.1756215035853,
+        "win_rate": 21.29032258064516,
+        "profit_factor": 1.437885361175129,
+        "max_drawdown_pct": 17.787537109986374,
+        "n_trades": 155,
+        "wins": 33,
+        "losses": 122,
+        "expectancy": 20.02693949357152,
+        "expectancy_sqrt_n": 249.33338594996073,
+        "score_expectancy_sqrt": 251.82849053651876
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "pack_be_partial_exit12",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 3145.0790939579624,
+        "win_rate": 42.592592592592595,
+        "profit_factor": 1.4130684891301175,
+        "max_drawdown_pct": 14.78719430636814,
+        "n_trades": 216,
+        "wins": 92,
+        "losses": 124,
+        "expectancy": 14.560551360916493,
+        "expectancy_sqrt_n": 213.99552724699558,
+        "score_expectancy_sqrt": 246.6331001947405
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_1.0_plus_partial_1.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": true,
+        "cooldown": 2,
+        "partial_tp_r": 1.5,
+        "partial_frac": 0.5
+      },
+      "metrics": {
+        "net_profit": 2843.185141505978,
+        "win_rate": 42.34234234234234,
+        "profit_factor": 1.3557117295344547,
+        "max_drawdown_pct": 16.304624061934227,
+        "n_trades": 222,
+        "wins": 94,
+        "losses": 128,
+        "expectancy": 12.807140277053955,
+        "expectancy_sqrt_n": 190.82209238162798,
+        "score_expectancy_sqrt": 203.65134197412726
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": true,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "pack_h4_be_max1",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": true,
+        "mid_channel_k": null,
+        "be_at_r": 1.0,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 1159.2982702283139,
+        "win_rate": 18.243243243243242,
+        "profit_factor": 1.184705996340146,
+        "max_drawdown_pct": 21.687355583433174,
+        "n_trades": 148,
+        "wins": 27,
+        "losses": 121,
+        "expectancy": 7.8330964204615805,
+        "expectancy_sqrt_n": 95.29373080519362,
+        "score_expectancy_sqrt": 24.917293110825298
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": false,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "be_at_r=0.5",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": 0.5,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": -521.2739300073563,
+        "win_rate": 8.974358974358974,
+        "profit_factor": 0.900363637010162,
+        "max_drawdown_pct": 23.410539767607688,
+        "n_trades": 234,
+        "wins": 21,
+        "losses": 213,
+        "expectancy": -2.227666367552805,
+        "expectancy_sqrt_n": -34.076742833778326,
+        "score_expectancy_sqrt": -161.17442822928663
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": false,
+          "expectancy": false,
+          "expectancy_sqrt_n": false,
+          "dd": false,
+          "n": true
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    },
+    {
+      "tag": "exit_channel_off",
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 2,
+        "exit_on_exit_channel": false,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 19409.472544385215,
+        "win_rate": 25.0,
+        "profit_factor": 69.89205591081796,
+        "max_drawdown_pct": 21.431099808004166,
+        "n_trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "expectancy": 4852.368136096304,
+        "expectancy_sqrt_n": 9704.736272192607,
+        "score_expectancy_sqrt": -496.0
+      },
+      "gate_eval": {
+        "hard_pass_expectancy": false,
+        "checks": {
+          "pf": true,
+          "expectancy": true,
+          "expectancy_sqrt_n": true,
+          "dd": false,
+          "n": false
+        },
+        "wr_diagnostic_ok": false,
+        "wr_not_a_hard_gate": true
+      }
+    }
+  ],
+  "factor_deltas": [
+    [
+      "exit_channel_off_be_1.0",
+      2350.3984096290746
+    ],
+    [
+      "exit_channel_off",
+      -2056.333781695188
+    ],
+    [
+      "be_at_r=0.5",
+      -1721.5082099244746
+    ],
+    [
+      "pack_h4_be_max1",
+      -1535.4164885843627
+    ],
+    [
+      "be_1.0_plus_partial_1.5",
+      -1356.6824397210607
+    ],
+    [
+      "pack_be_partial_exit12",
+      -1313.7006815004474
+    ],
+    [
+      "h4_bias=True_be_1.0",
+      -1308.5052911586693
+    ],
+    [
+      "partial_tp_r=1.0_frac=0.5",
+      -1274.5740462897875
+    ],
+    [
+      "be_1.0_plus_partial_1.0",
+      -1274.5740462897875
+    ],
+    [
+      "be_at_r=1.0",
+      -1187.1096784858241
+    ],
+    [
+      "pack_partial_exit8_atr2",
+      -1052.8421373609553
+    ],
+    [
+      "atr_sl=3.0",
+      -997.0798408034976
+    ],
+    [
+      "partial_tp_r=1.5_frac=0.67",
+      -988.6492668678598
+    ],
+    [
+      "partial_tp_r=1.5_frac=0.5",
+      -896.1220048276114
+    ],
+    [
+      "atr_sl=2.5",
+      -887.070306022702
+    ],
+    [
+      "atr_min_pct=0.55",
+      -857.1762975847278
+    ],
+    [
+      "partial_tp_r=1.5_frac=0.33",
+      -761.5811623197296
+    ],
+    [
+      "pack_turtle_classic_strict",
+      -729.4036743137056
+    ],
+    [
+      "atr_min_pct=0.5",
+      -711.8261173558482
+    ],
+    [
+      "partial_tp_r=2.0_frac=0.5",
+      -690.2597935906723
+    ],
+    [
+      "atr_sl=2.0",
+      -655.719310962732
+    ],
+    [
+      "atr_sl=1.0",
+      651.1100444051858
+    ],
+    [
+      "atr_min_pct=0.4",
+      -573.6477600154155
+    ],
+    [
+      "entry_N=55",
+      -515.2366200049021
+    ],
+    [
+      "be_at_r=1.5",
+      -436.962151794698
+    ],
+    [
+      "exit_N=5",
+      -410.15951756427194
+    ],
+    [
+      "hours_london_ny_late",
+      -405.54704585701074
+    ],
+    [
+      "entry_N=15",
+      -304.9465092768987
+    ],
+    [
+      "hours_london_ny",
+      -294.85152403608663
+    ],
+    [
+      "be_at_r=2.0",
+      -201.35864560778964
+    ],
+    [
+      "entry_N=24",
+      -193.50110625152797
+    ],
+    [
+      "h4_bias=True",
+      -192.05542666247584
+    ],
+    [
+      "entry_N=30",
+      -187.84104750667257
+    ],
+    [
+      "exit_N=8",
+      187.42020049729672
+    ],
+    [
+      "exit_N=12",
+      -142.65298879243846
+    ],
+    [
+      "max_entries_per_day=1",
+      -106.14522588442196
+    ],
+    [
+      "exit_N=20",
+      101.07274123321122
+    ],
+    [
+      "exit_N=15",
+      -39.55644762101542
+    ],
+    [
+      "mid_channel_k=1.5",
+      -30.233913475502504
+    ],
+    [
+      "cooldown=4",
+      -12.737799122714478
+    ],
+    [
+      "max_entries_per_day=3",
+      0.0
+    ],
+    [
+      "mid_channel_k=0.5",
+      0.0
+    ],
+    [
+      "mid_channel_k=1.0",
+      0.0
+    ],
+    [
+      "failed_breakout_fade=True",
+      0.0
+    ],
+    [
+      "cooldown=0",
+      0.0
+    ],
+    [
+      "cooldown=1",
+      0.0
+    ]
+  ],
+  "n_secondary_refine": 120,
+  "secondary_refine_top": [
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 15235.462843718706,
+        "win_rate": 43.18181818181818,
+        "profit_factor": 2.277555828086426,
+        "max_drawdown_pct": 9.42825215151209,
+        "n_trades": 132,
+        "wins": 57,
+        "losses": 75,
+        "expectancy": 115.42017305847504,
+        "expectancy_sqrt_n": 1326.0768296173412,
+        "score_expectancy_sqrt": 1550.6834525851214
+      },
+      "score": 1550.6834525851214
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 15,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12681.7275357787,
+        "win_rate": 43.75,
+        "profit_factor": 2.5982431289742887,
+        "max_drawdown_pct": 8.876885536003657,
+        "n_trades": 96,
+        "wins": 42,
+        "losses": 54,
+        "expectancy": 132.1013284976948,
+        "expectancy_sqrt_n": 1294.3233966525381,
+        "score_expectancy_sqrt": 1491.8186377843863
+      },
+      "score": 1491.8186377843863
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 15,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 13707.803029156932,
+        "win_rate": 40.35087719298246,
+        "profit_factor": 2.277957523282948,
+        "max_drawdown_pct": 13.13494630944251,
+        "n_trades": 114,
+        "wins": 46,
+        "losses": 68,
+        "expectancy": 120.24388622067484,
+        "expectancy_sqrt_n": 1283.8533825064949,
+        "score_expectancy_sqrt": 1478.0208201257756
+      },
+      "score": 1478.0208201257756
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 14083.166871308309,
+        "win_rate": 42.96875,
+        "profit_factor": 2.2240747005954686,
+        "max_drawdown_pct": 10.519515144274308,
+        "n_trades": 128,
+        "wins": 55,
+        "losses": 73,
+        "expectancy": 110.02474118209616,
+        "expectancy_sqrt_n": 1244.78784941048,
+        "score_expectancy_sqrt": 1454.188555810766
+      },
+      "score": 1454.188555810766
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 15,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12480.011221651195,
+        "win_rate": 40.0,
+        "profit_factor": 2.3637361181707837,
+        "max_drawdown_pct": 10.184052842496168,
+        "n_trades": 105,
+        "wins": 42,
+        "losses": 63,
+        "expectancy": 118.85724973001139,
+        "expectancy_sqrt_n": 1217.9243861607915,
+        "score_expectancy_sqrt": 1409.3805682039933
+      },
+      "score": 1409.3805682039933
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 13021.028536221484,
+        "win_rate": 40.98360655737705,
+        "profit_factor": 2.142085137790371,
+        "max_drawdown_pct": 11.460256272402031,
+        "n_trades": 122,
+        "wins": 50,
+        "losses": 72,
+        "expectancy": 106.7297421001761,
+        "expectancy_sqrt_n": 1178.8685327677351,
+        "score_expectancy_sqrt": 1373.762666537359
+      },
+      "score": 1373.762666537359
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12324.622965667455,
+        "win_rate": 42.47787610619469,
+        "profit_factor": 2.3300583851445844,
+        "max_drawdown_pct": 8.757630718127176,
+        "n_trades": 113,
+        "wins": 48,
+        "losses": 65,
+        "expectancy": 109.06745987316332,
+        "expectancy_sqrt_n": 1159.4030018763115,
+        "score_expectancy_sqrt": 1348.4116647243234
+      },
+      "score": 1348.4116647243234
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12508.010087936796,
+        "win_rate": 41.46341463414634,
+        "profit_factor": 2.221019141647017,
+        "max_drawdown_pct": 9.552197076858267,
+        "n_trades": 123,
+        "wins": 51,
+        "losses": 72,
+        "expectancy": 101.69113892631542,
+        "expectancy_sqrt_n": 1127.809288640653,
+        "score_expectancy_sqrt": 1317.4747018645683
+      },
+      "score": 1317.4747018645683
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11696.059047127554,
+        "win_rate": 42.72727272727273,
+        "profit_factor": 2.3296383960920157,
+        "max_drawdown_pct": 9.162584464313145,
+        "n_trades": 110,
+        "wins": 47,
+        "losses": 63,
+        "expectancy": 106.3278095193414,
+        "expectancy_sqrt_n": 1115.1754743043573,
+        "score_expectancy_sqrt": 1296.3207883348318
+      },
+      "score": 1296.3207883348318
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11391.31351007841,
+        "win_rate": 43.26923076923077,
+        "profit_factor": 2.3143080459346184,
+        "max_drawdown_pct": 9.160545166003516,
+        "n_trades": 104,
+        "wins": 45,
+        "losses": 59,
+        "expectancy": 109.53186067383086,
+        "expectancy_sqrt_n": 1117.0101898719793,
+        "score_expectancy_sqrt": 1294.1162294369788
+      },
+      "score": 1294.1162294369788
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11951.755560570138,
+        "win_rate": 41.1764705882353,
+        "profit_factor": 2.2361995246809667,
+        "max_drawdown_pct": 9.862922681722345,
+        "n_trades": 119,
+        "wins": 49,
+        "losses": 70,
+        "expectancy": 100.43492067705998,
+        "expectancy_sqrt_n": 1095.6156359223212,
+        "score_expectancy_sqrt": 1278.5555732996625
+      },
+      "score": 1278.5555732996625
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11443.384498595446,
+        "win_rate": 40.70796460176991,
+        "profit_factor": 2.177609994801773,
+        "max_drawdown_pct": 10.29327728202894,
+        "n_trades": 113,
+        "wins": 46,
+        "losses": 67,
+        "expectancy": 101.26888936810128,
+        "expectancy_sqrt_n": 1076.5030602766103,
+        "score_expectancy_sqrt": 1252.20951643108
+      },
+      "score": 1252.20951643108
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "exit_N": 8,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 12211.345670658717,
+        "win_rate": 38.27160493827161,
+        "profit_factor": 1.917858212645903,
+        "max_drawdown_pct": 11.352336211726378,
+        "n_trades": 162,
+        "wins": 62,
+        "losses": 100,
+        "expectancy": 75.37867697937479,
+        "expectancy_sqrt_n": 959.4139256817518,
+        "score_expectancy_sqrt": 1140.8236197546744
+      },
+      "score": 1140.8236197546744
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "exit_N": 10,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 11002.669673548997,
+        "win_rate": 37.34177215189873,
+        "profit_factor": 1.8461450446251748,
+        "max_drawdown_pct": 15.283907899857297,
+        "n_trades": 158,
+        "wins": 59,
+        "losses": 99,
+        "expectancy": 69.63714983258859,
+        "expectancy_sqrt_n": 875.3254004171307,
+        "score_expectancy_sqrt": 1007.7118680072978
+      },
+      "score": 1007.7118680072978
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "exit_N": 15,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 10562.021708427052,
+        "win_rate": 35.0,
+        "profit_factor": 1.8632771425174963,
+        "max_drawdown_pct": 18.131962497443894,
+        "n_trades": 140,
+        "wins": 49,
+        "losses": 91,
+        "expectancy": 75.44301220305037,
+        "expectancy_sqrt_n": 892.6537585412079,
+        "score_expectancy_sqrt": 991.3085620598695
+      },
+      "score": 991.3085620598695
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 30,
+        "exit_N": 15,
+        "atr_sl": 2.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 7825.5713878760525,
+        "win_rate": 46.666666666666664,
+        "profit_factor": 2.3385102224864034,
+        "max_drawdown_pct": 7.207464946799269,
+        "n_trades": 90,
+        "wins": 42,
+        "losses": 48,
+        "expectancy": 86.9507931986228,
+        "expectancy_sqrt_n": 824.8876525977767,
+        "score_expectancy_sqrt": 957.7849482835234
+      },
+      "score": 957.7849482835234
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 15,
+        "exit_N": 12,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 10013.842543157485,
+        "win_rate": 35.76158940397351,
+        "profit_factor": 1.7682392132530442,
+        "max_drawdown_pct": 15.219252359056174,
+        "n_trades": 151,
+        "wins": 54,
+        "losses": 97,
+        "expectancy": 66.31683803415554,
+        "expectancy_sqrt_n": 814.9149489573199,
+        "score_expectancy_sqrt": 934.4190453550224
+      },
+      "score": 934.4190453550224
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 20,
+        "exit_N": 5,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 9866.47581983341,
+        "win_rate": 45.0,
+        "profit_factor": 2.007044854550739,
+        "max_drawdown_pct": 9.04099932986032,
+        "n_trades": 160,
+        "wins": 72,
+        "losses": 88,
+        "expectancy": 61.66547387395881,
+        "expectancy_sqrt_n": 780.0134017412672,
+        "score_expectancy_sqrt": 933.4500223074459
+      },
+      "score": 933.4500223074459
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 15,
+        "atr_sl": 2.0,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 7359.807923443819,
+        "win_rate": 42.42424242424242,
+        "profit_factor": 2.1001072691222307,
+        "max_drawdown_pct": 9.734043887119803,
+        "n_trades": 99,
+        "wins": 42,
+        "losses": 57,
+        "expectancy": 74.3414941762002,
+        "expectancy_sqrt_n": 739.6885276105415,
+        "score_expectancy_sqrt": 863.1877356904228
+      },
+      "score": 863.1877356904228
+    },
+    {
+      "params": {
+        "atr_min_pct": null,
+        "hours": null,
+        "failed_breakout_fade": false,
+        "max_entries_per_day": 1,
+        "exit_on_exit_channel": true,
+        "risk_pct": 0.01,
+        "long_only": true,
+        "entry_N": 24,
+        "exit_N": 5,
+        "atr_sl": 1.5,
+        "h4_bias": false,
+        "mid_channel_k": null,
+        "be_at_r": null,
+        "partial_tp": false,
+        "cooldown": 2
+      },
+      "metrics": {
+        "net_profit": 8768.883214234776,
+        "win_rate": 42.567567567567565,
+        "profit_factor": 2.020315406364925,
+        "max_drawdown_pct": 10.296573908744,
+        "n_trades": 148,
+        "wins": 63,
+        "losses": 85,
+        "expectancy": 59.249210906991735,
+        "expectancy_sqrt_n": 720.7977601095718,
+        "score_expectancy_sqrt": 860.7135313829804
+      },
+      "score": 860.7135313829804
+    }
+  ],
+  "best_develop_candidate": {
+    "source": "ablation",
+    "tag": "exit_channel_off_be_1.0",
+    "params": {
+      "atr_min_pct": null,
+      "hours": null,
+      "failed_breakout_fade": false,
+      "max_entries_per_day": 2,
+      "exit_on_exit_channel": false,
+      "risk_pct": 0.01,
+      "long_only": true,
+      "entry_N": 20,
+      "exit_N": 10,
+      "atr_sl": 1.5,
+      "h4_bias": false,
+      "mid_channel_k": null,
+      "be_at_r": 1.0,
+      "partial_tp": false,
+      "cooldown": 2
+    },
+    "metrics": {
+      "net_profit": 17783.524666851656,
+      "win_rate": 4.3478260869565215,
+      "profit_factor": 64.26060008070505,
+      "max_drawdown_pct": 21.46830927894918,
+      "n_trades": 23,
+      "wins": 1,
+      "losses": 22,
+      "expectancy": 773.1967246457242,
+      "expectancy_sqrt_n": 3708.1212257781085,
+      "score_expectancy_sqrt": 3910.7321913242627
+    },
+    "gate_eval": {
+      "hard_pass_expectancy": false,
+      "checks": {
+        "pf": true,
+        "expectancy": true,
+        "expectancy_sqrt_n": true,
+        "dd": false,
+        "n": false
+      },
+      "wr_diagnostic_ok": false,
+      "wr_not_a_hard_gate": true
+    }
+  },
+  "seconds": 3.51,
+  "disposition": {
+    "lane": "donchian_turtle",
+    "status": "KEEP_OPTIMIZING",
+    "live_go": false,
+    "kill": false,
+    "note": "Expectancy gates pre-registered; ablations develop-only; no virgin holdout yet"
+  }
+}

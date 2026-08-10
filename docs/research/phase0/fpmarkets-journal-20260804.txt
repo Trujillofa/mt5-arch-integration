@@ -1,0 +1,15 @@
+﻿LM	0	02:08:48.854	Network	'84076984': scanning network for access points
+EK	0	02:09:09.220	Network	'84076984': scanning network finished
+QR	0	05:30:09.459	Trades	'84076984': deal #227408982 sell 0.2 US30 at 53473.80 done (based on order #242365136)
+GJ	0	08:08:49.896	Network	'84076984': scanning network for access points
+DJ	0	08:09:10.779	Network	'84076984': scanning network finished
+ES	0	08:09:10.779	Network	'84076984': auto connecting to a better access point with 75 % quality (previous: 73 %)
+CD	1	08:09:10.780	Network	'84076984': connection to FPMarketsSC-Live lost
+GH	0	08:09:11.832	Network	'84076984': authorized on FPMarketsSC-Live through London 2 (ping: 158.41 ms, build 5830)
+JQ	0	08:09:11.832	Network	'84076984': previous successful authorization performed from 181.56.18.7 on 2026.08.04 15:21:50
+PS	0	08:09:12.139	Network	'84076984': terminal synchronized with First Prudential Markets Limited: 3 positions, 0 orders, 834 symbols, 0 spreads
+EG	0	08:09:12.139	Network	'84076984': trading has been enabled - hedging mode
+MQ	0	08:09:12.139	Network	'84076984': balance management has been enabled
+DF	0	09:31:03.498	Indicators	custom indicator ForexIndicatorTemplate (NZDCHF.r,H1) loaded succesfully
+KJ	0	10:34:57.783	Experts	expert Mt5ArchBridge (BTCUSD,M15) loaded successfully
+QO	0	10:35:04.934	Experts	expert Mt5ArchBridge (XAUUSD.r,H1) loaded successfully

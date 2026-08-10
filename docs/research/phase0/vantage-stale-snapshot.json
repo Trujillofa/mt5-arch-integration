@@ -1,0 +1,77 @@
+{
+  "status": "STALE_TERMINAL_NOT_RUNNING",
+  "captured_from_mtime_utc": "2026-08-03T22:17:05.209711+00:00",
+  "account": {
+    "login": 27496181,
+    "server": "VantageMarkets-Live 5",
+    "company": "Vantage Markets (Pty) Ltd",
+    "currency": "USD",
+    "leverage": 500,
+    "balance": 8851.27,
+    "equity": 7127.26,
+    "algo_allowed": true,
+    "terminal_connected": true
+  },
+  "symbols": [
+    {
+      "symbol": "EURUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.0,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "GBPUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.0,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "USDJPY",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 3,
+      "point": 0.001,
+      "tick_value": 0.63414758,
+      "tick_size": 0.001,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "XAUUSD",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100.0,
+      "digits": 2,
+      "point": 0.01,
+      "tick_value": 1.0,
+      "tick_size": 0.01,
+      "trade_mode": "FULL"
+    },
+    {
+      "symbol": "USDCHF",
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "contract_size": 100000.0,
+      "digits": 5,
+      "point": 1e-05,
+      "tick_value": 1.23737874,
+      "tick_size": 1e-05,
+      "trade_mode": "FULL"
+    }
+  ]
+}

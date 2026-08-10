@@ -1,0 +1,51 @@
+{
+  "metrics": {
+    "net_profit": 1188.2678393647006,
+    "win_rate": 59.523809523809526,
+    "profit_factor": 1.671255765551878,
+    "max_drawdown_pct": 3.8383133455421437,
+    "n_trades": 42
+  },
+  "params": {
+    "mode": "bb_rsi",
+    "rsi_buy": 30.0,
+    "rsi_sell": 58.0,
+    "sl_atr": 1.0,
+    "tp_atr": 1.2,
+    "bb_col": "bb_lo15",
+    "trend_col": "ema200",
+    "use_macd_filter": false,
+    "hours": [
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "long_only": true,
+    "risk_pct": 0.01,
+    "cooldown": 2
+  },
+  "data": {
+    "csv": "xauusd_data.csv",
+    "sha256": "529b8f5759fd6bb27244c3bb7945e47be5bb3a287a89ffeeca5d50317652d22a",
+    "timeframe": "H1",
+    "bars": 25582,
+    "start": "2021-09-03T19:00:00+00:00",
+    "end": "2025-12-31T23:00:00+00:00",
+    "selection_cutoff": "2026-01-01 00:00:00+00:00",
+    "holdout_sealed": true
+  },
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0
+  },
+  "timeframe": "H1",
+  "start_balance": 10000.0
+}

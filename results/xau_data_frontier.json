@@ -1,0 +1,10 @@
+{
+  "before_max": "2026-08-06 18:00:00+00:00",
+  "after_max": "2026-08-06 20:00:00+00:00",
+  "n_h1": 11637,
+  "virgin_start": "2026-08-06 19:00:00+00:00",
+  "n_virgin_bars": 2,
+  "virgin_available": false,
+  "refresh_ok": true,
+  "refresh_log_tail": "ini ok\n==> Running export (timeout 120s)...\n==> OK /home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/xauusd_mt5_export.csv (4529091 bytes)\n58151 .../xauusd_mt5_export.csv\n==> Next: python fetch_data.py\n---\nWine MT5 export: .../xauusd_mt5_export.csv size=4529091 age_hours=-2.8\n  M15: n=46513 2024-08-16 20:15:00+00:00 \u2192 2026-08-06 20:00:00+00:00\n  H1: n=11637 2024-08-16 21:00:00+00:00 \u2192 2026-08-06 20:00:00+00:00\nSaved M15: n=46513 span_days=719\nSaved H1: n=11637 span_days=719\nWrote xauusd_data.csv (4273380 bytes) source=wine_export"
+}

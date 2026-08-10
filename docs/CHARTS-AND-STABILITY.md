@@ -131,10 +131,16 @@ Bridge files live at:
 
 ### Optional `hyprland.conf` rules
 
+Hyprland **0.53+** (you are on **0.56**): use `windowrule` + `match:` — **`windowrulev2` is deprecated**.
+
+Shipped rules: `ops/hyprland/mt5-window-rules.conf` (source from `~/.config/hypr/hyprland.conf`).
+
 ```conf
-# Float MT5 so it does not wreck the tiling layout
-windowrulev2 = float, class:^(terminal64\.exe)$
-windowrulev2 = float, class:^(MetaEditor64\.exe)$
+# Float Login only (do not force-float the main shell)
+windowrule = float on, match:class ^(terminal64\.exe)$, match:title ^(Login)$
+windowrule = center on, match:class ^(terminal64\.exe)$, match:title ^(Login)$
+windowrule = no_shadow on, match:class ^(terminal64\.exe)$
+windowrule = float on, match:class ^(MetaEditor64\.exe)$
 
 # Do not steal these if you want them inside MT5:
 # (remove global binds for Ctrl+E / Ctrl+N if present)
