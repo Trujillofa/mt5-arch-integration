@@ -1,10 +1,31 @@
 # XAU offline loop status
 
+## 2026-08-10 — NEW THESIS FREEZE · `early_server_range_break_flat` v1 (no develop peek)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`IMPLEMENT_FIXTURES_THEN_DEVELOP_SCREEN`** (not sealed r1 yet) |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **new family_id** | `early_server_range_break_flat` |
+| **thesis memo** | `docs/research/XAU-THESIS-early_server_range_break_flat_v1.md` |
+| **charter** | `results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json` |
+| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** |
+| **kill** | `KILL_EARLY_SERVER_RANGE_BREAK_FLAT` |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **sealed r1** | **not authorized** until fixtures + develop screen + external review if passers≥1 |
+| **branch** | `research/xau-early-server-range-break-v1` from `main` @ PR#1 merge |
+
+Closed freezes remain closed. Do not revive bb_rsi / Donchian / prior_day / TOD / server_hour.
+
+---
+
 ## 2026-08-10 — server_hour v2 SCREEN_FAIL · RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS
 
 | Field | Value |
 |-------|--------|
-| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** (superseded by early_server_range_break freeze above) |
 | **promote** | **no** |
 | **live_go** | **false** |
 | **PAPER_GO** | **no** |
