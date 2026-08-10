@@ -465,11 +465,17 @@ def build_provenance(
     costs_path: Path,
     data_path: Path,
     null_seed: int,
-    n_null: int,
+    n_null: int | None,
     out_dir: Path,
     extra: dict[str, Any] | None = None,
     require_clean_tree: bool = False,
 ) -> dict[str, Any]:
+    """Build run provenance. ``n_null`` is executed null count only.
+
+    Pass ``n_null=None`` when the executed count is unknown (FAILED_RUN /
+    UNKNOWN paths). Never substitute the planned trial count for an unknown
+    executed count — top-level ``n_null`` must stay JSON null in that case.
+    """
     dirty_info: dict[str, Any]
     if require_clean_tree:
         dirty_info = assert_clean_dispositional_tree()
@@ -483,6 +489,8 @@ def build_provenance(
             "dirty_paths": dirty,
             "code_commit": git_head(),
         }
+    # JSON-serializable: int or None (never invent planned-as-executed).
+    n_null_out: int | None = None if n_null is None else int(n_null)
     prov = {
         "charter_path": str(charter_path.relative_to(ROOT)) if charter_path.is_relative_to(ROOT) else str(charter_path),
         "charter_sha256": sha256_file(charter_path),
@@ -494,7 +502,7 @@ def build_provenance(
         "costs_path": str(costs_path.relative_to(ROOT)) if costs_path.is_relative_to(ROOT) else str(costs_path),
         "costs_sha256": sha256_file(costs_path),
         "null_seed": int(null_seed),
-        "n_null": int(n_null),
+        "n_null": n_null_out,
         "output_dir": str(out_dir.relative_to(ROOT)) if out_dir.is_relative_to(ROOT) else str(out_dir),
     }
     if extra:
@@ -511,13 +519,23 @@ def append_attempt(record: dict[str, Any], path: Path = ATTEMPTS_PATH) -> None:
 
 
 def count_attempts(family_id: str | None = None, path: Path = ATTEMPTS_PATH) -> int:
-    """Count attempts fail-closed: corrupt ledger lines raise RegistryError."""
+    """Count program attempts fail-closed (corrupt lines raise RegistryError).
+
+    STARTED + TERMINAL rows that share ``attempt_id`` count as **one** attempt.
+    Legacy rows without ``attempt_id`` each count as one attempt.
+    """
     rows = _parse_jsonl_strict(path)
-    n = 0
+    seen_ids: set[str] = set()
+    n_legacy = 0
     for rec in rows:
-        if family_id is None or rec.get("family_id") == family_id:
-            n += 1
-    return n
+        if family_id is not None and rec.get("family_id") != family_id:
+            continue
+        aid = rec.get("attempt_id")
+        if aid is None or aid == "":
+            n_legacy += 1
+            continue
+        seen_ids.add(str(aid))
+    return len(seen_ids) + n_legacy
 
 
 def gates_from_charter(charter: dict[str, Any]) -> dict[str, Any]:

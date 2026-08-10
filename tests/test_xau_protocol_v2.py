@@ -347,20 +347,22 @@ def test_screen_fail_zero_passers_accounting(tmp_path: Path):
     assert report["provenance"]["n_null_planned"] == 999
 
 
-def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkeypatch):
-    """Outer provenance/ledger must not invent n_null=999 after screen skip."""
-    import xau_sealed_family_cycle as sealed
-
-    out = tmp_path / "run"
-    out.mkdir()
-    # Fake completed harness report as if screen-fail happened
-    report = {
-        "verdict": {"disposition": "SCREEN_FAIL", "screen_status": "ZERO_PRIMARY_PASSERS"},
+def _full_screen_report(**overrides: object) -> dict:
+    """Valid DETERMINISTIC_SCREEN proof payload (harness-shaped)."""
+    base: dict = {
+        "verdict": {
+            "disposition": "SCREEN_FAIL",
+            "screen_status": "ZERO_PRIMARY_PASSERS",
+        },
+        "screen": {"zero_primary_passers": True},
+        "real": {"n_passers": 0, "n_passers_soft": 0, "n_passers_classic": 0},
         "null": {
             "base_seed": 1,
             "n_trials": 0,
             "n_null_planned": 999,
             "n_null_executed": 0,
+            "skipped_reason": "ZERO_PRIMARY_PASSERS",
+            "trials": [],
         },
         "attempt_accounting": {
             "attempt_type": "DETERMINISTIC_SCREEN",
@@ -371,16 +373,497 @@ def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkey
             "null_trials_executed": 0,
         },
     }
-    (out / "null_maxstat.json").write_text(json.dumps(report))
+    base.update(overrides)
+    return base
 
-    captured: dict = {}
+
+def _full_null_kill_report(
+    *,
+    planned: int = 3,
+    disposition: str = "KILL_SERVER_HOUR_WINDOW_FLAT",
+) -> dict:
+    """Valid full sealed-null report with unique trial rows."""
+    trials = [{"trial": i, "max_pf": 1.0, "n_passers": 0} for i in range(planned)]
+    return {
+        "verdict": {"disposition": disposition, "promote": False, "live_go": False},
+        "null": {
+            "base_seed": 1,
+            "n_trials": planned,
+            "n_null_planned": planned,
+            "n_null_executed": planned,
+            "trials": trials,
+        },
+        "attempt_accounting": {
+            "attempt_type": "SEALED_NULL",
+            "family_screen_attempt": True,
+            "sealed_null_attempt": True,
+            "n_null_planned": planned,
+            "n_null_executed": planned,
+            "null_trials_executed": planned,
+        },
+    }
+
+
+def test_parse_harness_screen_ok_unburned(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(_full_screen_report()))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "OK"
+    assert a["n_null_executed"] == 0
+    assert a["r1_burned"] is False
+    assert a["attempt_type"] == "DETERMINISTIC_SCREEN"
+    assert a["sealed_null_attempt"] is False
+    assert a["disposition"] == "SCREEN_FAIL"
+
+
+def test_parse_harness_exit0_partial_null_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "PASS_KEEP_RESEARCHING"},
+                "null": {
+                    "n_trials": 1,
+                    "n_null_planned": 999,
+                    "n_null_executed": 1,
+                },
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 1,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+
+
+def test_parse_harness_missing_verdict_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(
+            {
+                "null": {
+                    "n_trials": 1,
+                    "n_null_planned": 999,
+                    "n_null_executed": 1,
+                },
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 1,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"] == "missing_verdict"
+
+
+def test_parse_harness_minimal_screen_unknown(tmp_path: Path):
+    """SCREEN_FAIL without real-grid / screen-status proof must not unburn r1."""
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "SCREEN_FAIL"},
+                "null": {"n_null_executed": 0, "n_null_planned": 999},
+                "attempt_accounting": {
+                    "attempt_type": "DETERMINISTIC_SCREEN",
+                    "n_null_executed": 0,
+                    "n_null_planned": 999,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["reported_disposition"] == "SCREEN_FAIL"
+
+
+def test_parse_harness_count_conflict_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    rep["attempt_accounting"]["n_null_executed"] = 1  # conflict with null's 3
+    rep["attempt_accounting"]["null_trials_executed"] = 1
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert "count_conflict" in str(a["report_status"])
+
+
+def test_parse_harness_plan_mismatch_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    # Report claims planned=1 fully, but charter requires 999
+    rep = _full_null_kill_report(planned=1)
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["report_status"] == "plan_mismatch"
+
+
+def test_parse_harness_nonzero_preserves_reported_disposition(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "PASS_KEEP_RESEARCHING"},
+                "null": {
+                    "n_trials": 999,
+                    "n_null_planned": 999,
+                    "n_null_executed": 999,
+                },
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 999,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=9
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["reported_disposition"] == "PASS_KEEP_RESEARCHING"
+    assert a["r1_burned"] is True
+
+
+def test_parse_harness_screen_invalid_present_exec_unknown(tmp_path: Path):
+    """Present-but-invalid count must not fall back to another block."""
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_screen_report()
+    rep["attempt_accounting"]["n_null_executed"] = "invalid"
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert "invalid_type" in str(a["report_status"])
+
+
+def test_parse_harness_screen_family_screen_attempt_false_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_screen_report()
+    rep["attempt_accounting"]["family_screen_attempt"] = False
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["report_status"] == "family_screen_attempt_not_true"
+
+
+def test_parse_harness_full_null_missing_null_block_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    del rep["null"]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"] == "missing_null_block"
+
+
+def test_parse_harness_full_null_invalid_null_exec_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    rep["null"]["n_null_executed"] = "invalid"
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert "invalid_type" in str(a["report_status"])
+
+
+def test_parse_harness_screen_sealed_null_flag_true_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_screen_report()
+    rep["attempt_accounting"]["sealed_null_attempt"] = True
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "sealed_null_attempt_not_false"
+
+
+def test_parse_harness_full_null_family_screen_false_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    rep["attempt_accounting"]["family_screen_attempt"] = False
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "family_screen_attempt_not_true"
+
+
+def test_parse_harness_full_null_kill_ok(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(_full_null_kill_report(planned=3)))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "OK"
+    assert a["disposition"] == "KILL_SERVER_HOUR_WINDOW_FLAT"
+    assert a["n_null_executed"] == 3
+    assert a["r1_burned"] is True
+    assert a["sealed_null_attempt"] is True
+    assert a["family_screen_attempt"] is True
+    assert a["attempt_type"] == "SEALED_NULL"
+
+
+def test_parse_harness_full_null_missing_trials_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    del rep["null"]["trials"]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "missing_or_invalid_null.trials"
+
+
+def test_parse_harness_screen_nonempty_trials_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_screen_report()
+    rep["null"]["trials"] = [{"trial": 0}]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["report_status"] == "screen_null.trials_not_empty"
+
+
+def test_parse_harness_screen_missing_trials_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_screen_report()
+    del rep["null"]["trials"]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "screen_null.trials_missing"
+
+
+def test_parse_harness_full_null_missing_trial_ids_unknown(tmp_path: Path):
+    """[{}, {}, {}] must not OK via positional fallback."""
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    rep["null"]["trials"] = [{}, {}, {}]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["report_status"] == "null.trials_missing_trial_id"
+
+
+def test_parse_harness_full_null_out_of_range_trial_ids_unknown(tmp_path: Path):
+    """IDs [10,11,12] unique but not set(range(3)) → UNKNOWN."""
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    rep = _full_null_kill_report(planned=3)
+    rep["null"]["trials"] = [{"trial": 10}, {"trial": 11}, {"trial": 12}]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=3, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
+    assert a["report_status"] == "null.trials_id_set_mismatch"
+
+
+def test_parse_harness_missing_report_unknown_consumes_attempt(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    a = parse_harness_report_for_accounting(
+        result_json=tmp_path / "missing.json",
+        n_null_planned=999,
+        exit_code=9,
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+    assert a["sealed_null_attempt"] is True
+    assert a["attempt_type"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"] == "missing"
+
+
+def test_parse_harness_malformed_report_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text("{not-json")
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+    assert a["sealed_null_attempt"] is True
+    assert a["attempt_type"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"].startswith("malformed")
+
+
+def test_parse_harness_nonzero_exit_with_partial_report_unknown(tmp_path: Path):
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    # Partial / crash mid-null: claims 40 of 999 but nonzero exit
+    p.write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "UNKNOWN"},
+                "null": {"n_trials": 40, "n_null_planned": 999, "n_null_executed": 40},
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 40,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=9
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+    assert a["sealed_null_attempt"] is True
+    assert a["attempt_type"] == "FAILED_RUN_UNKNOWN"
+
+
+def test_parse_harness_zero_nulls_without_deterministic_screen_burns(tmp_path: Path):
+    """n_null_executed=0 + exit 0 without DETERMINISTIC_SCREEN must not unburn r1."""
+    from xau_sealed_family_cycle import parse_harness_report_for_accounting
+
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "PASS"},
+                "null": {
+                    "n_trials": 0,
+                    "n_null_planned": 999,
+                    "n_null_executed": 0,
+                },
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 0,
+                },
+            }
+        )
+    )
+    a = parse_harness_report_for_accounting(
+        result_json=p, n_null_planned=999, exit_code=0
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+    assert a["sealed_null_attempt"] is True
+    assert a["attempt_type"] == "FAILED_RUN_UNKNOWN"
+
+
+def _sealed_wrapper_mocks(
+    sealed,
+    monkeypatch,
+    *,
+    out: Path,
+    returncode: int | None = 0,
+    captured: dict,
+    raise_on_provenance: bool = False,
+    subprocess_side_effect: BaseException | None = None,
+):
+    """Shared sealed.main monkeypatches for fail-closed integration tests."""
 
     def fake_build_provenance(**kwargs):
-        captured.update(kwargs)
+        captured["prov"] = kwargs
+        if raise_on_provenance:
+            raise RuntimeError("provenance boom")
         return {"n_null": kwargs.get("n_null"), "extra": kwargs.get("extra")}
 
     def fake_append(record, path=None):
-        captured["ledger"] = record
+        captured.setdefault("ledger_rows", []).append(dict(record))
+        captured["ledger"] = record  # last row (terminal)
 
     monkeypatch.setattr(sealed, "build_provenance", fake_build_provenance)
     monkeypatch.setattr(sealed, "append_attempt", fake_append)
@@ -388,45 +871,58 @@ def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkey
     monkeypatch.setattr(sealed, "run_output_dir", lambda *a, **k: out)
     monkeypatch.setattr(sealed, "assert_charter_path_for_sealed", lambda p: {})
     monkeypatch.setattr(sealed, "assert_clean_dispositional_tree", lambda: {})
-    fake_charter = {
-        "family_id": "server_hour_window_flat",
-        "null": {"method": "within_day_ohlc_increment_rotate_v1", "n_trials": 999},
-        "fixed": {
-            "costs": {
-                "spread_col": "spread",
-                "point_size": 0.01,
-                "commission_per_lot": 0.0,
-                "slippage_points": 0.0,
-            }
-        },
-        "protocol_version": 2.2,
-        "thesis_class": "server_hour_window_fixed",
-        "rule": {"entry_hour": 13, "intraday_flat": True},
-        "gates": {
-            "soft": {
-                "n_trades_min": 20,
-                "profit_factor_min": 1.1,
-                "net_profit_gt": 0.0,
-            },
-            "primary_n_passers": "soft",
-        },
-        "n_free_knobs": 0,
-    }
+    monkeypatch.setattr(sealed, "is_charter_runnable", lambda p: (True, "ok"))
     monkeypatch.setattr(
-        sealed, "is_charter_runnable", lambda p: (True, "ok"), raising=False
+        sealed,
+        "load_charter",
+        lambda p: {
+            "family_id": "server_hour_window_flat",
+            "null": {"method": "within_day_ohlc_increment_rotate_v1", "n_trials": 999},
+            "fixed": {
+                "costs": {
+                    "spread_col": "spread",
+                    "point_size": 0.01,
+                    "commission_per_lot": 0.0,
+                    "slippage_points": 0.0,
+                }
+            },
+            "protocol_version": 2.2,
+            "thesis_class": "server_hour_window_fixed",
+            "rule": {"entry_hour": 13, "intraday_flat": True},
+            "gates": {"soft": {"n_trades_min": 20}, "primary_n_passers": "soft"},
+            "n_free_knobs": 0,
+        },
     )
-    monkeypatch.setattr(sealed, "load_charter", lambda p: fake_charter)
     monkeypatch.setattr(sealed, "validate_charter", lambda c: [])
     monkeypatch.setattr(sealed, "_assert_costs_match_charter", lambda c: {})
     monkeypatch.setattr(sealed, "_run_synthetic_fixture", lambda f, c: {"ok": True})
     monkeypatch.setattr(sealed, "count_attempts", lambda f: 0)
-    monkeypatch.setattr(
-        sealed.subprocess,
-        "run",
-        lambda *a, **k: type("R", (), {"returncode": 0})(),
+
+    if subprocess_side_effect is not None:
+        def _boom(*a, **k):
+            raise subprocess_side_effect
+
+        monkeypatch.setattr(sealed.subprocess, "run", _boom)
+    else:
+        monkeypatch.setattr(
+            sealed.subprocess,
+            "run",
+            lambda *a, **k: type("R", (), {"returncode": returncode})(),
+        )
+
+
+def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkeypatch):
+    """Outer provenance/ledger must not invent n_null=999 after screen skip."""
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run"
+    out.mkdir()
+    (out / "null_maxstat.json").write_text(json.dumps(_full_screen_report()))
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed, monkeypatch, out=out, returncode=0, captured=captured
     )
 
-    # Use a path that won't hit registry if is_charter_runnable not patched
     rc = sealed.main(
         [
             "--charter",
@@ -438,16 +934,342 @@ def test_sealed_wrapper_sources_executed_null_from_report(tmp_path: Path, monkey
         ]
     )
     assert rc == 0
-    assert captured.get("n_null") == 0
-    extra = captured.get("extra") or {}
-    assert extra.get("n_null_planned") == 999
-    assert extra.get("n_null_executed") == 0
-    assert extra.get("attempt_type") == "DETERMINISTIC_SCREEN"
-    assert extra.get("sealed_null_attempt") is False
-    assert extra.get("r1_burned") is False
+    rows = captured.get("ledger_rows") or []
+    assert len(rows) == 2
+    assert rows[0]["execution_state"] == "STARTED"
+    assert rows[0]["attempt_type"] == "STARTED"
+    assert rows[0]["attempt_id"]
+    assert rows[1]["attempt_id"] == rows[0]["attempt_id"]
     led = captured.get("ledger") or {}
     assert led.get("n_null_executed") == 0
     assert led.get("n_null_planned") == 999
     assert led.get("attempt_type") == "DETERMINISTIC_SCREEN"
     assert led.get("family_screen_attempt") is True
     assert led.get("sealed_null_attempt") is False
+    assert led.get("r1_burned") is False
+    assert led.get("execution_state") == "OK"
+    extra = (captured.get("prov") or {}).get("extra") or {}
+    assert extra.get("n_null_planned") == 999
+    assert extra.get("n_null_executed") == 0
+    assert extra.get("r1_burned") is False
+    assert captured.get("prov", {}).get("n_null") == 0
+
+
+def test_sealed_wrapper_missing_report_fail_closed(tmp_path: Path, monkeypatch):
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_missing"
+    out.mkdir()
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed, monkeypatch, out=out, returncode=9, captured=captured
+    )
+
+    rc = sealed.main(
+        [
+            "--charter",
+            str(tmp_path / "dummy.json"),
+            "--family",
+            "server_hour_window_flat",
+            "--run-id",
+            "fail9",
+        ]
+    )
+    assert rc == 9
+    rows = captured["ledger_rows"]
+    assert rows[0]["execution_state"] == "STARTED"
+    led = captured["ledger"]
+    assert led["execution_state"] == "UNKNOWN"
+    assert led["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert led["n_null_executed"] is None
+    assert led["r1_burned"] is True
+    assert led["sealed_null_attempt"] is True
+    assert led["attempt_type"] == "FAILED_RUN_UNKNOWN"
+    assert led["attempt_id"] == rows[0]["attempt_id"]
+    # provenance must not claim executed=0 or invent planned-as-executed
+    assert captured.get("prov", {}).get("n_null") is None
+    extra = (captured.get("prov") or {}).get("extra") or {}
+    assert extra.get("n_null_executed") is None
+    assert extra.get("n_null_planned") == 999
+    assert extra.get("r1_burned") is True
+
+
+def test_sealed_wrapper_malformed_report_fail_closed(tmp_path: Path, monkeypatch):
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_malformed"
+    out.mkdir()
+    (out / "null_maxstat.json").write_text("{not-json")
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed, monkeypatch, out=out, returncode=1, captured=captured
+    )
+
+    rc = sealed.main(
+        [
+            "--charter",
+            str(tmp_path / "dummy.json"),
+            "--family",
+            "server_hour_window_flat",
+            "--run-id",
+            "mal1",
+        ]
+    )
+    assert rc == 1
+    led = captured["ledger"]
+    assert led["execution_state"] == "UNKNOWN"
+    assert led["n_null_executed"] is None
+    assert led["r1_burned"] is True
+    assert led["sealed_null_attempt"] is True
+    assert led["attempt_type"] == "FAILED_RUN_UNKNOWN"
+    assert captured.get("prov", {}).get("n_null") is None
+    extra = (captured.get("prov") or {}).get("extra") or {}
+    assert extra.get("n_null_executed") is None
+    assert extra.get("r1_burned") is True
+
+
+def test_sealed_wrapper_nonzero_partial_report_fail_closed(tmp_path: Path, monkeypatch):
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_partial"
+    out.mkdir()
+    (out / "null_maxstat.json").write_text(
+        json.dumps(
+            {
+                "verdict": {"disposition": "UNKNOWN"},
+                "null": {"n_trials": 40, "n_null_planned": 999, "n_null_executed": 40},
+                "attempt_accounting": {
+                    "attempt_type": "SEALED_NULL",
+                    "n_null_planned": 999,
+                    "n_null_executed": 40,
+                },
+            }
+        )
+    )
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed, monkeypatch, out=out, returncode=9, captured=captured
+    )
+
+    rc = sealed.main(
+        [
+            "--charter",
+            str(tmp_path / "dummy.json"),
+            "--family",
+            "server_hour_window_flat",
+            "--run-id",
+            "partial9",
+        ]
+    )
+    assert rc == 9
+    led = captured["ledger"]
+    assert led["execution_state"] == "UNKNOWN"
+    assert led["n_null_executed"] is None
+    assert led["r1_burned"] is True
+    assert led["sealed_null_attempt"] is True
+    assert led["attempt_type"] == "FAILED_RUN_UNKNOWN"
+    assert captured.get("prov", {}).get("n_null") is None
+    extra = (captured.get("prov") or {}).get("extra") or {}
+    assert extra.get("n_null_executed") is None
+    assert extra.get("execution_state") == "UNKNOWN"
+
+
+def test_sealed_wrapper_append_survives_provenance_raise(tmp_path: Path, monkeypatch):
+    """If build_provenance raises, append_attempt must still ledger UNKNOWN."""
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_prov_raise"
+    out.mkdir()
+    # no report → UNKNOWN accounting, then provenance boom
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed,
+        monkeypatch,
+        out=out,
+        returncode=7,
+        captured=captured,
+        raise_on_provenance=True,
+    )
+
+    with pytest.raises(RuntimeError, match="provenance boom"):
+        sealed.main(
+            [
+                "--charter",
+                str(tmp_path / "dummy.json"),
+                "--family",
+                "server_hour_window_flat",
+                "--run-id",
+                "prov_fail",
+            ]
+        )
+    rows = captured["ledger_rows"]
+    assert rows[0]["execution_state"] == "STARTED"
+    led = captured["ledger"]
+    assert led["execution_state"] == "UNKNOWN"
+    assert led["n_null_executed"] is None
+    assert led["r1_burned"] is True
+    assert led["sealed_null_attempt"] is True
+    assert led["exit_code"] == 7
+    assert led["attempt_id"] == rows[0]["attempt_id"]
+    # Provenance was attempted with n_null=None before raise
+    assert captured.get("prov", {}).get("n_null") is None
+
+
+def test_sealed_wrapper_keyboard_interrupt_still_ledgers(tmp_path: Path, monkeypatch):
+    """KeyboardInterrupt during child run must leave STARTED + terminal attempt."""
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_ki"
+    out.mkdir()
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed,
+        monkeypatch,
+        out=out,
+        captured=captured,
+        subprocess_side_effect=KeyboardInterrupt(),
+    )
+
+    with pytest.raises(KeyboardInterrupt):
+        sealed.main(
+            [
+                "--charter",
+                str(tmp_path / "dummy.json"),
+                "--family",
+                "server_hour_window_flat",
+                "--run-id",
+                "ki1",
+            ]
+        )
+    rows = captured["ledger_rows"]
+    assert len(rows) >= 2
+    assert rows[0]["execution_state"] == "STARTED"
+    assert rows[0]["attempt_type"] == "STARTED"
+    terminal = rows[-1]
+    assert terminal["attempt_id"] == rows[0]["attempt_id"]
+    assert terminal["execution_state"] == "UNKNOWN"
+    assert terminal["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert terminal["r1_burned"] is True
+    assert terminal["sealed_null_attempt"] is True
+    assert terminal["n_null_executed"] is None
+    # Interrupt still records provenance with unknown executed count
+    assert captured.get("prov", {}).get("n_null") is None
+    extra = (captured.get("prov") or {}).get("extra") or {}
+    assert extra.get("n_null_executed") is None
+    assert extra.get("n_null_planned") == 999
+
+
+def test_sealed_wrapper_launch_oserror_still_ledgers(tmp_path: Path, monkeypatch):
+    import xau_sealed_family_cycle as sealed
+
+    out = tmp_path / "run_oserr"
+    out.mkdir()
+    captured: dict = {}
+    _sealed_wrapper_mocks(
+        sealed,
+        monkeypatch,
+        out=out,
+        captured=captured,
+        subprocess_side_effect=OSError("launch failed"),
+    )
+
+    with pytest.raises(OSError, match="launch failed"):
+        sealed.main(
+            [
+                "--charter",
+                str(tmp_path / "dummy.json"),
+                "--family",
+                "server_hour_window_flat",
+                "--run-id",
+                "os1",
+            ]
+        )
+    rows = captured["ledger_rows"]
+    assert len(rows) >= 2
+    assert rows[0]["execution_state"] == "STARTED"
+    terminal = rows[-1]
+    assert terminal["attempt_id"] == rows[0]["attempt_id"]
+    assert terminal["execution_state"] == "UNKNOWN"
+    assert terminal["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert terminal["r1_burned"] is True
+    assert terminal["n_null_executed"] is None
+    assert captured.get("prov", {}).get("n_null") is None
+
+
+def test_build_provenance_accepts_n_null_none(tmp_path: Path, monkeypatch):
+    """Unknown executed count must serialize as JSON null, not planned."""
+    from xau_charter_protocol import build_provenance
+
+    charter = tmp_path / "c.json"
+    costs = tmp_path / "costs.json"
+    data = tmp_path / "data.csv"
+    out = tmp_path / "out"
+    out.mkdir()
+    for p, body in (
+        (charter, "{}"),
+        (costs, "{}"),
+        (data, "t\n"),
+    ):
+        p.write_text(body)
+
+    monkeypatch.setattr(
+        "xau_charter_protocol.git_head", lambda: "deadbeef"
+    )
+    monkeypatch.setattr(
+        "xau_charter_protocol.git_dirty_tracked_paths", lambda: []
+    )
+    prov = build_provenance(
+        charter_path=charter,
+        costs_path=costs,
+        data_path=data,
+        null_seed=0,
+        n_null=None,
+        out_dir=out,
+        require_clean_tree=False,
+        extra={"n_null_planned": 999, "n_null_executed": None},
+    )
+    assert prov["n_null"] is None
+    assert prov["n_null_executed"] is None
+    assert prov["n_null_planned"] == 999
+    # JSON null, not omitted string "None"
+    blob = json.loads(json.dumps(prov))
+    assert blob["n_null"] is None
+
+
+def test_count_attempts_unique_attempt_id(tmp_path: Path):
+    from xau_charter_protocol import append_attempt, count_attempts
+
+    path = tmp_path / "attempts.jsonl"
+    append_attempt(
+        {
+            "attempt_id": "abc",
+            "family_id": "fam_a",
+            "execution_state": "STARTED",
+        },
+        path=path,
+    )
+    append_attempt(
+        {
+            "attempt_id": "abc",
+            "family_id": "fam_a",
+            "execution_state": "UNKNOWN",
+        },
+        path=path,
+    )
+    append_attempt(
+        {
+            "attempt_id": "def",
+            "family_id": "fam_a",
+            "execution_state": "OK",
+        },
+        path=path,
+    )
+    # legacy row without attempt_id
+    append_attempt({"family_id": "fam_a", "execution_state": "OK"}, path=path)
+    append_attempt(
+        {"attempt_id": "zzz", "family_id": "fam_b", "execution_state": "OK"},
+        path=path,
+    )
+    assert count_attempts("fam_a", path=path) == 3  # abc, def, legacy
+    assert count_attempts("fam_b", path=path) == 1
+    assert count_attempts(path=path) == 4
