@@ -1,9 +1,10 @@
 # Thesis memo — `early_server_range_break_flat` v1
 
 **Date:** 2026-08-10  
-**Status:** FREEZE_ONLY — charter frozen; **no develop grid inspection**; no sealed r1  
+**Status:** FREEZE_ONLY — **v2** is the runnable freeze; **no develop grid inspection**; no sealed r1  
 **Branch:** `research/xau-early-server-range-break-v1` (from `main` @ PR #1 merge `e99c925`)  
-**Charter:** `results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json`
+**Charter (runnable):** `results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json`  
+**Charter v1:** `…_v1.json` (SHA `fee8611c…`) — **SUPERSEDED** (left byte-for-byte; incomplete execution semantics)
 
 ## Standing constraints
 
@@ -47,6 +48,21 @@ Sign under null: if the break edge is only a reordering of within-day path geome
 | `tod_london_ny_flat` / `server_hour_window_flat` | Fixed clock long into a window **without** range condition; this **requires** early-range break and allows entries 9–15 |
 
 Not a rename, filter, or hour retune of those lines.
+
+## Execution contract (v2 — frozen house convention)
+
+Not free knobs; implementers must not re-choose:
+
+| Item | Contract |
+|------|----------|
+| ATR | Wilder via `TR.ewm(alpha=1/14, adjust=False)`; value at signal close `atr[i]` |
+| Entry | Signal + fill at **close** of bar `i`; SL/TP from `atr[i]` |
+| First exit bar | **`i+1`** (no same-bar exit after close entry) |
+| Same-bar exit priority | **Stop before TP before time-flat** |
+| Lots | floor to **0.01**, min **0.01**, max **0.5**, risk 1% |
+| Costs | Round-trip on entry bar (spread col + 2×slippage + 2×commission) |
+
+Full text: `execution_contract` in the v2 charter JSON.
 
 ## Free knobs
 

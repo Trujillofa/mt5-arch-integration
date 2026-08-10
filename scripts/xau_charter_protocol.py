@@ -63,6 +63,7 @@ TERMINAL_DISPOSITIONS = frozenset(
         "KILL_PRIOR_DAY_HIGH_BREAK",
         "KILL_SERVER_HOUR_WINDOW_FLAT",
         "KILL_TOD_LONDON_NY_FLAT",
+        "KILL_EARLY_SERVER_RANGE_BREAK_FLAT",
     }
 )
 
@@ -81,6 +82,18 @@ SESSION_THESIS_CLASSES = frozenset(
         "time_of_day_fixed",
         "session_or_breakout_fixed",
         "session_window_fixed",
+        "intraday_early_block_range_break",
+    }
+)
+# Rule keys that mark a charter as session-shaped (canonical session null required).
+SESSION_RULE_MARKERS = frozenset(
+    {
+        "entry_hour",
+        "entry_hours_server",
+        "entry_allowed_hours_server",
+        "early_block_hours_server",
+        "flat_hour_server",
+        "session_active_hours_server",
     }
 )
 
@@ -397,12 +410,23 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
         )
 
     thesis = str(charter.get("thesis_class") or "")
-    is_session = thesis in SESSION_THESIS_CLASSES or bool(
-        (charter.get("rule") or {}).get("entry_hour") is not None
-        or (charter.get("rule") or {}).get("entry_hours_server")
+    rule = charter.get("rule") or {}
+    is_session = thesis in SESSION_THESIS_CLASSES or any(
+        rule.get(k) is not None for k in SESSION_RULE_MARKERS
     )
     proto = float(charter.get("protocol_version") or 0)
     if is_session:
+        if method in (
+            "day_block_shuffle",
+            "circular_day_shift",
+            "global_return_shuffle",
+            "block_shuffle",
+            "circular",
+        ):
+            errs.append(
+                f"null.method={method!r} is PROTOCOL_NULL_INVALID for session-shaped "
+                f"families; use {CANONICAL_SESSION_NULL}"
+            )
         if proto >= 2.2:
             if method != CANONICAL_SESSION_NULL:
                 errs.append(
@@ -428,8 +452,7 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
     costs = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
     if "commission_per_lot" not in costs and "costs_source" not in (charter.get("fixed") or {}):
         errs.append("fixed.costs or fixed.costs_source required")
-    # Intraday flat or swap handling
-    rule = charter.get("rule") or {}
+    # Intraday flat or swap handling (rule already bound above)
     exits = str(rule.get("exit") or "") + str(rule.get("intraday_flat") or "")
     if (
         proto >= 2
