@@ -44,9 +44,7 @@
     "spread_col": "spread",
     "point_size": 0.01,
     "commission_per_lot": 0.0,
-    "slippage_points": 0.0,
-    "commission_account_type": "STANDARD_STP",
-    "account_note": "Vantage 27496181 Standard STP Live 5 \u2014 commission 0; measured spread"
+    "slippage_points": 0.0
   },
   "timeframe": "H1",
   "start_balance": 10000.0
