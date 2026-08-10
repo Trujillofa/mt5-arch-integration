@@ -17,5 +17,10 @@
   "slippage_points": 0.0,
   "slippage_notes": "still unmeasured; leave 0 until demo fills on this account",
   "default_reason": "Live account 27496181 is Standard STP on VantageMarkets-Live 5. Measured H1 spread in xauusd_data.csv already comes from this terminal. Do not charge RAW/PRO commission on top unless modeling a different account type.",
-  "spread_source": "Vantage live terminal 27496181 bridge dump (MqlRates.spread)"
+  "spread_source": "Vantage live terminal 27496181 bridge dump (MqlRates.spread)",
+  "official_docs": {
+    "standard_stp": "https://latam.vantagehelpcenter.com/hc/en-us/articles/12408090719119-What-is-a-Standard-STP-account",
+    "summary": "Standard STP: low spreads, no commission fees (excluding certain ETFs and stock products). XAUUSD CFD: commission 0; cost is measured spread."
+  }
 }
+

@@ -15,6 +15,18 @@
 
 Standard STP pays the broker in the **spread**, not a ticket commission. Charging RAW/PRO commission *on top of* this account’s measured spread would **double-count** relative to how 27496181 is billed.
 
+**Official Vantage LATAM help (Standard STP):**
+[What is a Standard STP account?](https://latam.vantagehelpcenter.com/hc/en-us/articles/12408090719119-What-is-a-Standard-STP-account)
+
+Quoted characteristics:
+
+- STP to liquidity providers (no dealing desk)
+- Low spreads
+- **No commission fees** (*excluding certain ETFs and stock products*)
+- Other fees may still apply (swap, etc.)
+
+XAUUSD on this account is a **metal CFD**, not the ETF/stock exclusion — research model stays **commission_per_lot = 0** + measured `MqlRates.spread`.
+
 Source of truth: [`results/xau_research_costs.json`](xau_research_costs.json)  
 Loader: [`scripts/xau_research_costs.py`](../scripts/xau_research_costs.py)
 
