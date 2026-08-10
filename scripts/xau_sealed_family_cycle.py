@@ -177,15 +177,11 @@ def main(argv: list[str] | None = None) -> int:
 
     charter_path = Path(args.charter)
     charter = load_charter(charter_path)
-    if charter.get("disposition") in (
-        "PROTOCOL_NULL_INVALID",
-        "SCREEN_FAIL",
-        "SUPERSEDED",
-    ):
-        raise SystemExit(
-            f"charter disposition={charter.get('disposition')!r} — refuse sealed run. "
-            "Freeze a new charter version."
-        )
+    from xau_charter_protocol import is_charter_runnable
+
+    ok_run, why = is_charter_runnable(charter_path)
+    if not ok_run:
+        raise SystemExit(f"charter not runnable: {why}")
 
     errs = validate_charter(charter)
     if errs:

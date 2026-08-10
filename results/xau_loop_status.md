@@ -1,5 +1,20 @@
 # XAU offline loop status
 
+## 2026-08-10 — protocol v2.2 correction (still do not burn r1)
+
+Review of v2.1 found OHLC-inconsistent within-day null and forced non-identity k.
+
+| Field | Value |
+|-------|--------|
+| **null v2.2** | Rotate **complete normalized OHLC increments**; k∈{0..m−1} **includes identity**; open/prev and TR/ref multisets preserved; develop gap bp no longer inflated |
+| **TOD v1 freeze** | Restored **byte-for-byte** (SHA `e7cd953f…`); invalidation **only** in `results/xau_charter_disposition_registry.jsonl` |
+| **strict paths** | `--charter` runs `validate_charter` + registry runnable check; costs keys must exist on both sides |
+| **r1** | **not burned** |
+| **next** | Re-review then optional sealed `server_hour_window_flat` |
+| **promote / live_go** | no / false |
+
+---
+
 ## 2026-08-10 — protocol v2.1 correction wave (do not burn r1)
 
 Review blocked Phase 0 on four points; correction shipped without running sealed r1.

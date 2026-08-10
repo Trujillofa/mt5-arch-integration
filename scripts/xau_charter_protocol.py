@@ -30,6 +30,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CHARTERS_DIR = ROOT / "results" / "xau_charters"
 ATTEMPTS_PATH = ROOT / "results" / "xau_family_attempts.jsonl"
+DISPOSITION_REGISTRY = ROOT / "results" / "xau_charter_disposition_registry.jsonl"
 LEGACY_CHARTER = ROOT / "results" / "xau_next_design_charter.json"
 
 # Defaults when a gate field is missing (should not happen on new charters).
@@ -88,6 +89,49 @@ def load_charter(path: Path | str) -> dict[str, Any]:
     if not p.is_file():
         raise CharterError(f"charter not found: {p}")
     return json.loads(p.read_text())
+
+
+def charter_file_sha256(path: Path | str) -> str:
+    return sha256_file(Path(path)) or ""
+
+
+def registry_disposition(charter_sha256: str, path: Path = DISPOSITION_REGISTRY) -> dict[str, Any] | None:
+    """Latest append-only disposition record for a charter SHA, if any."""
+    if not path.is_file() or not charter_sha256:
+        return None
+    latest = None
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            rec = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if rec.get("charter_sha256") == charter_sha256:
+            latest = rec
+    return latest
+
+
+def is_charter_runnable(path: Path | str) -> tuple[bool, str]:
+    """False if registry marks this charter SHA as invalid/superseded."""
+    p = Path(path)
+    sha = charter_file_sha256(p)
+    rec = registry_disposition(sha)
+    if rec is None:
+        # also refuse if in-file disposition present (legacy mistake)
+        try:
+            ch = load_charter(p)
+        except Exception as e:
+            return False, f"cannot load charter: {e}"
+        d = ch.get("disposition")
+        if d in ("PROTOCOL_NULL_INVALID", "SCREEN_FAIL", "SUPERSEDED"):
+            return False, f"in-file disposition={d!r} (prefer registry; do not mutate freezes)"
+        return True, "ok"
+    d = rec.get("disposition")
+    if d in ("PROTOCOL_NULL_INVALID", "SCREEN_FAIL", "SUPERSEDED", "KILL"):
+        return False, f"registry disposition={d!r} for sha={sha[:12]}…"
+    return True, "ok"
 
 
 def write_charter_once(path: Path, charter: dict[str, Any]) -> Path:

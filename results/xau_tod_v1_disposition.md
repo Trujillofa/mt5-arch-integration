@@ -1,16 +1,25 @@
-# TOD London–NY flat v1 — disposition
+# TOD London–NY flat v1 — disposition (registry)
 
-**Date:** 2026-08-10  
-**Charter:** `results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json`  
+**Charter file:** `results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json`  
+**Charter SHA-256:** `e7cd953f998015bbc9aa5ae23ea7f35c45723f82736a273274f41102bac2f4cf`  
 **Disposition:** `PROTOCOL_NULL_INVALID` / exploratory `SCREEN_FAIL`  
-**r1 sealed run:** **NOT burned** (correctly withheld)
+**r1 sealed run:** **NOT burned**
 
-## Why
+## Immutability
 
-1. **Null invalid:** `day_block_shuffle` pastes variable-length absolute-price day blocks onto fixed timestamps without rebasing. Real develop days have 5/19/20/21/23 bars; hour-13 opportunity counts and ATR paths are distorted. `day_bar_count_multiset` was tautological under fixed timestamps.
-2. **Clock claim unproven:** Server hour 13 is not established as London–NY overlap (MT5 server strings tagged as UTC without conversion; hours 1..23 present, hour 0 absent).
-3. **Quick smoke:** real soft passers = 0 while null passers ≥ 0 ⇒ `p_n_passers = 1` under add-one smoothing for any trial count — 999 trials cannot rescue.
+The charter JSON is **restored byte-for-byte** to its original freeze (commit `664a79c`).  
+Invalidation is recorded **only** in the append-only registry:
+
+`results/xau_charter_disposition_registry.jsonl`
+
+keyed by `charter_sha256` — the charter file itself must not be edited for disposition.
+
+## Why invalid
+
+1. Original null method `day_block_shuffle` is statistically invalid for hour rules.
+2. Server hour 13 is not established as London–NY wall-clock overlap.
+3. Quick smoke: real soft passers = 0 ⇒ `p_n_passers = 1` for any n_null.
 
 ## Supersession
 
-Use `server_hour_window_flat` with `within_day_return_rotate` null (`results/xau_charters/2026-08-10_server_hour_window_flat_v1.json`). Do not revive `tod_london_ny_flat` under the invalid null.
+`server_hour_window_flat` + `within_day_return_rotate` (v2.2 normalized OHLC increments, k∈{0..m-1}).

@@ -135,15 +135,21 @@ def _null_within_day_return_rotate(
     raw: pd.DataFrame,
     rng: np.random.Generator,
 ) -> pd.DataFrame:
-    """Per-day circular rotation of within-day log-returns; continuous rebase.
+    """Per-day circular rotation of **complete normalized OHLC bar increments**.
 
-    For each calendar day with m bars and closes c[0..m-1]:
-      rets[i] = log(c[i+1]/c[i])  (m-1 returns)
-      rotate rets left by k ~ Uniform{1..m-2} when m>=3 else skip day
-      rebuild c' from c[0] with cumsum of rotated rets
-      rebuild OHLC geometry scaled onto c'
+    For each calendar day with m bars (protocol v2.2):
 
-    Timestamps and spreads are unchanged. No cross-day absolute-price paste.
+    1. Build m increment tuples relative to the prior reference price:
+       ref_0 = open[0] (day's first open); ref_j = close[j-1] for j>0.
+       inc_j = (open, high, low, close) / ref_j  (componentwise).
+    2. Circularly rotate the m increments by k ~ Uniform{0, 1, …, m-1}
+       (**identity k=0 is included** independently per day).
+    3. Rebuild the path from the same day-open anchor by chaining rotated
+       increments so open/prev-close ratios and true-range/prev ratios of each
+       bar *unit* are preserved as a multiset.
+
+    Timestamps and spreads stay fixed. Does **not** paste geometry from a
+    different clock hour onto a new close (v2.1 bug).
     """
     out = raw.copy()
     n = len(out)
@@ -161,7 +167,6 @@ def _null_within_day_return_rotate(
     new_h = h.copy()
     new_l = lo.copy()
 
-    # group indices per day preserving order
     groups: dict[str, list[int]] = {}
     order: list[str] = []
     for i, d in enumerate(days):
@@ -174,24 +179,52 @@ def _null_within_day_return_rotate(
     for d in order:
         idxs = groups[d]
         m = len(idxs)
-        if m < 3:
-            # cannot rotate returns meaningfully; leave day as-is
+        if m < 1:
             continue
         ix = np.asarray(idxs, dtype=int)
+        oo = o[ix]
+        hh = h[ix]
+        ll = lo[ix]
         cc = c[ix]
-        # within-day log returns
-        rets = np.diff(np.log(np.clip(cc, 1e-12, None)))
-        k = int(rng.integers(1, m - 1))  # 1..m-2 inclusive via high=m-1 exclusive in integers
-        # numpy integers(low, high) is [low, high)
-        rets_r = np.concatenate([rets[k:], rets[:k]])
-        cc_new = np.empty(m, dtype=float)
-        cc_new[0] = cc[0]  # rebase: keep day's first close
-        cc_new[1:] = cc[0] * np.exp(np.cumsum(rets_r))
-        oo, hh, ll = _rebuild_ohlc_from_close(cc, h[ix], lo[ix], o[ix], cc_new)
-        new_c[ix] = cc_new
-        new_o[ix] = oo
-        new_h[ix] = hh
-        new_l[ix] = ll
+
+        # references: first bar vs open[0]; later bars vs previous close
+        refs = np.empty(m, dtype=float)
+        refs[0] = float(oo[0]) if oo[0] > 0 else float(cc[0])
+        if m > 1:
+            refs[1:] = cc[:-1]
+        refs = np.clip(refs, 1e-12, None)
+
+        # complete normalized OHLC increments (m × 4)
+        inc = np.column_stack(
+            [
+                oo / refs,
+                hh / refs,
+                ll / refs,
+                cc / refs,
+            ]
+        )
+
+        # k in {0,...,m-1} — identity included
+        k = int(rng.integers(0, m)) if m > 1 else 0
+        if k:
+            inc = np.concatenate([inc[k:], inc[:k]], axis=0)
+
+        # rebuild continuous path: first increment uses day open as reference
+        prev = float(oo[0]) if oo[0] > 0 else float(max(cc[0], 1e-12))
+        for j in range(m):
+            ro, rh, rl, rc = (float(x) for x in inc[j])
+            bj_o = prev * ro
+            bj_h = prev * rh
+            bj_l = prev * rl
+            bj_c = prev * rc
+            # numerical OHLC consistency (should already hold for well-formed bars)
+            bj_h = max(bj_h, bj_o, bj_c)
+            bj_l = min(bj_l, bj_o, bj_c)
+            new_o[ix[j]] = bj_o
+            new_h[ix[j]] = bj_h
+            new_l[ix[j]] = bj_l
+            new_c[ix[j]] = bj_c
+            prev = bj_c if bj_c > 0 else prev
 
     out["open"] = new_o
     out["high"] = new_h
@@ -305,9 +338,13 @@ def null_invariants_ok(
         "session_return_rotate",
         "intraday_return_rotate",
     ):
-        # continuous within-day: no huge artificial jump mid-day beyond original max jump*factor
         checks["within_day_path_continuous"] = _within_day_jumps_bounded(raw, scrambled)
-        # destroy hour-path association: close series at fixed hours should differ on some days
+        checks["open_prev_close_gap_multiset"] = _open_prev_close_gap_multiset_ok(
+            raw, scrambled
+        )
+        checks["true_range_prev_multiset"] = _true_range_prev_multiset_ok(raw, scrambled)
+        # With k=0 allowed, some trials may leave many days identity; still require
+        # that *a typical non-identity draw* moves paths (checked with fixed seed in tests).
         if entry_hour is not None:
             checks["entry_hour_closes_moved"] = _hour_closes_differ(
                 raw, scrambled, hour=int(entry_hour)
@@ -329,6 +366,90 @@ def null_invariants_ok(
         checks["protocol_session_valid"] = False  # explicitly invalid for hour rules
 
     return checks
+
+
+def _within_day_open_prev_gaps_bp(df: pd.DataFrame) -> np.ndarray:
+    """Within-day |open - prev_close| / prev_close in basis points."""
+    o = df["open"].to_numpy(float)
+    c = df["close"].to_numpy(float)
+    days = _day_keys(df["time"])
+    gaps: list[float] = []
+    for i in range(1, len(df)):
+        if days[i] != days[i - 1]:
+            continue
+        prev = c[i - 1]
+        if prev > 0:
+            gaps.append(abs(o[i] - prev) / prev * 1e4)
+    return np.asarray(gaps, dtype=float)
+
+
+def _open_prev_close_gap_multiset_ok(
+    raw: pd.DataFrame, scr: pd.DataFrame, *, rtol: float = 1e-6, atol: float = 1e-9
+) -> bool:
+    """Per-day multiset of open-increment components is preserved under rotation.
+
+    For each day, use the **original** day-open as the shared anchor for the first
+    bar ratio (so identity and rotated paths are comparable). Later bars use
+    previous close on that path.
+    """
+    rd = _day_keys(raw["time"])
+
+    def ratios(df: pd.DataFrame, idx: np.ndarray, *, anchor: float) -> np.ndarray:
+        o = df["open"].to_numpy(float)[idx]
+        c = df["close"].to_numpy(float)[idx]
+        r = np.empty(len(idx), dtype=float)
+        r[0] = o[0] / max(anchor, 1e-12)
+        if len(idx) > 1:
+            r[1:] = o[1:] / np.clip(c[:-1], 1e-12, None)
+        return np.sort(r)
+
+    for d in np.unique(rd):
+        ix = np.where(rd == d)[0]
+        if len(ix) < 1:
+            continue
+        anchor = float(raw["open"].to_numpy(float)[ix[0]])
+        if not np.allclose(
+            ratios(raw, ix, anchor=anchor),
+            ratios(scr, ix, anchor=anchor),
+            rtol=rtol,
+            atol=atol,
+        ):
+            return False
+    return True
+
+
+def _true_range_prev_multiset_ok(
+    raw: pd.DataFrame, scr: pd.DataFrame, *, rtol: float = 1e-6, atol: float = 1e-9
+) -> bool:
+    """Per-day multiset of true_range / ref for each bar unit (rotation invariant)."""
+    rd = _day_keys(raw["time"])
+
+    def tr_over_ref(df: pd.DataFrame, idx: np.ndarray, *, anchor: float) -> np.ndarray:
+        h = df["high"].to_numpy(float)[idx]
+        lo = df["low"].to_numpy(float)[idx]
+        c = df["close"].to_numpy(float)[idx]
+        refs = np.empty(len(idx), dtype=float)
+        refs[0] = anchor
+        if len(idx) > 1:
+            refs[1:] = c[:-1]
+        refs = np.clip(refs, 1e-12, None)
+        prev_c = refs.copy()
+        tr = np.maximum(h - lo, np.maximum(np.abs(h - prev_c), np.abs(lo - prev_c)))
+        return np.sort(tr / refs)
+
+    for d in np.unique(rd):
+        ix = np.where(rd == d)[0]
+        if len(ix) < 1:
+            continue
+        anchor = float(raw["open"].to_numpy(float)[ix[0]])
+        if not np.allclose(
+            tr_over_ref(raw, ix, anchor=anchor),
+            tr_over_ref(scr, ix, anchor=anchor),
+            rtol=rtol,
+            atol=atol,
+        ):
+            return False
+    return True
 
 
 def _within_day_jumps_bounded(raw: pd.DataFrame, scr: pd.DataFrame, factor: float = 5.0) -> bool:

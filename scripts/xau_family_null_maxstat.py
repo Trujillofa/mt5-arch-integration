@@ -70,9 +70,11 @@ from xau_charter_protocol import (  # noqa: E402, I001
     MIN_NULL_TRIALS_PROTOCOL,
     build_provenance,
     gates_from_charter,
+    is_charter_runnable,
     load_charter,
     make_pass_fns,
     null_spec_from_charter,
+    validate_charter,
 )
 from xau_null_core import (  # noqa: E402, I001
     MIN_TRADES_MAX_STAT,
@@ -716,15 +718,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.charter:
         charter_path = Path(args.charter)
+        ok_run, why = is_charter_runnable(charter_path)
+        if not ok_run:
+            raise SystemExit(f"charter not runnable: {why}")
         charter = load_charter(charter_path)
-        if charter.get("disposition") in (
-            "PROTOCOL_NULL_INVALID",
-            "SCREEN_FAIL",
-            "SUPERSEDED",
-        ):
-            raise SystemExit(
-                f"charter disposition={charter.get('disposition')!r} — refuse run"
-            )
+        # Same enforcement as sealed cycle: full charter validation
+        verrs = validate_charter(charter)
+        if verrs:
+            if args.quick and not args.strict_charter:
+                print("WARNING charter validation:", verrs, flush=True)
+            else:
+                raise SystemExit("charter validation failed:\n- " + "\n- ".join(verrs))
         ns = null_spec_from_charter(charter)
         charter_n_null = int(ns["n_trials"])
         charter_method = str(ns["method"])
@@ -750,16 +754,21 @@ def main(argv: list[str] | None = None) -> int:
                 flush=True,
             )
             non_dispositional = True
-        # costs equality (always when charter present)
+        # costs equality: every sim key in charter.fixed.costs must exist and match
         fixed_costs = (charter.get("fixed") or {}).get("costs") or {}
         for k in ("spread_col", "point_size", "commission_per_lot", "slippage_points"):
-            if k in fixed_costs and k in COSTS:
-                a, b = fixed_costs[k], COSTS[k]
-                if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                    if abs(float(a) - float(b)) > 1e-12:
-                        raise SystemExit(f"cost mismatch {k}: charter={a} loaded={b}")
-                elif a != b:
-                    raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
+            if k not in fixed_costs:
+                continue
+            if k not in COSTS:
+                raise SystemExit(
+                    f"cost key {k!r} present in charter but absent from loaded costs"
+                )
+            a, b = fixed_costs[k], COSTS[k]
+            if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                if abs(float(a) - float(b)) > 1e-12:
+                    raise SystemExit(f"cost mismatch {k}: charter={a} loaded={b}")
+            elif a != b:
+                raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
         # CLI overrides vs charter
         if cli_null_method and str(cli_null_method) != charter_method:
             if args.strict_charter and not args.allow_charter_override:
