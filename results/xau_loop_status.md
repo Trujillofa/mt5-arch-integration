@@ -1,5 +1,27 @@
 # XAU offline loop status
 
+## 2026-08-10 — protocol v2 Phase 0 (harden + freeze TOD charter)
+
+Owner-required protocol hardening **before** any next sealed thesis run.
+
+| Field | Value |
+|-------|--------|
+| **charters** | Immutable under `results/xau_charters/YYYY-MM-DD_<family>_vN.json` (refuse overwrite). Legacy `xau_next_design_charter.json` (`prior_day_high_break`) **not** overwritten. |
+| **gates** | From frozen charter when `--charter` passed (fixes prior soft-gate provenance mismatch). |
+| **n_null floor** | ≥**199** (prefer **999** for 0–1 knobs); charter freezes count. |
+| **null methods** | `global_return_shuffle` \| `day_block_shuffle` \| `circular_day_shift` + invariants. |
+| **costs wording** | Account-matched spread+commission only; **slip unmeasured**, **swap unmodeled** → intraday-flat required (v2). |
+| **sealed cycle** | `scripts/xau_sealed_family_cycle.py` + attempt ledger `results/xau_family_attempts.jsonl` |
+| **next frozen family** | **`tod_london_ny_flat`** zero-knob session thesis — charter only, **sealed run not yet executed** |
+| **candidates** | Multi-instrument **deferred**; EMA/H4 pullback **removed** (dead htf_pullback overlap) |
+| **PR #1** | **Do not expand scope** until current draft is reviewed |
+| **next_step** | Run sealed cycle for TOD when ready: `python3 scripts/xau_sealed_family_cycle.py --charter results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json --family tod_london_ny_flat --run-id r1` |
+| **promote / live_go** | **no / false** |
+
+Docs: `docs/research/XAU-FAMILY-PROTOCOL-V2.md`.
+
+---
+
 ## 2026-08-10 — cost model matched to live Standard STP
 
 Live account confirmed: **MT5 27496181 · Standard STP · 500:1 · VantageMarkets-Live 5**.

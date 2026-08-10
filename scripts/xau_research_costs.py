@@ -17,6 +17,15 @@ ROOT = Path(__file__).resolve().parents[1]
 RESEARCH_COSTS_PATH = ROOT / "results" / "xau_research_costs.json"
 PARAMS_PATH = ROOT / "strategy_params.json"
 
+# Re-export path for provenance hashing in harnesses.
+__all__ = [
+    "RESEARCH_COSTS_PATH",
+    "PARAMS_PATH",
+    "SIM_COST_KEYS",
+    "load_research_costs",
+    "load_research_costs_full",
+]
+
 # Keys accepted by backtest.simulate / lane simulators as cost kwargs.
 SIM_COST_KEYS = (
     "spread_col",

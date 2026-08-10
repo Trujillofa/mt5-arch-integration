@@ -15,9 +15,14 @@
     "RAW_ECN": 3.0
   },
   "slippage_points": 0.0,
-  "slippage_notes": "still unmeasured; leave 0 until demo fills on this account",
+  "slippage_notes": "UNMEASURED — left at 0 until demo/live fill sample on 27496181. Not a claim of zero slip.",
+  "swap_modeled": false,
+  "swap_notes": "Overnight swap not in bar simulator. Families under protocol v2 must be intraday-flat or declare swap handling.",
+  "cost_label": "account_matched_spread_commission_only",
+  "cost_label_notes": "Do not call this fully live-matched: slip=0 unmeasured, swap unmodeled. Spread+commission match Standard STP on this login.",
   "default_reason": "Live account 27496181 is Standard STP on VantageMarkets-Live 5. Measured H1 spread in xauusd_data.csv already comes from this terminal. Do not charge RAW/PRO commission on top unless modeling a different account type.",
   "spread_source": "Vantage live terminal 27496181 bridge dump (MqlRates.spread)",
+  "slippage_sensitivity_points_frozen": [0, 5, 10, 20],
   "official_docs": {
     "standard_stp": "https://latam.vantagehelpcenter.com/hc/en-us/articles/12408090719119-What-is-a-Standard-STP-account",
     "summary": "Standard STP: low spreads, no commission fees (excluding certain ETFs and stock products). XAUUSD CFD: commission 0; cost is measured spread."

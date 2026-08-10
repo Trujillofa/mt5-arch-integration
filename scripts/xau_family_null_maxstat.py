@@ -67,6 +67,7 @@ sys.path.insert(0, str(SCRIPTS))
 
 from xau_null_core import (  # noqa: E402
     MIN_TRADES_MAX_STAT,
+    apply_null_method,
     dist_summary,
     hard_pass_classic,
     metrics_dict,
@@ -76,7 +77,15 @@ from xau_null_core import (  # noqa: E402
     soft_pass_expectancy,
     subsample_grid,
 )
-from xau_research_costs import load_research_costs  # noqa: E402
+from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
+from xau_charter_protocol import (  # noqa: E402
+    MIN_NULL_TRIALS_PROTOCOL,
+    build_provenance,
+    gates_from_charter,
+    load_charter,
+    make_pass_fns,
+    null_spec_from_charter,
+)
 
 from backtest import (  # noqa: E402
     Metrics,
@@ -84,9 +93,11 @@ from backtest import (  # noqa: E402
     holdout_start,
     load_h1,
     passes as backtest_passes,
+    CSV_PATH,
 )
 
-# Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
+# Account-matched research costs (Standard STP: commission 0 + measured spread).
+# Slippage still unmeasured (0); not "fully live-matched".
 COSTS: dict[str, Any] = load_research_costs()
 
 # Worker globals (fork COW on Linux; re-init on spawn).
@@ -197,9 +208,16 @@ def _builtin_prior_day_high_break() -> FamilyPlugin:
     return _wrap_module("prior_day_high_break", mod, source="builtin:prior_day_high_break")
 
 
+def _builtin_tod_london_ny_flat() -> FamilyPlugin:
+    import xau_family_tod_london_ny_flat as mod  # type: ignore
+
+    return _wrap_module("tod_london_ny_flat", mod, source="xau_family_tod_london_ny_flat")
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
+    "tod_london_ny_flat": _builtin_tod_london_ny_flat,
 }
 
 
@@ -440,6 +458,9 @@ def _init_worker(
     candidates: list[dict],
     costs: dict,
     family_name: str,
+    null_method: str = "global_return_shuffle",
+    block_days: int = 1,
+    charter_path: str | None = None,
 ) -> None:
     global COSTS
     COSTS = dict(costs)
@@ -449,12 +470,21 @@ def _init_worker(
     if str(SCRIPTS) not in sys.path:
         sys.path.insert(0, str(SCRIPTS))
     plugin = load_family(family_name)
+    # Charter gates override module soft/classic passers when provided.
+    if charter_path:
+        ch = load_charter(charter_path)
+        classic_fn, soft_fn, primary = make_pass_fns(ch)
+        plugin.classic_pass = classic_fn
+        plugin.soft_pass = soft_fn
+        plugin.use_soft_primary = primary == "soft" and soft_fn is not None
     raw = pd.DataFrame.from_records(raw_records)
     raw["time"] = pd.to_datetime(raw["time"], utc=True)
     _W["raw"] = raw
     _W["candidates"] = candidates
     _W["costs"] = COSTS
     _W["plugin"] = plugin
+    _W["null_method"] = null_method
+    _W["block_days"] = int(block_days)
 
 
 def _null_trial(trial: int, base_seed: int) -> dict[str, Any]:
@@ -462,8 +492,10 @@ def _null_trial(trial: int, base_seed: int) -> dict[str, Any]:
     candidates = _W["candidates"]
     costs = _W["costs"]
     plugin: FamilyPlugin = _W["plugin"]
+    method = str(_W.get("null_method") or "global_return_shuffle")
+    block_days = int(_W.get("block_days") or 1)
     rng = np.random.default_rng(base_seed + trial * 1_000_003)
-    scr = scramble_ohlc(raw, rng)
+    scr = apply_null_method(raw, rng, method=method, block_days=block_days)
     d = plugin.prepare(scr)
     summary = score_grid(
         d,
@@ -517,13 +549,16 @@ def write_markdown(report: dict, path: Path) -> None:
         f"({report['window']['start']} → {report['window']['end']})",
         f"- Grid: {report['grid']['n_configs']} configs "
         f"(max_n={report['grid']['max_n']}, seed={report['grid']['seed']}) — no early exit",
-        f"- Null: {null['n_trials']} return-shuffle trials, base_seed={null['base_seed']}, "
+        f"- Null: method=`{null.get('method', 'global_return_shuffle')}`, "
+        f"{null['n_trials']} trials, base_seed={null['base_seed']}, "
         f"workers={null['workers']}",
-        f"- Costs: `{json.dumps(report['costs'])}`",
-        f"- Classic gates: {report['gates']['classic']}",
-        f"- Soft gates: {report['gates'].get('soft') or 'n/a'}",
+        f"- Costs: `{json.dumps(report['costs'])}` "
+        f"(slippage may be 0/unmeasured — not fully live-matched)",
+        f"- Classic gates (from charter if provided): {report['gates']['classic']}",
+        f"- Soft gates (from charter if provided): {report['gates'].get('soft') or 'n/a'}",
         f"- Primary n_passers: **{primary}**",
         f"- Max-stat min trades: {report['gates']['max_pf_min_trades']}",
+        f"- Charter: {report.get('charter_path') or 'none (legacy module gates)'}",
         "",
         "## Real grid (develop, costed)",
         "",
@@ -595,8 +630,33 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
         help="family name (builtin: stub) or module providing grid()+simulate()",
     )
-    ap.add_argument("--n-null", type=int, default=40, help="null trials (default 40)")
+    ap.add_argument(
+        "--charter",
+        default=None,
+        help="immutable charter JSON path (gates + null method/n_trials; required for protocol runs)",
+    )
+    ap.add_argument(
+        "--out-dir",
+        default=None,
+        help="write JSON/MD into this directory (refuse if files exist)",
+    )
+    ap.add_argument(
+        "--n-null",
+        type=int,
+        default=None,
+        help=f"null trials (default from charter or {MIN_NULL_TRIALS_PROTOCOL}; protocol floor {MIN_NULL_TRIALS_PROTOCOL})",
+    )
+    ap.add_argument(
+        "--null-method",
+        default=None,
+        help="override null method (default from charter or global_return_shuffle)",
+    )
     ap.add_argument("--max-n", type=int, default=1200, help="grid subsample size")
+    ap.add_argument(
+        "--allow-low-n-null",
+        action="store_true",
+        help="allow n_null below protocol floor (smoke/quick only; not for disposition)",
+    )
     ap.add_argument("--seed", type=int, default=42, help="grid subsample seed")
     ap.add_argument("--null-seed", type=int, default=20260808, help="base seed for nulls")
     ap.add_argument(
@@ -618,23 +678,76 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
+    charter: dict[str, Any] | None = None
+    charter_path: Path | None = None
+    null_method = "global_return_shuffle"
+    block_days = 1
+    gate_desc_classic = "n>=20, PF>1.5, WR>55, DD<10"
+    gate_desc_soft: str | None = "PF>=1.5, n>=40, DD<=12, expectancy>=20"
+
+    if args.charter:
+        charter_path = Path(args.charter)
+        charter = load_charter(charter_path)
+        ns = null_spec_from_charter(charter)
+        null_method = str(args.null_method or ns["method"])
+        block_days = int(ns["block_days"])
+        if args.n_null is None:
+            args.n_null = int(ns["n_trials"])
+        gmeta = gates_from_charter(charter)
+        gate_desc_classic = gmeta["description"]["classic"]
+        gate_desc_soft = gmeta["description"]["soft"]
+
+    if args.n_null is None:
+        args.n_null = MIN_NULL_TRIALS_PROTOCOL
+    if args.null_method:
+        null_method = str(args.null_method)
+
     if args.quick:
         args.max_n = min(args.max_n, 40)
-        args.n_null = min(args.n_null, 4)
+        args.n_null = min(int(args.n_null), 4)
+        args.allow_low_n_null = True
         print(
             f"QUICK smoke mode: max_n={args.max_n} n_null={args.n_null} — "
             "do not use for disposition",
             flush=True,
         )
 
+    if int(args.n_null) < MIN_NULL_TRIALS_PROTOCOL and not args.allow_low_n_null:
+        raise SystemExit(
+            f"n_null={args.n_null} < protocol floor {MIN_NULL_TRIALS_PROTOCOL}. "
+            "Pass --allow-low-n-null only for smoke, or raise n_trials in the charter."
+        )
+
     args.workers = max(1, min(8, int(args.workers)))
 
     plugin = load_family(args.family)
+    if charter is not None:
+        classic_fn, soft_fn, primary = make_pass_fns(charter)
+        plugin.classic_pass = classic_fn
+        plugin.soft_pass = soft_fn
+        plugin.use_soft_primary = primary == "soft" and soft_fn is not None
+        if charter.get("kill", {}).get("on_null_fail"):
+            plugin.kill_label = str(charter["kill"]["on_null_fail"])
     if args.no_soft_primary:
         plugin.use_soft_primary = False
 
     family_key = plugin.name
-    out_json, out_md = out_paths(family_key)
+    if args.out_dir:
+        out_dir = Path(args.out_dir)
+        if not out_dir.is_absolute():
+            out_dir = (ROOT / out_dir).resolve()
+        else:
+            out_dir = out_dir.resolve()
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_json = out_dir / "null_maxstat.json"
+        out_md = out_dir / "null_maxstat.md"
+    else:
+        out_json, out_md = out_paths(family_key)
+    if out_json.exists() or out_md.exists():
+        raise SystemExit(
+            f"refuse overwrite of existing results: {out_json} / {out_md}. "
+            "Use a fresh --out-dir or remove artifacts deliberately."
+        )
 
     t_all = time.time()
     cutoff = holdout_start()
@@ -651,7 +764,10 @@ def main(argv: list[str] | None = None) -> int:
         f"Develop window: {len(raw)} H1 bars  {raw['time'].iloc[0]} → {raw['time'].iloc[-1]}",
         flush=True,
     )
-    print(f"Costs: {COSTS}", flush=True)
+    print(f"Costs: {COSTS} (slippage may be unmeasured)", flush=True)
+    print(f"Null method: {null_method} block_days={block_days} n_null={args.n_null}", flush=True)
+    if charter_path:
+        print(f"Charter: {charter_path}", flush=True)
 
     # Build grid — family may already subsample; we enforce max_n after if needed
     try:
@@ -695,7 +811,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # --- nulls ---
     print(
-        f"Running {args.n_null} null trials with {args.workers} workers...",
+        f"Running {args.n_null} null trials ({null_method}) with {args.workers} workers...",
         flush=True,
     )
     raw_records = raw.to_dict(orient="records")
@@ -705,11 +821,21 @@ def main(argv: list[str] | None = None) -> int:
 
     # Workers re-load family by the CLI name (builtins + modules).
     family_load_name = args.family
+    charter_arg = str(charter_path) if charter_path else None
 
     null_rows: list[dict] = []
     if args.n_null > 0:
+        init_args = (
+            raw_records,
+            candidates,
+            COSTS,
+            family_load_name,
+            null_method,
+            block_days,
+            charter_arg,
+        )
         if args.workers <= 1:
-            _init_worker(raw_records, candidates, COSTS, family_load_name)
+            _init_worker(*init_args)
             for trial in range(args.n_null):
                 row = _null_trial(trial, args.null_seed)
                 null_rows.append(row)
@@ -724,7 +850,7 @@ def main(argv: list[str] | None = None) -> int:
             with ProcessPoolExecutor(
                 max_workers=args.workers,
                 initializer=_init_worker,
-                initargs=(raw_records, candidates, COSTS, family_load_name),
+                initargs=init_args,
             ) as pool:
                 futs = {
                     pool.submit(_null_trial, trial, args.null_seed): trial
@@ -764,7 +890,7 @@ def main(argv: list[str] | None = None) -> int:
         disposition = plugin.kill_label
         reason = (
             f"Real best-of-{plugin.name}-grid is not distinguishable from "
-            f"return-shuffled nulls (p_max_pf={p_max_pf:.3f}, "
+            f"{null_method} nulls (p_max_pf={p_max_pf:.3f}, "
             f"p_n_passers={p_n_passers:.3f}). The gates measured the search, "
             "not the market. Do not tune further; do not promote."
         )
@@ -783,11 +909,28 @@ def main(argv: list[str] | None = None) -> int:
             "(cut knobs, cross-instrument) — still not live_go / promote."
         )
 
+    provenance = build_provenance(
+        charter_path=charter_path or Path("none"),
+        costs_path=RESEARCH_COSTS_PATH,
+        data_path=CSV_PATH,
+        null_seed=int(args.null_seed),
+        n_null=int(args.n_null),
+        out_dir=out_json.parent,
+        extra={
+            "null_method": null_method,
+            "block_days": block_days,
+            "family": plugin.name,
+            "disposition": disposition,
+        },
+    )
+
     report = {
-        "method": "return_shuffle_maxstat_family",
+        "method": f"{null_method}_maxstat_family",
         "family": plugin.name,
         "family_source": plugin.source,
         "kill_label": plugin.kill_label,
+        "charter_path": str(charter_path) if charter_path else None,
+        "provenance": provenance,
         "timestamp_utc": pd.Timestamp.utcnow().isoformat(),
         "window": {
             "holdout_start": str(cutoff),
@@ -796,23 +939,26 @@ def main(argv: list[str] | None = None) -> int:
             "end": raw["time"].iloc[-1].isoformat(),
         },
         "costs": COSTS,
+        "costs_caveat": (
+            "commission/spread account-matched for Standard STP; "
+            "slippage_points=0 is unmeasured; swap not modeled"
+        ),
         "grid": {
             "max_n": args.max_n,
             "seed": args.seed,
             "n_configs": len(candidates),
         },
         "gates": {
-            "classic": "n>=20, PF>1.5, WR>55, DD<10",
-            "soft": (
-                "PF>=1.5, n>=40, DD<=12, expectancy>=20"
-                if plugin.soft_pass is not None
-                else None
-            ),
+            "classic": gate_desc_classic,
+            "soft": gate_desc_soft if plugin.soft_pass is not None else None,
             "primary_n_passers": primary_key.replace("n_passers_", ""),
             "max_pf_min_trades": MIN_TRADES_MAX_STAT,
+            "source": "charter" if charter is not None else "module_or_default",
         },
         "real": real,
         "null": {
+            "method": null_method,
+            "block_days": block_days,
             "n_trials": args.n_null,
             "base_seed": args.null_seed,
             "workers": args.workers,
