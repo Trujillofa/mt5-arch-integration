@@ -248,9 +248,15 @@ def verify_export_run(
     if not isinstance(symbols, list) or set(symbols) != set(SYMBOLS):
         errs.append(f"UNEXPECTED_SYMBOLS:{symbols!r}")
 
+    # Wine exit codes are non-authoritative under portable ShutdownTerminal.
+    # We still record them; hard-fail only when exit is non-int / missing AND
+    # there is no valid MQL completion (checked below). Soft-flag weird codes.
     exit_code = export_run.get("wine_exit_code")
-    if exit_code not in ACCEPTED_WINE_EXIT_CODES:
-        errs.append(f"WINE_EXIT_NOT_ACCEPTED:{exit_code!r}")
+    wine_exit_flag: str | None = None
+    if not isinstance(exit_code, int):
+        wine_exit_flag = f"WINE_EXIT_NOT_INT:{exit_code!r}"
+    elif exit_code not in ACCEPTED_WINE_EXIT_CODES:
+        wine_exit_flag = f"WINE_EXIT_UNUSUAL:{exit_code}"
 
     cost_login = costs.get("login")
     cost_server = costs.get("server")
@@ -302,29 +308,124 @@ def verify_export_run(
             if abs(int(ent.get("mtime_unix") or 0) - int(st.st_mtime)) > 2:
                 errs.append(f"EXPORT_RUN_MTIME_MISMATCH:{key}")
 
-    # MQL runtime completion sentinel
+    # MQL runtime completion sentinel — strict run binding + required fields
     if not export_complete:
         errs.append("MISSING_EXPORT_COMPLETE_JSON")
+        if wine_exit_flag:
+            errs.append(wine_exit_flag.replace("UNUSUAL", "NOT_ACCEPTED"))
     else:
-        if export_complete.get("run_id") and run_id and export_complete.get("run_id") != run_id:
-            # shell stamps run_id after MQL; allow complete without run_id match if shell injects later
-            pass
-        if not export_complete.get("terminal_connected"):
+        for req in (
+            "ok",
+            "run_id",
+            "terminal_connected",
+            "account_login",
+            "account_server",
+            "symbols",
+            "challenge_echo",
+        ):
+            if req not in export_complete:
+                errs.append(f"EXPORT_COMPLETE_MISSING_FIELD:{req}")
+        if export_complete.get("run_id") != run_id:
+            errs.append(
+                f"RUN_ID_MISMATCH:complete={export_complete.get('run_id')!r} "
+                f"export_run={run_id!r}"
+            )
+        if export_complete.get("terminal_connected") is not True:
             errs.append("TERMINAL_NOT_CONNECTED_AT_EXPORT")
-        if cost_login is not None and export_complete.get("account_login") is not None:
-            if int(export_complete["account_login"]) != int(cost_login):
+        if cost_login is not None:
+            if export_complete.get("account_login") is None:
+                errs.append("MQL_LOGIN_MISSING")
+            elif int(export_complete["account_login"]) != int(cost_login):
                 errs.append(
-                    f"MQL_LOGIN_MISMATCH:mql={export_complete.get('account_login')} costs={cost_login}"
+                    f"MQL_LOGIN_MISMATCH:mql={export_complete.get('account_login')} "
+                    f"costs={cost_login}"
                 )
-        if cost_server and export_complete.get("account_server"):
-            if str(export_complete["account_server"]) != str(cost_server):
+        if cost_server:
+            if not export_complete.get("account_server"):
+                errs.append("MQL_SERVER_MISSING")
+            elif str(export_complete["account_server"]) != str(cost_server):
                 errs.append(
                     f"MQL_SERVER_MISMATCH:mql={export_complete.get('account_server')!r} "
                     f"costs={cost_server!r}"
                 )
-        if not export_complete.get("ok"):
+        if export_complete.get("ok") is not True:
             errs.append("MQL_EXPORT_COMPLETE_NOT_OK")
+        # Per-symbol ok/count vs CSV
+        sym_details = export_complete.get("symbols")
+        if not isinstance(sym_details, list):
+            errs.append("EXPORT_COMPLETE_SYMBOLS_NOT_LIST")
+        else:
+            by_req = {
+                str(d.get("requested")): d
+                for d in sym_details
+                if isinstance(d, dict)
+            }
+            for s in SYMBOLS:
+                d = by_req.get(s)
+                if not d:
+                    errs.append(f"EXPORT_COMPLETE_MISSING_SYMBOL:{s}")
+                    continue
+                if d.get("ok") is not True:
+                    errs.append(f"EXPORT_COMPLETE_SYMBOL_NOT_OK:{s}")
+                hist = bridge_dir / f"history_{s}.csv"
+                if hist.is_file():
+                    n_csv = sum(1 for _ in hist.open()) - 1
+                    bars = d.get("bars")
+                    if bars is not None and int(bars) != n_csv:
+                        errs.append(
+                            f"EXPORT_COMPLETE_BAR_COUNT_MISMATCH:{s}:{bars}!={n_csv}"
+                        )
+        # Valid MQL completion ⇒ ignore unusual wine exit codes.
+        # Incomplete completion ⇒ surface wine_exit_flag as hard error.
+        if wine_exit_flag and any(
+            e.startswith(
+                (
+                    "MQL_",
+                    "TERMINAL_",
+                    "RUN_ID",
+                    "EXPORT_COMPLETE_",
+                )
+            )
+            for e in errs
+        ):
+            errs.append(wine_exit_flag.replace("UNUSUAL", "NOT_ACCEPTED"))
 
+    return errs
+
+
+def verify_costs_file(costs: dict[str, Any] | None, path: Path = COSTS_XAU) -> list[str]:
+    """Fail-closed research cost provenance."""
+    errs: list[str] = []
+    if not path.is_file():
+        return ["MISSING_COSTS_FILE"]
+    if not costs:
+        return ["EMPTY_COSTS"]
+    for k in (
+        "broker",
+        "login",
+        "server",
+        "account_type",
+        "commission_per_lot",
+        "slippage_points",
+        "slippage_notes",
+        "cost_label",
+    ):
+        if k not in costs:
+            errs.append(f"COSTS_MISSING_FIELD:{k}")
+    if costs.get("account_type") not in ("STANDARD_STP", "Standard STP"):
+        # allow exact enum used in file
+        if str(costs.get("account_type") or "") != "STANDARD_STP":
+            errs.append(f"COSTS_ACCOUNT_TYPE:{costs.get('account_type')!r}")
+    try:
+        if float(costs.get("commission_per_lot")) != 0.0:
+            errs.append(f"COSTS_COMMISSION_NE_ZERO:{costs.get('commission_per_lot')}")
+    except (TypeError, ValueError):
+        errs.append("COSTS_COMMISSION_INVALID")
+    notes = str(costs.get("slippage_notes") or "").upper()
+    if "UNMEASURED" not in notes:
+        errs.append("COSTS_SLIPPAGE_NOT_MARKED_UNMEASURED")
+    if costs.get("login") is None or costs.get("server") is None:
+        errs.append("COSTS_LOGIN_OR_SERVER_MISSING")
     return errs
 
 
@@ -710,71 +811,182 @@ def write_report(
     REPORT_PATH.write_text("\n".join(lines) + "\n")
 
 
-def write_artifact_lock(manifests: list[SymbolManifest], gate: str) -> dict[str, Any]:
-    """Committed-artifact lock: row counts + SHAs for research CSVs."""
+def write_artifact_lock(
+    manifests: list[SymbolManifest],
+    gate: str,
+    *,
+    out_dir: Path,
+) -> dict[str, Any]:
+    """Committed-artifact lock: full + develop row counts/SHAs for all symbols."""
     lock: dict[str, Any] = {
         "gate": gate,
         "frozen_at_utc": datetime.now(UTC).isoformat(),
         "clock_contract": CLOCK_CONTRACT,
+        "required_symbols": list(SYMBOLS),
         "artifacts": {},
     }
     for m in manifests:
         if not m.published or not m.research_csv:
             continue
-        p = ROOT / m.research_csv
-        dev = m.missing_duplicate_bars.get("develop_csv") or ""
+        # Prefer paths under out_dir (staging or final)
+        research_name = f"{m.symbol.lower()}_h1.csv"
+        develop_name = f"{m.symbol.lower()}_h1_develop.csv"
+        research_path = out_dir / research_name
+        develop_path = out_dir / develop_name
+        if not research_path.is_file() and m.research_csv:
+            research_path = ROOT / m.research_csv
+        if not develop_path.is_file():
+            drel = m.missing_duplicate_bars.get("develop_csv") or ""
+            if drel:
+                develop_path = ROOT / drel if not Path(drel).is_absolute() else Path(drel)
+
+        research_sha = _sha256_file(research_path) if research_path.is_file() else ""
+        develop_sha = _sha256_file(develop_path) if develop_path.is_file() else ""
+        n_full = sum(1 for _ in research_path.open()) - 1 if research_path.is_file() else -1
+        n_dev = sum(1 for _ in develop_path.open()) - 1 if develop_path.is_file() else -1
+
+        try:
+            research_rel = str(research_path.relative_to(ROOT))
+        except ValueError:
+            research_rel = str(research_path)
+        try:
+            develop_rel = str(develop_path.relative_to(ROOT))
+        except ValueError:
+            develop_rel = str(develop_path)
+
         lock["artifacts"][m.symbol] = {
-            "research_csv": m.research_csv,
-            "research_csv_sha256": m.research_csv_sha256,
+            "research_csv": research_rel,
+            "research_csv_sha256": research_sha,
             "n_rows_h1": m.n_rows_h1,
+            "n_rows_h1_on_disk": n_full,
             "n_rows_h1_develop": m.n_rows_h1_develop,
-            "develop_csv": dev,
-            "develop_csv_sha256": m.missing_duplicate_bars.get("develop_csv_sha256"),
+            "n_rows_h1_develop_on_disk": n_dev,
+            "develop_csv": develop_rel,
+            "develop_csv_sha256": develop_sha,
             "source_sha256": m.source_sha256,
             "status": m.status,
+            "manifest_n_rows_h1": m.n_rows_h1,
+            "manifest_n_rows_h1_develop": m.n_rows_h1_develop,
         }
-        # live verify
-        if p.is_file():
-            n_lines = sum(1 for _ in p.open()) - 1
-            lock["artifacts"][m.symbol]["n_data_lines_on_disk"] = n_lines
     MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
     ARTIFACT_LOCK.write_text(json.dumps(lock, indent=2) + "\n")
     return lock
 
 
-def verify_committed_artifacts(lock_path: Path = ARTIFACT_LOCK) -> list[str]:
-    """Assert on-disk research CSVs match committed_artifact_lock.json."""
+def verify_committed_artifacts(
+    lock_path: Path = ARTIFACT_LOCK,
+    *,
+    manifests: list[SymbolManifest] | None = None,
+) -> list[str]:
+    """Assert full + develop CSVs match lock; require exact symbol membership."""
     if not lock_path.is_file():
         return ["MISSING_ARTIFACT_LOCK"]
     lock = json.loads(lock_path.read_text())
     errs: list[str] = []
     arts = lock.get("artifacts") or {}
-    for sym, ent in arts.items():
+    required = set(lock.get("required_symbols") or SYMBOLS)
+    if set(arts.keys()) != required:
+        errs.append(
+            f"SYMBOL_SET_MISMATCH:have={sorted(arts.keys())} need={sorted(required)}"
+        )
+
+    man_by_sym = {m.symbol: m for m in (manifests or [])}
+
+    for sym in sorted(required):
+        ent = arts.get(sym)
+        if not ent:
+            errs.append(f"{sym}:missing_from_lock")
+            continue
+        # Full history
         rel = ent.get("research_csv")
         if not rel:
             errs.append(f"{sym}:missing_research_csv")
-            continue
-        p = ROOT / rel
-        if not p.is_file():
-            errs.append(f"{sym}:file_missing:{rel}")
-            continue
-        sha = _sha256_file(p)
-        if sha != ent.get("research_csv_sha256"):
-            errs.append(f"{sym}:sha_mismatch")
-        n_lines = sum(1 for _ in p.open()) - 1
-        if n_lines != int(ent.get("n_rows_h1") or -1):
-            errs.append(f"{sym}:row_count_mismatch:{n_lines}!={ent.get('n_rows_h1')}")
-        if n_lines < 1000:
-            errs.append(f"{sym}:suspiciously_small:{n_lines}")
+        else:
+            p = ROOT / rel if not Path(rel).is_absolute() else Path(rel)
+            if not p.is_file():
+                errs.append(f"{sym}:full_file_missing:{rel}")
+            else:
+                sha = _sha256_file(p)
+                if sha != ent.get("research_csv_sha256"):
+                    errs.append(f"{sym}:full_sha_mismatch")
+                n_lines = sum(1 for _ in p.open()) - 1
+                if n_lines != int(ent.get("n_rows_h1") or -1):
+                    errs.append(
+                        f"{sym}:full_row_count_mismatch:{n_lines}!={ent.get('n_rows_h1')}"
+                    )
+                if n_lines < 1000:
+                    errs.append(f"{sym}:full_suspiciously_small:{n_lines}")
+        # Develop
+        drel = ent.get("develop_csv")
+        if not drel:
+            errs.append(f"{sym}:missing_develop_csv")
+        else:
+            dp = ROOT / drel if not Path(drel).is_absolute() else Path(drel)
+            if not dp.is_file():
+                errs.append(f"{sym}:develop_file_missing:{drel}")
+            else:
+                dsha = _sha256_file(dp)
+                if dsha != ent.get("develop_csv_sha256"):
+                    errs.append(f"{sym}:develop_sha_mismatch")
+                dn = sum(1 for _ in dp.open()) - 1
+                if dn != int(ent.get("n_rows_h1_develop") or -1):
+                    errs.append(
+                        f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
+                    )
+                if dn < 1000:
+                    errs.append(f"{sym}:develop_suspiciously_small:{dn}")
+        # Manifest consistency
+        if man_by_sym:
+            m = man_by_sym.get(sym)
+            if m is None:
+                errs.append(f"{sym}:missing_manifest_object")
+            else:
+                if int(m.n_rows_h1) != int(ent.get("n_rows_h1") or -1):
+                    errs.append(f"{sym}:manifest_full_count_mismatch")
+                if int(m.n_rows_h1_develop) != int(ent.get("n_rows_h1_develop") or -1):
+                    errs.append(f"{sym}:manifest_develop_count_mismatch")
+                if m.research_csv_sha256 and m.research_csv_sha256 != ent.get(
+                    "research_csv_sha256"
+                ):
+                    errs.append(f"{sym}:manifest_full_sha_mismatch")
     return errs
 
 
+def _atomic_publish_staging(staging: Path, final: Path) -> None:
+    """Replace final CSV set with staging only after success."""
+    final.mkdir(parents=True, exist_ok=True)
+    for name in (
+        [f"{s.lower()}_h1.csv" for s in SYMBOLS]
+        + [f"{s.lower()}_h1_develop.csv" for s in SYMBOLS]
+    ):
+        src = staging / name
+        if not src.is_file():
+            raise FileNotFoundError(f"staging missing {name}")
+        dst = final / name
+        tmp = final / f".{name}.tmp"
+        tmp.write_bytes(src.read_bytes())
+        tmp.replace(dst)
+
+
 def main() -> int:
+    import shutil
+    import tempfile
+
     bridge = _wine_bridge_dir()
     print(f"Bridge dir: {bridge}")
-    costs: dict[str, Any] = {}
-    if COSTS_XAU.is_file():
-        costs = json.loads(COSTS_XAU.read_text())
+
+    # Mandatory costs provenance
+    if not COSTS_XAU.is_file():
+        print("Gate: FAIL_DATA (missing costs file)")
+        write_report([], {"status": "FAIL"}, "FAIL_DATA", ["MISSING_COSTS_FILE"])
+        return 1
+    costs = json.loads(COSTS_XAU.read_text())
+    cost_errs = verify_costs_file(costs)
+    if cost_errs:
+        print("COSTS_FAIL:", cost_errs)
+        write_report([], {"status": "FAIL"}, "FAIL_DATA", cost_errs)
+        return 1
+
     holdout = DEVELOP_END_SERVER
     if HOLDOUT_LOCK.is_file():
         hs = json.loads(HOLDOUT_LOCK.read_text()).get("holdout_start")
@@ -783,10 +995,6 @@ def main() -> int:
 
     export_run = _load_export_run(bridge)
     export_complete = _load_export_complete(bridge)
-    # Merge shell run_id into complete if MQL wrote without it
-    if export_complete and export_run and not export_complete.get("run_id"):
-        export_complete = dict(export_complete)
-        export_complete["run_id"] = export_run.get("run_id")
 
     export_errs = verify_export_run(
         export_run, costs, bridge_dir=bridge, export_complete=export_complete
@@ -794,8 +1002,18 @@ def main() -> int:
     print("export_run:", (export_run or {}).get("run_id"), "errs=", export_errs)
 
     MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Do not touch final OUT_DIR until global gate passes.
+    staging_root = Path(tempfile.mkdtemp(prefix="instr_stage_", dir=str(MANIFEST_DIR)))
+    staging_data = staging_root / "instrument_data"
+    staging_data.mkdir(parents=True, exist_ok=True)
+
     manifests: list[SymbolManifest] = []
     develops: dict[str, pd.DataFrame] = {}
+
+    # If export provenance already failed, still compute symbol DQ without publishing.
+    publish_stage = not bool(export_errs)
+
     for sym in SYMBOLS:
         m, dev = build_symbol(
             sym,
@@ -803,8 +1021,8 @@ def main() -> int:
             costs=costs,
             export_run=export_run,
             holdout_start=holdout,
-            out_dir=OUT_DIR,
-            publish=True,
+            out_dir=staging_data,
+            publish=publish_stage,
         )
         manifests.append(m)
         path = MANIFEST_DIR / f"{sym.lower()}_h1_manifest.json"
@@ -843,14 +1061,73 @@ def main() -> int:
         gate = "PASS_DATA_READY"
 
     write_report(manifests, common, gate, export_errs)
+
     if gate.startswith("PASS_"):
-        write_artifact_lock(manifests, gate)
-        lock_errs = verify_committed_artifacts()
+        # Rewrite manifest paths to final OUT_DIR locations before lock/publish
+        for m in manifests:
+            if m.published:
+                m.research_csv = str((OUT_DIR / f"{m.symbol.lower()}_h1.csv").relative_to(ROOT))
+                m.missing_duplicate_bars["develop_csv"] = str(
+                    (OUT_DIR / f"{m.symbol.lower()}_h1_develop.csv").relative_to(ROOT)
+                )
+                # SHAs still from staging files
+                sp = staging_data / f"{m.symbol.lower()}_h1.csv"
+                dp = staging_data / f"{m.symbol.lower()}_h1_develop.csv"
+                m.research_csv_sha256 = _sha256_file(sp)
+                m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
+
+        # Lock against staging content with final relative paths
+        write_artifact_lock(manifests, gate, out_dir=staging_data)
+        # Point lock paths at final destinations for verify after publish
+        lock = json.loads(ARTIFACT_LOCK.read_text())
+        for sym, ent in lock["artifacts"].items():
+            ent["research_csv"] = f"results/instrument_data/{sym.lower()}_h1.csv"
+            ent["develop_csv"] = f"results/instrument_data/{sym.lower()}_h1_develop.csv"
+            # recompute sha from staging (same bytes as will be published)
+            ent["research_csv_sha256"] = _sha256_file(
+                staging_data / f"{sym.lower()}_h1.csv"
+            )
+            ent["develop_csv_sha256"] = _sha256_file(
+                staging_data / f"{sym.lower()}_h1_develop.csv"
+            )
+            ent["n_rows_h1"] = sum(
+                1 for _ in (staging_data / f"{sym.lower()}_h1.csv").open()
+            ) - 1
+            ent["n_rows_h1_develop"] = sum(
+                1 for _ in (staging_data / f"{sym.lower()}_h1_develop.csv").open()
+            ) - 1
+        ARTIFACT_LOCK.write_text(json.dumps(lock, indent=2) + "\n")
+
+        try:
+            _atomic_publish_staging(staging_data, OUT_DIR)
+        except Exception as e:
+            print("ATOMIC_PUBLISH_FAIL:", e)
+            gate = "FAIL_DATA"
+            write_report(manifests, common, gate, export_errs + [f"ATOMIC_PUBLISH_FAIL:{e}"])
+            shutil.rmtree(staging_root, ignore_errors=True)
+            print(f"Gate: {gate}")
+            return 1
+
+        # Refresh manifests with final SHAs after publish
+        for m in manifests:
+            if m.published:
+                fp = OUT_DIR / f"{m.symbol.lower()}_h1.csv"
+                dp = OUT_DIR / f"{m.symbol.lower()}_h1_develop.csv"
+                m.research_csv_sha256 = _sha256_file(fp)
+                m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
+                (MANIFEST_DIR / f"{m.symbol.lower()}_h1_manifest.json").write_text(
+                    json.dumps(asdict(m), indent=2) + "\n"
+                )
+
+        lock_errs = verify_committed_artifacts(manifests=manifests)
         if lock_errs:
             print("ARTIFACT_LOCK_VERIFY_FAIL:", lock_errs)
             gate = "FAIL_DATA"
             write_report(manifests, common, gate, export_errs + lock_errs)
+    else:
+        print("Skipping publish — gate not PASS (staging discarded)")
 
+    shutil.rmtree(staging_root, ignore_errors=True)
     print(f"Gate: {gate}")
     print(f"Report: {REPORT_PATH}")
     return 0 if gate.startswith("PASS_") else 1

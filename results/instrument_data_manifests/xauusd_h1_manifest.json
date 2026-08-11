@@ -3,9 +3,9 @@
   "status": "OK_WITH_IMPUTATION",
   "clock_contract": "server_clock_as_stored",
   "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_XAUUSD.csv",
-  "source_sha256": "b53b36987229c36d529606ad1b916e2d6480bc2c67ba88540814c05d830054a1",
+  "source_sha256": "f73d7315e84d80e335a2b4554605d040387753d1ac9577b0706a6c1dff591bb6",
   "research_csv": "results/instrument_data/xauusd_h1.csv",
-  "research_csv_sha256": "b4781d7b89f61a599abd071d567b2a91cfcade5fe0dc7bed1565a702e2e63ec1",
+  "research_csv_sha256": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da",
   "timeframe": "H1",
   "n_rows_raw": 29155,
   "n_rows_h1": 29155,
@@ -103,7 +103,7 @@
   "account_type": "STANDARD_STP",
   "server": "VantageMarkets-Live 5",
   "login": 27496181,
-  "export_run_id": "158e5a16fc9a491d96d7f499f7fa1f86",
+  "export_run_id": "4f44b452081041f39fc24f03248b8ca8",
   "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_XAUUSD.csv",
   "meta_raw": {
     "key": "value",
@@ -123,6 +123,6 @@
     "ZERO_SPREAD_IMPUTED=1296",
     "LARGE_GAPS_GT_72H=9"
   ],
-  "frozen_at_utc": "2026-08-11T22:03:30.183875+00:00",
+  "frozen_at_utc": "2026-08-11T22:29:03.578139+00:00",
   "published": true
 }

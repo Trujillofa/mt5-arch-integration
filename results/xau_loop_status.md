@@ -1,21 +1,20 @@
 # XAU offline loop status
 
-## 2026-08-11 — MULTI-INSTRUMENT Phase 0 integrity v2 · PASS_DATA_READY_WITH_IMPUTATION
+## 2026-08-11 — MULTI-INSTRUMENT Phase 0 integrity **v3** · PASS_DATA_READY_WITH_IMPUTATION
 
 | Field | Value |
 |-------|--------|
-| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (integrity v2) → then multi-instrument family freeze |
+| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (integrity v3) → multi-instrument family freeze only if approved |
 | **gate** | **`PASS_DATA_READY_WITH_IMPUTATION`** |
-| **export_run_id** | `158e5a16fc9a491d96d7f499f7fa1f86` |
-| **MQL complete** | terminal_connected=true · login=27496181 · server=VantageMarkets-Live 5 |
-| **EURUSD rows** | **30694** (restored; unit tests isolated from OUT_DIR) |
-| **artifact lock** | `results/instrument_data_manifests/committed_artifact_lock.json` verified |
-| **clock** | server_clock_as_stored |
-| **joint intersection** | 25557 develop H1 (XAU=intersection; EUR≡GBP; XAU⊂FX) |
+| **export_run_id** | `4f44b452081041f39fc24f03248b8ca8` (MQL challenge-bound) |
+| **MQL complete** | connected + login/server match costs; challenge_echo present |
+| **publish** | **atomic staging** → final only after provenance + 3-symbol + common + lock verify |
+| **lock** | full **and develop** SHA/count for {XAU,EUR,GBP}; mutation of develop fails verify |
+| **costs** | required file; commission 0; slip UNMEASURED; login/server enforced |
 | **thesis freeze / scoring** | **not authorized** |
 | **promote / live_go / PAPER_GO** | **no / false / no** |
 
-Integrity v2: isolated test writes, no publish on hard fail, export_run SHA/size/mtime + export_complete runtime account, symbol/H1 alignment checks.
+Integrity v3 closes: develop lock verification, no publish before global gate, strict MQL run_id binding, mandatory costs.
 
 ---
 

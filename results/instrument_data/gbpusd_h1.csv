@@ -30692,4 +30692,4 @@ time,timeframe,symbol,open,high,low,close,tick_volume,spread_raw_pts,spread_effe
 2026-08-11 22:00:00,H1,GBPUSD,1.35025,1.35077,1.3502,1.35075,3751,15.0,15.0,False,15.0,server_clock_as_stored
 2026-08-11 23:00:00,H1,GBPUSD,1.35075,1.35085,1.35026,1.35068,1946,14.0,14.0,False,14.0,server_clock_as_stored
 2026-08-12 00:00:00,H1,GBPUSD,1.35048,1.35063,1.34965,1.35063,149,46.0,46.0,False,46.0,server_clock_as_stored
-2026-08-12 01:00:00,H1,GBPUSD,1.3508,1.3508,1.35015,1.35061,130,14.0,14.0,False,14.0,server_clock_as_stored
+2026-08-12 01:00:00,H1,GBPUSD,1.3508,1.35095,1.35015,1.35092,892,14.0,14.0,False,14.0,server_clock_as_stored

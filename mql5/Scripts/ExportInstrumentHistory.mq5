@@ -11,7 +11,8 @@ input string InpSymbols = "XAUUSD,EURUSD,GBPUSD";
 input int    InpMonths  = 60;
 input string InpTfs     = "H1";
 input string InpOutDir  = "mt5_arch";
-input string InpRunId   = "";   // optional; shell may stamp later
+// Pre-launch challenge written by shell as export_challenge.json (must be echoed).
+input string InpChallengeFile = "mt5_arch\\export_challenge.json";
 
 //+------------------------------------------------------------------+
 ENUM_TIMEFRAMES ParseTf(const string tf)
@@ -127,7 +128,41 @@ string JEsc(const string s)
   }
 
 //+------------------------------------------------------------------+
-void WriteCompletion(const bool ok, const string details_json_array)
+string ReadChallengeRaw()
+  {
+   // FILE_TXT whole-file read of pre-launch challenge (JSON).
+   int h = FileOpen(InpChallengeFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+     {
+      Print("ReadChallenge fail err=", GetLastError(), " path=", InpChallengeFile);
+      return "";
+     }
+   string raw = "";
+   while(!FileIsEnding(h))
+     {
+      string line = FileReadString(h);
+      raw += line;
+     }
+   FileClose(h);
+   return raw;
+  }
+
+// Extract "run_id":"...." from challenge JSON (simple scanner; hex only).
+string ExtractRunId(const string challenge)
+  {
+   int p = StringFind(challenge, "\"run_id\"");
+   if(p < 0) return "";
+   int c = StringFind(challenge, ":", p);
+   if(c < 0) return "";
+   int q1 = StringFind(challenge, "\"", c + 1);
+   if(q1 < 0) return "";
+   int q2 = StringFind(challenge, "\"", q1 + 1);
+   if(q2 < 0) return "";
+   return StringSubstr(challenge, q1 + 1, q2 - q1 - 1);
+  }
+
+void WriteCompletion(const bool ok, const string details_json_array,
+                     const string challenge_raw, const string run_id)
   {
    // Runtime account / connection attestation — not from common.ini alone.
    long login = AccountInfoInteger(ACCOUNT_LOGIN);
@@ -141,9 +176,11 @@ void WriteCompletion(const bool ok, const string details_json_array)
       Print("WriteCompletion FileOpen fail ", GetLastError());
       return;
      }
+   // challenge_echo is the exact challenge body (escaped for JSON string)
    string j = "{";
    j += "\"ok\":" + (ok ? "true" : "false") + ",";
-   j += "\"run_id\":\"" + JEsc(InpRunId) + "\",";
+   j += "\"run_id\":\"" + JEsc(run_id) + "\",";
+   j += "\"challenge_echo\":\"" + JEsc(challenge_raw) + "\",";
    j += "\"terminal_connected\":" + (connected ? "true" : "false") + ",";
    j += "\"account_login\":" + IntegerToString(login) + ",";
    j += "\"account_server\":\"" + JEsc(server) + "\",";
@@ -154,12 +191,21 @@ void WriteCompletion(const bool ok, const string details_json_array)
    j += "}";
    FileWriteString(h, j);
    FileClose(h);
-   Print("Wrote ", path, " ok=", ok, " connected=", connected, " login=", login);
+   Print("Wrote ", path, " ok=", ok, " connected=", connected, " login=", login, " run_id=", run_id);
   }
 
 //+------------------------------------------------------------------+
 void OnStart()
   {
+   string challenge_raw = ReadChallengeRaw();
+   string run_id = ExtractRunId(challenge_raw);
+   if(StringLen(run_id) == 0)
+     {
+      Print("FATAL: missing/invalid export_challenge.json run_id");
+      WriteCompletion(false, "[]", challenge_raw, "");
+      return;
+     }
+
    string symbols[];
    int ns = StringSplit(InpSymbols, ',', symbols);
    string tfs[];
@@ -261,7 +307,7 @@ void OnStart()
 
    if(done < 1)
       all_ok = false;
-   WriteCompletion(all_ok, details);
-   Print("ExportInstrumentHistory finished ok=", all_ok, " symbols_done=", done);
+   WriteCompletion(all_ok, details, challenge_raw, run_id);
+   Print("ExportInstrumentHistory finished ok=", all_ok, " symbols_done=", done, " run_id=", run_id);
   }
 //+------------------------------------------------------------------+

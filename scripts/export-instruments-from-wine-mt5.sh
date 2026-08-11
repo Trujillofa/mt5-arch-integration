@@ -124,6 +124,36 @@ for f in "$OUT_DIR/export_complete.json" "$OUT_DIR/export_run.json"; do
 done
 info "Stale CSVs moved to $ARCHIVE (if any)"
 
+# Pre-launch challenge: MQL must echo run_id/symbols/tfs unchanged.
+python3 - <<PY
+import json
+from pathlib import Path
+from datetime import datetime, timezone, timedelta
+
+out = Path(r"$OUT_DIR")
+run_id = "$RUN_ID"
+symbols = [s.strip() for s in "$SYMBOLS".split(",") if s.strip()]
+# Fixed server-time window: last MONTHS months ending "now" (server clock at export)
+months = int("$MONTHS")
+# Bound labels for attestation (MQL still uses TimeCurrent()-months internally;
+# challenge documents the intended window policy).
+challenge = {
+    "run_id": run_id,
+    "symbols": symbols,
+    "timeframes": "$TFS",
+    "months": months,
+    "holdout_start_server": "2026-01-01 00:00:00",
+    "expect_login": int("$EXPECT_LOGIN") if "$EXPECT_LOGIN".isdigit() else "$EXPECT_LOGIN",
+    "expect_server": "$EXPECT_SERVER",
+    "issued_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+}
+(out / "export_challenge.json").write_text(json.dumps(challenge, separators=(",", ":")) + "\n")
+repo = Path(r"$REPO_ROOT/results/instrument_data_manifests")
+repo.mkdir(parents=True, exist_ok=True)
+(repo / "export_challenge.json").write_text(json.dumps(challenge, indent=2) + "\n")
+print("challenge", run_id, symbols)
+PY
+
 python3 - <<PY
 from pathlib import Path
 mt5 = Path(r"$MT5_DIR")
@@ -151,6 +181,7 @@ set_body = f"""InpSymbols={'$SYMBOLS'}
 InpMonths={'$MONTHS'}
 InpTfs={'$TFS'}
 InpOutDir=mt5_arch
+InpChallengeFile=mt5_arch\\\\export_challenge.json
 """
 (mt5 / "MQL5/Scripts/ExportInstrumentHistory.set").write_bytes(
     "\ufeff".encode("utf-16-le") + set_body.encode("utf-16-le")
@@ -224,12 +255,20 @@ else:
         errs.append("export_complete_ok_false")
     if not complete.get("terminal_connected"):
         errs.append("export_complete_not_connected")
-    # Stamp shell run_id into complete for attestation chain
-    complete["run_id"] = run_id
+    if complete.get("run_id") != run_id:
+        errs.append(
+            f"run_id_mismatch:complete={complete.get('run_id')!r} challenge={run_id!r}"
+        )
+    if complete.get("account_login") is None:
+        errs.append("complete_missing_account_login")
+    if not complete.get("account_server"):
+        errs.append("complete_missing_account_server")
+    if "challenge_echo" not in complete:
+        errs.append("complete_missing_challenge_echo")
+    # Do NOT overwrite MQL run_id. Record shell identity separately.
     complete["shell_login"] = int(login) if str(login).isdigit() else login
     complete["shell_server"] = server
     complete_path.write_text(json.dumps(complete, indent=2) + "\n")
-    # copy to repo
     repo_meta = Path(r"$REPO_ROOT/results/instrument_data_manifests")
     repo_meta.mkdir(parents=True, exist_ok=True)
     (repo_meta / "export_complete.json").write_text(json.dumps(complete, indent=2) + "\n")
