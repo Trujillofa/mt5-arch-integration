@@ -1,5 +1,18 @@
 # XAU offline loop status
 
+## 2026-08-11 — PROTOCOL SEED CUTOVER FAIL-CLOSED (v2 immutable)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | `frozen_at` required+parseable; seed cutover by freeze date only (not protocol_version); post-cutover protocol <2.2 rejected |
+| **grandfather** | pre-2026-08-10 freezes without seed still valid |
+| **implement / develop / null / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
 ## 2026-08-11 — PROTOCOL SEED-PROOF CORRECTION (v2 charter immutable)
 
 | Field | Value |

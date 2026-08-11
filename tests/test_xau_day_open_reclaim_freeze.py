@@ -270,7 +270,52 @@ def test_future_v1_freeze_without_base_seed_rejected():
     del future["null"]["base_seed"]
     errs = validate_charter(future)
     assert any("base_seed" in e for e in errs), errs
-    assert any("charter_version" not in e or "not charter_version" in e for e in errs)
+    # Cutover message must not gate on charter_version alone
+    assert any("freeze date" in e.lower() or "frozen" in e.lower() for e in errs) or any(
+        "base_seed" in e for e in errs
+    )
+
+
+def test_missing_frozen_at_rejected():
+    ch = load_charter(CHARTER_V2)
+    bad = dict(ch)
+    bad.pop("frozen_at", None)
+    # keep seed so the only new failure mode is the date itself
+    errs = validate_charter(bad)
+    assert any("frozen_at" in e for e in errs), errs
+
+
+def test_malformed_frozen_at_rejected():
+    ch = load_charter(CHARTER_V2)
+    bad = dict(ch)
+    bad["frozen_at"] = "not-a-date"
+    errs = validate_charter(bad)
+    assert any("frozen_at" in e and "malformed" in e for e in errs), errs
+
+
+def test_post_cutover_protocol_downgrade_without_seed_rejected():
+    """protocol_version 2.1 + post-cutover date must not reopen seed shopping."""
+    ch = load_charter(CHARTER_V2)
+    bad = dict(ch)
+    bad["protocol_version"] = 2.1
+    bad["frozen_at"] = "2026-08-12"
+    bad["null"] = dict(ch["null"])
+    del bad["null"]["base_seed"]
+    errs = validate_charter(bad)
+    assert any("base_seed" in e for e in errs), errs
+    assert any("protocol_version" in e for e in errs), errs
+
+
+def test_post_cutover_protocol_downgrade_with_seed_still_rejected():
+    """Even with a seed, post-cutover freezes cannot claim protocol < 2.2."""
+    ch = load_charter(CHARTER_V2)
+    bad = dict(ch)
+    bad["protocol_version"] = 2.1
+    bad["frozen_at"] = "2026-08-12"
+    # base_seed kept from v2
+    errs = validate_charter(bad)
+    assert any("protocol_version" in e for e in errs), errs
+    assert not any("base_seed required" in e for e in errs), errs
 
 
 def test_validate_charter_rejects_invalid_base_seed_types_and_negative():

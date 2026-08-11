@@ -475,9 +475,22 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
             "rule.intraday_flat true required (or explicit swap handling) under protocol v2"
         )
 
+    # frozen_at is mandatory and must parse (missing/malformed fails closed —
+    # otherwise seed cutover can be bypassed by omitting the date).
+    freeze_day = _parse_frozen_at_date(charter.get("frozen_at"))
+    if freeze_day is None:
+        if charter.get("frozen_at") is None or str(charter.get("frozen_at") or "").strip() == "":
+            errs.append("frozen_at required (YYYY-MM-DD or ISO date prefix)")
+        else:
+            errs.append(
+                f"frozen_at malformed (need YYYY-MM-DD or ISO date prefix); "
+                f"got {charter.get('frozen_at')!r}"
+            )
+
     # null.base_seed: strict non-negative int when present; required for freezes
-    # on/after NULL_BASE_SEED_REQUIRED_ON_OR_AFTER (date cutover, not charter_version).
-    # Historical immutable freezes before that day without base_seed remain valid.
+    # on/after NULL_BASE_SEED_REQUIRED_ON_OR_AFTER by freeze *date only*
+    # (not charter_version, not protocol_version — protocol downgrade cannot
+    # reopen seed shopping). Pre-cutover freezes without seed remain valid.
     base_seed_raw = null.get("base_seed", _MISSING_BASE_SEED)
     if base_seed_raw is not _MISSING_BASE_SEED:
         # type(x) is int rejects bool (bool is a subclass of int) and rejects
@@ -489,18 +502,25 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
             )
         elif base_seed_raw < 0:
             errs.append("null.base_seed must be >= 0")
-    else:
-        freeze_day = _parse_frozen_at_date(charter.get("frozen_at"))
-        if (
-            proto >= 2.2
-            and freeze_day is not None
-            and freeze_day >= NULL_BASE_SEED_REQUIRED_ON_OR_AFTER
-        ):
-            errs.append(
-                "null.base_seed required (non-negative int) for freezes on/after "
-                f"{NULL_BASE_SEED_REQUIRED_ON_OR_AFTER.isoformat()} "
-                "(no seed shopping; cutover by freeze date, not charter_version)"
-            )
+    elif freeze_day is not None and freeze_day >= NULL_BASE_SEED_REQUIRED_ON_OR_AFTER:
+        errs.append(
+            "null.base_seed required (non-negative int) for freezes on/after "
+            f"{NULL_BASE_SEED_REQUIRED_ON_OR_AFTER.isoformat()} "
+            "(no seed shopping; cutover by freeze date only, independent of "
+            "protocol_version / charter_version)"
+        )
+
+    # Post-cutover freezes must not claim a pre-seed-proof protocol revision.
+    if (
+        freeze_day is not None
+        and freeze_day >= NULL_BASE_SEED_REQUIRED_ON_OR_AFTER
+        and proto < 2.2
+    ):
+        errs.append(
+            "protocol_version must be >= 2.2 for freezes on/after "
+            f"{NULL_BASE_SEED_REQUIRED_ON_OR_AFTER.isoformat()} "
+            f"(got {proto}; refuse protocol downgrade to bypass seed rules)"
+        )
     return errs
 
 
