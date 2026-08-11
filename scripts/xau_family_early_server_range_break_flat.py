@@ -122,6 +122,14 @@ def simulate(
     else:
         spread_pts = np.zeros(n)
 
+    # Fail-closed no-overnight: only enter on calendar days that have a bar
+    # with hour >= flat_hour so time-flat can fire without carrying overnight.
+    flat_h = int(flat_hour)
+    days_with_flat_bar: set[str] = set()
+    for j in range(n):
+        if int(hour[j]) >= flat_h:
+            days_with_flat_bar.add(str(day[j]))
+
     bal = START_BALANCE
     eq = np.zeros(n)
     pnls: list[float] = []
@@ -132,6 +140,7 @@ def simulate(
     early_high: float | None = None
     early_day: str | None = None
     entry_bar: int = -1  # bar index of last entry; exits only for i > entry_bar
+    pos_day: str | None = None  # calendar day of open position (overnight guard)
 
     for i in range(n):
         dkey = str(day[i])
@@ -150,6 +159,18 @@ def simulate(
         floating = bal + ((px - entry) * CONTRACT_SIZE * lots * pos if pos else 0.0)
         eq[i] = floating
 
+        # Fail-closed: never evaluate overnight bars for an open position.
+        # Positions must be flattened by hour>=flat_hour on the entry day; if a
+        # day boundary is crossed while still open, discard the open trade
+        # (no overnight fill rule is frozen) so it cannot hit next-day SL/TP.
+        if pos != 0 and pos_day is not None and dkey != pos_day:
+            pos = 0
+            lots = 0.0
+            trade_cost = 0.0
+            pos_day = None
+            entry_bar = -1
+            eq[i] = bal
+
         # Exits: open positions only; never on entry bar (i > entry_bar)
         if pos != 0 and i > entry_bar and not np.isnan(atr[i]):
             exit_px = None
@@ -157,7 +178,7 @@ def simulate(
                 exit_px = sl
             elif high[i] >= tp:
                 exit_px = tp
-            elif h_i >= int(flat_hour):
+            elif h_i >= flat_h:
                 exit_px = px
             if exit_px is not None:
                 pnl = (exit_px - entry) * CONTRACT_SIZE * lots * pos - trade_cost
@@ -166,6 +187,7 @@ def simulate(
                 pos = 0
                 lots = 0.0
                 trade_cost = 0.0
+                pos_day = None
                 eq[i] = bal
 
         if pos != 0 or i < WARMUP:
@@ -178,6 +200,9 @@ def simulate(
         if h_i not in entry_hrs:
             continue
         if entered_day == dkey:
+            continue
+        # Fail-closed no-overnight: day must have a bar hour >= flat_hour
+        if dkey not in days_with_flat_bar:
             continue
         # Strict close > early_high
         if not (px > float(early_high)):
@@ -204,9 +229,11 @@ def simulate(
         sl = entry - stop_dist
         tp = entry + float(atr[i]) * float(tp_atr)
         entered_day = dkey
+        pos_day = dkey
         entry_bar = i
 
-    if pos != 0:
+    # End-of-series: only book a final exit if still on the entry day (no overnight).
+    if pos != 0 and pos_day is not None and str(day[-1]) == pos_day:
         pnl = (close[-1] - entry) * CONTRACT_SIZE * lots * pos - trade_cost
         bal += pnl
         pnls.append(pnl)
