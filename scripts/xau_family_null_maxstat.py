@@ -857,6 +857,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 non_dispositional = True
+        # null.base_seed: under --strict-charter, CLI --null-seed must match charter
+        # (no seed shopping near significance thresholds).
+        charter_base_seed = ns.get("base_seed")
+        if charter_base_seed is not None and int(args.null_seed) != int(charter_base_seed):
+            if args.strict_charter and not args.allow_charter_override:
+                raise SystemExit(
+                    f"--null-seed={args.null_seed} != charter null.base_seed="
+                    f"{int(charter_base_seed)}"
+                )
+            non_dispositional = True
         slip_sensitivity_pts = list(
             (charter.get("success") or {})
             .get("slippage_sensitivity", {})

@@ -1,5 +1,29 @@
 # XAU offline loop status
 
+## 2026-08-11 — FREEZE CORRECTION · `day_open_reclaim_flat` **v2** (v1 SUPERSEDED)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `day_open_reclaim_flat` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json` · SHA `961dd3d4…` |
+| **v1** | SHA `8eafe48b…` · registry **SUPERSEDED** (byte-immutable) |
+| **corrections** | undercut_seen_before_i (j<i); capital start_balance=10000 + cost-at-exit-booking; null.base_seed=20260808 |
+| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** · seed **20260808** |
+| **kill** | `KILL_DAY_OPEN_RECLAIM_FLAT` |
+| **primary** | soft |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **implement / sealed r1** | **not authorized** until freeze review |
+| **branch** | `research/xau-day-open-reclaim-flat-v1` from `main` @ `f4e891f` |
+| **scope** | charter/protocol/tests only — no family module, no develop screen |
+
+Closed freezes remain closed (early_server_range_break, server_hour, TOD, prior_day, Donchian, bb_rsi).
+
+---
+
 ## 2026-08-11 — NEW THESIS FREEZE · `day_open_reclaim_flat` v1 (no implement / no develop peek)
 
 | Field | Value |

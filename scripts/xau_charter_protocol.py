@@ -64,6 +64,7 @@ TERMINAL_DISPOSITIONS = frozenset(
         "KILL_SERVER_HOUR_WINDOW_FLAT",
         "KILL_TOD_LONDON_NY_FLAT",
         "KILL_EARLY_SERVER_RANGE_BREAK_FLAT",
+        "KILL_DAY_OPEN_RECLAIM_FLAT",
     }
 )
 
@@ -83,8 +84,14 @@ SESSION_THESIS_CLASSES = frozenset(
         "session_or_breakout_fixed",
         "session_window_fixed",
         "intraday_early_block_range_break",
+        "intraday_day_open_reclaim",
     }
 )
+
+# Default null base seed when a freeze pins it (house convention; no seed shopping).
+DEFAULT_NULL_BASE_SEED = 20260808
+# Sentinel for "base_seed key absent" (None is a possible invalid value).
+_MISSING_BASE_SEED = object()
 # Rule keys that mark a charter as session-shaped (canonical session null required).
 SESSION_RULE_MARKERS = frozenset(
     {
@@ -463,6 +470,29 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
         errs.append(
             "rule.intraday_flat true required (or explicit swap handling) under protocol v2"
         )
+
+    # null.base_seed: type-check when present; require for post-gap freezes
+    # (protocol ≥2.2, charter_version≥2, frozen_at≥2026-08-11). Historical
+    # immutable freezes without base_seed remain valid (grandfathered).
+    base_seed_raw = null.get("base_seed", _MISSING_BASE_SEED)
+    if base_seed_raw is not _MISSING_BASE_SEED:
+        try:
+            bs_int = int(base_seed_raw)
+            if isinstance(base_seed_raw, bool) or float(base_seed_raw) != float(bs_int):
+                raise ValueError("non-integer")
+        except (TypeError, ValueError):
+            errs.append("null.base_seed must be an integer")
+    else:
+        frozen_at = str(charter.get("frozen_at") or "")
+        try:
+            cv = int(charter.get("charter_version") or 0)
+        except (TypeError, ValueError):
+            cv = 0
+        if proto >= 2.2 and cv >= 2 and frozen_at >= "2026-08-11":
+            errs.append(
+                "null.base_seed required (integer) under protocol ≥2.2 for "
+                "charter_version≥2 freezes on/after 2026-08-11 (no seed shopping)"
+            )
     return errs
 
 
@@ -686,13 +716,16 @@ def null_spec_from_charter(charter: dict[str, Any]) -> dict[str, Any]:
     method = str(null.get("method") or null.get("null_method") or "global_return_shuffle")
     n_trials = int(null.get("n_trials") or null.get("min_null_trials") or MIN_NULL_TRIALS_PROTOCOL)
     block_days = int(null.get("block_days") or null.get("block_size_days") or 1)
-    return {
+    out: dict[str, Any] = {
         "method": method,
         "n_trials": n_trials,
         "block_days": block_days,
         "invariants": null.get("invariants") or [],
         "notes": null.get("notes") or "",
     }
+    if "base_seed" in null and null["base_seed"] is not None:
+        out["base_seed"] = int(null["base_seed"])
+    return out
 
 
 if __name__ == "__main__":

@@ -34,6 +34,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402
+    DEFAULT_NULL_BASE_SEED,
     CharterError,
     append_attempt,
     assert_charter_path_for_sealed,
@@ -590,6 +591,11 @@ def main(argv: list[str] | None = None) -> int:
     ns = null_spec_from_charter(charter)
     n_null_planned = int(ns["n_trials"])
     null_method = str(ns["method"])
+    # Explicit seed from charter (or house default). Never leave seed to harness
+    # default alone under sealed path — pins against seed shopping.
+    sealed_null_seed = (
+        int(ns["base_seed"]) if ns.get("base_seed") is not None else int(DEFAULT_NULL_BASE_SEED)
+    )
 
     # Single sealed invocation — no CLI null overrides (charter is sole source).
     cmd = [
@@ -604,6 +610,8 @@ def main(argv: list[str] | None = None) -> int:
         "--workers",
         str(args.workers),
         "--strict-charter",
+        "--null-seed",
+        str(sealed_null_seed),
     ]
 
     # Finding B: pre-launch STARTED ledger row so interruption cannot erase the attempt.
