@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Export XAUUSD/EURUSD/GBPUSD H1 (+ optional M15) with per-bar spread from Wine Vantage MT5.
-# Phase-0 multi-instrument data readiness — no strategy scoring.
+# Export XAUUSD/EURUSD/GBPUSD H1 with per-bar spread from *one* Wine MT5 prefix.
+# Phase-0 multi-instrument data readiness — fail-closed. No strategy scoring.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
@@ -8,12 +8,20 @@ source "$SCRIPT_DIR/lib.sh"
 load_dotenv
 export_wine_env
 require_cmd wine
+require_cmd python3
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SYMBOLS="${SYMBOLS:-XAUUSD,EURUSD,GBPUSD}"
 MONTHS="${MONTHS:-60}"
-TFS="${TFS:-H1}"   # research lane primary is H1; set TFS=H1,M15 if needed
+TFS="${TFS:-H1}"
 TIMEOUT_S="${TIMEOUT_S:-300}"
+# Expected account identity (must match common.ini after export)
+EXPECT_LOGIN="${EXPECT_LOGIN:-${MT5_LOGIN:-27496181}}"
+EXPECT_SERVER="${EXPECT_SERVER:-${MT5_SERVER:-VantageMarkets-Live 5}}"
+
+WINEPREFIX="$(readlink -f "${WINEPREFIX:-$HOME/.mt5-vantage}")"
+export WINEPREFIX
+info "WINEPREFIX=$WINEPREFIX (prefix-scoped only)"
 
 MT5_DIR=""
 for d in \
@@ -31,11 +39,50 @@ info "Compiling ExportInstrumentHistory.mq5..."
 ( cd "$MT5_DIR/MQL5/Scripts" && wine "$ME" /compile:"ExportInstrumentHistory.mq5" /log >/dev/null 2>&1 || true )
 [[ -f "$MT5_DIR/MQL5/Scripts/ExportInstrumentHistory.ex5" ]] || die "compile failed — open MetaEditor log"
 
-# Kill existing terminal (one process at a time under Wine)
-pids=$(ps -eo pid,cmd | awk '/terminal64\.exe/ && !/awk/ {print $1}')
-for p in $pids; do kill -TERM "$p" 2>/dev/null || true; done
-sleep 2
-for p in $pids; do ps -p "$p" >/dev/null 2>&1 && kill -KILL "$p" 2>/dev/null || true; done
+# ---------------------------------------------------------------------------
+# Kill only terminal64 processes whose WINEPREFIX matches this prefix.
+# ---------------------------------------------------------------------------
+kill_prefix_terminals() {
+  python3 - <<'PY'
+import os, signal, time
+from pathlib import Path
+
+want = Path(os.environ["WINEPREFIX"]).resolve()
+pids = []
+for p in Path("/proc").iterdir():
+    if not p.name.isdigit():
+        continue
+    try:
+        cmd = (p / "cmdline").read_bytes().replace(b"\x00", b" ").decode("utf-8", "replace")
+        if "terminal64" not in cmd:
+            continue
+        env = (p / "environ").read_bytes().split(b"\x00")
+        wp = ""
+        for e in env:
+            if e.startswith(b"WINEPREFIX="):
+                wp = e.decode("utf-8", "replace").split("=", 1)[1]
+                break
+        if not wp:
+            continue
+        if Path(wp).expanduser().resolve() != want:
+            continue
+        pids.append(int(p.name))
+    except (OSError, PermissionError, ValueError):
+        continue
+for sig in (signal.SIGTERM, signal.SIGKILL):
+    for pid in pids:
+        try:
+            os.kill(pid, sig)
+            print(f"sent {sig.name} to prefix terminal pid={pid}")
+        except ProcessLookupError:
+            pass
+    if sig == signal.SIGTERM and pids:
+        time.sleep(2)
+print(f"prefix_terminal_pids={pids}")
+PY
+}
+info "Stopping terminal64 only in this WINEPREFIX..."
+kill_prefix_terminals
 
 LOGIN=$(python3 -c "
 from pathlib import Path
@@ -51,15 +98,32 @@ text=raw.decode('utf-16-le','replace')
 for line in text.replace(chr(13),'').split(chr(10)):
   if line.startswith('Server='): print(line.split('=',1)[1].strip())
 ")
-info "Login=$LOGIN Server=$SERVER"
+info "common.ini Login=$LOGIN Server=$SERVER"
+[[ "$LOGIN" == "$EXPECT_LOGIN" ]] || die "login mismatch: common.ini=$LOGIN expected=$EXPECT_LOGIN"
+[[ "$SERVER" == "$EXPECT_SERVER" ]] || die "server mismatch: common.ini=$SERVER expected=$EXPECT_SERVER"
 
-# Write .set inputs for the script (UTF-16LE required by tester/scripts often;
-# StartUp Script= runs with defaults unless we bake defaults into mq5 inputs —
-# we pass via script inputs file if present; otherwise mq5 defaults cover us.)
+OUT_DIR="$MT5_DIR/MQL5/Files/mt5_arch"
+RUN_ID="$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+EXPORT_MARK_START="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# Epoch second just before run — require output mtimes strictly after this.
+PRE_EXPORT_EPOCH=$(date +%s)
+# Subtract 1s slack for FS second resolution
+PRE_EXPORT_EPOCH=$((PRE_EXPORT_EPOCH - 1))
+
+# Move prior history_* aside so we never accept stale CSVs as success.
+ARCHIVE="$OUT_DIR/_stale_$(date -u +%Y%m%dT%H%M%SZ)_$RUN_ID"
+mkdir -p "$ARCHIVE"
+for s in ${SYMBOLS//,/ }; do
+  s=$(echo "$s" | tr -d ' ')
+  for f in "$OUT_DIR/history_${s}.csv" "$OUT_DIR/symbol_meta_${s}.csv"; do
+    [[ -f "$f" ]] && mv -f "$f" "$ARCHIVE/"
+  done
+done
+info "Stale CSVs moved to $ARCHIVE (if any)"
+
 python3 - <<PY
 from pathlib import Path
 mt5 = Path(r"$MT5_DIR")
-# Startup ini (ASCII CRLF)
 text = f"""[Common]
 Login={'$LOGIN'}
 Server={'$SERVER'}
@@ -80,40 +144,95 @@ Period=H1
 ShutdownTerminal=1
 """.replace("\n", "\r\n")
 (mt5 / "export_instruments.ini").write_bytes(text.encode("ascii"))
-print("ini ok")
-# Optional .set for script inputs (UTF-16LE)
 set_body = f"""InpSymbols={'$SYMBOLS'}
 InpMonths={'$MONTHS'}
 InpTfs={'$TFS'}
 InpOutDir=mt5_arch
 """
-# MT5 .set is often UTF-16LE with BOM
 (mt5 / "MQL5/Scripts/ExportInstrumentHistory.set").write_bytes(
     "\ufeff".encode("utf-16-le") + set_body.encode("utf-16-le")
 )
-print("set ok")
+print("ini/set ok")
 PY
 
-info "Running export (timeout ${TIMEOUT_S}s) — may download history from server..."
+info "Running export (timeout ${TIMEOUT_S}s) run_id=$RUN_ID ..."
 cd "$MT5_DIR"
 export WINEDEBUG=-all WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
-# Note: StartUp Script does not always apply .set; defaults in mq5 cover XAU/EUR/GBP.
-timeout "$TIMEOUT_S" wine ./terminal64.exe /portable /config:export_instruments.ini || true
+set +e
+timeout "$TIMEOUT_S" wine ./terminal64.exe /portable /config:export_instruments.ini
+rc=$?
+set -e
+# 0 = clean; 124 = timeout (often still wrote files before hang) — require fresh CSVs either way
+info "wine exit_code=$rc"
 
-OUT_DIR="$MT5_DIR/MQL5/Files/mt5_arch"
-info "Export artifacts in $OUT_DIR:"
-ls -la "$OUT_DIR"/history_*.csv "$OUT_DIR"/symbol_meta_*.csv 2>/dev/null || true
-missing=0
-IFS=',' read -ra SYMS <<< "$SYMBOLS"
-for s in "${SYMS[@]}"; do
-  s=$(echo "$s" | tr -d ' ')
-  f="$OUT_DIR/history_${s}.csv"
-  if [[ -f "$f" ]]; then
-    info "OK $f ($(stat -c%s "$f") bytes, $(wc -l < "$f") lines)"
-  else
-    warn "MISSING $f"
-    missing=1
-  fi
-done
-[[ "$missing" -eq 0 ]] || die "one or more symbol exports missing"
+EXPORT_MARK_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Fail-closed: every symbol history + meta must exist AND be mtime-fresh for this run.
+python3 - <<PY
+import hashlib, json, os, sys
+from pathlib import Path
+
+out = Path(r"$OUT_DIR")
+symbols = [s.strip() for s in "$SYMBOLS".split(",") if s.strip()]
+pre = int("$PRE_EXPORT_EPOCH")
+run_id = "$RUN_ID"
+login = "$LOGIN"
+server = "$SERVER"
+wp = r"$WINEPREFIX"
+rc = int("$rc")
+files = {}
+errs = []
+for s in symbols:
+    hist = out / f"history_{s}.csv"
+    meta = out / f"symbol_meta_{s}.csv"
+    for p, kind in ((hist, "history"), (meta, "meta")):
+        if not p.is_file():
+            errs.append(f"missing_{kind}:{s}")
+            continue
+        mtime = int(p.stat().st_mtime)
+        if mtime < pre:
+            errs.append(f"stale_{kind}:{s}:mtime={mtime}<pre={pre}")
+            continue
+        if p.stat().st_size < 100:
+            errs.append(f"tiny_{kind}:{s}:size={p.stat().st_size}")
+            continue
+        h = hashlib.sha256(p.read_bytes()).hexdigest()
+        files[f"{kind}_{s}"] = {
+            "path": str(p),
+            "sha256": h,
+            "bytes": p.stat().st_size,
+            "mtime_unix": mtime,
+        }
+if errs:
+    print("EXPORT_FAIL:", "; ".join(errs), file=sys.stderr)
+    sys.exit(2)
+
+meta = {
+    "run_id": run_id,
+    "export_started_utc": "$EXPORT_MARK_START",
+    "export_finished_utc": "$EXPORT_MARK_END",
+    "wine_exit_code": rc,
+    "wineprefix": wp,
+    "mt5_dir": r"$MT5_DIR",
+    "login": int(login) if login.isdigit() else login,
+    "server": server,
+    "expect_login": int("$EXPECT_LOGIN") if "$EXPECT_LOGIN".isdigit() else "$EXPECT_LOGIN",
+    "expect_server": "$EXPECT_SERVER",
+    "symbols": symbols,
+    "months": int("$MONTHS"),
+    "timeframes": "$TFS",
+    "clock_note": "Bar timestamps in history_*.csv are MT5 server clock strings (offset-free). Not labeled UTC.",
+    "account_source": "Config/common.ini Login=/Server= verified against EXPECT_* before launch",
+    "files": files,
+}
+# Repo-side copy for the builder
+repo_meta = Path(r"$REPO_ROOT/results/instrument_data_manifests")
+repo_meta.mkdir(parents=True, exist_ok=True)
+path = out / "export_run.json"
+path.write_text(json.dumps(meta, indent=2) + "\n")
+(repo_meta / "export_run.json").write_text(json.dumps(meta, indent=2) + "\n")
+print(json.dumps({"ok": True, "run_id": run_id, "n_files": len(files)}, indent=2))
+PY
+
+info "Export verified fresh for all symbols. export_run.json written."
 info "Next: python3 scripts/build_multi_instrument_data_readiness.py"

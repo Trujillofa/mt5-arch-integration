@@ -1,69 +1,79 @@
 {
   "symbol": "GBPUSD",
-  "status": "OK_WITH_FLAGS",
+  "status": "OK_WITH_IMPUTATION",
+  "clock_contract": "server_clock_as_stored",
   "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_GBPUSD.csv",
-  "source_sha256": "ec334ec5eaa2ff62f546b9aca263bfb1ab0f422a9ccc3a327dae6f0fda5dc904",
+  "source_sha256": "5bfe9bfb7410e86052bf74b8761867af3aa16ec3a053ba85f34046ec608ef89f",
   "research_csv": "results/instrument_data/gbpusd_h1.csv",
-  "research_csv_sha256": "622224a889f8a6eef579e78267e542f2bcc343c7d5004cdcea730c252a91e23e",
+  "research_csv_sha256": "1fa86c1891877784662c77cb6386554534c9c879ac5fca190eaff35c0f230a09",
   "timeframe": "H1",
   "n_rows_raw": 30694,
   "n_rows_h1": 30694,
   "n_rows_h1_develop": 26901,
-  "time_min": "2021-09-07T01:00:00+00:00",
-  "time_max": "2026-08-12T00:00:00+00:00",
-  "develop_time_min": "2021-09-07T01:00:00+00:00",
-  "develop_time_max": "2025-12-31T23:00:00+00:00",
-  "develop_rule": "time < holdout_start",
-  "holdout_start": "2026-01-01T00:00:00+00:00",
+  "time_min_server": "2021-09-07 01:00:00",
+  "time_max_server": "2026-08-12 00:00:00",
+  "develop_time_min_server": "2021-09-07 01:00:00",
+  "develop_time_max_server": "2025-12-31 23:00:00",
+  "develop_rule": "server_time < holdout_start_server",
+  "holdout_start_server": "2026-01-01 00:00:00",
   "missing_duplicate_bars": {
-    "duplicate_timestamps_dropped": 0,
+    "duplicate_timestamps": 0,
     "bad_ohlc_rows": 0,
     "develop_csv": "results/instrument_data/gbpusd_h1_develop.csv",
-    "develop_csv_sha256": "8e68babfa5a9940882f670a2f54f405c05c502eb0719d8d0193a51946d19d1f3"
+    "develop_csv_sha256": "6526b15efb9cbd6a449b71a64a7775b636548fa0be666b3a992e90762101140d"
   },
   "gap_report": {
     "n_gaps_gt_72h": 3,
     "max_gap_hours": 73.0,
     "large_gaps_sample": [
       {
-        "after": "2022-12-23T23:00:00+00:00",
-        "before": "2022-12-27T00:00:00+00:00",
+        "after": "2022-12-23 23:00:00",
+        "before": "2022-12-27 00:00:00",
         "gap_hours": 73.0
       },
       {
-        "after": "2023-12-22T23:00:00+00:00",
-        "before": "2023-12-26T00:00:00+00:00",
+        "after": "2023-12-22 23:00:00",
+        "before": "2023-12-26 00:00:00",
         "gap_hours": 73.0
       },
       {
-        "after": "2023-12-29T23:00:00+00:00",
-        "before": "2024-01-02T00:00:00+00:00",
+        "after": "2023-12-29 23:00:00",
+        "before": "2024-01-02 00:00:00",
         "gap_hours": 73.0
       }
     ]
   },
   "spread": {
     "n": 30694,
-    "median_pts": 12.0,
-    "mean_pts": 13.165602397862774,
-    "min_pts": 8.0,
-    "max_pts": 309.0,
-    "zero_bars_filled": 1,
+    "median_effective_pts": 12.0,
+    "mean_effective_pts": 13.165602397862774,
+    "min_raw_pts": 0.0,
+    "max_raw_pts": 309.0,
+    "n_imputed_full": 1,
+    "frac_imputed_full": 3.2579657262005605e-05,
+    "n_imputed_develop": 1,
+    "frac_imputed_develop": 3.717333928106762e-05,
     "fill_median_pts": 12.0,
-    "unit": "points (MqlRates.spread)"
+    "unit": "points (MqlRates.spread)",
+    "columns": [
+      "spread_raw_pts",
+      "spread_effective_pts",
+      "spread_imputed"
+    ]
   },
   "point_size": 1e-05,
   "contract_size": 100000.0,
   "digits": 5,
   "commission_per_lot": 0.0,
-  "commission_notes": "Standard STP: no separate commission; trading cost is in the measured spread. Account type=STANDARD_STP.",
+  "commission_notes": "Standard STP: no separate commission; trading cost is in measured spread. Account type=STANDARD_STP.",
   "slippage_points": 0.0,
   "slippage_notes": "UNMEASURED \u2014 left at 0 until demo/live fill sample. Not a claim of zero slip.",
-  "spread_source": "MqlRates.spread from Vantage terminal export (Wine file bridge / ExportInstrumentHistory)",
+  "spread_source": "MqlRates.spread from Vantage terminal export (ExportInstrumentHistory)",
   "broker": "Vantage",
   "account_type": "STANDARD_STP",
   "server": "VantageMarkets-Live 5",
   "login": 27496181,
+  "export_run_id": "bc076afdc470421696f040bf48116824",
   "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_GBPUSD.csv",
   "meta_raw": {
     "key": "value",
@@ -78,9 +88,10 @@
     "currency_profit": "USD",
     "trade_mode": "4"
   },
+  "hard_errors": [],
   "quality_flags": [
-    "ZERO_SPREAD_FILLED=1",
+    "ZERO_SPREAD_IMPUTED=1",
     "LARGE_GAPS_GT_72H=3"
   ],
-  "frozen_at_utc": "2026-08-11T21:18:51.561057+00:00"
+  "frozen_at_utc": "2026-08-11T21:33:27.585363+00:00"
 }
