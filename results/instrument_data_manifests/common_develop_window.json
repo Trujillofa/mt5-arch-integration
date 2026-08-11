@@ -1,24 +1,24 @@
 {
   "status": "OK",
   "clock_contract": "server_clock_as_stored",
-  "common_start_server": "2021-09-07 01:00:00",
+  "common_start_server": "2021-09-07 02:00:00",
   "common_end_server": "2025-12-31 23:00:00",
   "holdout_start_server": "2026-01-01 00:00:00",
   "n_bars_per_symbol": {
-    "XAUUSD": 25558,
-    "EURUSD": 26901,
-    "GBPUSD": 26901
+    "XAUUSD": 25557,
+    "EURUSD": 26900,
+    "GBPUSD": 26900
   },
-  "n_intersection_timestamps": 25558,
+  "n_intersection_timestamps": 25557,
   "fx_calendars_identical": true,
   "xau_subset_of_fx": true,
   "intersection_equals_xau_count": true,
   "hard_errors": [],
   "bar_count_note": "FX vs XAU bar counts differ by session; joint pool is timestamp intersection (must equal XAU count when XAU \u2282 FX).",
   "per_symbol_develop_start_server": {
-    "XAUUSD": "2021-09-07 01:00:00",
-    "EURUSD": "2021-09-07 01:00:00",
-    "GBPUSD": "2021-09-07 01:00:00"
+    "XAUUSD": "2021-09-07 02:00:00",
+    "EURUSD": "2021-09-07 02:00:00",
+    "GBPUSD": "2021-09-07 02:00:00"
   },
   "per_symbol_develop_end_server": {
     "XAUUSD": "2025-12-31 23:00:00",

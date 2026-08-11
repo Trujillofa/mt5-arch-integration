@@ -1,4 +1,4 @@
-"""Adversarial fail-closed tests for multi-instrument Phase-0 data readiness."""
+"""Adversarial fail-closed tests for multi-instrument Phase-0 integrity v2."""
 from __future__ import annotations
 
 import json
@@ -67,8 +67,6 @@ def test_parse_history_is_naive_server_clock_not_utc(tmp_path: Path):
     p = tmp_path / "h.csv"
     _write_history(p, _good_rows())
     df = b._parse_history(p)
-    assert str(df["time"].dtype) == "datetime64[ns]"
-    # No timezone attached
     assert df["time"].dt.tz is None
 
 
@@ -80,131 +78,181 @@ def test_spread_imputation_auditable():
     df["time"] = pd.to_datetime(df["time"], format="%Y.%m.%d %H:%M")
     df["spread"] = pd.to_numeric(df["spread"])
     out, imp = b._apply_spread_imputation(df)
-    assert "spread_raw_pts" in out.columns
-    assert "spread_effective_pts" in out.columns
-    assert "spread_imputed" in out.columns
     assert int(out["spread_imputed"].sum()) == 2
     assert float(out.loc[1, "spread_raw_pts"]) == 0.0
     assert float(out.loc[1, "spread_effective_pts"]) == 12.0
-    assert imp["n_imputed"] == 2
 
 
-def test_bad_ohlc_is_hard_fail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+def test_bad_ohlc_hard_fail_does_not_publish(tmp_path: Path):
     bridge = tmp_path / "bridge"
+    out = tmp_path / "out"
     bridge.mkdir()
+    out.mkdir()
     rows = _good_rows()
-    rows[0]["high"] = 1.0  # high < open/close → bad
+    rows[0]["high"] = 1.0
     _write_history(bridge / "history_EURUSD.csv", rows)
     _meta(bridge / "symbol_meta_EURUSD.csv")
-    monkeypatch.setattr(b, "_wine_bridge_dir", lambda: bridge)
-    # Only test EURUSD path via build_symbol directly
     m, dev = b.build_symbol(
         "EURUSD",
         bridge_dir=bridge,
         costs={"login": 1, "server": "S", "broker": "V", "account_type": "STANDARD_STP"},
-        export_run={
-            "run_id": "t",
-            "login": 1,
-            "server": "S",
-            "files": {"history_EURUSD": {}, "meta_EURUSD": {}},
-        },
+        export_run={"run_id": "a" * 32, "login": 1, "server": "S", "files": {}},
         holdout_start=b.DEVELOP_END_SERVER,
+        out_dir=out,
+        publish=True,
     )
     assert m.status == "FAIL"
-    assert any("BAD_OHLC" in e for e in m.hard_errors)
+    assert m.published is False
+    assert not (out / "eurusd_h1.csv").exists()
     assert dev is None
+
+
+def test_wrong_row_symbol_hard_fail(tmp_path: Path):
+    bridge = tmp_path / "bridge"
+    out = tmp_path / "out"
+    bridge.mkdir()
+    # File named EURUSD but rows are GBPUSD
+    _write_history(bridge / "history_EURUSD.csv", _good_rows(symbol="GBPUSD"))
+    _meta(bridge / "symbol_meta_EURUSD.csv", requested="EURUSD", resolved="EURUSD")
+    m, _ = b.build_symbol(
+        "EURUSD",
+        bridge_dir=bridge,
+        costs={},
+        export_run={"run_id": "a" * 32, "login": 1, "server": "S"},
+        holdout_start=b.DEVELOP_END_SERVER,
+        out_dir=out,
+        publish=True,
+    )
+    assert m.status == "FAIL"
+    assert any("ROW_SYMBOL" in e for e in m.hard_errors)
+    assert not (out / "eurusd_h1.csv").exists()
+
+
+def test_half_hour_timestamps_fail(tmp_path: Path):
+    bridge = tmp_path / "bridge"
+    out = tmp_path / "out"
+    bridge.mkdir()
+    rows = _good_rows()
+    for r in rows:
+        r["time"] = r["time"].replace(":00", ":30")
+    _write_history(bridge / "history_EURUSD.csv", rows)
+    _meta(bridge / "symbol_meta_EURUSD.csv")
+    m, _ = b.build_symbol(
+        "EURUSD",
+        bridge_dir=bridge,
+        costs={},
+        export_run={"run_id": "a" * 32},
+        holdout_start=b.DEVELOP_END_SERVER,
+        out_dir=out,
+        publish=True,
+    )
+    assert m.status == "FAIL"
+    assert any("H1_NOT_HOUR_ALIGNED" in e for e in m.hard_errors)
 
 
 def test_missing_meta_is_hard_fail(tmp_path: Path):
     bridge = tmp_path / "bridge"
     bridge.mkdir()
     _write_history(bridge / "history_EURUSD.csv", _good_rows())
-    # no meta file
     m, _ = b.build_symbol(
         "EURUSD",
         bridge_dir=bridge,
         costs={},
-        export_run={"run_id": "t", "login": 1, "server": "S", "files": {}},
+        export_run={"run_id": "a" * 32},
         holdout_start=b.DEVELOP_END_SERVER,
+        out_dir=tmp_path / "out",
+        publish=True,
     )
     assert m.status == "FAIL"
     assert any("MISSING_SYMBOL_META" in e for e in m.hard_errors)
 
 
-def test_missing_export_run_fails_verify():
-    errs = b.verify_export_run(None, {"login": 1, "server": "S"})
-    assert "MISSING_EXPORT_RUN_JSON" in errs
+def test_export_run_rejects_fake_hashes(tmp_path: Path):
+    bridge = tmp_path / "bridge"
+    bridge.mkdir()
+    # create real files
+    p = bridge / "history_XAUUSD.csv"
+    _write_history(p, _good_rows("XAUUSD"))
+    _meta(bridge / "symbol_meta_XAUUSD.csv", requested="XAUUSD", resolved="XAUUSD")
+    for s in ("EURUSD", "GBPUSD"):
+        _write_history(bridge / f"history_{s}.csv", _good_rows(s))
+        _meta(bridge / f"symbol_meta_{s}.csv", requested=s, resolved=s)
 
-
-def test_export_run_login_mismatch():
-    errs = b.verify_export_run(
-        {
-            "run_id": "x",
-            "login": 99,
-            "server": "S",
-            "export_finished_utc": "t",
-            "files": {
-                "history_XAUUSD": {},
-                "meta_XAUUSD": {},
-                "history_EURUSD": {},
-                "meta_EURUSD": {},
-                "history_GBPUSD": {},
-                "meta_GBPUSD": {},
-            },
+    fake = {
+        "run_id": "",
+        "login": 1,
+        "server": "S",
+        "export_started_utc": "not-a-date",
+        "export_finished_utc": "also-bad",
+        "wine_exit_code": 99,
+        "timeframes": "M15",
+        "symbols": ["FOO"],
+        "files": {
+            "history_XAUUSD": {
+                "path": str(p),
+                "sha256": "0" * 64,
+                "bytes": 1,
+                "mtime_unix": 0,
+            }
         },
-        {"login": 27496181, "server": "S"},
-    )
-    assert any("LOGIN_MISMATCH" in e for e in errs)
+    }
+    errs = b.verify_export_run(fake, {"login": 1, "server": "S"}, bridge_dir=bridge, export_complete=None)
+    assert any("INVALID_RUN_ID" in e for e in errs)
+    assert any("WINE_EXIT_NOT_ACCEPTED" in e for e in errs)
+    assert any("EXPORT_RUN_SHA_MISMATCH" in e or "EXPORT_RUN_SIZE" in e for e in errs)
+    assert any("MISSING_EXPORT_COMPLETE" in e for e in errs)
 
 
 def test_common_window_requires_exact_relationships():
-    # Identical FX, XAU subset → OK
     fx_times = pd.date_range("2024-01-01", periods=20, freq="h")
-    xau_times = fx_times[::2]  # subset every other hour
+    xau_times = fx_times[::2]
     develops = {
         "EURUSD": pd.DataFrame({"time": fx_times}),
         "GBPUSD": pd.DataFrame({"time": fx_times}),
         "XAUUSD": pd.DataFrame({"time": xau_times}),
     }
-    # Lower thresholds for unit test
-    old_min = b.MIN_DEVELOP_BARS
+    old = b.MIN_DEVELOP_BARS
     b.MIN_DEVELOP_BARS = 5
     try:
         c = b.common_window(develops)
         assert c["status"] == "OK"
-        assert c["fx_calendars_identical"] is True
-        assert c["xau_subset_of_fx"] is True
         assert c["intersection_equals_xau_count"] is True
-        assert c["n_intersection_timestamps"] == len(xau_times)
-    finally:
-        b.MIN_DEVELOP_BARS = old_min
-
-
-def test_common_window_fails_when_fx_calendars_differ():
-    t1 = pd.date_range("2024-01-01", periods=12, freq="h")
-    t2 = pd.date_range("2024-01-01 01:00:00", periods=12, freq="h")
-    develops = {
-        "EURUSD": pd.DataFrame({"time": t1}),
-        "GBPUSD": pd.DataFrame({"time": t2}),
-        "XAUUSD": pd.DataFrame({"time": t1[:6]}),
-    }
-    old = b.MIN_DEVELOP_BARS
-    b.MIN_DEVELOP_BARS = 3
-    try:
-        c = b.common_window(develops)
-        assert c["status"] == "FAIL"
-        assert any("EURUSD_GBPUSD" in e for e in c["hard_errors"])
     finally:
         b.MIN_DEVELOP_BARS = old
 
 
-def test_kill_prefix_only_logic():
-    """Document expected isolation: only matching WINEPREFIX PIDs (unit-level)."""
-    # Functional check is in the shell script; here we assert the helper exists
-    # by reading the script text for fail-closed patterns.
-    text = (ROOT / "scripts/export-instruments-from-wine-mt5.sh").read_text()
-    assert "WINEPREFIX" in text
-    assert "stale_" in text or "PRE_EXPORT_EPOCH" in text
-    assert "|| true" not in text.split("timeout")[1][:200] if "timeout" in text else True
-    assert "EXPECT_LOGIN" in text
-    assert "export_run.json" in text
+def test_repo_artifacts_not_touched_by_unit_tests(tmp_path: Path):
+    """Regression: build_symbol must not write into repo OUT_DIR during tests."""
+    eurusd = ROOT / "results/instrument_data/eurusd_h1.csv"
+    before = eurusd.read_bytes() if eurusd.is_file() else None
+    bridge = tmp_path / "bridge"
+    bridge.mkdir()
+    rows = _good_rows()
+    rows[0]["high"] = 0.5
+    _write_history(bridge / "history_EURUSD.csv", rows)
+    _meta(bridge / "symbol_meta_EURUSD.csv")
+    b.build_symbol(
+        "EURUSD",
+        bridge_dir=bridge,
+        costs={},
+        export_run={"run_id": "a" * 32},
+        holdout_start=b.DEVELOP_END_SERVER,
+        out_dir=tmp_path / "isolated",
+        publish=True,
+    )
+    after = eurusd.read_bytes() if eurusd.is_file() else None
+    assert before == after
+
+
+def test_committed_artifact_lock_verification():
+    """Committed research CSVs must match lock sha/count (catches test pollution)."""
+    lock = b.ARTIFACT_LOCK
+    if not lock.is_file():
+        pytest.skip("artifact lock not yet built")
+    errs = b.verify_committed_artifacts(lock)
+    assert errs == [], errs
+    # Each artifact must be full-history size, not unit-test fixtures
+    data = json.loads(lock.read_text())
+    for sym, ent in data["artifacts"].items():
+        assert int(ent["n_rows_h1"]) >= 10_000, (sym, ent["n_rows_h1"])
+

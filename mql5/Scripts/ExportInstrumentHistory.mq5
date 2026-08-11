@@ -1,16 +1,17 @@
 //+------------------------------------------------------------------+
 //| ExportInstrumentHistory.mq5                                      |
-//| Multi-symbol H1 (+ optional M15) dump with per-bar MqlRates.spread|
-//| For multi-instrument data readiness (offline research).          |
+//| Multi-symbol H1 dump with per-bar MqlRates.spread + completion   |
+//| record (runtime account / connection attestation).               |
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
-#property version   "1.00"
+#property version   "1.10"
 #property script_show_inputs
 
 input string InpSymbols = "XAUUSD,EURUSD,GBPUSD";
 input int    InpMonths  = 60;
-input string InpTfs     = "H1";              // comma list: H1 and/or M15
-input string InpOutDir  = "mt5_arch";        // under MQL5/Files/
+input string InpTfs     = "H1";
+input string InpOutDir  = "mt5_arch";
+input string InpRunId   = "";   // optional; shell may stamp later
 
 //+------------------------------------------------------------------+
 ENUM_TIMEFRAMES ParseTf(const string tf)
@@ -45,7 +46,8 @@ string ResolveSymbol(const string requested)
 //+------------------------------------------------------------------+
 bool ExportTf(const string symbol, const ENUM_TIMEFRAMES period,
               const string tf_name, const int handle, const int digits,
-              const datetime from, const datetime to)
+              const datetime from, const datetime to, int &out_n,
+              datetime &out_from, datetime &out_to)
   {
    MqlRates rates[];
    ArraySetAsSeries(rates, false);
@@ -59,18 +61,19 @@ bool ExportTf(const string symbol, const ENUM_TIMEFRAMES period,
       Sleep(2000);
      }
    if(n <= 0)
-     {
-      // count-based fallback
       n = CopyRates(symbol, period, 0, InpMonths * 30 * 24, rates);
-     }
    if(n <= 0)
      {
       Print("ExportTf fail ", symbol, " ", tf_name, " err=", GetLastError());
+      out_n = 0;
       return false;
      }
+   out_n = n;
+   out_from = rates[0].time;
+   out_to = rates[n - 1].time;
    Print("ExportTf ", symbol, " ", tf_name, " bars=", n,
-         " from=", TimeToString(rates[0].time, TIME_DATE | TIME_MINUTES),
-         " to=", TimeToString(rates[n - 1].time, TIME_DATE | TIME_MINUTES));
+         " from=", TimeToString(out_from, TIME_DATE | TIME_MINUTES),
+         " to=", TimeToString(out_to, TIME_DATE | TIME_MINUTES));
 
    for(int i = 0; i < n; i++)
      {
@@ -110,7 +113,48 @@ void WriteSymbolMeta(const string requested, const string resolved)
    FileWrite(h, "currency_profit," + SymbolInfoString(resolved, SYMBOL_CURRENCY_PROFIT));
    FileWrite(h, "trade_mode," + IntegerToString((int)SymbolInfoInteger(resolved, SYMBOL_TRADE_MODE)));
    FileClose(h);
-   Print("Wrote ", path);
+  }
+
+//+------------------------------------------------------------------+
+//| Simple JSON string escape                                        |
+//+------------------------------------------------------------------+
+string JEsc(const string s)
+  {
+   string o = s;
+   StringReplace(o, "\\", "\\\\");
+   StringReplace(o, "\"", "\\\"");
+   return o;
+  }
+
+//+------------------------------------------------------------------+
+void WriteCompletion(const bool ok, const string details_json_array)
+  {
+   // Runtime account / connection attestation — not from common.ini alone.
+   long login = AccountInfoInteger(ACCOUNT_LOGIN);
+   string server = AccountInfoString(ACCOUNT_SERVER);
+   string company = AccountInfoString(ACCOUNT_COMPANY);
+   bool connected = (bool)TerminalInfoInteger(TERMINAL_CONNECTED);
+   string path = InpOutDir + "\\export_complete.json";
+   int h = FileOpen(path, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+     {
+      Print("WriteCompletion FileOpen fail ", GetLastError());
+      return;
+     }
+   string j = "{";
+   j += "\"ok\":" + (ok ? "true" : "false") + ",";
+   j += "\"run_id\":\"" + JEsc(InpRunId) + "\",";
+   j += "\"terminal_connected\":" + (connected ? "true" : "false") + ",";
+   j += "\"account_login\":" + IntegerToString(login) + ",";
+   j += "\"account_server\":\"" + JEsc(server) + "\",";
+   j += "\"account_company\":\"" + JEsc(company) + "\",";
+   j += "\"trade_mode\":" + IntegerToString((int)AccountInfoInteger(ACCOUNT_TRADE_MODE)) + ",";
+   j += "\"finished_server\":\"" + TimeToString(TimeCurrent(), TIME_DATE | TIME_SECONDS) + "\",";
+   j += "\"symbols\":" + details_json_array;
+   j += "}";
+   FileWriteString(h, j);
+   FileClose(h);
+   Print("Wrote ", path, " ok=", ok, " connected=", connected, " login=", login);
   }
 
 //+------------------------------------------------------------------+
@@ -124,17 +168,17 @@ void OnStart()
    datetime to = TimeCurrent();
    datetime from = to - (datetime)((long)InpMonths * 30L * 24L * 3600L);
 
-   // Prefetch
+   bool connected0 = (bool)TerminalInfoInteger(TERMINAL_CONNECTED);
+   if(!connected0)
+      Print("WARNING: TERMINAL_CONNECTED=false at start — history may be cache-only");
+
    for(int s = 0; s < ns; s++)
      {
       string req = symbols[s];
       StringTrimLeft(req); StringTrimRight(req);
       string sym = ResolveSymbol(req);
       if(StringLen(sym) == 0)
-        {
-         Print("ResolveSymbol failed ", req);
          continue;
-        }
       for(int j = 0; j < nt; j++)
         {
          string tf = tfs[j];
@@ -145,6 +189,11 @@ void OnStart()
      }
    Sleep(2000);
 
+   string details = "[";
+   bool first = true;
+   bool all_ok = true;
+   int done = 0;
+
    for(int s = 0; s < ns; s++)
      {
       string req = symbols[s];
@@ -154,6 +203,7 @@ void OnStart()
       string sym = ResolveSymbol(req);
       if(StringLen(sym) == 0)
         {
+         all_ok = false;
          Print("Skip unresolved ", req);
          continue;
         }
@@ -164,23 +214,54 @@ void OnStart()
       int h = FileOpen(out, FILE_WRITE | FILE_CSV | FILE_ANSI);
       if(h == INVALID_HANDLE)
         {
+         all_ok = false;
          Print("FileOpen failed ", out, " err=", GetLastError());
          continue;
         }
       FileWrite(h, "time,timeframe,symbol,open,high,low,close,tick_volume,spread");
       bool any = false;
+      int bars = 0;
+      datetime bf = 0, bt = 0;
       for(int j = 0; j < nt; j++)
         {
          string tf = tfs[j];
          StringTrimLeft(tf); StringTrimRight(tf);
          if(StringLen(tf) == 0)
             continue;
-         if(ExportTf(sym, ParseTf(tf), tf, h, digits, from, to))
+         int bn = 0;
+         datetime f0 = 0, t0 = 0;
+         if(ExportTf(sym, ParseTf(tf), tf, h, digits, from, to, bn, f0, t0))
+           {
             any = true;
+            bars += bn;
+            if(bf == 0 || f0 < bf) bf = f0;
+            if(t0 > bt) bt = t0;
+           }
         }
       FileClose(h);
-      Print("Export done ", req, " -> ", out, " any=", any);
+      if(!any)
+         all_ok = false;
+      else
+         done++;
+
+      if(!first)
+         details += ",";
+      first = false;
+      details += "{";
+      details += "\"requested\":\"" + JEsc(req) + "\",";
+      details += "\"resolved\":\"" + JEsc(sym) + "\",";
+      details += "\"bars\":" + IntegerToString(bars) + ",";
+      details += "\"from\":\"" + TimeToString(bf, TIME_DATE | TIME_MINUTES) + "\",";
+      details += "\"to\":\"" + TimeToString(bt, TIME_DATE | TIME_MINUTES) + "\",";
+      details += "\"ok\":" + (any ? "true" : "false");
+      details += "}";
+      Print("Export done ", req, " -> ", out, " any=", any, " bars=", bars);
      }
-   Print("ExportInstrumentHistory finished");
+   details += "]";
+
+   if(done < 1)
+      all_ok = false;
+   WriteCompletion(all_ok, details);
+   Print("ExportInstrumentHistory finished ok=", all_ok, " symbols_done=", done);
   }
 //+------------------------------------------------------------------+

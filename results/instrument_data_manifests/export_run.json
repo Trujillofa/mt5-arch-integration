@@ -1,7 +1,7 @@
 {
-  "run_id": "bc076afdc470421696f040bf48116824",
-  "export_started_utc": "2026-08-11T21:33:11Z",
-  "export_finished_utc": "2026-08-11T21:33:19Z",
+  "run_id": "158e5a16fc9a491d96d7f499f7fa1f86",
+  "export_started_utc": "2026-08-11T22:03:14Z",
+  "export_finished_utc": "2026-08-11T22:03:22Z",
   "wine_exit_code": 3,
   "wineprefix": "/home/yderf/.mt5-vantage",
   "mt5_dir": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5",
@@ -17,43 +17,43 @@
   "months": 60,
   "timeframes": "H1",
   "clock_note": "Bar timestamps in history_*.csv are MT5 server clock strings (offset-free). Not labeled UTC.",
-  "account_source": "Config/common.ini Login=/Server= verified against EXPECT_* before launch",
+  "account_source": "common.ini pre-check + MQL export_complete.json runtime AccountInfo/TERMINAL_CONNECTED",
   "files": {
     "history_XAUUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_XAUUSD.csv",
-      "sha256": "34462bc0e959e8650a5a30d34850196250ae9383cf447c23585042e2c772767d",
+      "sha256": "b53b36987229c36d529606ad1b916e2d6480bc2c67ba88540814c05d830054a1",
       "bytes": 1987509,
-      "mtime_unix": 1786483998
+      "mtime_unix": 1786485800
     },
     "meta_XAUUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_XAUUSD.csv",
       "sha256": "d2b109bda76b5700219a0584e1f89ef6a418716bbfc47c552945d683d389fe73",
       "bytes": 197,
-      "mtime_unix": 1786483998
+      "mtime_unix": 1786485800
     },
     "history_EURUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_EURUSD.csv",
-      "sha256": "6dec99241b6a4e4af556ab633a555cdf903119fe87b063839995842d82778b7b",
+      "sha256": "032d0f33c17930d3943f77a71874c0f45bd0f0d88146568bf429938860a1fd15",
       "bytes": 2084126,
-      "mtime_unix": 1786483998
+      "mtime_unix": 1786485800
     },
     "meta_EURUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_EURUSD.csv",
       "sha256": "7dc3e7b69a2a58b2e6d59b92a2b92cc816881e67761ee7d177256808a0787af9",
       "bytes": 200,
-      "mtime_unix": 1786483998
+      "mtime_unix": 1786485800
     },
     "history_GBPUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_GBPUSD.csv",
-      "sha256": "5bfe9bfb7410e86052bf74b8761867af3aa16ec3a053ba85f34046ec608ef89f",
-      "bytes": 2085772,
-      "mtime_unix": 1786483998
+      "sha256": "3f6f4cdb0d8d0147f05fe11fc4ef3b5c433660ba8f304a279b42751be277cfa9",
+      "bytes": 2085773,
+      "mtime_unix": 1786485800
     },
     "meta_GBPUSD": {
       "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_GBPUSD.csv",
       "sha256": "080c46d72b302663bc2f7eddc9bce03177ab66e40946141d28621c5657b984b0",
       "bytes": 200,
-      "mtime_unix": 1786483998
+      "mtime_unix": 1786485800
     }
   }
 }

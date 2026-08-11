@@ -1,0 +1,38 @@
+{
+  "ok": true,
+  "run_id": "158e5a16fc9a491d96d7f499f7fa1f86",
+  "terminal_connected": true,
+  "account_login": 27496181,
+  "account_server": "VantageMarkets-Live 5",
+  "account_company": "Vantage Markets (Pty) Ltd",
+  "trade_mode": 2,
+  "finished_server": "2026.08.12 01:03:20",
+  "symbols": [
+    {
+      "requested": "XAUUSD",
+      "resolved": "XAUUSD",
+      "bars": 29155,
+      "from": "2021.09.07 02:00",
+      "to": "2026.08.12 01:00",
+      "ok": true
+    },
+    {
+      "requested": "EURUSD",
+      "resolved": "EURUSD",
+      "bars": 30694,
+      "from": "2021.09.07 02:00",
+      "to": "2026.08.12 01:00",
+      "ok": true
+    },
+    {
+      "requested": "GBPUSD",
+      "resolved": "GBPUSD",
+      "bars": 30694,
+      "from": "2021.09.07 02:00",
+      "to": "2026.08.12 01:00",
+      "ok": true
+    }
+  ],
+  "shell_login": 27496181,
+  "shell_server": "VantageMarkets-Live 5"
+}

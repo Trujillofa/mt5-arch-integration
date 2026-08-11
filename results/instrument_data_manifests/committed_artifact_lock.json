@@ -1,0 +1,40 @@
+{
+  "gate": "PASS_DATA_READY_WITH_IMPUTATION",
+  "frozen_at_utc": "2026-08-11T22:03:31.040583+00:00",
+  "clock_contract": "server_clock_as_stored",
+  "artifacts": {
+    "XAUUSD": {
+      "research_csv": "results/instrument_data/xauusd_h1.csv",
+      "research_csv_sha256": "b4781d7b89f61a599abd071d567b2a91cfcade5fe0dc7bed1565a702e2e63ec1",
+      "n_rows_h1": 29155,
+      "n_rows_h1_develop": 25557,
+      "develop_csv": "results/instrument_data/xauusd_h1_develop.csv",
+      "develop_csv_sha256": "d78f3ffa010521acb3dab3eb7f06182b2584eed439579eb1b32d1a0632a61ccd",
+      "source_sha256": "b53b36987229c36d529606ad1b916e2d6480bc2c67ba88540814c05d830054a1",
+      "status": "OK_WITH_IMPUTATION",
+      "n_data_lines_on_disk": 29155
+    },
+    "EURUSD": {
+      "research_csv": "results/instrument_data/eurusd_h1.csv",
+      "research_csv_sha256": "05b038ca7ed9ebb67562b6797a2346bf8f51ff45e2113992e86c28df1af9bc53",
+      "n_rows_h1": 30694,
+      "n_rows_h1_develop": 26900,
+      "develop_csv": "results/instrument_data/eurusd_h1_develop.csv",
+      "develop_csv_sha256": "ad01989eb40056dbc6686f1425987a9cae23eb29396693745f8744e79a3815f5",
+      "source_sha256": "032d0f33c17930d3943f77a71874c0f45bd0f0d88146568bf429938860a1fd15",
+      "status": "OK_WITH_IMPUTATION",
+      "n_data_lines_on_disk": 30694
+    },
+    "GBPUSD": {
+      "research_csv": "results/instrument_data/gbpusd_h1.csv",
+      "research_csv_sha256": "2a620d621285c243a7adfd0bea5430fc5112881abc28eab122a52b62a1338701",
+      "n_rows_h1": 30694,
+      "n_rows_h1_develop": 26900,
+      "develop_csv": "results/instrument_data/gbpusd_h1_develop.csv",
+      "develop_csv_sha256": "240b490750eb131313155abcd81966d916046708c581ee20a912e21a54136fb0",
+      "source_sha256": "3f6f4cdb0d8d0147f05fe11fc4ef3b5c433660ba8f304a279b42751be277cfa9",
+      "status": "OK_WITH_IMPUTATION",
+      "n_data_lines_on_disk": 30694
+    }
+  }
+}

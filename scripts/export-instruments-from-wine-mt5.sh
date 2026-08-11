@@ -110,7 +110,7 @@ PRE_EXPORT_EPOCH=$(date +%s)
 # Subtract 1s slack for FS second resolution
 PRE_EXPORT_EPOCH=$((PRE_EXPORT_EPOCH - 1))
 
-# Move prior history_* aside so we never accept stale CSVs as success.
+# Move prior history_* / completion aside so we never accept stale CSVs as success.
 ARCHIVE="$OUT_DIR/_stale_$(date -u +%Y%m%dT%H%M%SZ)_$RUN_ID"
 mkdir -p "$ARCHIVE"
 for s in ${SYMBOLS//,/ }; do
@@ -118,6 +118,9 @@ for s in ${SYMBOLS//,/ }; do
   for f in "$OUT_DIR/history_${s}.csv" "$OUT_DIR/symbol_meta_${s}.csv"; do
     [[ -f "$f" ]] && mv -f "$f" "$ARCHIVE/"
   done
+done
+for f in "$OUT_DIR/export_complete.json" "$OUT_DIR/export_run.json"; do
+  [[ -f "$f" ]] && mv -f "$f" "$ARCHIVE/"
 done
 info "Stale CSVs moved to $ARCHIVE (if any)"
 
@@ -162,7 +165,9 @@ set +e
 timeout "$TIMEOUT_S" wine ./terminal64.exe /portable /config:export_instruments.ini
 rc=$?
 set -e
-# 0 = clean; 124 = timeout (often still wrote files before hang) — require fresh CSVs either way
+# Wine exit codes are unreliable under portable ShutdownTerminal; attestation is
+# mtime-fresh files + export_complete.json + export_run.json. Accepted set is
+# enforced in the Python builder (0, 3, 124).
 info "wine exit_code=$rc"
 
 EXPORT_MARK_END="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -203,6 +208,32 @@ for s in symbols:
             "bytes": p.stat().st_size,
             "mtime_unix": mtime,
         }
+
+complete_path = out / "export_complete.json"
+if not complete_path.is_file():
+    errs.append("missing_export_complete.json")
+elif int(complete_path.stat().st_mtime) < pre:
+    errs.append("stale_export_complete.json")
+else:
+    try:
+        complete = json.loads(complete_path.read_text())
+    except json.JSONDecodeError as e:
+        errs.append(f"export_complete_json_error:{e}")
+        complete = {}
+    if not complete.get("ok"):
+        errs.append("export_complete_ok_false")
+    if not complete.get("terminal_connected"):
+        errs.append("export_complete_not_connected")
+    # Stamp shell run_id into complete for attestation chain
+    complete["run_id"] = run_id
+    complete["shell_login"] = int(login) if str(login).isdigit() else login
+    complete["shell_server"] = server
+    complete_path.write_text(json.dumps(complete, indent=2) + "\n")
+    # copy to repo
+    repo_meta = Path(r"$REPO_ROOT/results/instrument_data_manifests")
+    repo_meta.mkdir(parents=True, exist_ok=True)
+    (repo_meta / "export_complete.json").write_text(json.dumps(complete, indent=2) + "\n")
+
 if errs:
     print("EXPORT_FAIL:", "; ".join(errs), file=sys.stderr)
     sys.exit(2)
@@ -214,7 +245,7 @@ meta = {
     "wine_exit_code": rc,
     "wineprefix": wp,
     "mt5_dir": r"$MT5_DIR",
-    "login": int(login) if login.isdigit() else login,
+    "login": int(login) if str(login).isdigit() else login,
     "server": server,
     "expect_login": int("$EXPECT_LOGIN") if "$EXPECT_LOGIN".isdigit() else "$EXPECT_LOGIN",
     "expect_server": "$EXPECT_SERVER",
@@ -222,16 +253,15 @@ meta = {
     "months": int("$MONTHS"),
     "timeframes": "$TFS",
     "clock_note": "Bar timestamps in history_*.csv are MT5 server clock strings (offset-free). Not labeled UTC.",
-    "account_source": "Config/common.ini Login=/Server= verified against EXPECT_* before launch",
+    "account_source": "common.ini pre-check + MQL export_complete.json runtime AccountInfo/TERMINAL_CONNECTED",
     "files": files,
 }
-# Repo-side copy for the builder
 repo_meta = Path(r"$REPO_ROOT/results/instrument_data_manifests")
 repo_meta.mkdir(parents=True, exist_ok=True)
 path = out / "export_run.json"
 path.write_text(json.dumps(meta, indent=2) + "\n")
 (repo_meta / "export_run.json").write_text(json.dumps(meta, indent=2) + "\n")
-print(json.dumps({"ok": True, "run_id": run_id, "n_files": len(files)}, indent=2))
+print(json.dumps({"ok": True, "run_id": run_id, "n_files": len(files), "wine_exit_code": rc}, indent=2))
 PY
 
 info "Export verified fresh for all symbols. export_run.json written."

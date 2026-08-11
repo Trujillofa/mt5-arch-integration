@@ -1,5 +1,4 @@
 time,timeframe,symbol,open,high,low,close,tick_volume,spread_raw_pts,spread_effective_pts,spread_imputed,spread,clock
-2021-09-07 01:00:00,H1,XAUUSD,1823.17,1824.06,1821.83,1822.53,966,11.0,11.0,False,11.0,server_clock_as_stored
 2021-09-07 02:00:00,H1,XAUUSD,1822.55,1824.15,1822.52,1823.48,1087,13.0,13.0,False,13.0,server_clock_as_stored
 2021-09-07 03:00:00,H1,XAUUSD,1823.48,1826.2,1823.22,1825.93,3514,11.0,11.0,False,11.0,server_clock_as_stored
 2021-09-07 04:00:00,H1,XAUUSD,1825.96,1827.21,1825.43,1826.43,5006,11.0,11.0,False,11.0,server_clock_as_stored
