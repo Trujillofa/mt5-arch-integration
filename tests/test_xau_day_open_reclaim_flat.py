@@ -163,10 +163,10 @@ def _reclaim_day(
 # --- charter / plugin -----------------------------------------------------------------
 
 
-def test_charter_v2_runnable_v1_superseded():
+def test_charter_v2_screen_fail_v1_superseded():
     assert validate_charter_file(CHARTER_V2) == []
     ok2, why2 = is_charter_runnable(CHARTER_V2)
-    assert ok2 is True, why2
+    assert ok2 is False and "SCREEN_FAIL" in why2
     ok1, why1 = is_charter_runnable(CHARTER_V1)
     assert ok1 is False and "SUPERSEDED" in why1
     import hashlib

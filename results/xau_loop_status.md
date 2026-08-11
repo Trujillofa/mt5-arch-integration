@@ -1,5 +1,27 @@
 # XAU offline loop status
 
+## 2026-08-11 — day_open_reclaim_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `day_open_reclaim_flat` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json` · SHA `961dd3d4…` |
+| **disposition** | **SCREEN_FAIL** / `ZERO_PRIMARY_PASSERS` (registry) |
+| **screen path** | `--strict-charter --screen-only` · artifact `results/xau_runs/2026-08-11_day_open_reclaim_flat_screen/` |
+| **develop best (n≥20)** | PF **1.0348** · NP **+1251.52** · n **835** · DD **31.08%** · WR **47.3%** · primary passers **0** |
+| **soft gate miss** | PF 1.0348 < 1.1 (NP>0 and n≥20 hold) |
+| **null** | planned **999** · executed **0** · `sealed_null_attempt=false` · **r1_burned=false** |
+| **v1** | SHA `8eafe48b…` · **SUPERSEDED** (left immutable) |
+| **do not** | retune day_open knobs · sealed r1 · paper/live · revive dead lines |
+
+Closed freezes remain closed. Next research requires a **new** `family_id` and freeze-before-peek.
+
+---
+
 ## 2026-08-11 — IMPLEMENT FIXTURES · `day_open_reclaim_flat` v2 (no develop screen)
 
 | Field | Value |

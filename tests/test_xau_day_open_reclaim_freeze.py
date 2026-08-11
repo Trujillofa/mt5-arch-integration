@@ -77,9 +77,9 @@ def test_v2_charter_exists_validates_and_pins_sha():
     assert ch["supersedes"]["sha256"] == V1_SHA
 
 
-def test_charter_runnable_before_screen():
+def test_charter_screen_fail_after_develop_screen():
     ok, why = is_charter_runnable(CHARTER_V2)
-    assert ok is True, why
+    assert ok is False and "SCREEN_FAIL" in why
 
 
 def test_session_shape_rejects_global_return_shuffle():
