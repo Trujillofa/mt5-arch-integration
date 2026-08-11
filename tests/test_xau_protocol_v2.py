@@ -97,19 +97,24 @@ def test_server_hour_v1_superseded_v2_canonical():
     assert ch2["null"]["method"] == "within_day_ohlc_increment_rotate_v1"
     assert "k∈{0" in ch2["null"]["k_domain"] or "0" in ch2["null"]["k_domain"]
     assert "open_prev_close_gap_multiset" in ch2["null"]["invariants"]
-    assert validate_charter(ch2) == []
+    from xau_charter_protocol import validate_charter_file
+
+    assert validate_charter_file(v2) == []
     # v2 closed SCREEN_FAIL in registry (zero primary passers) — not runnable
     ok2, why2 = is_charter_runnable(v2)
     assert ok2 is False and "SCREEN_FAIL" in why2
 
 
 def test_session_charter_rejects_noncanonical_null():
-    v2 = json.loads(
-        (ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json").read_text()
-    )
+    from xau_charter_protocol import validate_charter_file
+
+    path = ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json"
+    assert validate_charter_file(path) == []
+    v2 = json.loads(path.read_text())
     bad = dict(v2)
     bad["null"] = dict(v2["null"])
     bad["null"]["method"] = "global_return_shuffle"
+    # mutated in-memory: not grandfathered; still must flag bad null method
     errs = validate_charter(bad)
     assert any("global_return_shuffle" in e for e in errs)
     assert any("within_day_ohlc_increment_rotate_v1" in e for e in errs)
@@ -117,16 +122,16 @@ def test_session_charter_rejects_noncanonical_null():
 
 def test_early_range_thesis_is_session_shaped_rejects_global_shuffle():
     """entry_allowed_hours_server / early_block_hours_server force session null."""
-    early = json.loads(
-        (
-            ROOT
-            / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
-        ).read_text()
+    from xau_charter_protocol import validate_charter_file
+
+    path = (
+        ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
     )
+    early = json.loads(path.read_text())
     assert early["thesis_class"] == "intraday_early_block_range_break"
     assert early["rule"].get("entry_allowed_hours_server")
     assert early["rule"].get("early_block_hours_server")
-    assert validate_charter(early) == []
+    assert validate_charter_file(path) == []
 
     bad = dict(early)
     bad["null"] = dict(early["null"])
@@ -1023,7 +1028,7 @@ def _sealed_wrapper_mocks(
             "n_free_knobs": 0,
         },
     )
-    monkeypatch.setattr(sealed, "validate_charter", lambda c: [])
+    monkeypatch.setattr(sealed, "validate_charter_file", lambda p: [])
     monkeypatch.setattr(sealed, "_assert_costs_match_charter", lambda c: {})
     monkeypatch.setattr(sealed, "_run_synthetic_fixture", lambda f, c: {"ok": True})
     monkeypatch.setattr(sealed, "count_attempts", lambda f: 0)

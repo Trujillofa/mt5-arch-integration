@@ -77,7 +77,7 @@ from xau_charter_protocol import (  # noqa: E402, I001
     load_charter,
     make_pass_fns,
     null_spec_from_charter,
-    validate_charter,
+    validate_charter_file,
 )
 from xau_null_core import (  # noqa: E402, I001
     MIN_TRADES_MAX_STAT,
@@ -788,8 +788,9 @@ def main(argv: list[str] | None = None) -> int:
             except CharterError as e:
                 raise SystemExit(str(e)) from e
         charter = load_charter(charter_path)
-        # Same enforcement as sealed cycle: full charter validation
-        verrs = validate_charter(charter)
+        # Same enforcement as sealed cycle: full charter validation (file SHA
+        # for historical grandfathering — never trust self-declared frozen_at alone).
+        verrs = validate_charter_file(charter_path)
         if verrs:
             if args.quick and not args.strict_charter:
                 print("WARNING charter validation:", verrs, flush=True)

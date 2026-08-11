@@ -46,7 +46,7 @@ from xau_charter_protocol import (  # noqa: E402
     load_charter,
     null_spec_from_charter,
     run_output_dir,
-    validate_charter,
+    validate_charter_file,
 )
 from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
 
@@ -602,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
     if not ok_run:
         raise SystemExit(f"charter not runnable: {why}")
 
-    errs = validate_charter(charter)
+    errs = validate_charter_file(charter_path)
     if errs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
 

@@ -17,10 +17,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from xau_charter_protocol import (  # noqa: E402
     DEFAULT_NULL_BASE_SEED,
+    GRANDFATHERED_NO_SEED_CHARTER_SHA256,
     is_charter_runnable,
     load_charter,
     null_spec_from_charter,
     validate_charter,
+    validate_charter_file,
 )
 
 CHARTER_V1 = ROOT / "results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json"
@@ -51,7 +53,8 @@ def test_v2_charter_exists_validates_and_pins_sha():
     body = CHARTER_V2.read_bytes()
     assert hashlib.sha256(body).hexdigest() == V2_SHA
     ch = load_charter(CHARTER_V2)
-    assert validate_charter(ch) == []
+    assert validate_charter_file(CHARTER_V2) == []
+    assert validate_charter(ch) == []  # seeded; no grandfather needed
     assert ch["family_id"] == "day_open_reclaim_flat"
     assert int(ch["charter_version"]) == 2
     assert ch["n_free_knobs"] == 0
@@ -261,7 +264,7 @@ def test_validate_charter_requires_base_seed_for_v2_freeze():
 
 
 def test_future_v1_freeze_without_base_seed_rejected():
-    """Cutover is freeze date, not charter_version — new family v1 must pin seed."""
+    """New family v1 without seed is rejected (not in grandfather SHA set)."""
     ch = load_charter(CHARTER_V2)
     future = dict(ch)
     future["charter_version"] = 1
@@ -270,10 +273,6 @@ def test_future_v1_freeze_without_base_seed_rejected():
     del future["null"]["base_seed"]
     errs = validate_charter(future)
     assert any("base_seed" in e for e in errs), errs
-    # Cutover message must not gate on charter_version alone
-    assert any("freeze date" in e.lower() or "frozen" in e.lower() for e in errs) or any(
-        "base_seed" in e for e in errs
-    )
 
 
 def test_missing_frozen_at_rejected():
@@ -377,10 +376,83 @@ def test_strict_harness_rejects_null_seed_divergence(monkeypatch, tmp_path: Path
     assert "20260808" in str(ei.value)
 
 
-def test_historical_charters_without_base_seed_still_validate():
-    """Grandfather pre-gap freezes (immutable) — must not break closed family tests."""
-    early = load_charter(
+def test_historical_charter_file_shas_grandfathered():
+    """Exact known historical file SHAs omit base_seed without seed-requirement errors.
+
+    Some historical freezes still fail other protocol checks (invalid null method);
+    grandfathering only exempts seed / protocol≥2.2 for those exact file bytes.
+    """
+    paths = [
+        ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json",
+        ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+        ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v1.json",
+        ROOT / "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json",
+        ROOT / "results/xau_charters/2026-08-10_tod_london_ny_flat_v1.json",
+        CHARTER_V1,
+    ]
+    fully_ok = {
+        "2026-08-10_early_server_range_break_flat_v1.json",
+        "2026-08-10_early_server_range_break_flat_v2.json",
+        "2026-08-10_server_hour_window_flat_v2.json",
+        CHARTER_V1.name,
+    }
+    for path in paths:
+        sha = _sha(path)
+        assert sha in GRANDFATHERED_NO_SEED_CHARTER_SHA256, path.name
+        ch = load_charter(path)
+        assert "base_seed" not in (ch.get("null") or {})
+        errs = validate_charter_file(path)
+        assert not any("base_seed" in e for e in errs), (path.name, errs)
+        assert not any("protocol_version must be >= 2.2" in e for e in errs), (
+            path.name,
+            errs,
+        )
+        if path.name in fully_ok:
+            assert errs == [], (path.name, errs)
+
+
+def test_mutation_loses_grandfathering():
+    """Any content change means the on-disk SHA no longer applies to the dict."""
+    path = (
         ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
     )
-    assert "base_seed" not in (early.get("null") or {})
-    assert validate_charter(early) == []
+    assert validate_charter_file(path) == []
+    ch = load_charter(path)
+    mutated = dict(ch)
+    mutated["display_name"] = str(ch.get("display_name") or "") + " MUTATED"
+    # In-memory validation never grandfathers (even if frozen_at stays 2026-08-10).
+    errs = validate_charter(mutated)
+    assert any("base_seed" in e for e in errs), errs
+
+
+def test_backdated_new_family_without_seed_rejected():
+    """Self-declared frozen_at=2026-08-10 cannot grandfather a new family."""
+    ch = load_charter(CHARTER_V2)
+    spoof = dict(ch)
+    spoof["family_id"] = "spoof_backdated_family"
+    spoof["frozen_at"] = "2026-08-10"
+    spoof["protocol_version"] = 2.1
+    spoof["charter_version"] = 1
+    spoof["null"] = dict(ch["null"])
+    del spoof["null"]["base_seed"]
+    errs = validate_charter(spoof)
+    assert any("base_seed" in e for e in errs), errs
+    assert any("protocol_version" in e for e in errs), errs
+
+
+def test_backdating_cannot_bypass_protocol_22():
+    """Backdated frozen_at + protocol 2.1 still fails even if a seed is present."""
+    ch = load_charter(CHARTER_V2)
+    spoof = dict(ch)
+    spoof["family_id"] = "spoof_backdated_with_seed"
+    spoof["frozen_at"] = "2026-08-10"
+    spoof["protocol_version"] = 2.1
+    # seed present — protocol downgrade still refused for non-grandfathered
+    errs = validate_charter(spoof)
+    assert any("protocol_version" in e for e in errs), errs
+    assert not any("base_seed required" in e for e in errs), errs
+
+
+def test_v2_not_in_no_seed_grandfather_set():
+    assert V2_SHA not in GRANDFATHERED_NO_SEED_CHARTER_SHA256
+    assert V1_SHA in GRANDFATHERED_NO_SEED_CHARTER_SHA256

@@ -1,5 +1,18 @@
 # XAU offline loop status
 
+## 2026-08-11 — SHA GRANDFATHER (no frozen_at spoof) · v2 immutable
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | seed/protocol exemptions only for exact `GRANDFATHERED_NO_SEED_CHARTER_SHA256` file bytes; self-declared `frozen_at` cannot grandfather |
+| **grandfather** | known historical file SHAs only (incl. 2026-08-10 freezes + day_open v1); mutations lose exemption |
+| **implement / develop / null / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
 ## 2026-08-11 — PROTOCOL SEED CUTOVER FAIL-CLOSED (v2 immutable)
 
 | Field | Value |
@@ -7,7 +20,7 @@
 | **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
 | **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
 | **protocol** | `frozen_at` required+parseable; seed cutover by freeze date only (not protocol_version); post-cutover protocol <2.2 rejected |
-| **grandfather** | pre-2026-08-10 freezes without seed still valid |
+| **grandfather** | exact historical charter file SHAs only (not self-declared dates) |
 | **implement / develop / null / live** | **not authorized** |
 | **promote / live_go / PAPER_GO** | **no / false / no** |
 
