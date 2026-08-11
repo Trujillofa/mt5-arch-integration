@@ -116,12 +116,14 @@ Strict CLI: `--null-seed` must equal charter `null.base_seed`. Sealed cycle pass
 
 No develop PF/NP/DD or passer counts appear in this memo (freeze-before-peek).
 
-## Immediate next (after adversarial review of this freeze)
+## Immediate next
 
-1. Implement `scripts/xau_family_day_open_reclaim_flat.py` + synthetic fixtures only (four required fixtures above).  
-2. `--screen-only` develop screen under **v2** charter.  
+1. ~~Implement family + fixtures~~ **done** (`scripts/xau_family_day_open_reclaim_flat.py`).  
+2. **Pending review:** `--strict-charter --screen-only` develop screen under **v2** only (not started).  
 3. Zero soft passers → SCREEN_FAIL registry, zero nulls.  
 4. ≥1 soft passer → external review → sealed 999 only if approved.
+
+Do **not** inspect develop metrics until screen is explicitly authorized.
 
 ## Safety
 

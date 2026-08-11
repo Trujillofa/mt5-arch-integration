@@ -1,5 +1,19 @@
 # XAU offline loop status
 
+## 2026-08-11 — IMPLEMENT FIXTURES · `day_open_reclaim_flat` v2 (no develop screen)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_REVIEW_THEN_DEVELOP_SCREEN`** (`--strict-charter --screen-only` only if authorized) |
+| **family** | `scripts/xau_family_day_open_reclaim_flat.py` |
+| **charter** | v2 SHA `961dd3d4…` · runnable |
+| **fixtures** | same_bar reject · prior_bar accept · two-trade sizing · entry/exit equity cost timing |
+| **develop metrics** | **not inspected** |
+| **null / sealed r1 / paper / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
 ## 2026-08-11 — SHA GRANDFATHER (no frozen_at spoof) · v2 immutable
 
 | Field | Value |
