@@ -1,0 +1,297 @@
+{
+  "method": "within_day_ohlc_increment_rotate_v1_maxstat_family",
+  "family": "early_server_range_break_flat",
+  "family_source": "xau_family_early_server_range_break_flat",
+  "kill_label": "KILL_EARLY_SERVER_RANGE_BREAK_FLAT",
+  "charter_path": "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+  "provenance": {
+    "charter_path": "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+    "charter_sha256": "11099b2a7aa0221187c94462361d53070daecfdc7df0be80f82df5ae1954475a",
+    "code_commit": "86000611eb07f4604bd97cc0ed0b27322f0a09c6",
+    "tree_clean": true,
+    "dirty_paths": [],
+    "data_path": "xauusd_data.csv",
+    "data_sha256": "529b8f5759fd6bb27244c3bb7945e47be5bb3a287a89ffeeca5d50317652d22a",
+    "costs_path": "results/xau_research_costs.json",
+    "costs_sha256": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+    "null_seed": 20260808,
+    "n_null": 0,
+    "output_dir": "results/xau_runs/2026-08-11_early_server_range_break_flat_screen",
+    "null_method": "within_day_ohlc_increment_rotate_v1",
+    "block_days": 1,
+    "family": "early_server_range_break_flat",
+    "disposition": "SCREEN_FAIL",
+    "n_null_planned": 999,
+    "n_null_executed": 0,
+    "attempt_type": "DETERMINISTIC_SCREEN",
+    "family_screen_attempt": true,
+    "sealed_null_attempt": false,
+    "null_trials_executed": 0,
+    "r1_style_null_burned": false,
+    "screen_only": true
+  },
+  "timestamp_utc": "2026-08-11T14:56:43.846612+00:00",
+  "window": {
+    "holdout_start": "2026-01-01 00:00:00+00:00",
+    "bars": 25582,
+    "start": "2021-09-03T19:00:00+00:00",
+    "end": "2025-12-31T23:00:00+00:00"
+  },
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0
+  },
+  "costs_caveat": "commission/spread account-matched for Standard STP; slippage_points=0 is unmeasured; swap not modeled",
+  "slippage_sensitivity": {
+    "role": "report_only_frozen",
+    "no_rescue_tuning": true,
+    "points": [
+      0,
+      5,
+      10,
+      20
+    ],
+    "rows": [
+      {
+        "slippage_points": 0.0,
+        "net_profit": -4054.464059780584,
+        "profit_factor": 0.7829463856871461,
+        "n_trades": 542,
+        "max_drawdown_pct": 47.876216094902425,
+        "soft_pass": false,
+        "classic_pass": false
+      },
+      {
+        "slippage_points": 5.0,
+        "net_profit": -4498.980919287389,
+        "profit_factor": 0.7539748881328101,
+        "n_trades": 542,
+        "max_drawdown_pct": 50.64288918314907,
+        "soft_pass": false,
+        "classic_pass": false
+      },
+      {
+        "slippage_points": 10.0,
+        "net_profit": -4913.196255208146,
+        "profit_factor": 0.7250727497966615,
+        "n_trades": 542,
+        "max_drawdown_pct": 53.47672453095173,
+        "soft_pass": false,
+        "classic_pass": false
+      },
+      {
+        "slippage_points": 20.0,
+        "net_profit": -5571.21342545143,
+        "profit_factor": 0.6762405227164058,
+        "n_trades": 541,
+        "max_drawdown_pct": 58.29770628984914,
+        "soft_pass": false,
+        "classic_pass": false
+      }
+    ]
+  },
+  "grid": {
+    "max_n": 1200,
+    "seed": 42,
+    "n_configs": 1
+  },
+  "gates": {
+    "classic": "n>=20, PF>1.5, WR>55.0, DD<10.0",
+    "soft": "n>=20, PF>=1.1, NP>0.0",
+    "primary_n_passers": "soft",
+    "max_pf_min_trades": 20,
+    "source": "charter"
+  },
+  "real": {
+    "n_configs": 1,
+    "min_trades_gate": 20,
+    "elapsed_s": 0.042722463607788086,
+    "best_by_pf": {
+      "index": 0,
+      "params": {
+        "flat_hour": 16,
+        "sl_atr": 1.5,
+        "tp_atr": 2.0,
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "early_block_hours": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "entry_allowed_hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "profit_factor": 0.7829463856871461,
+      "net_profit": -4054.464059780584,
+      "win_rate": 41.51291512915129,
+      "max_drawdown_pct": 47.876216094902425,
+      "n_trades": 542,
+      "expectancy": -7.480560995905137,
+      "passes_classic": false,
+      "passes_soft": false
+    },
+    "best_by_pf_min_trades": {
+      "index": 0,
+      "params": {
+        "flat_hour": 16,
+        "sl_atr": 1.5,
+        "tp_atr": 2.0,
+        "risk_pct": 0.01,
+        "max_lots": 0.5,
+        "early_block_hours": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "entry_allowed_hours": [
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      },
+      "profit_factor": 0.7829463856871461,
+      "net_profit": -4054.464059780584,
+      "win_rate": 41.51291512915129,
+      "max_drawdown_pct": 47.876216094902425,
+      "n_trades": 542,
+      "expectancy": -7.480560995905137,
+      "passes_classic": false,
+      "passes_soft": false
+    },
+    "best_soft_passer": null,
+    "n_passers_classic": 0,
+    "n_passers_soft": 0,
+    "n_with_min_trades": 1,
+    "pf": {
+      "max_raw": 0.7829463856871461,
+      "max_min_trades": 0.7829463856871461,
+      "p50": 0.7829463856871461,
+      "p90": 0.7829463856871461,
+      "p99": 0.7829463856871461,
+      "mean": 0.7829463856871461
+    },
+    "net_profit": {
+      "max_raw": -4054.464059780584,
+      "max_min_trades": -4054.464059780584,
+      "p50": -4054.464059780584,
+      "mean": -4054.464059780584
+    },
+    "top20_by_pf_min_trades": [
+      {
+        "index": 0,
+        "params": {
+          "flat_hour": 16,
+          "sl_atr": 1.5,
+          "tp_atr": 2.0,
+          "risk_pct": 0.01,
+          "max_lots": 0.5,
+          "early_block_hours": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "entry_allowed_hours": [
+            9,
+            10,
+            11,
+            12,
+            13,
+            14,
+            15
+          ]
+        },
+        "profit_factor": 0.7829463856871461,
+        "net_profit": -4054.464059780584,
+        "win_rate": 41.51291512915129,
+        "max_drawdown_pct": 47.876216094902425,
+        "n_trades": 542,
+        "expectancy": -7.480560995905137,
+        "passes_classic": false,
+        "passes_soft": false
+      }
+    ],
+    "max_pf": 0.7829463856871461,
+    "max_net": -4054.464059780584,
+    "max_pf_raw": 0.7829463856871461,
+    "n_passers": 0,
+    "primary_n_passers": "n_passers_soft"
+  },
+  "screen": {
+    "zero_primary_passers": true,
+    "screen_only": true,
+    "rule": "If real primary passers==0, SCREEN_FAIL without null trials. Reason: every null n_passers \u2265 0 = real, so hits=n_null and p_n_passers=(n_null+1)/(n_null+1)=1.0 for any planned n_null. With --screen-only, positive passers also stop before null (SCREEN_PASS_PENDING_NULL_REVIEW)."
+  },
+  "attempt_accounting": {
+    "attempt_type": "DETERMINISTIC_SCREEN",
+    "family_screen_attempt": true,
+    "sealed_null_attempt": false,
+    "n_null_planned": 999,
+    "n_null_executed": 0,
+    "null_trials_executed": 0,
+    "r1_style_null_burned": false,
+    "r1_burned": false,
+    "screen_only": true
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "block_days": 1,
+    "n_trials": 0,
+    "n_null_planned": 999,
+    "n_null_executed": 0,
+    "skipped_reason": "ZERO_PRIMARY_PASSERS",
+    "base_seed": 20260808,
+    "workers": 1,
+    "max_pf": null,
+    "n_passers": null,
+    "n_passers_classic": null,
+    "n_passers_soft": null,
+    "p_max_pf": null,
+    "p_n_passers": 1.0,
+    "p_n_passers_classic": null,
+    "p_n_passers_soft": null,
+    "p_max_pf_status": "not_evaluated",
+    "p_n_passers_status": "implied_1.0_zero_real_passers",
+    "trials": []
+  },
+  "verdict": {
+    "disposition": "SCREEN_FAIL",
+    "reason": "ZERO_PRIMARY_PASSERS: real grid primary passers=0. For any planned n_null, each null trial has n_passers \u2265 0 = real, so hits=n_null and p_n_passers=(n_null+1)/(n_null+1)=1.0 under add-one smoothing. Null trials not executed (planned=999, executed=0). p_max_pf not evaluated. Do not retune; freeze a new family_id.",
+    "fail_max_pf": false,
+    "fail_n_passers": true,
+    "promote": false,
+    "live_go": false,
+    "screen_status": "ZERO_PRIMARY_PASSERS"
+  },
+  "elapsed_s": 0.7534406185150146,
+  "quick": false,
+  "screen_only": true
+}

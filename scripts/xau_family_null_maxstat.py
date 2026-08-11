@@ -227,11 +227,22 @@ def _builtin_server_hour_window_flat() -> FamilyPlugin:
     )
 
 
+def _builtin_early_server_range_break_flat() -> FamilyPlugin:
+    import xau_family_early_server_range_break_flat as mod  # type: ignore
+
+    return _wrap_module(
+        "early_server_range_break_flat",
+        mod,
+        source="xau_family_early_server_range_break_flat",
+    )
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
     "tod_london_ny_flat": _builtin_tod_london_ny_flat,
     "server_hour_window_flat": _builtin_server_hour_window_flat,
+    "early_server_range_break_flat": _builtin_early_server_range_break_flat,
 }
 
 
@@ -705,6 +716,16 @@ def main(argv: list[str] | None = None) -> int:
         help="require --charter; refuse family/null/cost mismatches; no CLI null overrides",
     )
     ap.add_argument(
+        "--screen-only",
+        action="store_true",
+        help=(
+            "strict-charter develop screen only: score real grid, never run null trials. "
+            "Zero primary passers → SCREEN_FAIL; positive passers → "
+            "SCREEN_PASS_PENDING_NULL_REVIEW (nonterminal; r1 not burned). "
+            "Requires --strict-charter + --charter."
+        ),
+    )
+    ap.add_argument(
         "--allow-charter-override",
         action="store_true",
         help="allow CLI --n-null/--null-method to differ from charter (marks non-dispositional)",
@@ -741,6 +762,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.strict_charter and not args.charter:
         raise SystemExit("--strict-charter requires --charter")
+    if args.strict_charter and args.no_soft_primary:
+        raise SystemExit(
+            "--no-soft-primary is incompatible with --strict-charter; "
+            "the charter controls the primary gate"
+        )
+    if args.screen_only and not args.strict_charter:
+        raise SystemExit("--screen-only requires --strict-charter (and --charter)")
+    if args.screen_only and args.quick:
+        raise SystemExit("--screen-only is incompatible with --quick")
+    if args.screen_only and args.allow_charter_override:
+        raise SystemExit("--screen-only is incompatible with --allow-charter-override")
 
     cli_n_null = args.n_null  # None unless user passed --n-null
     cli_null_method = args.null_method
@@ -976,17 +1008,30 @@ def main(argv: list[str] | None = None) -> int:
         and not args.quick
         and not non_dispositional
     )
+    # --screen-only: always stop after real grid (never burn nulls), regardless
+    # of passer count. Positive passers wait for external review before null.
+    screen_only = bool(args.screen_only)
     n_null_executed = n_null_planned
-    if screen_fail_zero_passers:
+    if screen_fail_zero_passers or screen_only:
         n_null_executed = 0
         args.n_null = 0
-        print(
-            "SCREEN_FAIL ZERO_PRIMARY_PASSERS: real primary passers=0 ⇒ "
-            "for any planned n_null, every null count ≥ 0 hits the threshold, "
-            "so p_n_passers=(n_null+1)/(n_null+1)=1.0. "
-            f"Skipping null trials (planned={n_null_planned}, executed=0).",
-            flush=True,
-        )
+        if screen_only and not screen_fail_zero_passers:
+            print(
+                "SCREEN_ONLY: real primary passers="
+                f"{int(real['n_passers'])} ≥ 1. Stopping after develop grid — "
+                f"null trials NOT run (planned={n_null_planned}, executed=0). "
+                "Disposition SCREEN_PASS_PENDING_NULL_REVIEW; sealed r1 not burned. "
+                "External review required before any null/sealed run.",
+                flush=True,
+            )
+        elif screen_fail_zero_passers:
+            print(
+                "SCREEN_FAIL ZERO_PRIMARY_PASSERS: real primary passers=0 ⇒ "
+                "for any planned n_null, every null count ≥ 0 hits the threshold, "
+                "so p_n_passers=(n_null+1)/(n_null+1)=1.0. "
+                f"Skipping null trials (planned={n_null_planned}, executed=0).",
+                flush=True,
+            )
 
     # --- nulls ---
     if int(args.n_null) > 0:
@@ -1083,6 +1128,20 @@ def main(argv: list[str] | None = None) -> int:
         p_max_pf = None  # not evaluated — no null PF distribution
         fail_pf = False
         fail_pass = True
+    elif screen_only:
+        # Positive primary passers under --screen-only: stop for external review.
+        disposition = "SCREEN_PASS_PENDING_NULL_REVIEW"
+        reason = (
+            f"SCREEN_ONLY: real primary passers={int(real['n_passers'])} ≥ 1 on the "
+            f"develop grid. Null trials intentionally not executed "
+            f"(planned={n_null_planned}, executed=0); sealed_null_attempt=false; "
+            "r1 not burned. External review required before any 999-trial null or "
+            "sealed cycle. promote=no live_go=false."
+        )
+        p_max_pf = None
+        p_n_passers = None  # type: ignore[assignment]
+        fail_pf = False
+        fail_pass = False
     elif fail_pf or fail_pass:
         disposition = plugin.kill_label
         reason = (
@@ -1106,11 +1165,18 @@ def main(argv: list[str] | None = None) -> int:
             "(cut knobs, cross-instrument) — still not live_go / promote."
         )
 
-    attempt_type = (
-        "DETERMINISTIC_SCREEN"
-        if screen_fail_zero_passers
-        else ("QUICK_SMOKE" if args.quick else "SEALED_NULL")
+    if screen_fail_zero_passers:
+        attempt_type = "DETERMINISTIC_SCREEN"
+    elif screen_only:
+        attempt_type = "SCREEN_ONLY"
+    elif args.quick:
+        attempt_type = "QUICK_SMOKE"
+    else:
+        attempt_type = "SEALED_NULL"
+    sealed_null_attempt = bool(
+        n_null_executed > 0 and not args.quick and not non_dispositional and not screen_only
     )
+    r1_style_null_burned = bool(n_null_executed > 0 and not args.quick and not screen_only)
     provenance = build_provenance(
         charter_path=charter_path or Path("none"),
         costs_path=RESEARCH_COSTS_PATH,
@@ -1128,10 +1194,10 @@ def main(argv: list[str] | None = None) -> int:
             "n_null_executed": int(n_null_executed),
             "attempt_type": attempt_type,
             "family_screen_attempt": True,  # real develop grid was evaluated
-            "sealed_null_attempt": bool(
-                n_null_executed > 0 and not args.quick and not non_dispositional
-            ),
+            "sealed_null_attempt": sealed_null_attempt,
             "null_trials_executed": int(n_null_executed),
+            "r1_style_null_burned": r1_style_null_burned,
+            "screen_only": bool(screen_only),
         },
     )
 
@@ -1175,22 +1241,25 @@ def main(argv: list[str] | None = None) -> int:
         "real": real,
         "screen": {
             "zero_primary_passers": bool(screen_fail_zero_passers),
+            "screen_only": bool(screen_only),
             "rule": (
                 "If real primary passers==0, SCREEN_FAIL without null trials. "
                 "Reason: every null n_passers ≥ 0 = real, so hits=n_null and "
-                "p_n_passers=(n_null+1)/(n_null+1)=1.0 for any planned n_null."
+                "p_n_passers=(n_null+1)/(n_null+1)=1.0 for any planned n_null. "
+                "With --screen-only, positive passers also stop before null "
+                "(SCREEN_PASS_PENDING_NULL_REVIEW)."
             ),
         },
         "attempt_accounting": {
             "attempt_type": attempt_type,
             "family_screen_attempt": True,
-            "sealed_null_attempt": bool(
-                n_null_executed > 0 and not args.quick and not non_dispositional
-            ),
+            "sealed_null_attempt": sealed_null_attempt,
             "n_null_planned": int(n_null_planned),
             "n_null_executed": int(n_null_executed),
             "null_trials_executed": int(n_null_executed),
-            "r1_style_null_burned": bool(n_null_executed > 0 and not args.quick),
+            "r1_style_null_burned": r1_style_null_burned,
+            "r1_burned": r1_style_null_burned,
+            "screen_only": bool(screen_only),
         },
         "null": {
             "method": null_method,
@@ -1199,7 +1268,9 @@ def main(argv: list[str] | None = None) -> int:
             "n_null_planned": int(n_null_planned),
             "n_null_executed": int(n_null_executed),
             "skipped_reason": (
-                "ZERO_PRIMARY_PASSERS" if screen_fail_zero_passers else None
+                "ZERO_PRIMARY_PASSERS"
+                if screen_fail_zero_passers
+                else ("SCREEN_ONLY" if screen_only else None)
             ),
             "base_seed": args.null_seed,
             "workers": args.workers,
@@ -1207,17 +1278,19 @@ def main(argv: list[str] | None = None) -> int:
             "n_passers": null_pass_dist if null_rows else None,
             "n_passers_classic": dist_summary(null_n_classic) if null_rows else None,
             "n_passers_soft": dist_summary(null_n_soft) if null_rows else None,
-            "p_max_pf": p_max_pf,  # None when screen-fail (not evaluated)
+            "p_max_pf": p_max_pf,  # None when screen-fail / screen-only (not evaluated)
             "p_n_passers": p_n_passers,
             "p_n_passers_classic": p_n_classic if null_rows else None,
             "p_n_passers_soft": p_n_soft if null_rows else None,
             "p_max_pf_status": (
-                "not_evaluated" if screen_fail_zero_passers else "evaluated"
+                "not_evaluated"
+                if (screen_fail_zero_passers or screen_only)
+                else "evaluated"
             ),
             "p_n_passers_status": (
                 "implied_1.0_zero_real_passers"
                 if screen_fail_zero_passers
-                else "evaluated"
+                else ("not_evaluated_screen_only" if screen_only else "evaluated")
             ),
             "trials": null_rows,
         },
@@ -1229,11 +1302,18 @@ def main(argv: list[str] | None = None) -> int:
             "promote": False,
             "live_go": False,
             "screen_status": (
-                "ZERO_PRIMARY_PASSERS" if screen_fail_zero_passers else None
+                "ZERO_PRIMARY_PASSERS"
+                if screen_fail_zero_passers
+                else (
+                    "PASSERS_GE_1_PENDING_NULL_REVIEW"
+                    if screen_only
+                    else None
+                )
             ),
         },
         "elapsed_s": float(time.time() - t_all),
         "quick": bool(args.quick),
+        "screen_only": bool(screen_only),
     }
 
     out_json.parent.mkdir(parents=True, exist_ok=True)

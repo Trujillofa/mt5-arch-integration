@@ -115,6 +115,48 @@ def test_session_charter_rejects_noncanonical_null():
     assert any("within_day_ohlc_increment_rotate_v1" in e for e in errs)
 
 
+def test_early_range_thesis_is_session_shaped_rejects_global_shuffle():
+    """entry_allowed_hours_server / early_block_hours_server force session null."""
+    early = json.loads(
+        (
+            ROOT
+            / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
+        ).read_text()
+    )
+    assert early["thesis_class"] == "intraday_early_block_range_break"
+    assert early["rule"].get("entry_allowed_hours_server")
+    assert early["rule"].get("early_block_hours_server")
+    assert validate_charter(early) == []
+
+    bad = dict(early)
+    bad["null"] = dict(early["null"])
+    bad["null"]["method"] = "global_return_shuffle"
+    # strip forbidden list so rejection is from session-shape detection
+    bad["null"]["forbidden_methods"] = []
+    errs = validate_charter(bad)
+    assert any("global_return_shuffle" in e for e in errs)
+    assert any("within_day_ohlc_increment_rotate_v1" in e for e in errs)
+    assert any("session" in e.lower() for e in errs)
+
+
+def test_early_range_v1_superseded_v2_screen_fail():
+    from xau_charter_protocol import is_charter_runnable
+
+    v1 = ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json"
+    v2 = ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
+    ok1, why1 = is_charter_runnable(v1)
+    ok2, why2 = is_charter_runnable(v2)
+    assert ok1 is False and "SUPERSEDED" in why1
+    assert ok2 is False and "SCREEN_FAIL" in why2
+    # v1 remains freeze-immutable on disk
+    import hashlib
+
+    sha = hashlib.sha256(v1.read_bytes()).hexdigest()
+    assert sha.startswith("fee8611c")
+    sha2 = hashlib.sha256(v2.read_bytes()).hexdigest()
+    assert sha2.startswith("11099b2a")
+
+
 def test_registry_terminal_is_monotonic(tmp_path: Path):
     reg = tmp_path / "reg.jsonl"
     sha = "abc" * 16

@@ -483,7 +483,15 @@ def _run_synthetic_fixture(family: str, charter: dict[str, Any]) -> dict[str, An
     ns = null_spec_from_charter(charter)
     method = str(ns["method"])
     rule = charter.get("rule") or {}
-    entry_h = rule.get("entry_hour") or (rule.get("entry_hours_server") or [None])[0]
+    # Session-shaped entry hour: fixed hour, or first of entry_hours_server /
+    # entry_allowed_hours_server (early_server_range_break_flat uses the latter).
+    entry_h = rule.get("entry_hour")
+    if entry_h is None:
+        for key in ("entry_hours_server", "entry_allowed_hours_server"):
+            seq = rule.get(key) or []
+            if seq:
+                entry_h = seq[0]
+                break
     flat_h = rule.get("flat_hour") or rule.get("flat_hour_server")
     if flat_h is None:
         active = rule.get("session_active_hours_server") or []
