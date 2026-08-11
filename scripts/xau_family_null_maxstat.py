@@ -77,7 +77,7 @@ from xau_charter_protocol import (  # noqa: E402, I001
     load_charter,
     make_pass_fns,
     null_spec_from_charter,
-    validate_charter,
+    validate_charter_file,
 )
 from xau_null_core import (  # noqa: E402, I001
     MIN_TRADES_MAX_STAT,
@@ -237,12 +237,23 @@ def _builtin_early_server_range_break_flat() -> FamilyPlugin:
     )
 
 
+def _builtin_day_open_reclaim_flat() -> FamilyPlugin:
+    import xau_family_day_open_reclaim_flat as mod  # type: ignore
+
+    return _wrap_module(
+        "day_open_reclaim_flat",
+        mod,
+        source="xau_family_day_open_reclaim_flat",
+    )
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
     "tod_london_ny_flat": _builtin_tod_london_ny_flat,
     "server_hour_window_flat": _builtin_server_hour_window_flat,
     "early_server_range_break_flat": _builtin_early_server_range_break_flat,
+    "day_open_reclaim_flat": _builtin_day_open_reclaim_flat,
 }
 
 
@@ -788,8 +799,9 @@ def main(argv: list[str] | None = None) -> int:
             except CharterError as e:
                 raise SystemExit(str(e)) from e
         charter = load_charter(charter_path)
-        # Same enforcement as sealed cycle: full charter validation
-        verrs = validate_charter(charter)
+        # Same enforcement as sealed cycle: full charter validation (file SHA
+        # for historical grandfathering — never trust self-declared frozen_at alone).
+        verrs = validate_charter_file(charter_path)
         if verrs:
             if args.quick and not args.strict_charter:
                 print("WARNING charter validation:", verrs, flush=True)
@@ -857,6 +869,16 @@ def main(argv: list[str] | None = None) -> int:
                 )
             else:
                 non_dispositional = True
+        # null.base_seed: under --strict-charter, CLI --null-seed must match charter
+        # (no seed shopping near significance thresholds).
+        charter_base_seed = ns.get("base_seed")
+        if charter_base_seed is not None and int(args.null_seed) != int(charter_base_seed):
+            if args.strict_charter and not args.allow_charter_override:
+                raise SystemExit(
+                    f"--null-seed={args.null_seed} != charter null.base_seed="
+                    f"{int(charter_base_seed)}"
+                )
+            non_dispositional = True
         slip_sensitivity_pts = list(
             (charter.get("success") or {})
             .get("slippage_sensitivity", {})

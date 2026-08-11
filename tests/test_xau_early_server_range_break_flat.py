@@ -21,7 +21,6 @@ from xau_charter_protocol import (  # noqa: E402
     is_charter_runnable,
     load_charter,
     null_spec_from_charter,
-    validate_charter,
 )
 from xau_null_core import apply_null_method, null_invariants_ok  # noqa: E402
 
@@ -109,7 +108,9 @@ def _signal_day_with_flat(
 
 
 def test_charter_v2_screen_fail_v1_superseded():
-    assert validate_charter(load_charter(CHARTER_V2)) == []
+    from xau_charter_protocol import validate_charter_file
+
+    assert validate_charter_file(CHARTER_V2) == []
     ok2, why2 = is_charter_runnable(CHARTER_V2)
     assert ok2 is False and "SCREEN_FAIL" in why2
     ok1, why1 = is_charter_runnable(CHARTER_V1)

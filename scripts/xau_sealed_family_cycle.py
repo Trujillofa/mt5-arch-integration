@@ -34,6 +34,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402
+    DEFAULT_NULL_BASE_SEED,
     CharterError,
     append_attempt,
     assert_charter_path_for_sealed,
@@ -45,7 +46,7 @@ from xau_charter_protocol import (  # noqa: E402
     load_charter,
     null_spec_from_charter,
     run_output_dir,
-    validate_charter,
+    validate_charter_file,
 )
 from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
 
@@ -168,11 +169,38 @@ def _screen_trials_empty_ok(null_block: dict[str, Any]) -> str | None:
     return None
 
 
+def _verify_reported_null_seed(
+    null_block: dict[str, Any] | None,
+    expected_null_seed: int | None,
+) -> tuple[int | None, str | None]:
+    """Require report null.base_seed exact int match to charter expected seed.
+
+    Returns (verified_seed, error_code). On success error is None and seed is int.
+    Missing / wrong type / mismatch → FAILED_RUN_UNKNOWN on OK paths.
+    """
+    if expected_null_seed is None:
+        return None, "missing_expected_null_seed"
+    if type(expected_null_seed) is not int or expected_null_seed < 0:
+        return None, "invalid_expected_null_seed"
+    if null_block is None:
+        return None, "missing_null_block"
+    if "base_seed" not in null_block:
+        return None, "missing_null.base_seed"
+    raw = null_block.get("base_seed")
+    # Reject bool (subclass of int), float, str, None, negatives.
+    if type(raw) is not int or raw < 0:
+        return None, "invalid_null.base_seed"
+    if raw != expected_null_seed:
+        return None, "null.base_seed_mismatch"
+    return raw, None
+
+
 def parse_harness_report_for_accounting(
     *,
     result_json: Path,
     n_null_planned: int,
     exit_code: int | None,
+    expected_null_seed: int | None = None,
 ) -> dict[str, Any]:
     """Derive attempt accounting from harness report + process exit (fail-closed).
 
@@ -181,6 +209,10 @@ def parse_harness_report_for_accounting(
     1. DETERMINISTIC_SCREEN with full proof fields → r1_burned=false.
     2. Full sealed-null success (n_exec == charter planned > 0, trials list) →
        r1_burned=true.
+
+    Both OK paths require ``expected_null_seed`` and an exact integer match to
+    report ``null.base_seed``. Missing / mismatch / invalid seed →
+    FAILED_RUN_UNKNOWN (never invent seed 0).
 
     Invalid-present count fields never fall back to another block. Everything
     else → disposition FAILED_RUN_UNKNOWN, r1_burned=true, n_null_executed=None.
@@ -224,7 +256,8 @@ def parse_harness_report_for_accounting(
     if verdict is not None and verdict.get("disposition") is not None:
         reported_disposition = str(verdict.get("disposition"))
 
-    null_seed = null_block.get("base_seed") if null_block is not None else None
+    # Raw report seed (may be invalid); never coerce for provenance invention.
+    null_seed_raw = null_block.get("base_seed") if null_block is not None else None
 
     def _fail(reason: str) -> dict[str, Any]:
         return _unknown_accounting(
@@ -233,7 +266,7 @@ def parse_harness_report_for_accounting(
             report_status=reason,
             reported_disposition=reported_disposition,
             report=report,
-            null_seed=null_seed,
+            null_seed=null_seed_raw,
         )
 
     def _require_ok_blocks() -> str | None:
@@ -336,6 +369,13 @@ def parse_harness_report_for_accounting(
         if trials_err:
             return _fail(trials_err)
 
+        verified_seed, seed_err = _verify_reported_null_seed(
+            null_block, expected_null_seed
+        )
+        if seed_err:
+            return _fail(seed_err)
+        assert verified_seed is not None
+
         return {
             "n_null_planned": charter_planned,
             "exit_code": base_exit,
@@ -349,7 +389,7 @@ def parse_harness_report_for_accounting(
             "sealed_null_attempt": False,
             "r1_burned": False,
             "report_status": "ok",
-            "null_seed": null_seed,
+            "null_seed": verified_seed,
             "report": report,
         }
 
@@ -387,6 +427,13 @@ def parse_harness_report_for_accounting(
         if trials_err:
             return _fail(trials_err)
 
+        verified_seed, seed_err = _verify_reported_null_seed(
+            null_block, expected_null_seed
+        )
+        if seed_err:
+            return _fail(seed_err)
+        assert verified_seed is not None
+
         return {
             "n_null_planned": charter_planned,
             "exit_code": base_exit,
@@ -400,7 +447,7 @@ def parse_harness_report_for_accounting(
             "sealed_null_attempt": True,
             "r1_burned": True,
             "report_status": "ok",
-            "null_seed": null_seed,
+            "null_seed": verified_seed,
             "report": report,
         }
 
@@ -555,7 +602,7 @@ def main(argv: list[str] | None = None) -> int:
     if not ok_run:
         raise SystemExit(f"charter not runnable: {why}")
 
-    errs = validate_charter(charter)
+    errs = validate_charter_file(charter_path)
     if errs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
 
@@ -590,6 +637,11 @@ def main(argv: list[str] | None = None) -> int:
     ns = null_spec_from_charter(charter)
     n_null_planned = int(ns["n_trials"])
     null_method = str(ns["method"])
+    # Explicit seed from charter (or house default). Never leave seed to harness
+    # default alone under sealed path — pins against seed shopping.
+    sealed_null_seed = (
+        int(ns["base_seed"]) if ns.get("base_seed") is not None else int(DEFAULT_NULL_BASE_SEED)
+    )
 
     # Single sealed invocation — no CLI null overrides (charter is sole source).
     cmd = [
@@ -604,6 +656,8 @@ def main(argv: list[str] | None = None) -> int:
         "--workers",
         str(args.workers),
         "--strict-charter",
+        "--null-seed",
+        str(sealed_null_seed),
     ]
 
     # Finding B: pre-launch STARTED ledger row so interruption cannot erase the attempt.
@@ -659,6 +713,7 @@ def main(argv: list[str] | None = None) -> int:
                     result_json=result_json,
                     n_null_planned=n_null_planned,
                     exit_code=proc_returncode,
+                    expected_null_seed=sealed_null_seed,
                 )
             else:
                 # Interrupt / launch error: parse report if any, else hard UNKNOWN
@@ -667,6 +722,7 @@ def main(argv: list[str] | None = None) -> int:
                         result_json=result_json,
                         n_null_planned=n_null_planned,
                         exit_code=-1,  # nonzero → UNKNOWN path
+                        expected_null_seed=sealed_null_seed,
                     )
                     # force UNKNOWN if parse somehow returned OK (should not)
                     if acct.get("execution_state") != "UNKNOWN":
@@ -697,11 +753,14 @@ def main(argv: list[str] | None = None) -> int:
         execution_state = str(acct["execution_state"])
 
         try:
-            null_seed = acct.get("null_seed")
-            try:
-                null_seed_i = int(null_seed) if null_seed is not None else 0
-            except (TypeError, ValueError):
-                null_seed_i = 0
+            # Provenance null_seed: verified non-negative int when present.
+            # Never invent 0 when reported seed is missing/invalid.
+            reported_seed = acct.get("null_seed")
+            null_seed_i: int | None
+            if type(reported_seed) is int and reported_seed >= 0:
+                null_seed_i = reported_seed
+            else:
+                null_seed_i = None
             # Top-level provenance.n_null is executed count only. When unknown
             # (FAILED_RUN_UNKNOWN), pass None — never substitute planned.
             prov_n_null: int | None = (
@@ -724,6 +783,7 @@ def main(argv: list[str] | None = None) -> int:
                     "n_null_planned": int(acct.get("n_null_planned") or n_null_planned),
                     "n_null_executed": n_null_executed,
                     "null_trials_executed": n_null_executed,
+                    "null_seed_expected": sealed_null_seed,
                     "attempt_type": attempt_type,
                     "family_screen_attempt": family_screen_attempt,
                     "sealed_null_attempt": sealed_null_attempt,

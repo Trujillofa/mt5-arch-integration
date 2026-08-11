@@ -1,5 +1,126 @@
 # XAU offline loop status
 
+## 2026-08-11 — day_open_reclaim_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `day_open_reclaim_flat` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json` · SHA `961dd3d4…` |
+| **disposition** | **SCREEN_FAIL** / `ZERO_PRIMARY_PASSERS` (registry) |
+| **screen path** | `--strict-charter --screen-only` · artifact `results/xau_runs/2026-08-11_day_open_reclaim_flat_screen/` |
+| **develop best (n≥20)** | PF **1.0348** · NP **+1251.52** · n **835** · DD **31.08%** · WR **47.3%** · primary passers **0** |
+| **soft gate miss** | PF 1.0348 < 1.1 (NP>0 and n≥20 hold) |
+| **null** | planned **999** · executed **0** · `sealed_null_attempt=false` · **r1_burned=false** |
+| **v1** | SHA `8eafe48b…` · **SUPERSEDED** (left immutable) |
+| **do not** | retune day_open knobs · sealed r1 · paper/live · revive dead lines |
+
+Closed freezes remain closed. Next research requires a **new** `family_id` and freeze-before-peek.
+
+---
+
+## 2026-08-11 — IMPLEMENT FIXTURES · `day_open_reclaim_flat` v2 (no develop screen)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_REVIEW_THEN_DEVELOP_SCREEN`** (`--strict-charter --screen-only` only if authorized) |
+| **family** | `scripts/xau_family_day_open_reclaim_flat.py` |
+| **charter** | v2 SHA `961dd3d4…` · runnable |
+| **fixtures** | same_bar reject · prior_bar accept · two-trade sizing · entry/exit equity cost timing |
+| **develop metrics** | **not inspected** |
+| **null / sealed r1 / paper / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
+## 2026-08-11 — SHA GRANDFATHER (no frozen_at spoof) · v2 immutable
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | seed/protocol exemptions only for exact `GRANDFATHERED_NO_SEED_CHARTER_SHA256` file bytes; self-declared `frozen_at` cannot grandfather |
+| **grandfather** | known historical file SHAs only (incl. 2026-08-10 freezes + day_open v1); mutations lose exemption |
+| **implement / develop / null / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
+## 2026-08-11 — PROTOCOL SEED CUTOVER FAIL-CLOSED (v2 immutable)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | `frozen_at` required+parseable; seed cutover by freeze date only (not protocol_version); post-cutover protocol <2.2 rejected |
+| **grandfather** | exact historical charter file SHAs only (not self-declared dates) |
+| **implement / develop / null / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
+## 2026-08-11 — PROTOCOL SEED-PROOF CORRECTION (v2 charter immutable)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** (re-review seed-proof) then implement fixtures |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | freeze-date cutover for `null.base_seed`; strict `type is int` and `>=0`; sealed parser requires exact seed match on OK; never invent seed 0 |
+| **develop / implement** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
+## 2026-08-11 — FREEZE CORRECTION · `day_open_reclaim_flat` **v2** (v1 SUPERSEDED)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `day_open_reclaim_flat` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json` · SHA `961dd3d4…` |
+| **v1** | SHA `8eafe48b…` · registry **SUPERSEDED** (byte-immutable) |
+| **corrections** | undercut_seen_before_i (j<i); capital start_balance=10000 + cost-at-exit-booking; null.base_seed=20260808 |
+| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** · seed **20260808** |
+| **kill** | `KILL_DAY_OPEN_RECLAIM_FLAT` |
+| **primary** | soft |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **implement / sealed r1** | **not authorized** until freeze review |
+| **branch** | `research/xau-day-open-reclaim-flat-v1` from `main` @ `f4e891f` |
+| **scope** | charter/protocol/tests only — no family module, no develop screen |
+
+Closed freezes remain closed (early_server_range_break, server_hour, TOD, prior_day, Donchian, bb_rsi).
+
+---
+
+## 2026-08-11 — NEW THESIS FREEZE · `day_open_reclaim_flat` v1 (no implement / no develop peek)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **new family_id** | `day_open_reclaim_flat` |
+| **thesis memo** | `docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json` |
+| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** |
+| **kill** | `KILL_DAY_OPEN_RECLAIM_FLAT` |
+| **primary** | soft |
+| **execution_contract** | Wilder ATR14; close entry; next-bar exits; SL≻TP≻flat; 0.01 lot; no overnight |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **implement / sealed r1** | **not authorized** until freeze review |
+| **branch** | `research/xau-day-open-reclaim-flat-v1` from `main` @ `f4e891f` |
+
+Closed freezes remain closed (early_server_range_break, server_hour, TOD, prior_day, Donchian, bb_rsi).
+
+---
+
 ## 2026-08-11 — early_server_range_break_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |

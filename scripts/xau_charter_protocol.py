@@ -64,6 +64,7 @@ TERMINAL_DISPOSITIONS = frozenset(
         "KILL_SERVER_HOUR_WINDOW_FLAT",
         "KILL_TOD_LONDON_NY_FLAT",
         "KILL_EARLY_SERVER_RANGE_BREAK_FLAT",
+        "KILL_DAY_OPEN_RECLAIM_FLAT",
     }
 )
 
@@ -83,6 +84,29 @@ SESSION_THESIS_CLASSES = frozenset(
         "session_or_breakout_fixed",
         "session_window_fixed",
         "intraday_early_block_range_break",
+        "intraday_day_open_reclaim",
+    }
+)
+
+# Default null base seed when a freeze pins it (house convention; no seed shopping).
+DEFAULT_NULL_BASE_SEED = 20260808
+# Sentinel for "base_seed key absent" (None is a possible invalid value).
+_MISSING_BASE_SEED = object()
+
+# Exact SHA-256 of immutable historical charter *files* that predate seed
+# preregistration and may omit null.base_seed. Grandfathering is by content
+# hash only — never by self-declared frozen_at (backdating is not a free pass).
+# Computed over on-disk JSON bytes; any mutation loses membership.
+GRANDFATHERED_NO_SEED_CHARTER_SHA256: frozenset[str] = frozenset(
+    {
+        # 2026-08-10 freezes (no base_seed)
+        "fee8611c11b352314e1b295916189acc0f0f472fd01a99dac29d1c9997f2e102",  # early_server_range_break_flat v1
+        "11099b2a7aa0221187c94462361d53070daecfdc7df0be80f82df5ae1954475a",  # early_server_range_break_flat v2
+        "6b5811eedf11838e85733179fcecacacd0a58a978860f1811a6aba4a0be8e064",  # server_hour_window_flat v1
+        "26ff7532a4cae730f370d350d39df383e83b01f85e0f5de3e1eac9ae283a464e",  # server_hour_window_flat v2
+        "e7cd953f998015bbc9aa5ae23ea7f35c45723f82736a273274f41102bac2f4cf",  # tod_london_ny_flat v1
+        # day_open_reclaim_flat v1 SUPERSEDED incomplete freeze (no base_seed)
+        "8eafe48b5f57746dc64188364bd073058dc4fe320decd45c15ef1cb481deebea",
     }
 )
 # Rule keys that mark a charter as session-shaped (canonical session null required).
@@ -380,8 +404,34 @@ def write_charter_once(path: Path, charter: dict[str, Any]) -> Path:
     return path
 
 
-def validate_charter(charter: dict[str, Any]) -> list[str]:
-    """Return list of hard errors (empty ⇒ ok to freeze/run)."""
+def validate_charter_file(path: Path | str) -> list[str]:
+    """Validate an on-disk charter; grandfathering uses the file's SHA-256 bytes."""
+    p = Path(path)
+    if not p.is_file():
+        return [f"charter not found: {p}"]
+    body = p.read_bytes()
+    file_sha = hashlib.sha256(body).hexdigest()
+    try:
+        charter = json.loads(body.decode())
+    except (UnicodeDecodeError, json.JSONDecodeError) as e:
+        return [f"charter JSON invalid: {e}"]
+    if not isinstance(charter, dict):
+        return ["charter JSON must be an object"]
+    return validate_charter(charter, file_sha256=file_sha)
+
+
+def validate_charter(
+    charter: dict[str, Any],
+    *,
+    file_sha256: str | None = None,
+) -> list[str]:
+    """Return list of hard errors (empty ⇒ ok to freeze/run).
+
+    ``file_sha256`` is the SHA-256 of the on-disk charter bytes that produced
+    ``charter``. Only ``validate_charter_file`` should supply it. In-memory
+    copies never receive grandfathering — self-declared ``frozen_at`` alone
+    cannot exempt a new/backdated family from seed / protocol rules.
+    """
     errs: list[str] = []
     if not charter.get("family_id"):
         errs.append("missing family_id")
@@ -415,6 +465,9 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
         rule.get(k) is not None for k in SESSION_RULE_MARKERS
     )
     proto = float(charter.get("protocol_version") or 0)
+    grandfathered = (
+        file_sha256 is not None and file_sha256 in GRANDFATHERED_NO_SEED_CHARTER_SHA256
+    )
     if is_session:
         if method in (
             "day_block_shuffle",
@@ -435,6 +488,7 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
                 )
         elif proto >= 2.1:
             # transitional: allow legacy name only if notes pin v2.2 algorithm
+            # (grandfathered historical freezes only; new freezes require ≥2.2 below)
             notes = str(null.get("notes") or "")
             if method not in SESSION_NULL_ALIASES:
                 errs.append(
@@ -463,7 +517,60 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
         errs.append(
             "rule.intraday_flat true required (or explicit swap handling) under protocol v2"
         )
+
+    # frozen_at is mandatory and must parse (missing/malformed fails closed).
+    freeze_day = _parse_frozen_at_date(charter.get("frozen_at"))
+    if freeze_day is None:
+        if charter.get("frozen_at") is None or str(charter.get("frozen_at") or "").strip() == "":
+            errs.append("frozen_at required (YYYY-MM-DD or ISO date prefix)")
+        else:
+            errs.append(
+                f"frozen_at malformed (need YYYY-MM-DD or ISO date prefix); "
+                f"got {charter.get('frozen_at')!r}"
+            )
+
+    # null.base_seed: strict non-negative int when present. When absent, only
+    # exact on-disk SHA matches in GRANDFATHERED_NO_SEED_CHARTER_SHA256 may omit
+    # it — never self-declared frozen_at (backdating is not grandfathering).
+    base_seed_raw = null.get("base_seed", _MISSING_BASE_SEED)
+    if base_seed_raw is not _MISSING_BASE_SEED:
+        # type(x) is int rejects bool (bool is a subclass of int) and rejects
+        # float/str that int() would coerce — no seed shopping via "7" or 1.0.
+        if type(base_seed_raw) is not int:
+            errs.append(
+                "null.base_seed must be a non-negative int "
+                f"(got type {type(base_seed_raw).__name__})"
+            )
+        elif base_seed_raw < 0:
+            errs.append("null.base_seed must be >= 0")
+    elif not grandfathered:
+        errs.append(
+            "null.base_seed required (non-negative int); only exact historical "
+            "charter file SHAs in GRANDFATHERED_NO_SEED_CHARTER_SHA256 may omit "
+            "it (self-declared frozen_at cannot grandfather)"
+        )
+
+    # New / non-grandfathered freezes must claim protocol ≥2.2 (backdating to a
+    # pre-seed protocol revision is refused).
+    if not grandfathered and proto < 2.2:
+        errs.append(
+            "protocol_version must be >= 2.2 for non-grandfathered freezes "
+            f"(got {proto}; refuse protocol downgrade / backdating bypass)"
+        )
     return errs
+
+
+def _parse_frozen_at_date(value: Any) -> date | None:
+    """Parse charter frozen_at to a calendar date (YYYY-MM-DD or ISO prefix)."""
+    if value is None:
+        return None
+    s = str(value).strip()
+    if len(s) < 10:
+        return None
+    try:
+        return date.fromisoformat(s[:10])
+    except ValueError:
+        return None
 
 
 def run_output_dir(family_id: str, *, day: str | None = None, run_id: str = "r1") -> Path:
@@ -487,7 +594,7 @@ def build_provenance(
     charter_path: Path,
     costs_path: Path,
     data_path: Path,
-    null_seed: int,
+    null_seed: int | None,
     n_null: int | None,
     out_dir: Path,
     extra: dict[str, Any] | None = None,
@@ -498,6 +605,9 @@ def build_provenance(
     Pass ``n_null=None`` when the executed count is unknown (FAILED_RUN /
     UNKNOWN paths). Never substitute the planned trial count for an unknown
     executed count — top-level ``n_null`` must stay JSON null in that case.
+
+    ``null_seed`` may be ``None`` when the reported seed is unknown/invalid —
+    never invent ``0`` as a substitute for a missing reported seed.
     """
     dirty_info: dict[str, Any]
     if require_clean_tree:
@@ -512,8 +622,9 @@ def build_provenance(
             "dirty_paths": dirty,
             "code_commit": git_head(),
         }
-    # JSON-serializable: int or None (never invent planned-as-executed).
+    # JSON-serializable: int or None (never invent planned-as-executed / seed 0).
     n_null_out: int | None = None if n_null is None else int(n_null)
+    null_seed_out: int | None = None if null_seed is None else int(null_seed)
     prov = {
         "charter_path": str(charter_path.relative_to(ROOT)) if charter_path.is_relative_to(ROOT) else str(charter_path),
         "charter_sha256": sha256_file(charter_path),
@@ -524,7 +635,7 @@ def build_provenance(
         "data_sha256": sha256_file(data_path),
         "costs_path": str(costs_path.relative_to(ROOT)) if costs_path.is_relative_to(ROOT) else str(costs_path),
         "costs_sha256": sha256_file(costs_path),
-        "null_seed": int(null_seed),
+        "null_seed": null_seed_out,
         "n_null": n_null_out,
         "output_dir": str(out_dir.relative_to(ROOT)) if out_dir.is_relative_to(ROOT) else str(out_dir),
     }
@@ -686,13 +797,19 @@ def null_spec_from_charter(charter: dict[str, Any]) -> dict[str, Any]:
     method = str(null.get("method") or null.get("null_method") or "global_return_shuffle")
     n_trials = int(null.get("n_trials") or null.get("min_null_trials") or MIN_NULL_TRIALS_PROTOCOL)
     block_days = int(null.get("block_days") or null.get("block_size_days") or 1)
-    return {
+    out: dict[str, Any] = {
         "method": method,
         "n_trials": n_trials,
         "block_days": block_days,
         "invariants": null.get("invariants") or [],
         "notes": null.get("notes") or "",
     }
+    if "base_seed" in null and null["base_seed"] is not None:
+        # Preserve only already-valid ints; callers should validate_charter first.
+        raw = null["base_seed"]
+        if type(raw) is int and raw >= 0:
+            out["base_seed"] = raw
+    return out
 
 
 if __name__ == "__main__":
