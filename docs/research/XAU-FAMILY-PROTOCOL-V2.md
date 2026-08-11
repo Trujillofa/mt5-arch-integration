@@ -12,6 +12,8 @@
 
 | Charter | Status |
 |---------|--------|
+| `…/early_server_range_break_flat_v2.json` | **SCREEN_FAIL** ZERO_PRIMARY_PASSERS (SHA `11099b2a…`) — r1 not burned; screen-only 999/0 |
+| `…/early_server_range_break_flat_v1.json` | **SUPERSEDED** (SHA `fee8611c…`) — incomplete execution contract |
 | `…/server_hour_window_flat_v2.json` | **SCREEN_FAIL** ZERO_PRIMARY_PASSERS (SHA `26ff7532…`) — r1 not burned |
 | `…/server_hour_window_flat_v1.json` | **SUPERSEDED** (SHA `6b5811ee…`) |
 | `…/tod_london_ny_flat_v1.json` | **PROTOCOL_NULL_INVALID** (SHA `e7cd953f…`) |

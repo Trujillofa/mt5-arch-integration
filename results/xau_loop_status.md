@@ -1,23 +1,33 @@
 # XAU offline loop status
 
-## 2026-08-10 — NEW THESIS FREEZE · `early_server_range_break_flat` **v2** (no develop peek)
+## 2026-08-11 — early_server_range_break_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |
 |-------|--------|
-| **next_step** | **`IMPLEMENT_FIXTURES_THEN_DEVELOP_SCREEN`** (not sealed r1 yet) |
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
 | **promote** | **no** |
 | **live_go** | **false** |
 | **PAPER_GO** | **no** |
-| **new family_id** | `early_server_range_break_flat` |
-| **thesis memo** | `docs/research/XAU-THESIS-early_server_range_break_flat_v1.md` |
-| **charter (runnable)** | `results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json` |
-| **v1** | SHA `fee8611c…` · registry **SUPERSEDED** (byte-immutable; incomplete execution contract) |
-| **execution_contract** | Wilder ATR14 ewm α=1/14; close entry; exits from next bar; SL≻TP≻flat; 0.01 lot floor |
-| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** |
-| **kill** | `KILL_EARLY_SERVER_RANGE_BREAK_FLAT` |
-| **session-shape** | `intraday_early_block_range_break` + `entry_allowed_hours_server` / `early_block_hours_server` enforced as session null |
-| **develop metrics** | **not inspected** (freeze-before-peek) |
-| **sealed r1** | **not authorized** until fixtures + develop screen + external review if passers≥1 |
+| **family_id** | `early_server_range_break_flat` |
+| **charter** | `results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json` · SHA `11099b2a…` |
+| **disposition** | **SCREEN_FAIL** / `ZERO_PRIMARY_PASSERS` (registry) |
+| **screen path** | `--strict-charter --screen-only` · artifact `results/xau_runs/2026-08-11_early_server_range_break_flat_screen/` |
+| **develop best (n≥20)** | PF **0.7829** · NP **−4054.46** · n **542** · DD **47.88%** · WR **41.5%** · primary passers **0** |
+| **null** | planned **999** · executed **0** · `sealed_null_attempt=false` · **r1_burned=false** |
+| **v1** | SHA `fee8611c…` · **SUPERSEDED** (left immutable) |
+| **do not** | retune early-range knobs · sealed r1 · paper/live · revive dead lines |
+
+Closed freezes remain closed. Next research requires a **new** `family_id` and freeze-before-peek.
+
+---
+
+## 2026-08-10 — NEW THESIS FREEZE · `early_server_range_break_flat` **v2** (superseded by screen close above)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | was `IMPLEMENT_FIXTURES_THEN_DEVELOP_SCREEN` — closed SCREEN_FAIL 2026-08-11 |
+| **charter** | `…_early_server_range_break_flat_v2.json` · SHA `11099b2a…` |
+| **v1** | SHA `fee8611c…` · registry **SUPERSEDED** |
 | **branch** | `research/xau-early-server-range-break-v1` from `main` @ PR#1 merge |
 
 Closed freezes remain closed. Do not revive bb_rsi / Donchian / prior_day / TOD / server_hour.

@@ -139,7 +139,7 @@ def test_early_range_thesis_is_session_shaped_rejects_global_shuffle():
     assert any("session" in e.lower() for e in errs)
 
 
-def test_early_range_v1_superseded_v2_runnable():
+def test_early_range_v1_superseded_v2_screen_fail():
     from xau_charter_protocol import is_charter_runnable
 
     v1 = ROOT / "results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json"
@@ -147,12 +147,14 @@ def test_early_range_v1_superseded_v2_runnable():
     ok1, why1 = is_charter_runnable(v1)
     ok2, why2 = is_charter_runnable(v2)
     assert ok1 is False and "SUPERSEDED" in why1
-    assert ok2 is True, why2
+    assert ok2 is False and "SCREEN_FAIL" in why2
     # v1 remains freeze-immutable on disk
     import hashlib
 
     sha = hashlib.sha256(v1.read_bytes()).hexdigest()
     assert sha.startswith("fee8611c")
+    sha2 = hashlib.sha256(v2.read_bytes()).hexdigest()
+    assert sha2.startswith("11099b2a")
 
 
 def test_registry_terminal_is_monotonic(tmp_path: Path):

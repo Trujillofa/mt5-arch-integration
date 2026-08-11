@@ -89,35 +89,7 @@ def test_screen_only_positive_passers_never_calls_null_trial(
 
     out = tmp_path / "screen_only_out"
     out.mkdir()
-    null_calls: list[int] = []
-
-    def boom_null(*_a, **_k):
-        null_calls.append(1)
-        raise AssertionError("_null_trial must not run under --screen-only")
-
-    monkeypatch.setattr(harness, "_null_trial", boom_null)
-    monkeypatch.setattr(harness, "load_h1", _synthetic_h1)
-    monkeypatch.setattr(
-        harness,
-        "develop_only",
-        lambda raw, cutoff: raw,  # use all synthetic bars
-    )
-    monkeypatch.setattr(chp, "assert_clean_dispositional_tree", lambda: {"clean": True})
-    monkeypatch.setattr(
-        chp,
-        "assert_charter_path_for_sealed",
-        lambda p: {"path": str(p), "matches_head": True},
-    )
-    # harness imports assert_* into its namespace at module load
-    monkeypatch.setattr(
-        harness, "assert_clean_dispositional_tree", lambda: {"clean": True}
-    )
-    monkeypatch.setattr(
-        harness,
-        "assert_charter_path_for_sealed",
-        lambda p: {"path": str(p), "matches_head": True},
-    )
-    # build_provenance also calls assert_clean_dispositional_tree via protocol module
+    null_calls = _patch_strict_screen_env(monkeypatch, harness, chp)
 
     def fake_score_grid(*_a, **_k):
         return {
@@ -240,7 +212,11 @@ def test_screen_only_positive_passers_never_calls_null_trial(
 
 
 def _patch_strict_screen_env(monkeypatch, harness, chp) -> list[int]:
-    """Shared patches for strict-charter screen-only tests (dirty-tree / null)."""
+    """Shared patches for strict-charter screen-only tests (dirty-tree / null).
+
+    Mocks runnability so the historical screen-only path remains testable after
+    the early-range v2 charter is closed SCREEN_FAIL in the live registry.
+    """
     null_calls: list[int] = []
 
     def boom_null(*_a, **_k):
@@ -259,6 +235,8 @@ def _patch_strict_screen_env(monkeypatch, harness, chp) -> list[int]:
         lambda p: {"path": str(p), "matches_head": True},
     )
     monkeypatch.setattr(chp, "assert_clean_dispositional_tree", lambda: {"clean": True})
+    monkeypatch.setattr(chp, "is_charter_runnable", lambda p: (True, "ok"))
+    monkeypatch.setattr(harness, "is_charter_runnable", lambda p: (True, "ok"))
     return null_calls
 
 
