@@ -762,6 +762,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.strict_charter and not args.charter:
         raise SystemExit("--strict-charter requires --charter")
+    if args.strict_charter and args.no_soft_primary:
+        raise SystemExit(
+            "--no-soft-primary is incompatible with --strict-charter; "
+            "the charter controls the primary gate"
+        )
     if args.screen_only and not args.strict_charter:
         raise SystemExit("--screen-only requires --strict-charter (and --charter)")
     if args.screen_only and args.quick:

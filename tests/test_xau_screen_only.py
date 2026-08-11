@@ -54,6 +54,32 @@ def test_screen_only_requires_strict_charter():
         )
 
 
+def test_strict_charter_rejects_no_soft_primary_before_scoring(monkeypatch):
+    """Charter freezes primary_n_passers; --no-soft-primary must not override."""
+    import xau_family_null_maxstat as harness
+
+    # If we got past arg validation, scoring would be a bug
+    monkeypatch.setattr(
+        harness,
+        "load_h1",
+        lambda: (_ for _ in ()).throw(AssertionError("must not score")),
+    )
+    with pytest.raises(SystemExit, match="no-soft-primary"):
+        harness.main(
+            [
+                "--family",
+                "early_server_range_break_flat",
+                "--charter",
+                str(CHARTER_V2),
+                "--strict-charter",
+                "--screen-only",
+                "--no-soft-primary",
+                "--out-dir",
+                str(ROOT / "results" / "_should_not_exist_screen"),
+            ]
+        )
+
+
 def test_screen_only_positive_passers_never_calls_null_trial(
     tmp_path: Path, monkeypatch
 ):
@@ -213,17 +239,13 @@ def test_screen_only_positive_passers_never_calls_null_trial(
     assert report["provenance"].get("sealed_null_attempt") is False
 
 
-def test_screen_only_zero_passers_still_screen_fail(tmp_path: Path, monkeypatch):
-    import xau_charter_protocol as chp
-    import xau_family_null_maxstat as harness
-
-    out = tmp_path / "screen_zero"
-    out.mkdir()
+def _patch_strict_screen_env(monkeypatch, harness, chp) -> list[int]:
+    """Shared patches for strict-charter screen-only tests (dirty-tree / null)."""
     null_calls: list[int] = []
 
     def boom_null(*_a, **_k):
         null_calls.append(1)
-        raise AssertionError("_null_trial must not run")
+        raise AssertionError("_null_trial must not run under --screen-only")
 
     monkeypatch.setattr(harness, "_null_trial", boom_null)
     monkeypatch.setattr(harness, "load_h1", _synthetic_h1)
@@ -236,8 +258,17 @@ def test_screen_only_zero_passers_still_screen_fail(tmp_path: Path, monkeypatch)
         "assert_charter_path_for_sealed",
         lambda p: {"path": str(p), "matches_head": True},
     )
-    # build_provenance(require_clean_tree=True) calls protocol assert directly
     monkeypatch.setattr(chp, "assert_clean_dispositional_tree", lambda: {"clean": True})
+    return null_calls
+
+
+def test_screen_only_zero_passers_still_screen_fail(tmp_path: Path, monkeypatch):
+    import xau_charter_protocol as chp
+    import xau_family_null_maxstat as harness
+
+    out = tmp_path / "screen_zero"
+    out.mkdir()
+    null_calls = _patch_strict_screen_env(monkeypatch, harness, chp)
 
     def fake_score_grid(*_a, **_k):
         base = {
@@ -306,3 +337,87 @@ def test_screen_only_zero_passers_still_screen_fail(tmp_path: Path, monkeypatch)
     assert report["null"]["n_null_executed"] == 0
     assert report["attempt_accounting"]["sealed_null_attempt"] is False
     assert report["attempt_accounting"]["r1_style_null_burned"] is False
+
+
+def test_screen_only_soft_passers_positive_classic_zero_pending_review(
+    tmp_path: Path, monkeypatch
+):
+    """Charter primary=soft: soft>0 classic=0 must not become SCREEN_FAIL."""
+    import xau_charter_protocol as chp
+    import xau_family_null_maxstat as harness
+
+    out = tmp_path / "screen_soft_only"
+    out.mkdir()
+    null_calls = _patch_strict_screen_env(monkeypatch, harness, chp)
+
+    def fake_score_grid(*_a, **_k):
+        soft_row = {
+            "index": 0,
+            "params": {},
+            "profit_factor": 1.2,
+            "net_profit": 50.0,
+            "win_rate": 52.0,
+            "max_drawdown_pct": 12.0,
+            "n_trades": 40,
+            "expectancy": 1.0,
+            "passes_classic": False,
+            "passes_soft": True,
+        }
+        return {
+            "n_configs": 1,
+            "min_trades_gate": 20,
+            "elapsed_s": 0.01,
+            "best_by_pf": soft_row,
+            "best_by_pf_min_trades": soft_row,
+            "best_soft_passer": soft_row,
+            "n_passers_classic": 0,
+            "n_passers_soft": 3,
+            "n_with_min_trades": 1,
+            "pf": {
+                "max_raw": 1.2,
+                "max_min_trades": 1.2,
+                "p50": 1.2,
+                "p90": 1.2,
+                "p99": 1.2,
+                "mean": 1.2,
+            },
+            "net_profit": {
+                "max_raw": 50.0,
+                "max_min_trades": 50.0,
+                "p50": 50.0,
+                "mean": 50.0,
+            },
+            "top20_by_pf_min_trades": [],
+            "max_pf": 1.2,
+            "max_net": 50.0,
+            "max_pf_raw": 1.2,
+        }
+
+    monkeypatch.setattr(harness, "score_grid", fake_score_grid)
+
+    rc = harness.main(
+        [
+            "--family",
+            "early_server_range_break_flat",
+            "--charter",
+            str(CHARTER_V2),
+            "--strict-charter",
+            "--screen-only",
+            "--out-dir",
+            str(out),
+            "--workers",
+            "1",
+        ]
+    )
+    assert rc == 0
+    assert null_calls == []
+    report = json.loads((out / "null_maxstat.json").read_text())
+    assert report["gates"]["primary_n_passers"] == "soft"
+    assert report["real"]["n_passers_soft"] == 3
+    assert report["real"]["n_passers_classic"] == 0
+    assert report["real"]["n_passers"] == 3  # soft primary
+    assert report["verdict"]["disposition"] == "SCREEN_PASS_PENDING_NULL_REVIEW"
+    assert report["verdict"]["screen_status"] == "PASSERS_GE_1_PENDING_NULL_REVIEW"
+    assert report["null"]["n_null_executed"] == 0
+    assert report["attempt_accounting"]["sealed_null_attempt"] is False
+    assert report["attempt_accounting"]["r1_burned"] is False
