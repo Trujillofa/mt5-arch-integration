@@ -1,0 +1,116 @@
+{
+  "symbol": "XAUUSD",
+  "status": "OK_WITH_FLAGS",
+  "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_XAUUSD.csv",
+  "source_sha256": "34462bc0e959e8650a5a30d34850196250ae9383cf447c23585042e2c772767d",
+  "research_csv": "results/instrument_data/xauusd_h1.csv",
+  "research_csv_sha256": "6592c2161ee000bdeb4c09750f9f355fa9b783df6b711b1c0c8184d7b4a27854",
+  "timeframe": "H1",
+  "n_rows_raw": 29155,
+  "n_rows_h1": 29155,
+  "n_rows_h1_develop": 25558,
+  "time_min": "2021-09-07T01:00:00+00:00",
+  "time_max": "2026-08-11T23:00:00+00:00",
+  "develop_time_min": "2021-09-07T01:00:00+00:00",
+  "develop_time_max": "2025-12-31T23:00:00+00:00",
+  "develop_rule": "time < holdout_start",
+  "holdout_start": "2026-01-01T00:00:00+00:00",
+  "missing_duplicate_bars": {
+    "duplicate_timestamps_dropped": 0,
+    "bad_ohlc_rows": 0,
+    "develop_csv": "results/instrument_data/xauusd_h1_develop.csv",
+    "develop_csv_sha256": "829ab6b5e1cbf24341c5ec7fcf65dac153ce8c6631e5d6ba0445234ed160f992"
+  },
+  "gap_report": {
+    "n_gaps_gt_72h": 9,
+    "max_gap_hours": 74.0,
+    "large_gaps_sample": [
+      {
+        "after": "2021-12-23T23:00:00+00:00",
+        "before": "2021-12-27T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-04-14T23:00:00+00:00",
+        "before": "2022-04-18T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-12-23T23:00:00+00:00",
+        "before": "2022-12-27T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-12-30T23:00:00+00:00",
+        "before": "2023-01-03T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-04-06T23:00:00+00:00",
+        "before": "2023-04-10T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-12-22T23:00:00+00:00",
+        "before": "2023-12-26T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-12-29T23:00:00+00:00",
+        "before": "2024-01-02T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2024-03-28T23:00:00+00:00",
+        "before": "2024-04-01T01:00:00+00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2025-04-17T23:00:00+00:00",
+        "before": "2025-04-21T01:00:00+00:00",
+        "gap_hours": 74.0
+      }
+    ]
+  },
+  "spread": {
+    "n": 29155,
+    "median_pts": 18.0,
+    "mean_pts": 16.119019036185904,
+    "min_pts": 1.0,
+    "max_pts": 50.0,
+    "zero_bars_filled": 1296,
+    "fill_median_pts": 18.0,
+    "unit": "points (MqlRates.spread)"
+  },
+  "point_size": 0.01,
+  "contract_size": 100.0,
+  "digits": 2,
+  "commission_per_lot": 0.0,
+  "commission_notes": "Standard STP: no separate commission; trading cost is in the measured spread. Account type=STANDARD_STP.",
+  "slippage_points": 0.0,
+  "slippage_notes": "UNMEASURED \u2014 left at 0 until demo/live fill sample. Not a claim of zero slip.",
+  "spread_source": "MqlRates.spread from Vantage terminal export (Wine file bridge / ExportInstrumentHistory)",
+  "broker": "Vantage",
+  "account_type": "STANDARD_STP",
+  "server": "VantageMarkets-Live 5",
+  "login": 27496181,
+  "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_XAUUSD.csv",
+  "meta_raw": {
+    "key": "value",
+    "requested": "XAUUSD",
+    "resolved": "XAUUSD",
+    "digits": "2",
+    "point": "0.01000000",
+    "contract_size": "100.0000",
+    "tick_size": "0.01000000",
+    "tick_value": "1.00000000",
+    "currency_base": "XAU",
+    "currency_profit": "USD",
+    "trade_mode": "4"
+  },
+  "quality_flags": [
+    "ZERO_SPREAD_FILLED=1296",
+    "LARGE_GAPS_GT_72H=9"
+  ],
+  "frozen_at_utc": "2026-08-11T21:18:50.554521+00:00"
+}

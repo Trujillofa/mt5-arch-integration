@@ -1,0 +1,32 @@
+{
+  "status": "OK",
+  "common_start": "2021-09-07T01:00:00+00:00",
+  "common_end": "2025-12-31T23:00:00+00:00",
+  "holdout_start": "2026-01-01T00:00:00+00:00",
+  "n_bars_per_symbol": {
+    "XAUUSD": 25558,
+    "EURUSD": 26901,
+    "GBPUSD": 26901
+  },
+  "bar_count_range": {
+    "min": 25558,
+    "max": 26901
+  },
+  "bar_counts_equal": false,
+  "bar_count_note": "FX vs XAU H1 counts differ by session calendar; not a hard fail. Joint work uses timestamp intersection.",
+  "n_intersection_timestamps": 25558,
+  "min_develop_bars_required": 10000,
+  "min_intersection_required": 8000,
+  "enough_each_symbol": true,
+  "enough_joint_intersection": true,
+  "per_symbol_develop_start": {
+    "XAUUSD": "2021-09-07T01:00:00+00:00",
+    "EURUSD": "2021-09-07T01:00:00+00:00",
+    "GBPUSD": "2021-09-07T01:00:00+00:00"
+  },
+  "per_symbol_develop_end": {
+    "XAUUSD": "2025-12-31T23:00:00+00:00",
+    "EURUSD": "2025-12-31T23:00:00+00:00",
+    "GBPUSD": "2025-12-31T23:00:00+00:00"
+  }
+}
