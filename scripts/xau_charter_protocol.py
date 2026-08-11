@@ -90,6 +90,10 @@ SESSION_THESIS_CLASSES = frozenset(
 
 # Default null base seed when a freeze pins it (house convention; no seed shopping).
 DEFAULT_NULL_BASE_SEED = 20260808
+# Freezes on/after this calendar day must preregister null.base_seed (gap closed
+# 2026-08-11). Cutover is freeze *date*, not charter_version — a new family v1
+# frozen tomorrow must still pin a seed.
+NULL_BASE_SEED_REQUIRED_ON_OR_AFTER = date(2026, 8, 11)
 # Sentinel for "base_seed key absent" (None is a possible invalid value).
 _MISSING_BASE_SEED = object()
 # Rule keys that mark a charter as session-shaped (canonical session null required).
@@ -471,29 +475,46 @@ def validate_charter(charter: dict[str, Any]) -> list[str]:
             "rule.intraday_flat true required (or explicit swap handling) under protocol v2"
         )
 
-    # null.base_seed: type-check when present; require for post-gap freezes
-    # (protocol ≥2.2, charter_version≥2, frozen_at≥2026-08-11). Historical
-    # immutable freezes without base_seed remain valid (grandfathered).
+    # null.base_seed: strict non-negative int when present; required for freezes
+    # on/after NULL_BASE_SEED_REQUIRED_ON_OR_AFTER (date cutover, not charter_version).
+    # Historical immutable freezes before that day without base_seed remain valid.
     base_seed_raw = null.get("base_seed", _MISSING_BASE_SEED)
     if base_seed_raw is not _MISSING_BASE_SEED:
-        try:
-            bs_int = int(base_seed_raw)
-            if isinstance(base_seed_raw, bool) or float(base_seed_raw) != float(bs_int):
-                raise ValueError("non-integer")
-        except (TypeError, ValueError):
-            errs.append("null.base_seed must be an integer")
-    else:
-        frozen_at = str(charter.get("frozen_at") or "")
-        try:
-            cv = int(charter.get("charter_version") or 0)
-        except (TypeError, ValueError):
-            cv = 0
-        if proto >= 2.2 and cv >= 2 and frozen_at >= "2026-08-11":
+        # type(x) is int rejects bool (bool is a subclass of int) and rejects
+        # float/str that int() would coerce — no seed shopping via "7" or 1.0.
+        if type(base_seed_raw) is not int:
             errs.append(
-                "null.base_seed required (integer) under protocol ≥2.2 for "
-                "charter_version≥2 freezes on/after 2026-08-11 (no seed shopping)"
+                "null.base_seed must be a non-negative int "
+                f"(got type {type(base_seed_raw).__name__})"
+            )
+        elif base_seed_raw < 0:
+            errs.append("null.base_seed must be >= 0")
+    else:
+        freeze_day = _parse_frozen_at_date(charter.get("frozen_at"))
+        if (
+            proto >= 2.2
+            and freeze_day is not None
+            and freeze_day >= NULL_BASE_SEED_REQUIRED_ON_OR_AFTER
+        ):
+            errs.append(
+                "null.base_seed required (non-negative int) for freezes on/after "
+                f"{NULL_BASE_SEED_REQUIRED_ON_OR_AFTER.isoformat()} "
+                "(no seed shopping; cutover by freeze date, not charter_version)"
             )
     return errs
+
+
+def _parse_frozen_at_date(value: Any) -> date | None:
+    """Parse charter frozen_at to a calendar date (YYYY-MM-DD or ISO prefix)."""
+    if value is None:
+        return None
+    s = str(value).strip()
+    if len(s) < 10:
+        return None
+    try:
+        return date.fromisoformat(s[:10])
+    except ValueError:
+        return None
 
 
 def run_output_dir(family_id: str, *, day: str | None = None, run_id: str = "r1") -> Path:
@@ -517,7 +538,7 @@ def build_provenance(
     charter_path: Path,
     costs_path: Path,
     data_path: Path,
-    null_seed: int,
+    null_seed: int | None,
     n_null: int | None,
     out_dir: Path,
     extra: dict[str, Any] | None = None,
@@ -528,6 +549,9 @@ def build_provenance(
     Pass ``n_null=None`` when the executed count is unknown (FAILED_RUN /
     UNKNOWN paths). Never substitute the planned trial count for an unknown
     executed count — top-level ``n_null`` must stay JSON null in that case.
+
+    ``null_seed`` may be ``None`` when the reported seed is unknown/invalid —
+    never invent ``0`` as a substitute for a missing reported seed.
     """
     dirty_info: dict[str, Any]
     if require_clean_tree:
@@ -542,8 +566,9 @@ def build_provenance(
             "dirty_paths": dirty,
             "code_commit": git_head(),
         }
-    # JSON-serializable: int or None (never invent planned-as-executed).
+    # JSON-serializable: int or None (never invent planned-as-executed / seed 0).
     n_null_out: int | None = None if n_null is None else int(n_null)
+    null_seed_out: int | None = None if null_seed is None else int(null_seed)
     prov = {
         "charter_path": str(charter_path.relative_to(ROOT)) if charter_path.is_relative_to(ROOT) else str(charter_path),
         "charter_sha256": sha256_file(charter_path),
@@ -554,7 +579,7 @@ def build_provenance(
         "data_sha256": sha256_file(data_path),
         "costs_path": str(costs_path.relative_to(ROOT)) if costs_path.is_relative_to(ROOT) else str(costs_path),
         "costs_sha256": sha256_file(costs_path),
-        "null_seed": int(null_seed),
+        "null_seed": null_seed_out,
         "n_null": n_null_out,
         "output_dir": str(out_dir.relative_to(ROOT)) if out_dir.is_relative_to(ROOT) else str(out_dir),
     }
@@ -724,7 +749,10 @@ def null_spec_from_charter(charter: dict[str, Any]) -> dict[str, Any]:
         "notes": null.get("notes") or "",
     }
     if "base_seed" in null and null["base_seed"] is not None:
-        out["base_seed"] = int(null["base_seed"])
+        # Preserve only already-valid ints; callers should validate_charter first.
+        raw = null["base_seed"]
+        if type(raw) is int and raw >= 0:
+            out["base_seed"] = raw
     return out
 
 

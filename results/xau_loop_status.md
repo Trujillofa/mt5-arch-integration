@@ -1,5 +1,17 @@
 # XAU offline loop status
 
+## 2026-08-11 — PROTOCOL SEED-PROOF CORRECTION (v2 charter immutable)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** (re-review seed-proof) then implement fixtures |
+| **charter** | v2 SHA `961dd3d4…` **unchanged** (no v3) |
+| **protocol** | freeze-date cutover for `null.base_seed`; strict `type is int` and `>=0`; sealed parser requires exact seed match on OK; never invent seed 0 |
+| **develop / implement** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+---
+
 ## 2026-08-11 — FREEZE CORRECTION · `day_open_reclaim_flat` **v2** (v1 SUPERSEDED)
 
 | Field | Value |

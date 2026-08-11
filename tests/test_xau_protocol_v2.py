@@ -446,13 +446,34 @@ def _full_null_kill_report(
     }
 
 
-def test_parse_harness_screen_ok_unburned(tmp_path: Path):
+
+
+def _parse_acct(
+    result_json: Path,
+    *,
+    n_null_planned: int,
+    exit_code: int | None,
+    expected_null_seed: int | None = 1,
+):
+    """Default expected seed matches fixture base_seed=1; pass None to omit."""
     from xau_sealed_family_cycle import parse_harness_report_for_accounting
 
+    kwargs: dict = {
+        "result_json": result_json,
+        "n_null_planned": n_null_planned,
+        "exit_code": exit_code,
+    }
+    if expected_null_seed is not None:
+        kwargs["expected_null_seed"] = expected_null_seed
+    return parse_harness_report_for_accounting(**kwargs)
+
+
+def test_parse_harness_screen_ok_unburned(tmp_path: Path):
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(_full_screen_report()))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "OK"
     assert a["n_null_executed"] == 0
@@ -463,8 +484,6 @@ def test_parse_harness_screen_ok_unburned(tmp_path: Path):
 
 
 def test_parse_harness_exit0_partial_null_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(
         json.dumps(
@@ -483,8 +502,9 @@ def test_parse_harness_exit0_partial_null_unknown(tmp_path: Path):
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -493,8 +513,6 @@ def test_parse_harness_exit0_partial_null_unknown(tmp_path: Path):
 
 
 def test_parse_harness_missing_verdict_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(
         json.dumps(
@@ -512,8 +530,9 @@ def test_parse_harness_missing_verdict_unknown(tmp_path: Path):
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -522,8 +541,6 @@ def test_parse_harness_missing_verdict_unknown(tmp_path: Path):
 
 def test_parse_harness_minimal_screen_unknown(tmp_path: Path):
     """SCREEN_FAIL without real-grid / screen-status proof must not unburn r1."""
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(
         json.dumps(
@@ -538,8 +555,9 @@ def test_parse_harness_minimal_screen_unknown(tmp_path: Path):
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -548,15 +566,14 @@ def test_parse_harness_minimal_screen_unknown(tmp_path: Path):
 
 
 def test_parse_harness_count_conflict_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     rep["attempt_accounting"]["n_null_executed"] = 1  # conflict with null's 3
     rep["attempt_accounting"]["null_trials_executed"] = 1
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -564,14 +581,13 @@ def test_parse_harness_count_conflict_unknown(tmp_path: Path):
 
 
 def test_parse_harness_plan_mismatch_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     # Report claims planned=1 fully, but charter requires 999
     rep = _full_null_kill_report(planned=1)
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -580,8 +596,6 @@ def test_parse_harness_plan_mismatch_unknown(tmp_path: Path):
 
 
 def test_parse_harness_nonzero_preserves_reported_disposition(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(
         json.dumps(
@@ -600,8 +614,9 @@ def test_parse_harness_nonzero_preserves_reported_disposition(tmp_path: Path):
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=9
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=9,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -611,14 +626,13 @@ def test_parse_harness_nonzero_preserves_reported_disposition(tmp_path: Path):
 
 def test_parse_harness_screen_invalid_present_exec_unknown(tmp_path: Path):
     """Present-but-invalid count must not fall back to another block."""
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_screen_report()
     rep["attempt_accounting"]["n_null_executed"] = "invalid"
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -627,14 +641,13 @@ def test_parse_harness_screen_invalid_present_exec_unknown(tmp_path: Path):
 
 
 def test_parse_harness_screen_family_screen_attempt_false_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_screen_report()
     rep["attempt_accounting"]["family_screen_attempt"] = False
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -642,14 +655,13 @@ def test_parse_harness_screen_family_screen_attempt_false_unknown(tmp_path: Path
 
 
 def test_parse_harness_full_null_missing_null_block_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     del rep["null"]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -657,14 +669,13 @@ def test_parse_harness_full_null_missing_null_block_unknown(tmp_path: Path):
 
 
 def test_parse_harness_full_null_invalid_null_exec_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     rep["null"]["n_null_executed"] = "invalid"
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -672,40 +683,37 @@ def test_parse_harness_full_null_invalid_null_exec_unknown(tmp_path: Path):
 
 
 def test_parse_harness_screen_sealed_null_flag_true_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_screen_report()
     rep["attempt_accounting"]["sealed_null_attempt"] = True
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["report_status"] == "sealed_null_attempt_not_false"
 
 
 def test_parse_harness_full_null_family_screen_false_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     rep["attempt_accounting"]["family_screen_attempt"] = False
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["report_status"] == "family_screen_attempt_not_true"
 
 
 def test_parse_harness_full_null_kill_ok(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(_full_null_kill_report(planned=3)))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "OK"
     assert a["disposition"] == "KILL_SERVER_HOUR_WINDOW_FLAT"
@@ -714,31 +722,114 @@ def test_parse_harness_full_null_kill_ok(tmp_path: Path):
     assert a["sealed_null_attempt"] is True
     assert a["family_screen_attempt"] is True
     assert a["attempt_type"] == "SEALED_NULL"
+    assert a["null_seed"] == 1
+
+
+def test_parse_harness_full_null_missing_seed_unknown(tmp_path: Path):
+    """Otherwise-valid full-null report without base_seed → FAILED_RUN_UNKNOWN."""
+    rep = _full_null_kill_report(planned=3)
+    del rep["null"]["base_seed"]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"] == "missing_null.base_seed"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+
+
+def test_parse_harness_full_null_wrong_seed_unknown(tmp_path: Path):
+    """Wrong-seed PASS_KEEP_RESEARCHING must not be accepted as OK."""
+    rep = _full_null_kill_report(planned=3, disposition="PASS_KEEP_RESEARCHING")
+    rep["null"]["base_seed"] = 7
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+    assert a["report_status"] == "null.base_seed_mismatch"
+    assert a["n_null_executed"] is None
+    assert a["r1_burned"] is True
+
+
+def test_parse_harness_full_null_invalid_seed_string_unknown(tmp_path: Path):
+    rep = _full_null_kill_report(planned=3)
+    rep["null"]["base_seed"] = "bad"
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "invalid_null.base_seed"
+    assert a["disposition"] == "FAILED_RUN_UNKNOWN"
+
+
+def test_parse_harness_screen_missing_seed_unknown(tmp_path: Path):
+    rep = _full_screen_report()
+    del rep["null"]["base_seed"]
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "missing_null.base_seed"
+    assert a["r1_burned"] is True  # fail-closed burns; not a clean screen OK
+
+
+def test_parse_harness_screen_wrong_seed_unknown(tmp_path: Path):
+    rep = _full_screen_report()
+    rep["null"]["base_seed"] = 7
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(rep))
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "null.base_seed_mismatch"
+
+
+def test_parse_harness_ok_requires_expected_null_seed(tmp_path: Path):
+    """OK path without expected_null_seed must not silently pass."""
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(_full_null_kill_report(planned=3)))
+    a = _parse_acct(
+        result_json=p,
+        n_null_planned=3,
+        exit_code=0,
+        expected_null_seed=None,  # omit → missing expected
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["report_status"] == "missing_expected_null_seed"
 
 
 def test_parse_harness_full_null_missing_trials_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     del rep["null"]["trials"]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["report_status"] == "missing_or_invalid_null.trials"
 
 
 def test_parse_harness_screen_nonempty_trials_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_screen_report()
     rep["null"]["trials"] = [{"trial": 0}]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -746,14 +837,13 @@ def test_parse_harness_screen_nonempty_trials_unknown(tmp_path: Path):
 
 
 def test_parse_harness_screen_missing_trials_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_screen_report()
     del rep["null"]["trials"]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["report_status"] == "screen_null.trials_missing"
@@ -761,14 +851,13 @@ def test_parse_harness_screen_missing_trials_unknown(tmp_path: Path):
 
 def test_parse_harness_full_null_missing_trial_ids_unknown(tmp_path: Path):
     """[{}, {}, {}] must not OK via positional fallback."""
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     rep["null"]["trials"] = [{}, {}, {}]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -777,14 +866,13 @@ def test_parse_harness_full_null_missing_trial_ids_unknown(tmp_path: Path):
 
 def test_parse_harness_full_null_out_of_range_trial_ids_unknown(tmp_path: Path):
     """IDs [10,11,12] unique but not set(range(3)) → UNKNOWN."""
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     rep = _full_null_kill_report(planned=3)
     rep["null"]["trials"] = [{"trial": 10}, {"trial": 11}, {"trial": 12}]
     p = tmp_path / "null_maxstat.json"
     p.write_text(json.dumps(rep))
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=3, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=3, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["r1_burned"] is True
@@ -792,12 +880,11 @@ def test_parse_harness_full_null_out_of_range_trial_ids_unknown(tmp_path: Path):
 
 
 def test_parse_harness_missing_report_unknown_consumes_attempt(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
-    a = parse_harness_report_for_accounting(
+    a = _parse_acct(
         result_json=tmp_path / "missing.json",
         n_null_planned=999,
         exit_code=9,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -809,12 +896,11 @@ def test_parse_harness_missing_report_unknown_consumes_attempt(tmp_path: Path):
 
 
 def test_parse_harness_malformed_report_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text("{not-json")
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=1
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=1,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["disposition"] == "FAILED_RUN_UNKNOWN"
@@ -826,8 +912,6 @@ def test_parse_harness_malformed_report_unknown(tmp_path: Path):
 
 
 def test_parse_harness_nonzero_exit_with_partial_report_unknown(tmp_path: Path):
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     # Partial / crash mid-null: claims 40 of 999 but nonzero exit
     p.write_text(
@@ -843,8 +927,9 @@ def test_parse_harness_nonzero_exit_with_partial_report_unknown(tmp_path: Path):
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=9
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=9,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["n_null_executed"] is None
@@ -855,8 +940,6 @@ def test_parse_harness_nonzero_exit_with_partial_report_unknown(tmp_path: Path):
 
 def test_parse_harness_zero_nulls_without_deterministic_screen_burns(tmp_path: Path):
     """n_null_executed=0 + exit 0 without DETERMINISTIC_SCREEN must not unburn r1."""
-    from xau_sealed_family_cycle import parse_harness_report_for_accounting
-
     p = tmp_path / "null_maxstat.json"
     p.write_text(
         json.dumps(
@@ -875,8 +958,9 @@ def test_parse_harness_zero_nulls_without_deterministic_screen_burns(tmp_path: P
             }
         )
     )
-    a = parse_harness_report_for_accounting(
-        result_json=p, n_null_planned=999, exit_code=0
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0,
+        expected_null_seed=1,
     )
     assert a["execution_state"] == "UNKNOWN"
     assert a["n_null_executed"] is None
@@ -919,7 +1003,11 @@ def _sealed_wrapper_mocks(
         "load_charter",
         lambda p: {
             "family_id": "server_hour_window_flat",
-            "null": {"method": "within_day_ohlc_increment_rotate_v1", "n_trials": 999},
+            "null": {
+                "method": "within_day_ohlc_increment_rotate_v1",
+                "n_trials": 999,
+                "base_seed": 1,
+            },
             "fixed": {
                 "costs": {
                     "spread_col": "spread",
@@ -1264,18 +1352,20 @@ def test_build_provenance_accepts_n_null_none(tmp_path: Path, monkeypatch):
         charter_path=charter,
         costs_path=costs,
         data_path=data,
-        null_seed=0,
+        null_seed=None,  # never invent 0 for unknown reported seed
         n_null=None,
         out_dir=out,
         require_clean_tree=False,
         extra={"n_null_planned": 999, "n_null_executed": None},
     )
     assert prov["n_null"] is None
+    assert prov["null_seed"] is None
     assert prov["n_null_executed"] is None
     assert prov["n_null_planned"] == 999
     # JSON null, not omitted string "None"
     blob = json.loads(json.dumps(prov))
     assert blob["n_null"] is None
+    assert blob["null_seed"] is None
 
 
 def test_count_attempts_unique_attempt_id(tmp_path: Path):

@@ -260,19 +260,41 @@ def test_validate_charter_requires_base_seed_for_v2_freeze():
     assert any("base_seed" in e for e in errs)
 
 
-def test_validate_charter_rejects_non_integer_base_seed():
+def test_future_v1_freeze_without_base_seed_rejected():
+    """Cutover is freeze date, not charter_version — new family v1 must pin seed."""
     ch = load_charter(CHARTER_V2)
-    bad = dict(ch)
-    bad["null"] = dict(ch["null"])
-    bad["null"]["base_seed"] = 1.5
-    errs = validate_charter(bad)
-    assert any("base_seed" in e for e in errs)
+    future = dict(ch)
+    future["charter_version"] = 1
+    future["frozen_at"] = "2026-08-12"
+    future["null"] = dict(ch["null"])
+    del future["null"]["base_seed"]
+    errs = validate_charter(future)
+    assert any("base_seed" in e for e in errs), errs
+    assert any("charter_version" not in e or "not charter_version" in e for e in errs)
+
+
+def test_validate_charter_rejects_invalid_base_seed_types_and_negative():
+    ch = load_charter(CHARTER_V2)
+    cases = [
+        1.5,  # float
+        "20260808",  # numeric string (int() would coerce — must reject)
+        True,  # bool is int subclass — must reject
+        -1,  # negative
+        None,
+    ]
+    for bad_val in cases:
+        bad = dict(ch)
+        bad["null"] = dict(ch["null"])
+        bad["null"]["base_seed"] = bad_val
+        errs = validate_charter(bad)
+        assert any("base_seed" in e for e in errs), (bad_val, errs)
 
 
 def test_null_spec_exposes_base_seed():
     ch = load_charter(CHARTER_V2)
     ns = null_spec_from_charter(ch)
     assert int(ns["base_seed"]) == 20260808
+    assert type(ns["base_seed"]) is int
 
 
 def test_strict_harness_rejects_null_seed_divergence(monkeypatch, tmp_path: Path):
