@@ -1,0 +1,203 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-08-11",
+  "charter_version": 1,
+  "family_id": "day_open_reclaim_flat",
+  "display_name": "Zero-knob same-day day-open undercut reclaim long, intraday flat (v1)",
+  "thesis_class": "intraday_day_open_reclaim",
+  "thesis_memo": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+  "hypothesis": "On XAUUSD H1 as stamped by the Vantage terminal clock in xauusd_data.csv, the open of the first printed bar of each calendar day is a day-local reference. After any same-day bar prints low < day_open (undercut), a long-only reclaim when a later bar with server hour in 9..15 closes strictly above day_open, with fixed ATR SL/TP and force-flat at server hour 16, has no free parameters. Any edge must come from day-open support recovery after an early dip under Standard STP spread costs. Hours are pure server labels — not claimed Tokyo/Asia wall-clock or London–NY overlap.",
+  "clock_contract": {
+    "source": "MqlRates time via Mt5ArchBridge TimeToString; fetch_data tags as UTC without conversion",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "asia_tokyo_wall_clock_claimed": false,
+    "hours_present_develop_note": "develop bars show server hours 1..23 (hour 0 typically absent)"
+  },
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "multi_symbol_in_scope": false
+  },
+  "rule": {
+    "direction": "long_only",
+    "day_open": "open of the first printed H1 bar of the calendar day (server clock date of time stamp)",
+    "undercut": "true once any same-day bar has low < day_open (causal; sticky until day ends)",
+    "entry": "once per calendar day: if flat and undercut is true and server hour in entry_allowed_hours_server and close > day_open, enter long at that bar close",
+    "entry_allowed_hours_server": [9, 10, 11, 12, 13, 14, 15],
+    "flat_hour": 16,
+    "flat_hour_server": 16,
+    "intraday_flat": true,
+    "exit": "SL/TP or force flat at close of bar with hour>=flat_hour same day; no overnight",
+    "one_entry_per_day": true,
+    "sl_atr_fixed": 1.5,
+    "tp_atr_fixed": 2.0,
+    "atr_period": 14,
+    "execution_contract_ref": "execution_contract"
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "long_only": true,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0
+    }
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "classic": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.5,
+      "profit_factor_strict_gt": true,
+      "win_rate_min": 55.0,
+      "win_rate_strict_gt": true,
+      "max_drawdown_pct_max": 10.0,
+      "max_drawdown_strict_lt": true
+    },
+    "soft": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.1,
+      "net_profit_gt": 0.0,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft"
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "implementation_id": "within_day_ohlc_increment_rotate_v1",
+    "n_trials": 999,
+    "min_null_trials": 999,
+    "k_domain": "per_day Uniform{0,1,...,m-1} including identity k=0",
+    "algorithm": "For each calendar day with m bars: (1) ref_0 = open[0], ref_j = close[j-1] for j>0; (2) inc_j = (open,high,low,close)/ref_j componentwise; (3) circularly rotate the m increments by k∈{0..m-1}; (4) rebuild continuous OHLC path from the original day open by chaining rotated increments so each bar unit's open/ref and true-range/ref ratios are preserved as a multiset. Timestamps and spreads remain fixed. No absolute-price day-block paste; no foreign-hour geometry on a new close.",
+    "notes": "Canonical session null for protocol 2.2. Required because day_open, undercut, and reclaim use within-day path geometry.",
+    "invariants": [
+      "time_unchanged",
+      "spread_calendar_aligned",
+      "per_day_bar_count_equal",
+      "within_day_path_continuous",
+      "open_prev_close_gap_multiset",
+      "true_range_prev_multiset",
+      "session_path_association_broken"
+    ],
+    "forbidden_methods": [
+      "day_block_shuffle",
+      "circular_day_shift",
+      "global_return_shuffle",
+      "within_day_return_rotate"
+    ]
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 999,
+      "early_exit_search": false,
+      "costs_required": true
+    },
+    "slippage_sensitivity": {
+      "points": [0, 5, 10, 20],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    },
+    "walk_forward": {
+      "only_after_null_pass": true,
+      "costed": true
+    }
+  },
+  "kill": {
+    "on_null_fail": "KILL_DAY_OPEN_RECLAIM_FLAT",
+    "on_wf_fail": "KILL_DAY_OPEN_RECLAIM_FLAT",
+    "refine_loops": false
+  },
+  "explicitly_forbidden": [
+    "inspect develop grid metrics before this charter is git-committed and matches HEAD",
+    "implement family module before adversarial freeze review",
+    "rename or filter closed families (bb_rsi, Donchian, prior_day_high_break, tod_london_ny_flat, server_hour_window_flat, early_server_range_break_flat)",
+    "claim Tokyo/Asia or London–NY wall-clock identity without external offset proof",
+    "day_block_shuffle or global_return_shuffle null",
+    "CLI null overrides under sealed cycle",
+    "dispositional run with dirty tracked protocol/family/cost/charter/registry files",
+    "overnight holds",
+    "holdout selection or retune after screen",
+    "paper, live, or promote",
+    "deviate from execution_contract (ATR estimator, exit priority, same-bar exit after close entry)",
+    "--no-soft-primary under --strict-charter"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false
+  },
+  "execution_contract": {
+    "bar": "closed H1 only; no same-bar open entry from open of signal bar",
+    "atr": {
+      "period": 14,
+      "estimator": "wilder_ewm",
+      "formula": "TR ewm(alpha=1/14, adjust=False).mean() — MetaTrader-style Wilder via EWM",
+      "tr": "max(high-low, abs(high-prev_close), abs(low-prev_close))",
+      "value_used_at_entry": "atr[i] on signal bar close (no lag beyond causal TR/EWM definition)",
+      "forbidden_alternatives": [
+        "SMA of TR",
+        "standard EMA of TR with different alpha convention unless identical to Wilder alpha=1/14",
+        "using atr[i-1] for SL distance when entering at close[i]"
+      ]
+    },
+    "entry": {
+      "signal": "evaluated at bar close of index i",
+      "fill": "enter at close[i] when signal true and flat",
+      "atr_for_stops": "atr[i] known at that close",
+      "sl": "entry - sl_atr * atr[i]",
+      "tp": "entry + tp_atr * atr[i]",
+      "costs_on_entry_bar": "round-trip cost charged at entry: (spread_pts[i] + 2*slippage_points)*point_size*CONTRACT_SIZE*lots + 2*commission_per_lot*lots"
+    },
+    "exit": {
+      "first_eligible_bar": "i+1 (exits begin next bar after close-entry; no same-bar exit)",
+      "priority_same_bar_when_multiple": [
+        "1_stop_loss_if_low_le_sl",
+        "2_take_profit_if_high_ge_tp",
+        "3_time_flat_if_hour_ge_flat_hour_at_close"
+      ],
+      "sl_fill": "exit at sl price when low[j] <= sl",
+      "tp_fill": "exit at tp price when high[j] >= tp (only if stop not hit first)",
+      "time_flat_fill": "exit at close[j] when hour[j] >= flat_hour_server",
+      "end_of_series": "if still in position on last bar of entry day, force close at last close with trade_cost already charged; never carry overnight"
+    },
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "min_lot": 0.01,
+      "lot_step": 0.01,
+      "rounding": "floor to 0.01 lots: floor(raw_lots * 100 + 1e-12) / 100",
+      "raw_lots": "risk_cash / (stop_dist * CONTRACT_SIZE) with risk_cash = balance * risk_pct",
+      "skip_if": "lots < min_lot OR stop_dist * CONTRACT_SIZE * min_lot > risk_cash",
+      "contract_size": 100.0
+    },
+    "no_overnight": {
+      "entry_gate": "enter only if the calendar day has at least one bar with hour >= flat_hour_server",
+      "day_boundary": "if position still open when calendar day changes, fail-closed: do not apply next-day SL/TP (discard open risk without overnight fill invention)"
+    },
+    "warmup_bars": "max(atr_period + 5, 20); no entries before warmup",
+    "house_convention_source": "scripts/xau_family_early_server_range_break_flat.py + server_hour_window_flat simulate() sequencing"
+  }
+}

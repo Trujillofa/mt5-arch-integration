@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-11 — NEW THESIS FREEZE · `day_open_reclaim_flat` v1 (no implement / no develop peek)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_FREEZE_REVIEW`** then implement fixtures only |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **new family_id** | `day_open_reclaim_flat` |
+| **thesis memo** | `docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md` |
+| **charter** | `results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json` |
+| **n_free_knobs** | **0** · null `within_day_ohlc_increment_rotate_v1` · planned **999** |
+| **kill** | `KILL_DAY_OPEN_RECLAIM_FLAT` |
+| **primary** | soft |
+| **execution_contract** | Wilder ATR14; close entry; next-bar exits; SL≻TP≻flat; 0.01 lot; no overnight |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **implement / sealed r1** | **not authorized** until freeze review |
+| **branch** | `research/xau-day-open-reclaim-flat-v1` from `main` @ `f4e891f` |
+
+Closed freezes remain closed (early_server_range_break, server_hour, TOD, prior_day, Donchian, bb_rsi).
+
+---
+
 ## 2026-08-11 — early_server_range_break_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |
