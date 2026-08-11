@@ -127,6 +127,7 @@ Do **not** inspect develop metrics until screen is explicitly authorized.
 
 ## Safety
 
-No paper, live, promote, holdout selection, implement, or sealed cycle until freeze review passes.  
+Implementation + synthetic fixtures are **done** (family module on disk; freeze review passed).  
+Still forbidden without explicit authorization: **develop screen**, sealed null r1, paper, live, promote, holdout selection.  
 `KILL_DAY_OPEN_RECLAIM_FLAT` is a valid scientific close.  
 v1 remains byte-immutable under SUPERSEDED.

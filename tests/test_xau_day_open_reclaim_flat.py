@@ -253,32 +253,47 @@ def test_prior_bar_undercut_reclaim_accepted():
 
 
 def test_two_trade_realized_balance_sizing():
-    """Trade2 lots sized from post-trade1 realized balance (compounding)."""
+    """Trade2 lots sized from post-trade1 realized balance (lot-step crossing).
+
+    ATR=8.4 → stop_dist=12.6: start-balance risk floors to 0.07 lots. Trade1
+    hits TP (+2*ATR) so balance grows enough that trade2 floors to 0.08.
+    An implementation that always sizes from START_BALANCE would keep 0.07.
+    """
+    atr = 8.4
+    stop_dist = atr * fam.SL_ATR
+    entry_px = 2001.0
+    tp_px = entry_px + atr * fam.TP_ATR  # 2017.8
+
     d1 = _reclaim_day(
         "2024-03-01",
         day_open=2000.0,
         undercut_hour=4,
         undercut_low=1990.0,
         reclaim_hour=10,
-        reclaim_close=2001.0,
-        post_reclaim_close=2011.0,  # +10 at time-flat
+        reclaim_close=entry_px,
+        post_reclaim_close=entry_px,  # quiet until TP bar override
         include_hour16=True,
         spreads=0.0,
     )
+    # Hour 11: hit TP (high >= tp); keep low above SL
+    d1.loc[d1["time"].dt.hour == 11, "high"] = tp_px + 0.5
+    d1.loc[d1["time"].dt.hour == 11, "low"] = entry_px - 1.0
+    d1.loc[d1["time"].dt.hour == 11, "close"] = tp_px
+
     d2 = _reclaim_day(
         "2024-03-04",
         day_open=2000.0,
         undercut_hour=4,
         undercut_low=1990.0,
         reclaim_hour=10,
-        reclaim_close=2001.0,
-        post_reclaim_close=2001.0,
+        reclaim_close=entry_px,
+        post_reclaim_close=entry_px,
         include_hour16=True,
         spreads=0.0,
     )
     raw = _concat_days(_warmup_day(), d1, d2)
     d = fam.prepare(raw)
-    d["atr"] = 10.0  # stop_dist = 15
+    d["atr"] = atr
     log: list[dict] = []
     m = fam.simulate(
         d,
@@ -289,24 +304,26 @@ def test_two_trade_realized_balance_sizing():
     )
     assert m.n_trades == 2
     assert len(log) == 2
-    stop_dist = 10.0 * 1.5
-    # Trade1 from start_balance
-    risk1 = START_BALANCE * 0.01
+    assert log[0]["reason"] == "tp"
+
+    risk1 = START_BALANCE * fam.RISK_PCT
     lots1 = float(np.floor((risk1 / (stop_dist * CONTRACT_SIZE)) * 100 + 1e-12) / 100.0)
-    assert log[0]["lots"] == pytest.approx(lots1)
+    assert lots1 == pytest.approx(0.07)
+    assert log[0]["lots"] == pytest.approx(0.07)
     assert log[0]["bal_at_entry"] == pytest.approx(START_BALANCE)
-    # After trade1: bal = start + pnl1
+
     bal_after_1 = log[0]["bal_after_exit"]
     assert bal_after_1 == pytest.approx(START_BALANCE + log[0]["pnl"])
-    assert bal_after_1 > START_BALANCE  # profitable path
-    # Trade2 compounds
-    risk2 = bal_after_1 * 0.01
+    assert bal_after_1 > START_BALANCE
+
+    risk2 = bal_after_1 * fam.RISK_PCT
     lots2 = float(np.floor((risk2 / (stop_dist * CONTRACT_SIZE)) * 100 + 1e-12) / 100.0)
+    start_based_lots = lots1  # incorrect: always size from START_BALANCE
+    assert lots2 == pytest.approx(0.08)
+    assert log[1]["lots"] == pytest.approx(0.08)
     assert log[1]["bal_at_entry"] == pytest.approx(bal_after_1)
-    assert log[1]["lots"] == pytest.approx(lots2)
-    # If someone used start_balance for trade2, lots would match lots1 only when
-    # bal_after_1 == start — here bal grew so risk2 > risk1 (lots may still floor equal).
-    assert log[1]["bal_at_entry"] != pytest.approx(START_BALANCE)
+    assert log[1]["lots"] != pytest.approx(start_based_lots)
+    assert log[1]["lots"] != log[0]["lots"]
 
 
 def test_entry_exit_equity_cost_timing():
@@ -397,25 +414,41 @@ def test_no_entry_without_hour16_bar():
 
 
 def test_one_entry_per_day():
+    """entered_day blocks re-entry even after TP exits and later reclaim signals.
+
+    Without this guard, a second flat reclaim same day would open trade 2.
+    """
+    atr = 1.0
+    entry_px = 2001.0
+    tp_px = entry_px + atr * fam.TP_ATR  # 2003.0
     signal = _reclaim_day(
         "2024-03-01",
         undercut_hour=3,
         undercut_low=1990.0,
         reclaim_hour=9,
-        reclaim_close=2001.0,
-        post_reclaim_close=2001.0,
+        reclaim_close=entry_px,
+        post_reclaim_close=entry_px,
         include_hour16=True,
         spreads=0.0,
     )
-    # Later reclaims same day
+    # Hour 10: take profit → flat again same day
+    signal.loc[signal["time"].dt.hour == 10, "high"] = tp_px + 0.5
+    signal.loc[signal["time"].dt.hour == 10, "low"] = entry_px - 0.2
+    signal.loc[signal["time"].dt.hour == 10, "close"] = tp_px
+    # Hours 11–13: eligible reclaim signals while flat (undercut already sticky)
     for h in (11, 12, 13):
         signal.loc[signal["time"].dt.hour == h, "close"] = 2002.0
         signal.loc[signal["time"].dt.hour == h, "high"] = 2003.0
+        signal.loc[signal["time"].dt.hour == h, "low"] = 2000.5
     raw = _concat_days(_warmup_day(), signal)
     d = fam.prepare(raw)
-    d["atr"] = 50.0
-    m = fam.simulate(d, spread_col=None)
+    d["atr"] = atr
+    log: list[dict] = []
+    m = fam.simulate(d, spread_col=None, trade_log=log)
     assert m.n_trades == 1
+    assert len(log) == 1
+    assert log[0]["reason"] == "tp"
+    # Would be 2+ trades if entered_day guard were removed
 
 
 def test_no_entry_bar_exit_sl_before_tp():
