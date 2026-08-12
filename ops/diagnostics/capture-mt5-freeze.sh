@@ -91,6 +91,51 @@ for PID in "${PIDS[@]}"; do
     sudo rm -f "/tmp/mt5-strace-raw.$$"
 
     echo
+    echo "=== backtrace (gdb) ==="
+    # Use gdb, NEVER winedbg. winedbg attaches as a *Windows* debugger, and a Windows
+    # debuggee is killed when its debugger exits: attaching it to the frozen terminal on
+    # 2026-08-12 terminated the process, losing both the stack and the unsaved charts.
+    # gdb attaches via ptrace and detaches cleanly, leaving the terminal running.
+    #
+    # SIGSEGV must be passed through, not trapped: the freeze IS a SIGSEGV storm, so a
+    # gdb that stops on every fault never reaches a prompt.
+    GDB_OUT="/tmp/mt5-gdb.$$"
+    if command -v gdb >/dev/null 2>&1; then
+      sudo timeout 45 gdb -p "$PID" -batch \
+        -ex "set confirm off" \
+        -ex "set pagination off" \
+        -ex "handle SIGSEGV nostop noprint pass" \
+        -ex "info registers rip" \
+        -ex "bt 25" \
+        -ex "thread apply all bt 6" \
+        -ex "detach" >"$GDB_OUT" 2>&1
+      grep -vE '^\[|^warning:|Reading symbols' "$GDB_OUT" | head -70
+    else
+      echo "gdb not installed (pacman -S gdb)"
+    fi
+
+    echo
+    echo "=== faulting module ==="
+    # Resolve every address in the backtrace against the process map. Wine PE code has
+    # no symbols, so gdb prints "?? ()" — the module name is the whole answer, and
+    # matching it by eye across 40 map lines is where this gets abandoned.
+    if [[ -s "$GDB_OUT" ]]; then
+      grep -oE '0x[0-9a-f]{6,16}' "$GDB_OUT" | sort -u | while read -r addr; do
+        awk -v a="$addr" '
+          {
+            split($1, r, "-")
+            lo = strtonum("0x" r[1]); hi = strtonum("0x" r[2]); t = strtonum(a)
+            if (t >= lo && t < hi) {
+              path = ""
+              for (i = 6; i <= NF; i++) path = path (i > 6 ? " " : "") $i
+              if (path != "") { print "  " a "  ->  " path; exit }
+            }
+          }' "/proc/$PID/maps" 2>/dev/null
+      done | sort -u -k3 | head -25
+    fi
+    sudo rm -f "$GDB_OUT"
+
+    echo
     echo "=== terminal log tail (gap here == when it stopped making progress) ==="
     if [[ -n "$PREFIX" ]]; then
       LOG="$(find "$PREFIX/drive_c/Program Files" -maxdepth 3 -path '*/logs/*.log' -printf '%T@ %p\n' \
