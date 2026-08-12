@@ -1,9 +1,10 @@
-# Multi-instrument data readiness (Phase 0 — integrity v2)
+# Multi-instrument data readiness (Phase 0 — integrity v4)
 
-**Report generated (UTC wall clock):** 2026-08-11T22:29:04.430990+00:00
+**Report generated (UTC wall clock):** 2026-08-12T15:25:18.885187+00:00
 **Gate:** `PASS_DATA_READY_WITH_IMPUTATION`
 **Bar clock contract:** `server_clock_as_stored` (not UTC)
 **Develop rule:** server_time `< 2026-01-01 00:00:00`
+**Publish model:** versioned package + CURRENT pointer (set-atomic install)
 
 ## Per-symbol
 

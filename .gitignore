@@ -51,3 +51,6 @@ winetricks.log
 
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
+
+# Local versioned publish packages (live results/instrument_data* are canonical commits)
+results/instrument_data_packages/*/

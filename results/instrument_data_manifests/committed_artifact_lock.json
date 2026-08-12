@@ -1,6 +1,6 @@
 {
   "gate": "PASS_DATA_READY_WITH_IMPUTATION",
-  "frozen_at_utc": "2026-08-11T22:29:04.442187+00:00",
+  "frozen_at_utc": "2026-08-12T15:25:18.854727+00:00",
   "clock_contract": "server_clock_as_stored",
   "required_symbols": [
     "XAUUSD",
@@ -50,5 +50,7 @@
       "manifest_n_rows_h1": 30694,
       "manifest_n_rows_h1_develop": 26900
     }
-  }
+  },
+  "package_id": "4f44b452081041f39fc24f03248b8ca8",
+  "publish_model": "versioned_package_v4"
 }

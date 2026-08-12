@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Phase-0 multi-instrument data readiness — fail-closed (no signals / PF / grids).
 
-Integrity rules (v2):
+Integrity rules (v4):
   * Bar clock = server_clock_as_stored (never false UTC).
+  * Attest and consume the same canonical bridge_dir paths only.
+  * Challenge/echo exact JSON compare (run_id, symbols, H1, holdout, account).
+  * Versioned package publish + CURRENT pointer; set-atomic install with rollback.
   * Research CSVs written only after hard DQ passes (no publish on FAIL).
   * build_symbol accepts out_dir (tests must not write repo artifacts).
-  * export_run.json must attest exact source file sha/size/mtime.
-  * MQL export_complete.json required for runtime account/connection.
   * Row symbol vs meta.resolved; H1 timestamps on :00:00.
 
 SAFETY: offline data QA only.
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
@@ -33,6 +35,8 @@ MANIFEST_DIR = ROOT / "results" / "instrument_data_manifests"
 REPORT_PATH = ROOT / "results" / "multi_instrument_data_readiness.md"
 EXPORT_RUN_REPO = MANIFEST_DIR / "export_run.json"
 ARTIFACT_LOCK = MANIFEST_DIR / "committed_artifact_lock.json"
+PACKAGE_ROOT = ROOT / "results" / "instrument_data_packages"
+CURRENT_POINTER = PACKAGE_ROOT / "CURRENT"
 
 SYMBOLS = ("XAUUSD", "EURUSD", "GBPUSD")
 PRIMARY_TF = "H1"
@@ -215,6 +219,157 @@ def _load_export_complete(bridge: Path) -> dict[str, Any] | None:
     return None
 
 
+
+def _parse_challenge_echo(raw: Any) -> dict[str, Any] | None:
+    """challenge_echo may be a JSON object or a JSON-encoded string."""
+    if isinstance(raw, dict):
+        return raw
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _load_export_challenge(bridge_dir: Path) -> dict[str, Any] | None:
+    for p in (bridge_dir / "export_challenge.json", MANIFEST_DIR / "export_challenge.json"):
+        if p.is_file():
+            try:
+                data = json.loads(p.read_text())
+            except json.JSONDecodeError:
+                return None
+            return data if isinstance(data, dict) else None
+    return None
+
+
+def _verify_challenge_echo(
+    bridge_dir: Path,
+    export_run: dict[str, Any],
+    export_complete: dict[str, Any],
+) -> list[str]:
+    """Exact compare of export_challenge vs challenge_echo (+ export_run binding).
+
+    Presence-only is not enough: echo must parse and match run_id, symbols,
+    timeframes, holdout_start_server, and expected account fields.
+    """
+    errs: list[str] = []
+    challenge = _load_export_challenge(bridge_dir)
+    if not challenge:
+        errs.append("MISSING_EXPORT_CHALLENGE_JSON")
+        return errs
+
+    echo = _parse_challenge_echo(export_complete.get("challenge_echo"))
+    if echo is None:
+        errs.append("CHALLENGE_ECHO_UNPARSEABLE")
+        return errs
+
+    # Required challenge fields
+    required = (
+        "run_id",
+        "symbols",
+        "timeframes",
+        "holdout_start_server",
+        "expect_login",
+        "expect_server",
+    )
+    for k in required:
+        if k not in challenge:
+            errs.append(f"CHALLENGE_MISSING_FIELD:{k}")
+        if k not in echo:
+            errs.append(f"CHALLENGE_ECHO_MISSING_FIELD:{k}")
+
+    def _norm_symbols(v: Any) -> list[str] | None:
+        if not isinstance(v, list):
+            return None
+        return [str(x) for x in v]
+
+    # Field-by-field exact compare
+    if challenge.get("run_id") != echo.get("run_id"):
+        errs.append(
+            f"CHALLENGE_ECHO_RUN_ID_MISMATCH:challenge={challenge.get('run_id')!r} "
+            f"echo={echo.get('run_id')!r}"
+        )
+    ch_syms = _norm_symbols(challenge.get("symbols"))
+    echo_syms = _norm_symbols(echo.get("symbols"))
+    if ch_syms is None or echo_syms is None or ch_syms != echo_syms:
+        errs.append(
+            f"CHALLENGE_ECHO_SYMBOLS_MISMATCH:challenge={challenge.get('symbols')!r} "
+            f"echo={echo.get('symbols')!r}"
+        )
+    if str(challenge.get("timeframes") or "") != str(echo.get("timeframes") or ""):
+        errs.append(
+            f"CHALLENGE_ECHO_TIMEFRAMES_MISMATCH:challenge={challenge.get('timeframes')!r} "
+            f"echo={echo.get('timeframes')!r}"
+        )
+    if str(challenge.get("holdout_start_server") or "") != str(
+        echo.get("holdout_start_server") or ""
+    ):
+        errs.append(
+            "CHALLENGE_ECHO_HOLDOUT_MISMATCH:"
+            f"challenge={challenge.get('holdout_start_server')!r} "
+            f"echo={echo.get('holdout_start_server')!r}"
+        )
+    try:
+        ch_login = int(challenge["expect_login"]) if challenge.get("expect_login") is not None else None
+        echo_login = int(echo["expect_login"]) if echo.get("expect_login") is not None else None
+    except (TypeError, ValueError, KeyError):
+        ch_login = echo_login = None
+        errs.append("CHALLENGE_ECHO_LOGIN_UNPARSEABLE")
+    if ch_login != echo_login:
+        errs.append(
+            f"CHALLENGE_ECHO_LOGIN_MISMATCH:challenge={challenge.get('expect_login')!r} "
+            f"echo={echo.get('expect_login')!r}"
+        )
+    if str(challenge.get("expect_server") or "") != str(echo.get("expect_server") or ""):
+        errs.append(
+            f"CHALLENGE_ECHO_SERVER_MISMATCH:challenge={challenge.get('expect_server')!r} "
+            f"echo={echo.get('expect_server')!r}"
+        )
+
+    # Cross-bind to export_run
+    run_id = export_run.get("run_id")
+    if challenge.get("run_id") != run_id:
+        errs.append(
+            f"CHALLENGE_RUN_ID_NE_EXPORT_RUN:challenge={challenge.get('run_id')!r} "
+            f"export_run={run_id!r}"
+        )
+    if echo.get("run_id") != run_id:
+        errs.append(
+            f"CHALLENGE_ECHO_RUN_ID_NE_EXPORT_RUN:echo={echo.get('run_id')!r} "
+            f"export_run={run_id!r}"
+        )
+    if ch_syms is not None and set(ch_syms) != set(SYMBOLS):
+        errs.append(f"CHALLENGE_UNEXPECTED_SYMBOLS:{ch_syms!r}")
+    if str(challenge.get("timeframes") or "") != "H1":
+        errs.append(f"CHALLENGE_UNEXPECTED_TIMEFRAMES:{challenge.get('timeframes')!r}")
+    if str(challenge.get("holdout_start_server") or "")[:10] != "2026-01-01":
+        errs.append(
+            f"CHALLENGE_HOLDOUT_UNEXPECTED:{challenge.get('holdout_start_server')!r}"
+        )
+    # Expected account must match export_run / costs binding surface
+    if (
+        export_run.get("login") is not None
+        and ch_login is not None
+        and int(export_run["login"]) != ch_login
+    ):
+        errs.append(
+            f"CHALLENGE_LOGIN_NE_EXPORT_RUN:challenge={ch_login} "
+            f"export_run={export_run.get('login')}"
+        )
+    if (
+        export_run.get("server")
+        and challenge.get("expect_server")
+        and str(export_run["server"]) != str(challenge["expect_server"])
+    ):
+        errs.append(
+            f"CHALLENGE_SERVER_NE_EXPORT_RUN:challenge={challenge.get('expect_server')!r} "
+            f"export_run={export_run.get('server')!r}"
+        )
+    return errs
+
+
 def verify_export_run(
     export_run: dict[str, Any] | None,
     costs: dict[str, Any],
@@ -260,11 +415,14 @@ def verify_export_run(
 
     cost_login = costs.get("login")
     cost_server = costs.get("server")
-    if cost_login is not None and export_run.get("login") is not None:
-        if int(export_run["login"]) != int(cost_login):
-            errs.append(
-                f"LOGIN_MISMATCH:export={export_run.get('login')} costs={cost_login}"
-            )
+    if (
+        cost_login is not None
+        and export_run.get("login") is not None
+        and int(export_run["login"]) != int(cost_login)
+    ):
+        errs.append(
+            f"LOGIN_MISMATCH:export={export_run.get('login')} costs={cost_login}"
+        )
     if cost_server and export_run.get("server") and str(export_run["server"]) != str(cost_server):
         errs.append(
             f"SERVER_MISMATCH:export={export_run.get('server')!r} costs={cost_server!r}"
@@ -275,38 +433,45 @@ def verify_export_run(
         errs.append("EXPORT_RUN_FILES_NOT_OBJECT")
         return errs
 
+    # Canonical consume paths: ONLY bridge_dir/history_{S}.csv and symbol_meta_{S}.csv.
+    # Attestation hashes must match these paths (ignore export_run path strings for IO).
     for s in SYMBOLS:
-        for kind in ("history", "meta"):
+        for kind, fname in (
+            ("history", f"history_{s}.csv"),
+            ("meta", f"symbol_meta_{s}.csv"),
+        ):
             key = f"{kind}_{s}"
             ent = files.get(key)
             if not isinstance(ent, dict):
                 errs.append(f"EXPORT_RUN_MISSING_FILE_ENTRY:{key}")
                 continue
-            path_s = ent.get("path")
-            if not path_s:
-                errs.append(f"EXPORT_RUN_EMPTY_PATH:{key}")
-                continue
-            p = Path(str(path_s))
+            p = bridge_dir / fname
             if not p.is_file():
-                # also try bridge_dir relative name
-                alt = bridge_dir / p.name
-                if alt.is_file():
-                    p = alt
-                else:
-                    errs.append(f"EXPORT_RUN_PATH_MISSING:{key}:{path_s}")
-                    continue
+                errs.append(f"CANONICAL_PATH_MISSING:{key}:{p}")
+                continue
             try:
                 st = p.stat()
             except OSError:
-                errs.append(f"EXPORT_RUN_PATH_UNREADABLE:{key}")
+                errs.append(f"CANONICAL_PATH_UNREADABLE:{key}")
                 continue
             sha = _sha256_file(p)
             if ent.get("sha256") != sha:
-                errs.append(f"EXPORT_RUN_SHA_MISMATCH:{key}")
+                errs.append(f"EXPORT_RUN_SHA_MISMATCH:{key}:attested_ne_canonical")
             if int(ent.get("bytes") or -1) != int(st.st_size):
                 errs.append(f"EXPORT_RUN_SIZE_MISMATCH:{key}")
             if abs(int(ent.get("mtime_unix") or 0) - int(st.st_mtime)) > 2:
                 errs.append(f"EXPORT_RUN_MTIME_MISMATCH:{key}")
+            # If export_run.path is present and names a different existing file with
+            # different content, that is also a fail (split-brain attestation).
+            path_s = ent.get("path")
+            if path_s:
+                alt = Path(str(path_s))
+                if (
+                    alt.is_file()
+                    and alt.resolve() != p.resolve()
+                    and _sha256_file(alt) != sha
+                ):
+                    errs.append(f"ATTESTED_PATH_DIVERGES:{key}")
 
     # MQL runtime completion sentinel — strict run binding + required fields
     if not export_complete:
@@ -330,6 +495,9 @@ def verify_export_run(
                 f"RUN_ID_MISMATCH:complete={export_complete.get('run_id')!r} "
                 f"export_run={run_id!r}"
             )
+        # Exact challenge/echo compare (not presence-only)
+        ch_errs = _verify_challenge_echo(bridge_dir, export_run, export_complete)
+        errs.extend(ch_errs)
         if export_complete.get("terminal_connected") is not True:
             errs.append("TERMINAL_NOT_CONNECTED_AT_EXPORT")
         if cost_login is not None:
@@ -412,10 +580,9 @@ def verify_costs_file(costs: dict[str, Any] | None, path: Path = COSTS_XAU) -> l
     ):
         if k not in costs:
             errs.append(f"COSTS_MISSING_FIELD:{k}")
-    if costs.get("account_type") not in ("STANDARD_STP", "Standard STP"):
-        # allow exact enum used in file
-        if str(costs.get("account_type") or "") != "STANDARD_STP":
-            errs.append(f"COSTS_ACCOUNT_TYPE:{costs.get('account_type')!r}")
+    acct = str(costs.get("account_type") or "")
+    if acct not in ("STANDARD_STP", "Standard STP"):
+        errs.append(f"COSTS_ACCOUNT_TYPE:{costs.get('account_type')!r}")
     try:
         if float(costs.get("commission_per_lot")) != 0.0:
             errs.append(f"COSTS_COMMISSION_NE_ZERO:{costs.get('commission_per_lot')}")
@@ -460,47 +627,47 @@ def build_symbol(
         hard.append("MISSING_SYMBOL_META")
 
     def _fail_manifest(**extra: Any) -> SymbolManifest:
-        base = dict(
-            symbol=symbol,
-            status="FAIL",
-            clock_contract=CLOCK_CONTRACT,
-            source_path=str(src),
-            source_sha256=_sha256_file(src) if src.is_file() else "",
-            research_csv="",
-            research_csv_sha256="",
-            timeframe=PRIMARY_TF,
-            n_rows_raw=0,
-            n_rows_h1=0,
-            n_rows_h1_develop=0,
-            time_min_server="",
-            time_max_server="",
-            develop_time_min_server="",
-            develop_time_max_server="",
-            develop_rule="server_time < holdout_start_server",
-            holdout_start_server=str(holdout_start),
-            missing_duplicate_bars={},
-            gap_report={},
-            spread={},
-            point_size=float("nan"),
-            contract_size=float("nan"),
-            digits=None,
-            commission_per_lot=0.0,
-            commission_notes="Standard STP: commission 0; cost in spread",
-            slippage_points=0.0,
-            slippage_notes="UNMEASURED — left at 0; not a claim of zero slip",
-            spread_source="MqlRates.spread via Wine Vantage export",
-            broker=str(costs.get("broker", "Vantage")),
-            account_type=str(costs.get("account_type", "STANDARD_STP")),
-            server=server,
-            login=int(login) if login is not None else None,
-            export_run_id=run_id,
-            meta_source="",
-            meta_raw={},
-            hard_errors=list(hard),
-            quality_flags=list(flags),
-            frozen_at_utc=datetime.now(UTC).isoformat(),
-            published=False,
-        )
+        base = {
+            "symbol": symbol,
+            "status": "FAIL",
+            "clock_contract": CLOCK_CONTRACT,
+            "source_path": str(src),
+            "source_sha256": _sha256_file(src) if src.is_file() else "",
+            "research_csv": "",
+            "research_csv_sha256": "",
+            "timeframe": PRIMARY_TF,
+            "n_rows_raw": 0,
+            "n_rows_h1": 0,
+            "n_rows_h1_develop": 0,
+            "time_min_server": "",
+            "time_max_server": "",
+            "develop_time_min_server": "",
+            "develop_time_max_server": "",
+            "develop_rule": "server_time < holdout_start_server",
+            "holdout_start_server": str(holdout_start),
+            "missing_duplicate_bars": {},
+            "gap_report": {},
+            "spread": {},
+            "point_size": float("nan"),
+            "contract_size": float("nan"),
+            "digits": None,
+            "commission_per_lot": 0.0,
+            "commission_notes": "Standard STP: commission 0; cost in spread",
+            "slippage_points": 0.0,
+            "slippage_notes": "UNMEASURED — left at 0; not a claim of zero slip",
+            "spread_source": "MqlRates.spread via Wine Vantage export",
+            "broker": str(costs.get("broker", "Vantage")),
+            "account_type": str(costs.get("account_type", "STANDARD_STP")),
+            "server": server,
+            "login": int(login) if login is not None else None,
+            "export_run_id": run_id,
+            "meta_source": "",
+            "meta_raw": {},
+            "hard_errors": list(hard),
+            "quality_flags": list(flags),
+            "frozen_at_utc": datetime.now(UTC).isoformat(),
+            "published": False,
+        }
         base.update(extra)
         return SymbolManifest(**base)
 
@@ -765,14 +932,18 @@ def write_report(
     common: dict[str, Any],
     gate: str,
     export_errs: list[str],
+    *,
+    path: Path | None = None,
 ) -> None:
+    dest = path if path is not None else REPORT_PATH
     lines = [
-        "# Multi-instrument data readiness (Phase 0 — integrity v2)",
+        "# Multi-instrument data readiness (Phase 0 — integrity v4)",
         "",
         f"**Report generated (UTC wall clock):** {datetime.now(UTC).isoformat()}",
         f"**Gate:** `{gate}`",
         f"**Bar clock contract:** `{CLOCK_CONTRACT}` (not UTC)",
         f"**Develop rule:** server_time `< {DEVELOP_END_SERVER}`",
+        "**Publish model:** versioned package + CURRENT pointer (set-atomic install)",
         "",
         "## Per-symbol",
         "",
@@ -807,8 +978,8 @@ def write_report(
         "- No thesis freeze, signals, PF, grids, nulls, paper, or live.",
         "",
     ]
-    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text("\n".join(lines) + "\n")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text("\n".join(lines) + "\n")
 
 
 def write_artifact_lock(
@@ -816,8 +987,14 @@ def write_artifact_lock(
     gate: str,
     *,
     out_dir: Path,
+    lock_path: Path | None = None,
+    path_prefix: str = "results/instrument_data",
 ) -> dict[str, Any]:
-    """Committed-artifact lock: full + develop row counts/SHAs for all symbols."""
+    """Committed-artifact lock: full + develop row counts/SHAs for all symbols.
+
+    Paths recorded under ``path_prefix`` (live consumer paths), while bytes/SHAs
+    are taken from ``out_dir`` (package/staging content).
+    """
     lock: dict[str, Any] = {
         "gate": gate,
         "frozen_at_utc": datetime.now(UTC).isoformat(),
@@ -826,15 +1003,14 @@ def write_artifact_lock(
         "artifacts": {},
     }
     for m in manifests:
-        if not m.published or not m.research_csv:
+        if not m.published:
             continue
-        # Prefer paths under out_dir (staging or final)
         research_name = f"{m.symbol.lower()}_h1.csv"
         develop_name = f"{m.symbol.lower()}_h1_develop.csv"
         research_path = out_dir / research_name
         develop_path = out_dir / develop_name
         if not research_path.is_file() and m.research_csv:
-            research_path = ROOT / m.research_csv
+            research_path = ROOT / m.research_csv if not Path(m.research_csv).is_absolute() else Path(m.research_csv)
         if not develop_path.is_file():
             drel = m.missing_duplicate_bars.get("develop_csv") or ""
             if drel:
@@ -845,14 +1021,8 @@ def write_artifact_lock(
         n_full = sum(1 for _ in research_path.open()) - 1 if research_path.is_file() else -1
         n_dev = sum(1 for _ in develop_path.open()) - 1 if develop_path.is_file() else -1
 
-        try:
-            research_rel = str(research_path.relative_to(ROOT))
-        except ValueError:
-            research_rel = str(research_path)
-        try:
-            develop_rel = str(develop_path.relative_to(ROOT))
-        except ValueError:
-            develop_rel = str(develop_path)
+        research_rel = f"{path_prefix}/{research_name}"
+        develop_rel = f"{path_prefix}/{develop_name}"
 
         lock["artifacts"][m.symbol] = {
             "research_csv": research_rel,
@@ -868,8 +1038,9 @@ def write_artifact_lock(
             "manifest_n_rows_h1": m.n_rows_h1,
             "manifest_n_rows_h1_develop": m.n_rows_h1_develop,
         }
-    MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
-    ARTIFACT_LOCK.write_text(json.dumps(lock, indent=2) + "\n")
+    dest = lock_path if lock_path is not None else ARTIFACT_LOCK
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(json.dumps(lock, indent=2) + "\n")
     return lock
 
 
@@ -952,8 +1123,129 @@ def verify_committed_artifacts(
     return errs
 
 
+def _live_package_file_map(package_dir: Path) -> list[tuple[Path, Path]]:
+    """Map package-relative sources to live repo destinations (set install)."""
+    pairs: list[tuple[Path, Path]] = []
+    data = package_dir / "instrument_data"
+    for name in (
+        [f"{s.lower()}_h1.csv" for s in SYMBOLS]
+        + [f"{s.lower()}_h1_develop.csv" for s in SYMBOLS]
+    ):
+        pairs.append((data / name, OUT_DIR / name))
+    man = package_dir / "instrument_data_manifests"
+    for name in (
+        [f"{s.lower()}_h1_manifest.json" for s in SYMBOLS]
+        + [
+            "common_develop_window.json",
+            "committed_artifact_lock.json",
+            "export_run.json",
+            "export_complete.json",
+            "export_challenge.json",
+        ]
+    ):
+        src = man / name
+        if src.is_file():
+            pairs.append((src, MANIFEST_DIR / name))
+    report = package_dir / "multi_instrument_data_readiness.md"
+    if report.is_file():
+        pairs.append((report, REPORT_PATH))
+    return pairs
+
+
+def _read_current_package_id() -> str | None:
+    if not CURRENT_POINTER.is_file():
+        return None
+    val = CURRENT_POINTER.read_text().strip()
+    return val or None
+
+
+def _write_current_package_id(package_id: str) -> None:
+    PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
+    tmp = CURRENT_POINTER.with_suffix(".tmp")
+    tmp.write_text(package_id + "\n")
+    tmp.replace(CURRENT_POINTER)
+
+
+def install_package_to_live(package_dir: Path) -> None:
+    """Copy every package member into live paths via tmp+rename (per-file).
+
+    Callers must treat this as part of a set transaction: on exception, restore
+    the previous package with the same function.
+    """
+    pairs = _live_package_file_map(package_dir)
+    if not pairs:
+        raise FileNotFoundError(f"empty package map: {package_dir}")
+    for src, _dst in pairs:
+        if not src.is_file():
+            raise FileNotFoundError(f"package missing {src}")
+
+    # Stage all new content beside destinations first (no live mutation yet).
+    staged: list[tuple[Path, Path]] = []
+    try:
+        for src, dst in pairs:
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            tmp = dst.with_name(f".{dst.name}.pkgnew")
+            if tmp.exists() or tmp.is_symlink():
+                tmp.unlink()
+            tmp.write_bytes(src.read_bytes())
+            staged.append((tmp, dst))
+        # Commit renames. Any failure after this point requires full rollback
+        # from the previous package (caller responsibility).
+        for tmp, dst in staged:
+            tmp.replace(dst)
+            staged = [(t, d) for t, d in staged if t != tmp]
+    except Exception:
+        for tmp, _dst in staged:
+            with contextlib.suppress(OSError):
+                tmp.unlink(missing_ok=True)
+        raise
+
+
+def publish_versioned_package(package_dir: Path, package_id: str) -> None:
+    """Promote a fully-built package directory to CURRENT with set-atomic live install.
+
+    1. Finalize package under PACKAGE_ROOT/<package_id>/
+    2. Install full file set to live paths
+    3. On any install failure: reinstall previous CURRENT package (complete rollback)
+    4. Flip CURRENT pointer only after live install succeeds
+    """
+    import shutil
+
+    if not re.fullmatch(r"[0-9a-f]{32}", package_id) and not re.fullmatch(
+        r"[0-9A-Za-z._-]{8,64}", package_id
+    ):
+        raise ValueError(f"invalid package_id: {package_id!r}")
+
+    PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
+    final_pkg = PACKAGE_ROOT / package_id
+    if final_pkg.resolve() != package_dir.resolve():
+        if final_pkg.exists():
+            shutil.rmtree(final_pkg)
+        # Move complete staging tree into versioned slot
+        shutil.move(str(package_dir), str(final_pkg))
+
+    prev_id = _read_current_package_id()
+    try:
+        install_package_to_live(final_pkg)
+        # Post-install: every live file must match package bytes
+        for src, dst in _live_package_file_map(final_pkg):
+            if not dst.is_file() or _sha256_file(src) != _sha256_file(dst):
+                raise RuntimeError(f"live/package mismatch after install: {dst.name}")
+        _write_current_package_id(package_id)
+    except Exception:
+        # Complete rollback to previous accepted package when available
+        if prev_id and (PACKAGE_ROOT / prev_id).is_dir():
+            try:
+                install_package_to_live(PACKAGE_ROOT / prev_id)
+            except Exception as rb_err:
+                raise RuntimeError(
+                    f"publish failed and rollback failed: {rb_err}"
+                ) from rb_err
+        raise
+
+
 def _atomic_publish_staging(staging: Path, final: Path) -> None:
-    """Replace final CSV set with staging only after success."""
+    """Legacy per-CSV helper — prefer publish_versioned_package."""
     final.mkdir(parents=True, exist_ok=True)
     for name in (
         [f"{s.lower()}_h1.csv" for s in SYMBOLS]
@@ -1001,17 +1293,24 @@ def main() -> int:
     )
     print("export_run:", (export_run or {}).get("run_id"), "errs=", export_errs)
 
-    MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
+    package_id = None
+    if export_run and isinstance(export_run.get("run_id"), str):
+        package_id = str(export_run["run_id"])
+    if not package_id:
+        package_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "_nopkg"
 
-    # Do not touch final OUT_DIR until global gate passes.
-    staging_root = Path(tempfile.mkdtemp(prefix="instr_stage_", dir=str(MANIFEST_DIR)))
-    staging_data = staging_root / "instrument_data"
-    staging_data.mkdir(parents=True, exist_ok=True)
+    # Build entire acceptance set into a versioned package staging tree.
+    # Live OUT_DIR / MANIFEST_DIR / REPORT_PATH are not mutated until PASS.
+    staging_root = Path(tempfile.mkdtemp(prefix="instr_pkg_", dir=str(ROOT / "results")))
+    package_stage = staging_root / package_id
+    stage_data = package_stage / "instrument_data"
+    stage_man = package_stage / "instrument_data_manifests"
+    stage_data.mkdir(parents=True, exist_ok=True)
+    stage_man.mkdir(parents=True, exist_ok=True)
 
     manifests: list[SymbolManifest] = []
     develops: dict[str, pd.DataFrame] = {}
 
-    # If export provenance already failed, still compute symbol DQ without publishing.
     publish_stage = not bool(export_errs)
 
     for sym in SYMBOLS:
@@ -1021,12 +1320,13 @@ def main() -> int:
             costs=costs,
             export_run=export_run,
             holdout_start=holdout,
-            out_dir=staging_data,
+            out_dir=stage_data,
             publish=publish_stage,
         )
         manifests.append(m)
-        path = MANIFEST_DIR / f"{sym.lower()}_h1_manifest.json"
-        path.write_text(json.dumps(asdict(m), indent=2) + "\n")
+        (stage_man / f"{sym.lower()}_h1_manifest.json").write_text(
+            json.dumps(asdict(m), indent=2) + "\n"
+        )
         print(
             f"{sym}: status={m.status} published={m.published} h1={m.n_rows_h1} "
             f"develop={m.n_rows_h1_develop} hard={m.hard_errors} flags={m.quality_flags}"
@@ -1042,9 +1342,16 @@ def main() -> int:
             "reason": "not all symbols produced develop series",
             "hard_errors": ["INCOMPLETE_DEVELOP_SET"],
         }
-    (MANIFEST_DIR / "common_develop_window.json").write_text(
+    (stage_man / "common_develop_window.json").write_text(
         json.dumps(common, indent=2) + "\n"
     )
+
+    # Copy provenance into package for audit trail
+    for name in ("export_run.json", "export_complete.json", "export_challenge.json"):
+        for src in (bridge / name, MANIFEST_DIR / name):
+            if src.is_file():
+                (stage_man / name).write_text(src.read_text())
+                break
 
     any_hard = bool(export_errs) or any(m.status == "FAIL" for m in manifests)
     if common.get("status") == "FAIL":
@@ -1060,76 +1367,74 @@ def main() -> int:
     else:
         gate = "PASS_DATA_READY"
 
-    write_report(manifests, common, gate, export_errs)
+    report_stage = package_stage / "multi_instrument_data_readiness.md"
+    write_report(manifests, common, gate, export_errs, path=report_stage)
 
     if gate.startswith("PASS_"):
-        # Rewrite manifest paths to final OUT_DIR locations before lock/publish
+        # Final relative paths for consumers (live layout after install)
         for m in manifests:
             if m.published:
-                m.research_csv = str((OUT_DIR / f"{m.symbol.lower()}_h1.csv").relative_to(ROOT))
-                m.missing_duplicate_bars["develop_csv"] = str(
-                    (OUT_DIR / f"{m.symbol.lower()}_h1_develop.csv").relative_to(ROOT)
+                m.research_csv = f"results/instrument_data/{m.symbol.lower()}_h1.csv"
+                m.missing_duplicate_bars["develop_csv"] = (
+                    f"results/instrument_data/{m.symbol.lower()}_h1_develop.csv"
                 )
-                # SHAs still from staging files
-                sp = staging_data / f"{m.symbol.lower()}_h1.csv"
-                dp = staging_data / f"{m.symbol.lower()}_h1_develop.csv"
+                sp = stage_data / f"{m.symbol.lower()}_h1.csv"
+                dp = stage_data / f"{m.symbol.lower()}_h1_develop.csv"
                 m.research_csv_sha256 = _sha256_file(sp)
                 m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
+                (stage_man / f"{m.symbol.lower()}_h1_manifest.json").write_text(
+                    json.dumps(asdict(m), indent=2) + "\n"
+                )
 
-        # Lock against staging content with final relative paths
-        write_artifact_lock(manifests, gate, out_dir=staging_data)
-        # Point lock paths at final destinations for verify after publish
-        lock = json.loads(ARTIFACT_LOCK.read_text())
-        for sym, ent in lock["artifacts"].items():
-            ent["research_csv"] = f"results/instrument_data/{sym.lower()}_h1.csv"
-            ent["develop_csv"] = f"results/instrument_data/{sym.lower()}_h1_develop.csv"
-            # recompute sha from staging (same bytes as will be published)
-            ent["research_csv_sha256"] = _sha256_file(
-                staging_data / f"{sym.lower()}_h1.csv"
-            )
-            ent["develop_csv_sha256"] = _sha256_file(
-                staging_data / f"{sym.lower()}_h1_develop.csv"
-            )
-            ent["n_rows_h1"] = sum(
-                1 for _ in (staging_data / f"{sym.lower()}_h1.csv").open()
-            ) - 1
-            ent["n_rows_h1_develop"] = sum(
-                1 for _ in (staging_data / f"{sym.lower()}_h1_develop.csv").open()
-            ) - 1
-        ARTIFACT_LOCK.write_text(json.dumps(lock, indent=2) + "\n")
+        lock = write_artifact_lock(
+            manifests,
+            gate,
+            out_dir=stage_data,
+            lock_path=stage_man / "committed_artifact_lock.json",
+            path_prefix="results/instrument_data",
+        )
+        # Bind package identity into lock for audit
+        lock["package_id"] = package_id
+        lock["publish_model"] = "versioned_package_v4"
+        (stage_man / "committed_artifact_lock.json").write_text(
+            json.dumps(lock, indent=2) + "\n"
+        )
+        write_report(manifests, common, gate, export_errs, path=report_stage)
 
         try:
-            _atomic_publish_staging(staging_data, OUT_DIR)
+            publish_versioned_package(package_stage, package_id)
         except Exception as e:
-            print("ATOMIC_PUBLISH_FAIL:", e)
+            print("PACKAGE_PUBLISH_FAIL:", e)
             gate = "FAIL_DATA"
-            write_report(manifests, common, gate, export_errs + [f"ATOMIC_PUBLISH_FAIL:{e}"])
+            write_report(
+                manifests,
+                common,
+                gate,
+                export_errs + [f"PACKAGE_PUBLISH_FAIL:{e}"],
+            )
             shutil.rmtree(staging_root, ignore_errors=True)
             print(f"Gate: {gate}")
             return 1
-
-        # Refresh manifests with final SHAs after publish
-        for m in manifests:
-            if m.published:
-                fp = OUT_DIR / f"{m.symbol.lower()}_h1.csv"
-                dp = OUT_DIR / f"{m.symbol.lower()}_h1_develop.csv"
-                m.research_csv_sha256 = _sha256_file(fp)
-                m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
-                (MANIFEST_DIR / f"{m.symbol.lower()}_h1_manifest.json").write_text(
-                    json.dumps(asdict(m), indent=2) + "\n"
-                )
 
         lock_errs = verify_committed_artifacts(manifests=manifests)
         if lock_errs:
             print("ARTIFACT_LOCK_VERIFY_FAIL:", lock_errs)
             gate = "FAIL_DATA"
             write_report(manifests, common, gate, export_errs + lock_errs)
+            shutil.rmtree(staging_root, ignore_errors=True)
+            print(f"Gate: {gate}")
+            return 1
     else:
-        print("Skipping publish — gate not PASS (staging discarded)")
+        print("Skipping publish — gate not PASS (package staging discarded)")
+        # Failure report only: write report to live path so operators see FAIL
+        # without swapping CSVs/lock/manifests mid-set.
+        write_report(manifests, common, gate, export_errs)
 
     shutil.rmtree(staging_root, ignore_errors=True)
     print(f"Gate: {gate}")
     print(f"Report: {REPORT_PATH}")
+    if gate.startswith("PASS_"):
+        print(f"Package: {PACKAGE_ROOT / package_id} CURRENT={package_id}")
     return 0 if gate.startswith("PASS_") else 1
 
 

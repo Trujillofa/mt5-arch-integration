@@ -265,6 +265,42 @@ else:
         errs.append("complete_missing_account_server")
     if "challenge_echo" not in complete:
         errs.append("complete_missing_challenge_echo")
+    else:
+        # Exact challenge/echo compare (not presence-only)
+        ch_path = out / "export_challenge.json"
+        if not ch_path.is_file():
+            errs.append("missing_export_challenge_for_echo_compare")
+        else:
+            try:
+                challenge = json.loads(ch_path.read_text())
+            except json.JSONDecodeError as e:
+                errs.append(f"export_challenge_json_error:{e}")
+                challenge = None
+            echo_raw = complete.get("challenge_echo")
+            try:
+                if isinstance(echo_raw, dict):
+                    echo = echo_raw
+                else:
+                    echo = json.loads(echo_raw) if echo_raw else None
+            except (TypeError, json.JSONDecodeError):
+                errs.append("challenge_echo_unparseable")
+                echo = None
+            if challenge is not None and isinstance(echo, dict):
+                for key in (
+                    "run_id",
+                    "symbols",
+                    "timeframes",
+                    "holdout_start_server",
+                    "expect_login",
+                    "expect_server",
+                ):
+                    if challenge.get(key) != echo.get(key):
+                        errs.append(
+                            f"challenge_echo_mismatch:{key}:"
+                            f"challenge={challenge.get(key)!r}:echo={echo.get(key)!r}"
+                        )
+            elif challenge is not None:
+                errs.append("challenge_echo_not_object")
     # Do NOT overwrite MQL run_id. Record shell identity separately.
     complete["shell_login"] = int(login) if str(login).isdigit() else login
     complete["shell_server"] = server

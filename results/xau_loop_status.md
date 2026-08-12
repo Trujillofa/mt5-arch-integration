@@ -1,5 +1,24 @@
 # XAU offline loop status
 
+## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v4** · PASS_DATA_READY_WITH_IMPUTATION
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (integrity v4) → multi-instrument family freeze only if approved |
+| **gate** | **`PASS_DATA_READY_WITH_IMPUTATION`** |
+| **export_run_id** | `4f44b452081041f39fc24f03248b8ca8` (MQL challenge-bound) |
+| **MQL complete** | connected + login/server match costs; **challenge_echo exact-compare** |
+| **publish** | **versioned package + CURRENT pointer**; set-atomic install with complete rollback |
+| **attest/consume** | **canonical bridge_dir paths only** (export_run.path divergence fails) |
+| **lock** | full **and develop** SHA/count for {XAU,EUR,GBP}; mutation of develop fails verify |
+| **costs** | required file; commission 0; slip UNMEASURED; login/server enforced |
+| **thesis freeze / scoring** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+Integrity v4 closes: attested≠consumed split-brain, presence-only challenge echo, non-set-atomic publish.
+
+---
+
 ## 2026-08-11 — MULTI-INSTRUMENT Phase 0 integrity **v3** · PASS_DATA_READY_WITH_IMPUTATION
 
 | Field | Value |
