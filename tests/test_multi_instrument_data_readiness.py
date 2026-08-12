@@ -306,8 +306,13 @@ def test_committed_artifact_lock_full_and_develop():
     for _sym, ent in data["artifacts"].items():
         assert int(ent["n_rows_h1"]) >= 10_000
         assert int(ent["n_rows_h1_develop"]) >= 10_000
-        assert ent.get("develop_csv_sha256")
-        assert Path(ROOT / ent["develop_csv"]).is_file()
+        drel = ent.get("develop_csv") or ""
+        if str(drel).startswith("derived:"):
+            # develop is filtered from full H1 — no separate CSV file
+            assert Path(ROOT / ent["research_csv"]).is_file()
+        else:
+            assert ent.get("develop_csv_sha256")
+            assert Path(ROOT / drel).is_file()
 
 
 def test_common_window_ok():
