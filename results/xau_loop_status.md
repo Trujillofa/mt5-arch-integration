@@ -1,5 +1,22 @@
 # XAU offline loop status
 
+## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v6.1 close** · PASS_DATA_READY_WITH_IMPUTATION
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (v6.1) → family freeze only if approved; then open PR after data hygiene |
+| **gate** | **`PASS_DATA_READY_WITH_IMPUTATION`** |
+| **package** | single CURRENT content-addressed package; superseded ad5ba removed |
+| **digest** | **read-only** (lock never unlinked; excluded from content id) |
+| **lock schema** | exact SYMBOLS; PASS gate; publish_model=current_indirection_v6; path + run-id prefix |
+| **consumer** | **`load_package_snapshot()`** pins package_dir once for multi-symbol IO |
+| **thesis freeze** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v6.1 closes: lock-redefines-universe, verify mutates package, cross-flip consumer reads.
+
+---
+
 ## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v6** · PASS_DATA_READY_WITH_IMPUTATION
 
 | Field | Value |

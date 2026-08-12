@@ -11,10 +11,12 @@ Integrity rules (v6):
   * Validate staged package (lock/SHAs/counts/id) before CURRENT switch;
     post-switch verify failure rolls CURRENT back.
   * CURRENT id must be content-ID format and a direct child of PACKAGE_ROOT.
+  * Package digest is read-only (never unlinks lock); lock excluded by path set.
+  * Lock must declare exact SYMBOLS, PASS gate, publish_model, paths, run-id prefix.
+  * Consumers pin one package via load_package_snapshot() before multi-symbol IO.
   * Publish failures write evidence beside live set (never clobber package report).
   * Research CSVs written only after hard DQ passes (no publish on FAIL).
   * build_symbol accepts out_dir (tests must not write repo artifacts).
-  * Row symbol vs meta.resolved; H1 timestamps on :00:00.
 
 SAFETY: offline data QA only.
 """
@@ -224,7 +226,6 @@ def _load_export_complete(bridge: Path) -> dict[str, Any] | None:
     if p.is_file():
         return json.loads(p.read_text())
     return None
-
 
 
 def _parse_challenge_echo(raw: Any) -> dict[str, Any] | None:
@@ -944,13 +945,13 @@ def write_report(
 ) -> None:
     dest = path if path is not None else REPORT_PATH
     lines = [
-        "# Multi-instrument data readiness (Phase 0 — integrity v6)",
+        "# Multi-instrument data readiness (Phase 0 — integrity v6.1)",
         "",
         f"**Report generated (UTC wall clock):** {datetime.now(UTC).isoformat()}",
         f"**Gate:** `{gate}`",
         f"**Bar clock contract:** `{CLOCK_CONTRACT}` (not UTC)",
         f"**Develop rule:** server_time `< {DEVELOP_END_SERVER}`",
-        "**Publish model:** static live roots via packages/CURRENT (v6 atomic pointer)",
+        "**Publish model:** static live roots via packages/CURRENT (v6.1 strict lock + pin)",
         "",
         "## Per-symbol",
         "",
@@ -1063,12 +1064,9 @@ def verify_committed_artifacts(
         return ["MISSING_ARTIFACT_LOCK"]
     lock = json.loads(lock_path.read_text())
     errs: list[str] = []
+    errs.extend(_validate_lock_schema(lock))
     arts = lock.get("artifacts") or {}
-    required = set(lock.get("required_symbols") or SYMBOLS)
-    if set(arts.keys()) != required:
-        errs.append(
-            f"SYMBOL_SET_MISMATCH:have={sorted(arts.keys())} need={sorted(required)}"
-        )
+    required = set(SYMBOLS)  # never trust lock to redefine the universe
 
     man_by_sym = {m.symbol: m for m in (manifests or [])}
 
@@ -1132,7 +1130,6 @@ def verify_committed_artifacts(
     return errs
 
 
-
 PACKAGE_ID_RE = re.compile(r"^(?:[0-9a-f]{32}|norun)-[0-9a-f]{16}$")
 
 
@@ -1158,6 +1155,14 @@ def _optional_package_rels() -> list[str]:
     ]
 
 
+# Lock is stamped after content-id freeze; never part of content digest.
+_DIGEST_EXCLUDE_RELS = frozenset(
+    {
+        "instrument_data_manifests/committed_artifact_lock.json",
+    }
+)
+
+
 def _package_member_relpaths(package_dir: Path) -> list[str]:
     """Stable ordered relative paths of files that constitute package content."""
     rels: list[str] = []
@@ -1167,12 +1172,21 @@ def _package_member_relpaths(package_dir: Path) -> list[str]:
     return sorted(rels)
 
 
+def _package_digest_member_relpaths(package_dir: Path) -> list[str]:
+    """Members hashed for content-addressed package ID (excludes lock; read-only)."""
+    return [r for r in _package_member_relpaths(package_dir) if r not in _DIGEST_EXCLUDE_RELS]
+
+
 def _package_content_digest(package_dir: Path) -> str:
-    """SHA-256 over sorted (relpath, file_sha) pairs — immutable content identity."""
+    """SHA-256 over sorted (relpath, file_sha) pairs — immutable content identity.
+
+    Read-only: never mutates package files. Lock is excluded so stamp fields
+    (package_id, frozen_at) do not require unlink/recompute cycles.
+    """
     h = hashlib.sha256()
-    members = _package_member_relpaths(package_dir)
+    members = _package_digest_member_relpaths(package_dir)
     if not members:
-        raise FileNotFoundError(f"empty package: {package_dir}")
+        raise FileNotFoundError(f"empty package digest set: {package_dir}")
     for rel in members:
         p = package_dir / rel
         h.update(rel.encode("utf-8"))
@@ -1204,6 +1218,71 @@ def validate_package_id(package_id: str) -> str:
     return package_id
 
 
+PASS_GATE_PREFIX = "PASS_DATA_READY"
+EXPECTED_PATH_PREFIX = "results/instrument_data"
+
+
+def _validate_lock_schema(lock: dict[str, Any]) -> list[str]:
+    """Fail-closed lock fields: exact symbol universe, gate, publish model, paths."""
+    errs: list[str] = []
+    req = lock.get("required_symbols")
+    if not isinstance(req, list) or set(req) != set(SYMBOLS) or len(req) != len(SYMBOLS):
+        errs.append(
+            f"LOCK_REQUIRED_SYMBOLS:have={req!r} need={list(SYMBOLS)}"
+        )
+    arts = lock.get("artifacts")
+    if not isinstance(arts, dict):
+        errs.append("LOCK_ARTIFACTS_NOT_OBJECT")
+        arts = {}
+    if set(arts.keys()) != set(SYMBOLS):
+        errs.append(
+            f"LOCK_ARTIFACT_KEYS:have={sorted(arts.keys())} need={sorted(SYMBOLS)}"
+        )
+    gate = str(lock.get("gate") or "")
+    if not gate.startswith(PASS_GATE_PREFIX):
+        errs.append(f"LOCK_GATE_NOT_PASS:gate={gate!r}")
+    pm = lock.get("publish_model")
+    if pm != PUBLISH_MODEL:
+        errs.append(f"LOCK_PUBLISH_MODEL:have={pm!r} need={PUBLISH_MODEL!r}")
+    run_id = lock.get("export_run_id")
+    package_id = lock.get("package_id")
+    if package_id is not None:
+        try:
+            validate_package_id(str(package_id))
+        except ValueError as e:
+            errs.append(f"LOCK_PACKAGE_ID_INVALID:{e}")
+        else:
+            if isinstance(run_id, str) and re.fullmatch(r"[0-9a-f]{32}", run_id):
+                prefix = str(package_id).split("-", 1)[0]
+                if prefix != run_id:
+                    errs.append(
+                        f"LOCK_RUN_ID_PREFIX_MISMATCH:package_id={package_id!r} "
+                        f"export_run_id={run_id!r}"
+                    )
+            elif run_id is not None and not (
+                isinstance(run_id, str) and re.fullmatch(r"[0-9a-f]{32}", run_id)
+            ):
+                errs.append(f"LOCK_EXPORT_RUN_ID_INVALID:{run_id!r}")
+    elif run_id is not None:
+        errs.append("LOCK_MISSING_PACKAGE_ID_WITH_RUN_ID")
+
+    for sym in SYMBOLS:
+        ent = arts.get(sym)
+        if not isinstance(ent, dict):
+            continue
+        want_full = f"{EXPECTED_PATH_PREFIX}/{sym.lower()}_h1.csv"
+        want_dev = f"{EXPECTED_PATH_PREFIX}/{sym.lower()}_h1_develop.csv"
+        if ent.get("research_csv") != want_full:
+            errs.append(
+                f"{sym}:LOCK_PATH_FULL:have={ent.get('research_csv')!r} need={want_full!r}"
+            )
+        if ent.get("develop_csv") != want_dev:
+            errs.append(
+                f"{sym}:LOCK_PATH_DEVELOP:have={ent.get('develop_csv')!r} need={want_dev!r}"
+            )
+    return errs
+
+
 def seal_package_identity(
     package_dir: Path,
     run_id: str | None,
@@ -1211,10 +1290,12 @@ def seal_package_identity(
     gate: str,
     manifests: list[SymbolManifest],
 ) -> tuple[str, dict[str, Any]]:
-    """Write lock, freeze content id (lock excluded from digest), stamp lock with id."""
+    """Write lock stamped with content id (digest excludes lock; no unlink)."""
     stage_man = package_dir / "instrument_data_manifests"
     stage_data = package_dir / "instrument_data"
     lock_path = stage_man / "committed_artifact_lock.json"
+    # Content id is independent of lock bytes — compute first, then write lock once.
+    package_id = content_package_id(package_dir, run_id)
     lock = write_artifact_lock(
         manifests,
         gate,
@@ -1222,16 +1303,13 @@ def seal_package_identity(
         lock_path=lock_path,
         path_prefix="results/instrument_data",
     )
-    if lock_path.is_file():
-        lock_path.unlink()
-    package_id = content_package_id(package_dir, run_id)
     lock["package_id"] = package_id
     lock["publish_model"] = PUBLISH_MODEL
     lock["export_run_id"] = run_id
+    lock["required_symbols"] = list(SYMBOLS)
     lock_path.write_text(json.dumps(lock, indent=2) + "\n")
-    lock_path.unlink()
+    # Stability check is read-only (lock still excluded from digest)
     pid2 = content_package_id(package_dir, run_id)
-    lock_path.write_text(json.dumps(lock, indent=2) + "\n")
     if pid2 != package_id:
         raise RuntimeError(f"package_id unstable: {package_id} vs {pid2}")
     return package_id, lock
@@ -1484,6 +1562,7 @@ def verify_package_artifacts(
 ) -> list[str]:
     """Validate lock/counts/SHAs/package_id against files *inside* package_dir.
 
+    Read-only: never mutates package files (lock is never unlinked).
     Does not depend on live CURRENT. Used before promotion.
     """
     errs: list[str] = []
@@ -1498,6 +1577,8 @@ def verify_package_artifacts(
         lock = json.loads(lock_path.read_text())
     except json.JSONDecodeError as e:
         return [f"PACKAGE_LOCK_JSON:{e}"]
+
+    errs.extend(_validate_lock_schema(lock))
 
     if expected_package_id is not None:
         if lock.get("package_id") != expected_package_id:
@@ -1515,39 +1596,27 @@ def verify_package_artifacts(
         except ValueError as e:
             errs.append(f"PACKAGE_ID_INVALID:{e}")
 
-    # Content id (lock excluded): recompute with lock temporarily removed
-    lock_bytes = lock_path.read_bytes()
-    lock_path.unlink()
-    try:
-        recomputed = content_package_id(
-            package_dir,
-            lock.get("export_run_id")
-            if isinstance(lock.get("export_run_id"), str)
-            else None,
-        )
-    finally:
-        lock_path.write_bytes(lock_bytes)
-    if expected_package_id and recomputed != expected_package_id:
-        # seal uses run_id from export; lock export_run_id should match
-        # If lock has package_id field, compare that to recomputed after stripping
-        # package_id is content-derived without lock — must match expected
+    # Content id: read-only recompute (lock excluded by digest member set)
+    run_for_id = (
+        lock.get("export_run_id")
+        if isinstance(lock.get("export_run_id"), str)
+        else None
+    )
+    recomputed = content_package_id(package_dir, run_for_id)
+    want_id = expected_package_id or lock.get("package_id")
+    if want_id and recomputed != want_id:
         errs.append(
-            f"CONTENT_ID_MISMATCH:recomputed={recomputed} expected={expected_package_id}"
+            f"CONTENT_ID_MISMATCH:recomputed={recomputed} expected={want_id}"
         )
 
-    arts = lock.get("artifacts") or {}
-    required = set(lock.get("required_symbols") or SYMBOLS)
-    if set(arts.keys()) != required:
-        errs.append(
-            f"SYMBOL_SET_MISMATCH:have={sorted(arts.keys())} need={sorted(required)}"
-        )
-
+    arts = lock.get("artifacts") if isinstance(lock.get("artifacts"), dict) else {}
+    required = set(SYMBOLS)
     man_by_sym = {m.symbol: m for m in (manifests or [])}
     data_dir = package_dir / "instrument_data"
 
     for sym in sorted(required):
         ent = arts.get(sym)
-        if not ent:
+        if not isinstance(ent, dict):
             errs.append(f"{sym}:missing_from_lock")
             continue
         research_name = f"{sym.lower()}_h1.csv"
@@ -1603,6 +1672,118 @@ def recover_live_from_current() -> str | None:
     if pkg is None:
         return None
     return pkg.name
+
+
+@dataclass(frozen=True)
+class PackageSnapshot:
+    """Pinned multi-instrument package view for one research operation.
+
+    Resolve CURRENT once, then read every symbol from ``package_dir`` only.
+    Do not re-resolve CURRENT between symbol loads (avoids cross-flip reads).
+    """
+
+    package_id: str
+    package_dir: Path
+
+    def data_dir(self) -> Path:
+        return self.package_dir / "instrument_data"
+
+    def manifest_dir(self) -> Path:
+        return self.package_dir / "instrument_data_manifests"
+
+    def history_csv(self, symbol: str) -> Path:
+        if symbol not in SYMBOLS:
+            raise ValueError(f"unknown symbol {symbol!r}; need one of {SYMBOLS}")
+        return self.data_dir() / f"{symbol.lower()}_h1.csv"
+
+    def develop_csv(self, symbol: str) -> Path:
+        if symbol not in SYMBOLS:
+            raise ValueError(f"unknown symbol {symbol!r}; need one of {SYMBOLS}")
+        return self.data_dir() / f"{symbol.lower()}_h1_develop.csv"
+
+    def lock_path(self) -> Path:
+        return self.manifest_dir() / "committed_artifact_lock.json"
+
+    def read_history(self, symbol: str) -> pd.DataFrame:
+        path = self.history_csv(symbol)
+        if not path.is_file():
+            raise FileNotFoundError(f"missing history in pinned package: {path}")
+        return pd.read_csv(path)
+
+    def read_develop(self, symbol: str) -> pd.DataFrame:
+        path = self.develop_csv(symbol)
+        if not path.is_file():
+            raise FileNotFoundError(f"missing develop in pinned package: {path}")
+        return pd.read_csv(path)
+
+    def read_all_histories(self) -> dict[str, pd.DataFrame]:
+        """Load all SYMBOLS from this pinned package (single directory)."""
+        return {s: self.read_history(s) for s in SYMBOLS}
+
+    def read_all_develop(self) -> dict[str, pd.DataFrame]:
+        return {s: self.read_develop(s) for s in SYMBOLS}
+
+
+def load_package_snapshot(
+    package_dir: Path | None = None,
+    *,
+    validate: bool = True,
+) -> PackageSnapshot:
+    """Resolve and pin one package directory for multi-symbol research IO.
+
+    If ``package_dir`` is None, resolves CURRENT once. Subsequent reads must use
+    the returned snapshot paths — never re-open live roots per symbol mid-operation.
+    """
+    if package_dir is None:
+        pkg = resolve_current_package_dir()
+        if pkg is None:
+            raise RuntimeError("NO_CURRENT_PACKAGE: cannot load snapshot")
+    else:
+        pkg = package_dir
+        if not pkg.is_dir():
+            raise FileNotFoundError(f"package_dir missing: {pkg}")
+        # If under PACKAGE_ROOT, enforce direct-child safety
+        try:
+            if pkg.resolve().parent == PACKAGE_ROOT.resolve():
+                validate_package_id(pkg.name)
+        except ValueError as e:
+            raise RuntimeError(f"INVALID_PACKAGE_DIR:{e}") from e
+
+    package_id = pkg.name
+    if validate:
+        errs = verify_package_artifacts(pkg, expected_package_id=package_id)
+        if errs:
+            raise RuntimeError(f"SNAPSHOT_VALIDATE_FAIL:{errs}")
+    return PackageSnapshot(package_id=package_id, package_dir=pkg.resolve())
+
+
+def write_package_sha_manifest(package_dir: Path, dest: Path | None = None) -> Path:
+    """Write read-only SHA inventory for a package (artifact mechanism without bulk git)."""
+    package_id = package_dir.name
+    files: dict[str, dict[str, Any]] = {}
+    for rel in _package_member_relpaths(package_dir):
+        fp = package_dir / rel
+        st = fp.stat()
+        files[rel] = {
+            "sha256": _sha256_file(fp),
+            "bytes": int(st.st_size),
+        }
+    body = {
+        "package_id": package_id,
+        "publish_model": PUBLISH_MODEL,
+        "required_symbols": list(SYMBOLS),
+        "files": files,
+        "content_package_id": content_package_id(
+            package_dir,
+            package_id.split("-", 1)[0]
+            if PACKAGE_ID_RE.fullmatch(package_id)
+            else None,
+        ),
+    }
+    out = dest if dest is not None else (PACKAGE_ROOT / f"{package_id}.sha256.json")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(body, indent=2) + "\n")
+    return out
 
 
 def finalize_package_dir(package_dir: Path, package_id: str) -> Path:
