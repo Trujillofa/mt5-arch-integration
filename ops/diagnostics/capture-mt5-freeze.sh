@@ -9,7 +9,10 @@
 #
 # Restarting destroys that evidence, so run this first.
 #
-# Usage:  ./ops/diagnostics/capture-mt5-freeze.sh [seconds]     (default 10)
+# Usage:  ./ops/diagnostics/capture-mt5-freeze.sh [seconds] [pid]   (default 10, all pids)
+#
+# Pass a pid to capture just that terminal. The watchdog does this: capturing all
+# three takes minutes of strace, and by then the state you wanted is gone.
 #
 # Needs sudo: kernel.yama.ptrace_scope is 1, so strace cannot attach to a process
 # that is not its own descendant without CAP_SYS_PTRACE.
@@ -19,6 +22,7 @@
 set -uo pipefail
 
 SECS="${1:-10}"
+ONLY_PID="${2:-}"
 OUT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/captures"
 STAMP="$(date '+%Y%m%d-%H%M%S')"
 mkdir -p "$OUT_DIR"
@@ -27,7 +31,11 @@ command -v strace >/dev/null 2>&1 || { echo "error: strace not installed (pacman
 
 # Wine names the main thread "main", so /proc/<pid>/comm does NOT say terminal64.
 # Match the command line instead — a comm-based scan silently finds nothing.
-mapfile -t PIDS < <(pgrep -f 'terminal64\.exe' || true)
+if [[ -n "$ONLY_PID" ]]; then
+  PIDS=("$ONLY_PID")
+else
+  mapfile -t PIDS < <(pgrep -f 'terminal64\.exe' || true)
+fi
 if [[ ${#PIDS[@]} -eq 0 ]]; then
   echo "No MetaTrader terminal running."
   exit 0

@@ -1,0 +1,7 @@
+[Unit]
+Description=Watch MetaTrader terminals for the SIGSEGV livelock and capture it at onset
+
+[Service]
+Type=oneshot
+Environment=DISPLAY=:0
+ExecStart=/home/yderf/Projects/trading/mt5-arch-integration/ops/diagnostics/mt5-freeze-watch.sh
