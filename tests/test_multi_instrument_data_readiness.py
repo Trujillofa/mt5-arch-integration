@@ -1,4 +1,4 @@
-"""Adversarial fail-closed tests for multi-instrument Phase-0 integrity v4."""
+"""Adversarial fail-closed tests for multi-instrument Phase-0 integrity v5."""
 from __future__ import annotations
 
 import json
@@ -375,9 +375,8 @@ def test_challenge_echo_tamper_rejected(tmp_path: Path):
     assert any("CHALLENGE_ECHO_RUN_ID" in e for e in errs2), errs2
 
 
-def test_publish_package_set_atomic_rollback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    """Partial live install must not leave mixed new/old; rollback restores prev package."""
-    # Isolate package/live roots under tmp
+
+def _isolate_publish_roots(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     root = tmp_path / "repo"
     (root / "results").mkdir(parents=True)
     monkeypatch.setattr(b, "ROOT", root)
@@ -386,74 +385,218 @@ def test_publish_package_set_atomic_rollback(tmp_path: Path, monkeypatch: pytest
     monkeypatch.setattr(
         b, "REPORT_PATH", root / "results" / "multi_instrument_data_readiness.md"
     )
-    monkeypatch.setattr(b, "ARTIFACT_LOCK", root / "results" / "instrument_data_manifests" / "committed_artifact_lock.json")
+    monkeypatch.setattr(
+        b,
+        "FAIL_REPORT_PATH",
+        root / "results" / "multi_instrument_data_readiness.FAIL.md",
+    )
+    monkeypatch.setattr(
+        b,
+        "ARTIFACT_LOCK",
+        root / "results" / "instrument_data_manifests" / "committed_artifact_lock.json",
+    )
     monkeypatch.setattr(b, "PACKAGE_ROOT", root / "results" / "instrument_data_packages")
-    monkeypatch.setattr(b, "CURRENT_POINTER", root / "results" / "instrument_data_packages" / "CURRENT")
-
-    b.OUT_DIR.mkdir(parents=True)
-    b.MANIFEST_DIR.mkdir(parents=True)
+    monkeypatch.setattr(
+        b, "CURRENT_POINTER", root / "results" / "instrument_data_packages" / "CURRENT"
+    )
     b.PACKAGE_ROOT.mkdir(parents=True)
+    return root
 
-    def _make_pkg(pkg_id: str, marker: str) -> Path:
-        pkg = b.PACKAGE_ROOT / pkg_id
-        data = pkg / "instrument_data"
-        man = pkg / "instrument_data_manifests"
-        data.mkdir(parents=True)
-        man.mkdir(parents=True)
-        for s in b.SYMBOLS:
-            (data / f"{s.lower()}_h1.csv").write_text(f"{marker}-{s}-full\n")
-            (data / f"{s.lower()}_h1_develop.csv").write_text(f"{marker}-{s}-dev\n")
-            (man / f"{s.lower()}_h1_manifest.json").write_text(json.dumps({"symbol": s, "m": marker}))
-        (man / "common_develop_window.json").write_text("{}\n")
-        (man / "committed_artifact_lock.json").write_text(
-            json.dumps({"package_id": pkg_id, "marker": marker}) + "\n"
+
+def _make_pkg(pkg_id: str, marker: str) -> Path:
+    pkg = b.PACKAGE_ROOT / pkg_id
+    data = pkg / "instrument_data"
+    man = pkg / "instrument_data_manifests"
+    data.mkdir(parents=True)
+    man.mkdir(parents=True)
+    for s in b.SYMBOLS:
+        (data / f"{s.lower()}_h1.csv").write_text(f"{marker}-{s}-full\n")
+        (data / f"{s.lower()}_h1_develop.csv").write_text(f"{marker}-{s}-dev\n")
+        (man / f"{s.lower()}_h1_manifest.json").write_text(
+            json.dumps({"symbol": s, "m": marker})
         )
-        (pkg / "multi_instrument_data_readiness.md").write_text(f"# {marker}\n")
-        return pkg
+    (man / "common_develop_window.json").write_text("{}\n")
+    (man / "committed_artifact_lock.json").write_text(
+        json.dumps({"package_id": pkg_id, "marker": marker}) + "\n"
+    )
+    (pkg / "multi_instrument_data_readiness.md").write_text(f"# {marker}\n")
+    return pkg
 
-    old_id = "a" * 32
-    new_id = "b" * 32
+
+def _live_csv_texts() -> dict[str, str]:
+    return {
+        p.name: p.read_text()
+        for p in b.OUT_DIR.iterdir()
+        if p.is_file() or p.is_symlink()
+    }
+
+
+def test_publish_package_atomic_symlink_switch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Live roots become symlinks into one package; switch is all-or-nothing per root."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    old_id = "a" * 32 + "-" + "1" * 16
+    new_id = "b" * 32 + "-" + "2" * 16
     old_pkg = _make_pkg(old_id, "OLD")
     b.install_package_to_live(old_pkg)
     b._write_current_package_id(old_id)
-
-    # Snapshot live content after old install
-    old_live = {
-        p.name: p.read_text()
-        for p in b.OUT_DIR.iterdir()
-        if p.is_file()
-    }
-    assert all(v.startswith("OLD-") for v in old_live.values())
+    assert b.OUT_DIR.is_symlink()
+    assert all(v.startswith("OLD-") for v in _live_csv_texts().values())
 
     new_pkg = _make_pkg(new_id, "NEW")
+    b.publish_versioned_package(new_pkg, new_id)
+    assert b._read_current_package_id() == new_id
+    assert all(v.startswith("NEW-") for v in _live_csv_texts().values())
+    assert b.OUT_DIR.resolve() == (b.PACKAGE_ROOT / new_id / "instrument_data").resolve()
+    assert b.verify_live_matches_package(b.PACKAGE_ROOT / new_id) == []
 
-    # Fail after two successful renames into live OUT_DIR
+
+def test_publish_rollback_restores_previous_package(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Failure during symlink switch reinstalls previous package; CURRENT stays old."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    old_id = "a" * 32 + "-" + "1" * 16
+    new_id = "b" * 32 + "-" + "2" * 16
+    old_pkg = _make_pkg(old_id, "OLD")
+    b.install_package_to_live(old_pkg)
+    b._write_current_package_id(old_id)
+    old_live = _live_csv_texts()
+
+    new_pkg = _make_pkg(new_id, "NEW")
     real_replace = Path.replace
     counter = {"n": 0}
 
     def flaky_replace(self, target):  # type: ignore[no-untyped-def]
-        # Fail mid-install only for NEW package CSV content into OUT_DIR so
-        # rollback (OLD content) can still complete.
-        if self.parent == b.OUT_DIR and self.name.startswith(".") and self.is_file():
-            head = self.read_bytes()[:32]
-            if head.startswith(b"NEW-"):
+        # Fail mid-switch only when installing the NEW package so rollback (OLD)
+        # can still complete. Detect NEW by symlink target path containing new_id.
+        name = self.name
+        if name.startswith(".") and name.endswith(".new") and self.is_symlink():
+            dest = str(self.readlink())
+            base = name[1 : -len(".new")]
+            if base in {
+                b.OUT_DIR.name,
+                b.MANIFEST_DIR.name,
+                b.REPORT_PATH.name,
+            } and new_id in dest:
                 counter["n"] += 1
-                if counter["n"] > 2:
-                    raise OSError("simulated mid-publish failure")
+                if counter["n"] > 1:
+                    raise OSError("simulated mid-symlink-switch failure")
         return real_replace(self, target)
 
     monkeypatch.setattr(Path, "replace", flaky_replace)
-
-    with pytest.raises(OSError, match="simulated mid-publish failure"):
+    with pytest.raises(OSError, match="simulated mid-symlink-switch failure"):
         b.publish_versioned_package(new_pkg, new_id)
 
-    # CURRENT must still be old package; live CSVs fully OLD (complete rollback)
     assert b._read_current_package_id() == old_id
-    live_after = {
-        p.name: p.read_text()
-        for p in b.OUT_DIR.iterdir()
-        if p.is_file() and not p.name.startswith(".")
-    }
-    assert live_after == old_live, (live_after, old_live)
-    assert all(v.startswith("OLD-") for v in live_after.values())
+    assert _live_csv_texts() == old_live
+    assert all(v.startswith("OLD-") for v in _live_csv_texts().values())
+    # Previous package report not replaced by FAIL
+    assert (b.OUT_DIR.parent / "multi_instrument_data_readiness.md").read_text().startswith(
+        "# OLD"
+    ) or b.REPORT_PATH.read_text().startswith("# OLD")
 
+
+def test_same_package_id_refuses_different_content(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Immutable packages: never overwrite an existing id with different bytes."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    pkg_id = "c" * 32 + "-" + "3" * 16
+    first = _make_pkg(pkg_id, "FIRST")
+    b.install_package_to_live(first)
+    b._write_current_package_id(pkg_id)
+
+    # Stage a different package that tries to reuse the same id
+    stage = tmp_path / "stage_collision"
+    stage.mkdir()
+    # build different content under staging with forced same id via finalize
+    data = stage / "instrument_data"
+    man = stage / "instrument_data_manifests"
+    data.mkdir()
+    man.mkdir()
+    for s in b.SYMBOLS:
+        (data / f"{s.lower()}_h1.csv").write_text("OTHER-full\n")
+        (data / f"{s.lower()}_h1_develop.csv").write_text("OTHER-dev\n")
+        (man / f"{s.lower()}_h1_manifest.json").write_text("{}")
+    (man / "common_develop_window.json").write_text("{}\n")
+    (man / "committed_artifact_lock.json").write_text("{}\n")
+    (stage / "multi_instrument_data_readiness.md").write_text("# OTHER\n")
+
+    with pytest.raises(RuntimeError, match="PACKAGE_ID_COLLISION"):
+        b.finalize_package_dir(stage, pkg_id)
+
+    # Original package intact
+    assert (b.PACKAGE_ROOT / pkg_id / "instrument_data" / "eurusd_h1.csv").read_text().startswith(
+        "FIRST-"
+    )
+    assert b._read_current_package_id() == pkg_id
+    assert all(v.startswith("FIRST-") for v in _live_csv_texts().values())
+
+
+def test_missing_previous_package_aborts_before_live_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Dangling CURRENT aborts; live set is not partially rewritten."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    # Seed a real live directory (legacy layout) with OLD content
+    b.OUT_DIR.mkdir(parents=True)
+    b.MANIFEST_DIR.mkdir(parents=True)
+    for s in b.SYMBOLS:
+        (b.OUT_DIR / f"{s.lower()}_h1.csv").write_text(f"LEGACY-{s}\n")
+        (b.OUT_DIR / f"{s.lower()}_h1_develop.csv").write_text(f"LEGACY-{s}-d\n")
+    b.REPORT_PATH.write_text("# LEGACY\n")
+    (b.MANIFEST_DIR / "committed_artifact_lock.json").write_text("{}\n")
+
+    # CURRENT points at a missing package
+    b.CURRENT_POINTER.write_text("deadbeef" * 4 + "-" + "abcd" * 4 + "\n")
+    # actually need valid-looking id
+    b.CURRENT_POINTER.write_text("d" * 32 + "-" + "e" * 16 + "\n")
+
+    with pytest.raises(RuntimeError, match="CURRENT_PACKAGE_MISSING"):
+        b.resolve_current_package_dir()
+
+    new_id = "f" * 32 + "-" + "9" * 16
+    new_pkg = _make_pkg(new_id, "NEW")
+    with pytest.raises(RuntimeError, match="CURRENT_PACKAGE_MISSING"):
+        b.publish_versioned_package(new_pkg, new_id)
+
+    # Live legacy files unchanged (no mixed NEW/OLD)
+    assert (b.OUT_DIR / "eurusd_h1.csv").read_text().startswith("LEGACY-")
+    assert not any(
+        p.read_text().startswith("NEW-")
+        for p in b.OUT_DIR.iterdir()
+        if p.is_file()
+    )
+
+
+def test_fail_evidence_does_not_clobber_package_report(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """FAIL writes go to FAIL_REPORT_PATH, not the live/package readiness report."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    old_id = "a" * 32 + "-" + "1" * 16
+    old_pkg = _make_pkg(old_id, "OLD")
+    b.install_package_to_live(old_pkg)
+    b._write_current_package_id(old_id)
+    before = b.REPORT_PATH.read_text()
+
+    b.write_fail_evidence([], {"status": "FAIL"}, "FAIL_DATA", ["boom"])
+    assert b.FAIL_REPORT_PATH.is_file()
+    assert "FAIL_DATA" in b.FAIL_REPORT_PATH.read_text()
+    assert b.REPORT_PATH.read_text() == before
+    assert before.startswith("# OLD")
+
+
+def test_content_package_id_stable_for_same_bytes(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    pkg = _make_pkg("tmp-id", "SAME")
+    run = "a" * 32
+    # Remove lock from digest path: content_package_id uses existing members
+    id1 = b.content_package_id(pkg, run)
+    id2 = b.content_package_id(pkg, run)
+    assert id1 == id2
+    assert id1.startswith(run + "-")
+    # Different content → different id
+    (pkg / "instrument_data" / "eurusd_h1.csv").write_text("mutated\n")
+    id3 = b.content_package_id(pkg, run)
+    assert id3 != id1

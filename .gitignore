@@ -52,5 +52,7 @@ winetricks.log
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
 
-# Local versioned publish packages (live results/instrument_data* are canonical commits)
-results/instrument_data_packages/*/
+# Keep instrument_data_packages tracked (CURRENT + package trees are the atomic unit).
+# Displaced legacy dirs from symlink migration are local-only:
+results/**/.*.displaced_*
+results/multi_instrument_data_readiness.FAIL.md

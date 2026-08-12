@@ -1,5 +1,24 @@
 # XAU offline loop status
 
+## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v5** · PASS_DATA_READY_WITH_IMPUTATION
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (integrity v5) → multi-instrument family freeze only if approved |
+| **gate** | **`PASS_DATA_READY_WITH_IMPUTATION`** |
+| **export_run_id** | `4f44b452081041f39fc24f03248b8ca8` (MQL challenge-bound) |
+| **package_id** | content-addressed `run_id-content16` (immutable; never overwrite different content) |
+| **publish** | **atomic live symlinks** into CURRENT package dir (not per-file copy) |
+| **rollback** | preflight resolves CURRENT package before mutation; dangling CURRENT aborts |
+| **fail evidence** | `multi_instrument_data_readiness.FAIL.md` only — never clobbers package report |
+| **lock** | full + develop SHA/count; live roots resolve under package |
+| **thesis freeze / scoring** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+
+Integrity v5 closes: rollback source destruction, non-atomic consumer boundary, FAIL report clobbering package equality.
+
+---
+
 ## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v4** · PASS_DATA_READY_WITH_IMPUTATION
 
 | Field | Value |

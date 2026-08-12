@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Phase-0 multi-instrument data readiness — fail-closed (no signals / PF / grids).
 
-Integrity rules (v4):
+Integrity rules (v5):
   * Bar clock = server_clock_as_stored (never false UTC).
   * Attest and consume the same canonical bridge_dir paths only.
   * Challenge/echo exact JSON compare (run_id, symbols, H1, holdout, account).
-  * Versioned package publish + CURRENT pointer; set-atomic install with rollback.
+  * Content-addressed immutable packages; never overwrite a different package.
+  * Live consumer paths are atomic symlinks into the CURRENT package directory.
+  * Abort before live mutation if CURRENT package cannot be resolved for rollback.
+  * Publish failures write evidence beside live set (never clobber restored package).
   * Research CSVs written only after hard DQ passes (no publish on FAIL).
   * build_symbol accepts out_dir (tests must not write repo artifacts).
   * Row symbol vs meta.resolved; H1 timestamps on :00:00.
@@ -14,7 +17,6 @@ SAFETY: offline data QA only.
 """
 from __future__ import annotations
 
-import contextlib
 import hashlib
 import json
 import os
@@ -37,6 +39,8 @@ EXPORT_RUN_REPO = MANIFEST_DIR / "export_run.json"
 ARTIFACT_LOCK = MANIFEST_DIR / "committed_artifact_lock.json"
 PACKAGE_ROOT = ROOT / "results" / "instrument_data_packages"
 CURRENT_POINTER = PACKAGE_ROOT / "CURRENT"
+FAIL_REPORT_PATH = ROOT / "results" / "multi_instrument_data_readiness.FAIL.md"
+PUBLISH_MODEL = "content_addressed_symlink_v5"
 
 SYMBOLS = ("XAUUSD", "EURUSD", "GBPUSD")
 PRIMARY_TF = "H1"
@@ -937,13 +941,13 @@ def write_report(
 ) -> None:
     dest = path if path is not None else REPORT_PATH
     lines = [
-        "# Multi-instrument data readiness (Phase 0 — integrity v4)",
+        "# Multi-instrument data readiness (Phase 0 — integrity v5)",
         "",
         f"**Report generated (UTC wall clock):** {datetime.now(UTC).isoformat()}",
         f"**Gate:** `{gate}`",
         f"**Bar clock contract:** `{CLOCK_CONTRACT}` (not UTC)",
         f"**Develop rule:** server_time `< {DEVELOP_END_SERVER}`",
-        "**Publish model:** versioned package + CURRENT pointer (set-atomic install)",
+        "**Publish model:** content-addressed package + atomic live symlinks (v5)",
         "",
         "## Per-symbol",
         "",
@@ -1123,125 +1127,386 @@ def verify_committed_artifacts(
     return errs
 
 
+def _required_package_rels() -> list[str]:
+    """Files that must exist for a package to be publishable."""
+    rels = [
+        f"instrument_data/{s.lower()}_h1.csv" for s in SYMBOLS
+    ] + [
+        f"instrument_data/{s.lower()}_h1_develop.csv" for s in SYMBOLS
+    ] + [
+        f"instrument_data_manifests/{s.lower()}_h1_manifest.json" for s in SYMBOLS
+    ] + [
+        "instrument_data_manifests/common_develop_window.json",
+        "instrument_data_manifests/committed_artifact_lock.json",
+        "multi_instrument_data_readiness.md",
+    ]
+    return rels
+
+
+def _optional_package_rels() -> list[str]:
+    return [
+        "instrument_data_manifests/export_run.json",
+        "instrument_data_manifests/export_complete.json",
+        "instrument_data_manifests/export_challenge.json",
+    ]
+
+
+def _package_member_relpaths(package_dir: Path) -> list[str]:
+    """Stable ordered relative paths of files that constitute package content."""
+    rels: list[str] = []
+    for rel in _required_package_rels() + _optional_package_rels():
+        if (package_dir / rel).is_file():
+            rels.append(rel)
+    return sorted(rels)
+
+
+def _package_content_digest(package_dir: Path) -> str:
+    """SHA-256 over sorted (relpath, file_sha) pairs — immutable content identity."""
+    h = hashlib.sha256()
+    members = _package_member_relpaths(package_dir)
+    if not members:
+        raise FileNotFoundError(f"empty package: {package_dir}")
+    for rel in members:
+        p = package_dir / rel
+        h.update(rel.encode("utf-8"))
+        h.update(b"\0")
+        h.update(_sha256_file(p).encode("ascii"))
+        h.update(b"\0")
+    return h.hexdigest()
+
+
+def content_package_id(package_dir: Path, run_id: str | None) -> str:
+    """Immutable content/build-derived package ID.
+
+    Format: ``{run_id_or_norun}-{content_sha16}``. Same bytes ⇒ same ID; different
+    bytes never share an ID, so rebuilds cannot clobber a prior package.
+    """
+    digest16 = _package_content_digest(package_dir)[:16]
+    rid = run_id if run_id and re.fullmatch(r"[0-9a-f]{32}", run_id) else "norun"
+    return f"{rid}-{digest16}"
+
+
+def seal_package_identity(
+    package_dir: Path,
+    run_id: str | None,
+    *,
+    gate: str,
+    manifests: list[SymbolManifest],
+) -> tuple[str, dict[str, Any]]:
+    """Write lock without package_id, freeze content id, then stamp lock with id.
+
+    The content digest intentionally excludes a self-referential package_id field
+    by writing the lock twice: first without package_id (for digest), then with
+    package_id stamped (digest of CSVs/manifests/report still stable if we hash
+    only digest-stable members). We include the stamped lock in the package for
+    audit; the *id* is derived from digest-stable members only.
+    """
+    stage_man = package_dir / "instrument_data_manifests"
+    stage_data = package_dir / "instrument_data"
+
+    # Digest-stable members: CSVs + per-symbol manifests + common + report + provenance.
+    # Lock is written with package_id after id is known; lock bytes are NOT part of id.
+    lock_path = stage_man / "committed_artifact_lock.json"
+    # Temporary lock without package_id so publish can proceed; final lock stamped later.
+    lock = write_artifact_lock(
+        manifests,
+        gate,
+        out_dir=stage_data,
+        lock_path=lock_path,
+        path_prefix="results/instrument_data",
+    )
+    # Compute id from package excluding the lock file (remove lock, digest, restore).
+    if lock_path.is_file():
+        lock_path.unlink()
+    package_id = content_package_id(package_dir, run_id)
+    lock["package_id"] = package_id
+    lock["publish_model"] = PUBLISH_MODEL
+    lock["export_run_id"] = run_id
+    lock_path.write_text(json.dumps(lock, indent=2) + "\n")
+    # Sanity: recompute id the same way (still excluding lock)
+    lock_path.unlink()
+    pid2 = content_package_id(package_dir, run_id)
+    lock_path.write_text(json.dumps(lock, indent=2) + "\n")
+    if pid2 != package_id:
+        raise RuntimeError(f"package_id unstable: {package_id} vs {pid2}")
+    return package_id, lock
+
+
 def _live_package_file_map(package_dir: Path) -> list[tuple[Path, Path]]:
-    """Map package-relative sources to live repo destinations (set install)."""
+    """Map package members to live consumer paths (via OUT_DIR/MANIFEST_DIR/REPORT)."""
     pairs: list[tuple[Path, Path]] = []
-    data = package_dir / "instrument_data"
-    for name in (
-        [f"{s.lower()}_h1.csv" for s in SYMBOLS]
-        + [f"{s.lower()}_h1_develop.csv" for s in SYMBOLS]
-    ):
-        pairs.append((data / name, OUT_DIR / name))
-    man = package_dir / "instrument_data_manifests"
-    for name in (
-        [f"{s.lower()}_h1_manifest.json" for s in SYMBOLS]
-        + [
-            "common_develop_window.json",
-            "committed_artifact_lock.json",
-            "export_run.json",
-            "export_complete.json",
-            "export_challenge.json",
-        ]
-    ):
-        src = man / name
-        if src.is_file():
-            pairs.append((src, MANIFEST_DIR / name))
-    report = package_dir / "multi_instrument_data_readiness.md"
-    if report.is_file():
-        pairs.append((report, REPORT_PATH))
+    for rel in _package_member_relpaths(package_dir):
+        src = package_dir / rel
+        if rel.startswith("instrument_data_manifests/"):
+            pairs.append((src, MANIFEST_DIR / Path(rel).name))
+        elif rel.startswith("instrument_data/"):
+            pairs.append((src, OUT_DIR / Path(rel).name))
+        elif rel == "multi_instrument_data_readiness.md":
+            pairs.append((src, REPORT_PATH))
     return pairs
 
 
 def _read_current_package_id() -> str | None:
-    if not CURRENT_POINTER.is_file():
+    """Return CURRENT package id, or None if unset.
+
+    Supports symlink CURRENT -> <package_name> and plain-text CURRENT.
+    """
+    if not (CURRENT_POINTER.exists() or CURRENT_POINTER.is_symlink()):
         return None
-    val = CURRENT_POINTER.read_text().strip()
-    return val or None
+    if CURRENT_POINTER.is_symlink():
+        target = CURRENT_POINTER.readlink()
+        name = Path(str(target)).name
+        if name and name not in (".", ".."):
+            return name
+        try:
+            resolved = CURRENT_POINTER.resolve()
+            if resolved.parent == PACKAGE_ROOT or PACKAGE_ROOT in resolved.parents:
+                return resolved.name
+        except OSError:
+            return None
+        return None
+    if CURRENT_POINTER.is_file():
+        val = CURRENT_POINTER.read_text().strip()
+        return val or None
+    return None
+
+
+def resolve_current_package_dir() -> Path | None:
+    """Resolve CURRENT to an existing package directory, or None if unset.
+
+    Raises RuntimeError if CURRENT is set but the package directory is missing
+    (dangling pointer — refuse live mutation until repaired).
+    """
+    pid = _read_current_package_id()
+    if not pid:
+        return None
+    pkg = PACKAGE_ROOT / pid
+    if not pkg.is_dir():
+        raise RuntimeError(
+            f"CURRENT_PACKAGE_MISSING: pointer={pid!r} path={pkg} "
+            "(abort before live mutation; repair CURRENT or restore package)"
+        )
+    return pkg
 
 
 def _write_current_package_id(package_id: str) -> None:
+    """Atomically point CURRENT at package_id (relative directory symlink)."""
     PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
-    tmp = CURRENT_POINTER.with_suffix(".tmp")
-    tmp.write_text(package_id + "\n")
+    target_dir = PACKAGE_ROOT / package_id
+    if not target_dir.is_dir():
+        raise FileNotFoundError(f"cannot point CURRENT at missing package {package_id}")
+    tmp = CURRENT_POINTER.with_name(".CURRENT.new")
+    if tmp.exists() or tmp.is_symlink():
+        tmp.unlink()
+    tmp.symlink_to(package_id, target_is_directory=True)
     tmp.replace(CURRENT_POINTER)
 
 
-def install_package_to_live(package_dir: Path) -> None:
-    """Copy every package member into live paths via tmp+rename (per-file).
+def _atomic_symlink_replace(link: Path, target: Path, *, target_is_directory: bool) -> None:
+    """Replace ``link`` with a symlink to ``target`` via tmp+rename (atomic).
 
-    Callers must treat this as part of a set transaction: on exception, restore
-    the previous package with the same function.
-    """
-    pairs = _live_package_file_map(package_dir)
-    if not pairs:
-        raise FileNotFoundError(f"empty package map: {package_dir}")
-    for src, _dst in pairs:
-        if not src.is_file():
-            raise FileNotFoundError(f"package missing {src}")
-
-    # Stage all new content beside destinations first (no live mutation yet).
-    staged: list[tuple[Path, Path]] = []
-    try:
-        for src, dst in pairs:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            tmp = dst.with_name(f".{dst.name}.pkgnew")
-            if tmp.exists() or tmp.is_symlink():
-                tmp.unlink()
-            tmp.write_bytes(src.read_bytes())
-            staged.append((tmp, dst))
-        # Commit renames. Any failure after this point requires full rollback
-        # from the previous package (caller responsibility).
-        for tmp, dst in staged:
-            tmp.replace(dst)
-            staged = [(t, d) for t, d in staged if t != tmp]
-    except Exception:
-        for tmp, _dst in staged:
-            with contextlib.suppress(OSError):
-                tmp.unlink(missing_ok=True)
-        raise
-
-
-def publish_versioned_package(package_dir: Path, package_id: str) -> None:
-    """Promote a fully-built package directory to CURRENT with set-atomic live install.
-
-    1. Finalize package under PACKAGE_ROOT/<package_id>/
-    2. Install full file set to live paths
-    3. On any install failure: reinstall previous CURRENT package (complete rollback)
-    4. Flip CURRENT pointer only after live install succeeds
+    If ``link`` is a real file/directory (legacy layout), it is renamed aside
+    first so rename can install the symlink. Callers must only invoke this after
+    rollback sources are validated.
     """
     import shutil
 
-    if not re.fullmatch(r"[0-9a-f]{32}", package_id) and not re.fullmatch(
-        r"[0-9A-Za-z._-]{8,64}", package_id
-    ):
-        raise ValueError(f"invalid package_id: {package_id!r}")
+    link.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        rel = os.path.relpath(target, start=link.parent)
+    except ValueError:
+        rel = str(target)
+
+    if link.exists() and not link.is_symlink():
+        displaced = link.with_name(f".{link.name}.displaced_{os.getpid()}")
+        if displaced.exists() or displaced.is_symlink():
+            if displaced.is_dir() and not displaced.is_symlink():
+                shutil.rmtree(displaced)
+            else:
+                displaced.unlink()
+        link.rename(displaced)
+
+    tmp = link.with_name(f".{link.name}.new")
+    if tmp.exists() or tmp.is_symlink():
+        tmp.unlink()
+    tmp.symlink_to(rel, target_is_directory=target_is_directory)
+    tmp.replace(link)
+
+
+def _live_symlink_targets(package_dir: Path) -> list[tuple[Path, Path, bool]]:
+    """(live_path, package_subdir_or_file, is_directory) for atomic consumer switch."""
+    return [
+        (OUT_DIR, package_dir / "instrument_data", True),
+        (MANIFEST_DIR, package_dir / "instrument_data_manifests", True),
+        (REPORT_PATH, package_dir / "multi_instrument_data_readiness.md", False),
+    ]
+
+
+def install_package_to_live(package_dir: Path) -> None:
+    """Point live consumer paths at ``package_dir`` via atomic symlink replace.
+
+    After success, every consumer path is a symlink into one package directory.
+    Concurrent readers see either the previous package set or the new one for each
+    root; roots are switched as whole directories (not file-by-file).
+    """
+    if not package_dir.is_dir():
+        raise FileNotFoundError(f"package missing: {package_dir}")
+    for rel in _required_package_rels():
+        if not (package_dir / rel).is_file():
+            raise FileNotFoundError(f"package incomplete: {rel}")
+
+    for live, target, is_dir in _live_symlink_targets(package_dir):
+        if not target.exists():
+            raise FileNotFoundError(f"package target missing: {target}")
+        _atomic_symlink_replace(live, target, target_is_directory=is_dir)
+
+
+def verify_live_matches_package(package_dir: Path) -> list[str]:
+    """Assert live consumer paths are symlinks into package_dir with matching bytes."""
+    errs: list[str] = []
+    try:
+        pkg_res = package_dir.resolve()
+    except OSError as e:
+        return [f"PACKAGE_UNRESOLVABLE:{e}"]
+
+    for live, target, _is_dir in _live_symlink_targets(package_dir):
+        if not live.is_symlink():
+            errs.append(f"LIVE_NOT_SYMLINK:{live.name}")
+            continue
+        try:
+            if live.resolve() != target.resolve():
+                errs.append(f"LIVE_SYMLINK_TARGET_MISMATCH:{live.name}")
+        except OSError as e:
+            errs.append(f"LIVE_SYMLINK_BROKEN:{live.name}:{e}")
+
+    for src, dst in _live_package_file_map(package_dir):
+        if not src.is_file():
+            continue
+        if not dst.exists() and not dst.is_symlink():
+            errs.append(f"LIVE_MISSING:{dst.name}")
+            continue
+        try:
+            if not dst.is_file():
+                errs.append(f"LIVE_NOT_FILE:{dst.name}")
+                continue
+            if _sha256_file(src) != _sha256_file(dst):
+                errs.append(f"LIVE_SHA_MISMATCH:{dst.name}")
+            try:
+                dres = dst.resolve()
+                if pkg_res not in dres.parents and dres.parent != pkg_res:
+                    errs.append(f"LIVE_NOT_UNDER_PACKAGE:{dst.name}")
+            except OSError:
+                errs.append(f"LIVE_UNRESOLVABLE:{dst.name}")
+        except OSError as e:
+            errs.append(f"LIVE_READ_FAIL:{dst.name}:{e}")
+    return errs
+
+
+def recover_live_from_current() -> str | None:
+    """Startup recovery: if CURRENT resolves, reinstall its symlinks. Return id."""
+    pkg = resolve_current_package_dir()
+    if pkg is None:
+        return None
+    install_package_to_live(pkg)
+    return pkg.name
+
+
+def finalize_package_dir(package_dir: Path, package_id: str) -> Path:
+    """Place package at PACKAGE_ROOT/package_id without destroying different content.
+
+    - Destination missing: move staging into place.
+    - Destination exists with identical content digest: reuse (idempotent).
+    - Destination exists with different content: refuse.
+    Never deletes an existing package directory.
+    """
+    import shutil
 
     PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
     final_pkg = PACKAGE_ROOT / package_id
-    if final_pkg.resolve() != package_dir.resolve():
-        if final_pkg.exists():
-            shutil.rmtree(final_pkg)
-        # Move complete staging tree into versioned slot
-        shutil.move(str(package_dir), str(final_pkg))
+    stage_digest = _package_content_digest(package_dir)
 
-    prev_id = _read_current_package_id()
+    if final_pkg.resolve() == package_dir.resolve():
+        return final_pkg
+
+    if final_pkg.exists():
+        if not final_pkg.is_dir():
+            raise RuntimeError(f"PACKAGE_ID_OCCUPIED_BY_NON_DIR:{final_pkg}")
+        existing = _package_content_digest(final_pkg)
+        if existing != stage_digest:
+            raise RuntimeError(
+                f"PACKAGE_ID_COLLISION: id={package_id} exists with different content "
+                f"(existing={existing[:16]} staged={stage_digest[:16]}). "
+                "Refusing to overwrite immutable package."
+            )
+        if package_dir.exists() and package_dir.resolve() != final_pkg.resolve():
+            shutil.rmtree(package_dir, ignore_errors=True)
+        return final_pkg
+
+    shutil.move(str(package_dir), str(final_pkg))
+    return final_pkg
+
+
+def publish_versioned_package(package_dir: Path, package_id: str) -> Path:
+    """Promote a fully-built package to CURRENT via atomic live symlink switch.
+
+    Safety rules (v5):
+    1. Resolve previous CURRENT package *before* any live mutation; dangling
+       CURRENT aborts.
+    2. Never overwrite an existing different package (immutable IDs).
+    3. Switch live roots with atomic symlink renames (package directory boundary).
+    4. Flip CURRENT only after live symlinks verify against the new package.
+    5. On failure after live mutation began: reinstall previous package if known.
+    """
+    if not re.fullmatch(r"(?:[0-9a-f]{32}|norun)-[0-9a-f]{16}", package_id) and not re.fullmatch(
+        r"[0-9A-Za-z._-]{8,80}", package_id
+    ):
+        raise ValueError(f"invalid package_id: {package_id!r}")
+
+    # Resolve rollback source BEFORE mutating live or package slots
+    prev_pkg = resolve_current_package_dir()
+
+    final_pkg = finalize_package_dir(package_dir, package_id)
+
+    # Idempotent: already CURRENT and live matches
+    cur = _read_current_package_id()
+    if cur == package_id:
+        live_errs = verify_live_matches_package(final_pkg)
+        if not live_errs:
+            return final_pkg
+        install_package_to_live(final_pkg)
+        live_errs = verify_live_matches_package(final_pkg)
+        if live_errs:
+            raise RuntimeError(f"LIVE_REPAIR_FAILED:{live_errs}")
+        return final_pkg
+
     try:
         install_package_to_live(final_pkg)
-        # Post-install: every live file must match package bytes
-        for src, dst in _live_package_file_map(final_pkg):
-            if not dst.is_file() or _sha256_file(src) != _sha256_file(dst):
-                raise RuntimeError(f"live/package mismatch after install: {dst.name}")
+        live_errs = verify_live_matches_package(final_pkg)
+        if live_errs:
+            raise RuntimeError(f"LIVE_VERIFY_FAIL:{live_errs}")
         _write_current_package_id(package_id)
     except Exception:
-        # Complete rollback to previous accepted package when available
-        if prev_id and (PACKAGE_ROOT / prev_id).is_dir():
+        if prev_pkg is not None:
             try:
-                install_package_to_live(PACKAGE_ROOT / prev_id)
+                install_package_to_live(prev_pkg)
+                _write_current_package_id(prev_pkg.name)
             except Exception as rb_err:
                 raise RuntimeError(
                     f"publish failed and rollback failed: {rb_err}"
                 ) from rb_err
         raise
+    return final_pkg
+
+
+def write_fail_evidence(
+    manifests: list[SymbolManifest],
+    common: dict[str, Any],
+    gate: str,
+    export_errs: list[str],
+) -> Path:
+    """Write FAIL evidence beside the live set — never into the CURRENT package."""
+    write_report(manifests, common, gate, export_errs, path=FAIL_REPORT_PATH)
+    return FAIL_REPORT_PATH
 
 
 def _atomic_publish_staging(staging: Path, final: Path) -> None:
@@ -1267,16 +1532,15 @@ def main() -> int:
     bridge = _wine_bridge_dir()
     print(f"Bridge dir: {bridge}")
 
-    # Mandatory costs provenance
     if not COSTS_XAU.is_file():
         print("Gate: FAIL_DATA (missing costs file)")
-        write_report([], {"status": "FAIL"}, "FAIL_DATA", ["MISSING_COSTS_FILE"])
+        write_fail_evidence([], {"status": "FAIL"}, "FAIL_DATA", ["MISSING_COSTS_FILE"])
         return 1
     costs = json.loads(COSTS_XAU.read_text())
     cost_errs = verify_costs_file(costs)
     if cost_errs:
         print("COSTS_FAIL:", cost_errs)
-        write_report([], {"status": "FAIL"}, "FAIL_DATA", cost_errs)
+        write_fail_evidence([], {"status": "FAIL"}, "FAIL_DATA", cost_errs)
         return 1
 
     holdout = DEVELOP_END_SERVER
@@ -1293,16 +1557,22 @@ def main() -> int:
     )
     print("export_run:", (export_run or {}).get("run_id"), "errs=", export_errs)
 
-    package_id = None
+    run_id: str | None = None
     if export_run and isinstance(export_run.get("run_id"), str):
-        package_id = str(export_run["run_id"])
-    if not package_id:
-        package_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "_nopkg"
+        run_id = str(export_run["run_id"])
 
-    # Build entire acceptance set into a versioned package staging tree.
-    # Live OUT_DIR / MANIFEST_DIR / REPORT_PATH are not mutated until PASS.
+    # Pre-flight: dangling CURRENT must abort before any live mutation.
+    try:
+        prev_pkg = resolve_current_package_dir()
+    except RuntimeError as e:
+        print("CURRENT_PREFLIGHT_FAIL:", e)
+        write_fail_evidence([], {"status": "FAIL"}, "FAIL_DATA", [str(e)])
+        return 1
+    if prev_pkg:
+        print(f"Previous package (rollback source): {prev_pkg.name}")
+
     staging_root = Path(tempfile.mkdtemp(prefix="instr_pkg_", dir=str(ROOT / "results")))
-    package_stage = staging_root / package_id
+    package_stage = staging_root / "staging_pkg"
     stage_data = package_stage / "instrument_data"
     stage_man = package_stage / "instrument_data_manifests"
     stage_data.mkdir(parents=True, exist_ok=True)
@@ -1310,7 +1580,6 @@ def main() -> int:
 
     manifests: list[SymbolManifest] = []
     develops: dict[str, pd.DataFrame] = {}
-
     publish_stage = not bool(export_errs)
 
     for sym in SYMBOLS:
@@ -1346,7 +1615,6 @@ def main() -> int:
         json.dumps(common, indent=2) + "\n"
     )
 
-    # Copy provenance into package for audit trail
     for name in ("export_run.json", "export_complete.json", "export_challenge.json"):
         for src in (bridge / name, MANIFEST_DIR / name):
             if src.is_file():
@@ -1370,8 +1638,9 @@ def main() -> int:
     report_stage = package_stage / "multi_instrument_data_readiness.md"
     write_report(manifests, common, gate, export_errs, path=report_stage)
 
+    package_id = "unbuilt"
+
     if gate.startswith("PASS_"):
-        # Final relative paths for consumers (live layout after install)
         for m in manifests:
             if m.published:
                 m.research_csv = f"results/instrument_data/{m.symbol.lower()}_h1.csv"
@@ -1386,27 +1655,18 @@ def main() -> int:
                     json.dumps(asdict(m), indent=2) + "\n"
                 )
 
-        lock = write_artifact_lock(
-            manifests,
-            gate,
-            out_dir=stage_data,
-            lock_path=stage_man / "committed_artifact_lock.json",
-            path_prefix="results/instrument_data",
-        )
-        # Bind package identity into lock for audit
-        lock["package_id"] = package_id
-        lock["publish_model"] = "versioned_package_v4"
-        (stage_man / "committed_artifact_lock.json").write_text(
-            json.dumps(lock, indent=2) + "\n"
-        )
         write_report(manifests, common, gate, export_errs, path=report_stage)
+        package_id, _lock = seal_package_identity(
+            package_stage, run_id, gate=gate, manifests=manifests
+        )
+        print(f"Package id (content-addressed): {package_id}")
 
         try:
             publish_versioned_package(package_stage, package_id)
         except Exception as e:
             print("PACKAGE_PUBLISH_FAIL:", e)
             gate = "FAIL_DATA"
-            write_report(
+            fail_path = write_fail_evidence(
                 manifests,
                 common,
                 gate,
@@ -1414,21 +1674,22 @@ def main() -> int:
             )
             shutil.rmtree(staging_root, ignore_errors=True)
             print(f"Gate: {gate}")
+            print(f"Fail evidence: {fail_path}")
+            # Confirm live report not clobbered with FAIL if previous package restored
+            print(f"Live report path: {REPORT_PATH} (package report untouched by FAIL write)")
             return 1
 
         lock_errs = verify_committed_artifacts(manifests=manifests)
         if lock_errs:
             print("ARTIFACT_LOCK_VERIFY_FAIL:", lock_errs)
             gate = "FAIL_DATA"
-            write_report(manifests, common, gate, export_errs + lock_errs)
+            write_fail_evidence(manifests, common, gate, export_errs + lock_errs)
             shutil.rmtree(staging_root, ignore_errors=True)
             print(f"Gate: {gate}")
             return 1
     else:
         print("Skipping publish — gate not PASS (package staging discarded)")
-        # Failure report only: write report to live path so operators see FAIL
-        # without swapping CSVs/lock/manifests mid-set.
-        write_report(manifests, common, gate, export_errs)
+        write_fail_evidence(manifests, common, gate, export_errs)
 
     shutil.rmtree(staging_root, ignore_errors=True)
     print(f"Gate: {gate}")

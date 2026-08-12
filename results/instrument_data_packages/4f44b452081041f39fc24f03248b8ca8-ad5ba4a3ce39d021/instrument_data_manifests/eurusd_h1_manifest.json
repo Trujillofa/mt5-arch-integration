@@ -1,11 +1,11 @@
 {
-  "symbol": "GBPUSD",
+  "symbol": "EURUSD",
   "status": "OK_WITH_IMPUTATION",
   "clock_contract": "server_clock_as_stored",
-  "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_GBPUSD.csv",
-  "source_sha256": "34cc5a4d5034ecd60299dcc1ffcb264bf8de4797c73dab1f81fa8b0d81cf60c6",
-  "research_csv": "results/instrument_data/gbpusd_h1.csv",
-  "research_csv_sha256": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd",
+  "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_EURUSD.csv",
+  "source_sha256": "74858a021ea0b60f1ce8d9932c6b607e797f436d3607b4e80678b92782c112ce",
+  "research_csv": "results/instrument_data/eurusd_h1.csv",
+  "research_csv_sha256": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab",
   "timeframe": "H1",
   "n_rows_raw": 30694,
   "n_rows_h1": 30694,
@@ -19,8 +19,8 @@
   "missing_duplicate_bars": {
     "duplicate_timestamps": 0,
     "bad_ohlc_rows": 0,
-    "develop_csv": "results/instrument_data/gbpusd_h1_develop.csv",
-    "develop_csv_sha256": "240b490750eb131313155abcd81966d916046708c581ee20a912e21a54136fb0"
+    "develop_csv": "results/instrument_data/eurusd_h1_develop.csv",
+    "develop_csv_sha256": "ad01989eb40056dbc6686f1425987a9cae23eb29396693745f8744e79a3815f5"
   },
   "gap_report": {
     "n_gaps_gt_72h": 3,
@@ -46,9 +46,9 @@
   "spread": {
     "n": 30694,
     "median_effective_pts": 12.0,
-    "mean_effective_pts": 13.165667557177299,
+    "mean_effective_pts": 12.090734345474685,
     "min_raw_pts": 0.0,
-    "max_raw_pts": 309.0,
+    "max_raw_pts": 165.0,
     "n_imputed_full": 1,
     "frac_imputed_full": 3.2579657262005605e-05,
     "n_imputed_develop": 1,
@@ -74,17 +74,17 @@
   "server": "VantageMarkets-Live 5",
   "login": 27496181,
   "export_run_id": "4f44b452081041f39fc24f03248b8ca8",
-  "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_GBPUSD.csv",
+  "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_EURUSD.csv",
   "meta_raw": {
     "key": "value",
-    "requested": "GBPUSD",
-    "resolved": "GBPUSD",
+    "requested": "EURUSD",
+    "resolved": "EURUSD",
     "digits": "5",
     "point": "0.00001000",
     "contract_size": "100000.0000",
     "tick_size": "0.00001000",
     "tick_value": "1.00000000",
-    "currency_base": "GBP",
+    "currency_base": "EUR",
     "currency_profit": "USD",
     "trade_mode": "4"
   },
@@ -93,6 +93,6 @@
     "ZERO_SPREAD_IMPUTED=1",
     "LARGE_GAPS_GT_72H=3"
   ],
-  "frozen_at_utc": "2026-08-12T15:25:18.738349+00:00",
+  "frozen_at_utc": "2026-08-12T16:17:19.345213+00:00",
   "published": true
 }
