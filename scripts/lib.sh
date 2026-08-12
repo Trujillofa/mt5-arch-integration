@@ -79,8 +79,14 @@ info() { echo "==> $*"; }
 warn() { echo "warning: $*" >&2; }
 die()  { echo "error: $*" >&2; exit 1; }
 
+# PIDs of MetaTrader processes. With an argument, only those whose WINEPREFIX matches
+# it — several brokers run side by side (Vantage, Exness, FP Markets, WSF) and an
+# unfiltered stop takes down all of them to restart one.
+#
+# Match on the command line, not /proc/<pid>/comm: Wine names the main thread "main",
+# so a comm-based scan finds nothing and silently reports MT5 as not running.
 mt5_terminal_pids() {
-  local pid cmd
+  local want="${1:-}" pid cmd pfx
   for pid in /proc/[0-9]*; do
     pid="${pid#/proc/}"
     # Group the redirect so a process exiting mid-scan cannot print a bash error.
@@ -90,9 +96,14 @@ mt5_terminal_pids() {
       *bash*|*extglob*) continue ;;
     esac
     case "$cmd" in
-      *terminal64.exe*|*MetaEditor64.exe*|*metaeditor64.exe*|*metatester64.exe*)
-        echo "$pid" ;;
+      *terminal64.exe*|*MetaEditor64.exe*|*metaeditor64.exe*|*metatester64.exe*) ;;
+      *) continue ;;
     esac
+    if [[ -n "$want" ]]; then
+      pfx="$( { tr '\0' '\n' <"/proc/$pid/environ"; } 2>/dev/null | sed -n 's/^WINEPREFIX=//p' | head -1)"
+      [[ "${pfx%/}" == "${want%/}" ]] || continue
+    fi
+    echo "$pid"
   done
 }
 
@@ -105,15 +116,19 @@ mt5_terminal_pids() {
 # (Observed 2026-08-11: *.chr frozen at Aug 8 10:52 across several later sessions.)
 #
 # So: ask each window to close, give MT5 time to write, and only then escalate.
+#
+# Usage: stop_terminal_gracefully [timeout_seconds] [wineprefix]
+# Pass a wineprefix to stop only that broker's terminal and leave the others running.
 stop_terminal_gracefully() {
-  local timeout="${1:-40}" pids wins w waited closed=0
+  local timeout="${1:-40}" want="${2:-}" pids wins w waited closed=0
   export DISPLAY="${DISPLAY:-:0}"
 
-  mapfile -t pids < <(mt5_terminal_pids)
+  mapfile -t pids < <(mt5_terminal_pids "$want")
   if [[ ${#pids[@]} -eq 0 ]]; then
-    info "No MetaTrader process running."
+    info "No MetaTrader process running${want:+ for $want}."
     return 0
   fi
+  info "Stopping ${#pids[@]} MetaTrader process(es)${want:+ in $want}"
 
   # Ask the compositor to close the window. Measured 2026-08-11 on Hyprland 0.56 +
   # XWayland, in order of what actually reaches MT5:
@@ -122,12 +137,19 @@ stop_terminal_gracefully() {
   #   xdotool windowclose           -> destroys the X window, no WM_CLOSE at all LOSES DATA
   # The window advertises WM_DELETE_WINDOW in WM_PROTOCOLS, so the xdotool path looks
   # correct and silently is not — do not "simplify" back to it.
+  # Select windows by PID, not by class alone: every broker's shell has class
+  # terminal64.exe, so a class-only match closes all of them regardless of the filter.
   if command -v hyprctl >/dev/null 2>&1; then
-    mapfile -t wins < <(hyprctl clients -j 2>/dev/null | python3 -c "
-import json, sys
+    # The env assignment must sit on python3, not on hyprctl: a prefix assignment
+    # applies only to the command it precedes, so putting it before hyprctl leaves
+    # python with an empty set, selects no windows, and drops through to the
+    # "nothing to close" branch that SIGKILLs without saving charts.
+    mapfile -t wins < <(hyprctl clients -j 2>/dev/null | MT5_PIDS="${pids[*]}" python3 -c "
+import json, os, sys
+wanted = {int(p) for p in os.environ.get('MT5_PIDS', '').split()}
 try:
     for c in json.load(sys.stdin):
-        if c.get('class') == 'terminal64.exe':
+        if c.get('class') == 'terminal64.exe' and c.get('pid') in wanted:
             print(c['address'])
 except Exception:
     pass
@@ -138,7 +160,9 @@ except Exception:
     done
   fi
 
-  if [[ "$closed" -eq 0 ]] && command -v xdotool >/dev/null 2>&1; then
+  if [[ "$closed" -eq 0 ]] && [[ -z "$want" ]] && command -v xdotool >/dev/null 2>&1; then
+    # Fallback only when unfiltered: xdotool matches by class and cannot honour the
+    # prefix filter, so using it here would close other brokers' terminals.
     warn "hyprctl close unavailable — falling back to xdotool windowquit (unreliable for MT5)"
     mapfile -t wins < <(xdotool search --class '^terminal64\.exe$' 2>/dev/null || true)
     for w in "${wins[@]}"; do
@@ -157,7 +181,7 @@ except Exception:
   fi
 
   for ((waited = 0; waited < timeout; waited++)); do
-    mapfile -t pids < <(mt5_terminal_pids)
+    mapfile -t pids < <(mt5_terminal_pids "$want")
     if [[ ${#pids[@]} -eq 0 ]]; then
       info "MetaTrader exited cleanly (charts saved)."
       return 0
@@ -166,10 +190,10 @@ except Exception:
   done
 
   warn "MetaTrader still running after ${timeout}s — escalating (chart edits may be lost)"
-  mapfile -t pids < <(mt5_terminal_pids)
+  mapfile -t pids < <(mt5_terminal_pids "$want")
   for w in "${pids[@]}"; do kill -TERM "$w" 2>/dev/null || true; done
   sleep 3
-  mapfile -t pids < <(mt5_terminal_pids)
+  mapfile -t pids < <(mt5_terminal_pids "$want")
   for w in "${pids[@]}"; do
     kill -0 "$w" 2>/dev/null && { warn "SIGKILL $w"; kill -KILL "$w" 2>/dev/null || true; }
   done

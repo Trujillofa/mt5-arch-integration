@@ -26,7 +26,15 @@ wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/n
 
 info "Stopping MetaTrader terminal processes..."
 # Graceful WM_CLOSE first — signals alone lose all chart/indicator edits. See lib.sh.
-stop_terminal_gracefully "${MT5_STOP_TIMEOUT:-40}"
+#
+# Scoped to this WINEPREFIX: this script relaunches exactly one terminal, and several
+# brokers run side by side, so stopping all of them would leave the others dead.
+# Set MT5_STOP_ALL=1 for the old behaviour of stopping every MetaTrader process.
+if [[ "${MT5_STOP_ALL:-0}" == "1" ]]; then
+  stop_terminal_gracefully "${MT5_STOP_TIMEOUT:-40}"
+else
+  stop_terminal_gracefully "${MT5_STOP_TIMEOUT:-40}" "$WINEPREFIX"
+fi
 
 term="$(find_terminal64)" || die "terminal64.exe not found. Run ./scripts/02-install-mt5.sh"
 # If path is Windows-style in .env, resolve Linux path
