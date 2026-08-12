@@ -1,0 +1,128 @@
+{
+  "symbol": "XAUUSD",
+  "status": "OK_WITH_IMPUTATION",
+  "clock_contract": "server_clock_as_stored",
+  "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_XAUUSD.csv",
+  "source_sha256": "f73d7315e84d80e335a2b4554605d040387753d1ac9577b0706a6c1dff591bb6",
+  "research_csv": "results/instrument_data/xauusd_h1.csv",
+  "research_csv_sha256": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da",
+  "timeframe": "H1",
+  "n_rows_raw": 29155,
+  "n_rows_h1": 29155,
+  "n_rows_h1_develop": 25557,
+  "time_min_server": "2021-09-07 02:00:00",
+  "time_max_server": "2026-08-12 01:00:00",
+  "develop_time_min_server": "2021-09-07 02:00:00",
+  "develop_time_max_server": "2025-12-31 23:00:00",
+  "develop_rule": "server_time < holdout_start_server",
+  "holdout_start_server": "2026-01-01 00:00:00",
+  "missing_duplicate_bars": {
+    "duplicate_timestamps": 0,
+    "bad_ohlc_rows": 0,
+    "develop_csv": "results/instrument_data/xauusd_h1_develop.csv",
+    "develop_csv_sha256": "d78f3ffa010521acb3dab3eb7f06182b2584eed439579eb1b32d1a0632a61ccd"
+  },
+  "gap_report": {
+    "n_gaps_gt_72h": 9,
+    "max_gap_hours": 74.0,
+    "large_gaps_sample": [
+      {
+        "after": "2021-12-23 23:00:00",
+        "before": "2021-12-27 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-04-14 23:00:00",
+        "before": "2022-04-18 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-12-23 23:00:00",
+        "before": "2022-12-27 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2022-12-30 23:00:00",
+        "before": "2023-01-03 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-04-06 23:00:00",
+        "before": "2023-04-10 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-12-22 23:00:00",
+        "before": "2023-12-26 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2023-12-29 23:00:00",
+        "before": "2024-01-02 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2024-03-28 23:00:00",
+        "before": "2024-04-01 01:00:00",
+        "gap_hours": 74.0
+      },
+      {
+        "after": "2025-04-17 23:00:00",
+        "before": "2025-04-21 01:00:00",
+        "gap_hours": 74.0
+      }
+    ]
+  },
+  "spread": {
+    "n": 29155,
+    "median_effective_pts": 18.0,
+    "mean_effective_pts": 16.11953352769679,
+    "min_raw_pts": 0.0,
+    "max_raw_pts": 50.0,
+    "n_imputed_full": 1296,
+    "frac_imputed_full": 0.04445206654090208,
+    "n_imputed_develop": 1296,
+    "frac_imputed_develop": 0.050710177250851037,
+    "fill_median_pts": 18.0,
+    "unit": "points (MqlRates.spread)",
+    "columns": [
+      "spread_raw_pts",
+      "spread_effective_pts",
+      "spread_imputed"
+    ]
+  },
+  "point_size": 0.01,
+  "contract_size": 100.0,
+  "digits": 2,
+  "commission_per_lot": 0.0,
+  "commission_notes": "Standard STP: no separate commission; trading cost is in measured spread. Account type=STANDARD_STP.",
+  "slippage_points": 0.0,
+  "slippage_notes": "UNMEASURED \u2014 left at 0 until demo/live fill sample. Not a claim of zero slip.",
+  "spread_source": "MqlRates.spread from Vantage terminal export (ExportInstrumentHistory)",
+  "broker": "Vantage",
+  "account_type": "STANDARD_STP",
+  "server": "VantageMarkets-Live 5",
+  "login": 27496181,
+  "export_run_id": "4f44b452081041f39fc24f03248b8ca8",
+  "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_XAUUSD.csv",
+  "meta_raw": {
+    "key": "value",
+    "requested": "XAUUSD",
+    "resolved": "XAUUSD",
+    "digits": "2",
+    "point": "0.01000000",
+    "contract_size": "100.0000",
+    "tick_size": "0.01000000",
+    "tick_value": "1.00000000",
+    "currency_base": "XAU",
+    "currency_profit": "USD",
+    "trade_mode": "4"
+  },
+  "hard_errors": [],
+  "quality_flags": [
+    "ZERO_SPREAD_IMPUTED=1296",
+    "LARGE_GAPS_GT_72H=9"
+  ],
+  "frozen_at_utc": "2026-08-12T16:48:59.144601+00:00",
+  "published": true
+}

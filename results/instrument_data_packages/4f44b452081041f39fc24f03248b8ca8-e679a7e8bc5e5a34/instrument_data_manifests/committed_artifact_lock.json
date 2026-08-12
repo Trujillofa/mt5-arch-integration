@@ -1,0 +1,60 @@
+{
+  "gate": "PASS_DATA_READY_WITH_IMPUTATION",
+  "frozen_at_utc": "2026-08-12T19:55:46.625890+00:00",
+  "clock_contract": "server_clock_as_stored",
+  "required_symbols": [
+    "XAUUSD",
+    "EURUSD",
+    "GBPUSD"
+  ],
+  "artifacts": {
+    "XAUUSD": {
+      "research_csv": "results/instrument_data/xauusd_h1.csv",
+      "research_csv_sha256": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da",
+      "n_rows_h1": 29155,
+      "n_rows_h1_on_disk": 29155,
+      "n_rows_h1_develop": 25557,
+      "n_rows_h1_develop_on_disk": 25557,
+      "develop_csv": "derived:server_time < holdout_start_server",
+      "develop_csv_sha256": "d78f3ffa010521acb3dab3eb7f06182b2584eed439579eb1b32d1a0632a61ccd",
+      "develop_mode": "derived",
+      "source_sha256": "f73d7315e84d80e335a2b4554605d040387753d1ac9577b0706a6c1dff591bb6",
+      "status": "OK_WITH_IMPUTATION",
+      "manifest_n_rows_h1": 29155,
+      "manifest_n_rows_h1_develop": 25557
+    },
+    "EURUSD": {
+      "research_csv": "results/instrument_data/eurusd_h1.csv",
+      "research_csv_sha256": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab",
+      "n_rows_h1": 30694,
+      "n_rows_h1_on_disk": 30694,
+      "n_rows_h1_develop": 26900,
+      "n_rows_h1_develop_on_disk": 26900,
+      "develop_csv": "derived:server_time < holdout_start_server",
+      "develop_csv_sha256": "ad01989eb40056dbc6686f1425987a9cae23eb29396693745f8744e79a3815f5",
+      "develop_mode": "derived",
+      "source_sha256": "74858a021ea0b60f1ce8d9932c6b607e797f436d3607b4e80678b92782c112ce",
+      "status": "OK_WITH_IMPUTATION",
+      "manifest_n_rows_h1": 30694,
+      "manifest_n_rows_h1_develop": 26900
+    },
+    "GBPUSD": {
+      "research_csv": "results/instrument_data/gbpusd_h1.csv",
+      "research_csv_sha256": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd",
+      "n_rows_h1": 30694,
+      "n_rows_h1_on_disk": 30694,
+      "n_rows_h1_develop": 26900,
+      "n_rows_h1_develop_on_disk": 26900,
+      "develop_csv": "derived:server_time < holdout_start_server",
+      "develop_csv_sha256": "240b490750eb131313155abcd81966d916046708c581ee20a912e21a54136fb0",
+      "develop_mode": "derived",
+      "source_sha256": "34cc5a4d5034ecd60299dcc1ffcb264bf8de4797c73dab1f81fa8b0d81cf60c6",
+      "status": "OK_WITH_IMPUTATION",
+      "manifest_n_rows_h1": 30694,
+      "manifest_n_rows_h1_develop": 26900
+    }
+  },
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-e679a7e8bc5e5a34",
+  "publish_model": "current_indirection_v6",
+  "export_run_id": "4f44b452081041f39fc24f03248b8ca8"
+}

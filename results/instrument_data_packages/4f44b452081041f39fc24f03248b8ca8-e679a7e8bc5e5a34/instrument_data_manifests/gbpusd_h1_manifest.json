@@ -1,0 +1,98 @@
+{
+  "symbol": "GBPUSD",
+  "status": "OK_WITH_IMPUTATION",
+  "clock_contract": "server_clock_as_stored",
+  "source_path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/history_GBPUSD.csv",
+  "source_sha256": "34cc5a4d5034ecd60299dcc1ffcb264bf8de4797c73dab1f81fa8b0d81cf60c6",
+  "research_csv": "results/instrument_data/gbpusd_h1.csv",
+  "research_csv_sha256": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd",
+  "timeframe": "H1",
+  "n_rows_raw": 30694,
+  "n_rows_h1": 30694,
+  "n_rows_h1_develop": 26900,
+  "time_min_server": "2021-09-07 02:00:00",
+  "time_max_server": "2026-08-12 01:00:00",
+  "develop_time_min_server": "2021-09-07 02:00:00",
+  "develop_time_max_server": "2025-12-31 23:00:00",
+  "develop_rule": "server_time < holdout_start_server",
+  "holdout_start_server": "2026-01-01 00:00:00",
+  "missing_duplicate_bars": {
+    "duplicate_timestamps": 0,
+    "bad_ohlc_rows": 0,
+    "develop_csv": "results/instrument_data/gbpusd_h1_develop.csv",
+    "develop_csv_sha256": "240b490750eb131313155abcd81966d916046708c581ee20a912e21a54136fb0"
+  },
+  "gap_report": {
+    "n_gaps_gt_72h": 3,
+    "max_gap_hours": 73.0,
+    "large_gaps_sample": [
+      {
+        "after": "2022-12-23 23:00:00",
+        "before": "2022-12-27 00:00:00",
+        "gap_hours": 73.0
+      },
+      {
+        "after": "2023-12-22 23:00:00",
+        "before": "2023-12-26 00:00:00",
+        "gap_hours": 73.0
+      },
+      {
+        "after": "2023-12-29 23:00:00",
+        "before": "2024-01-02 00:00:00",
+        "gap_hours": 73.0
+      }
+    ]
+  },
+  "spread": {
+    "n": 30694,
+    "median_effective_pts": 12.0,
+    "mean_effective_pts": 13.165667557177299,
+    "min_raw_pts": 0.0,
+    "max_raw_pts": 309.0,
+    "n_imputed_full": 1,
+    "frac_imputed_full": 3.2579657262005605e-05,
+    "n_imputed_develop": 1,
+    "frac_imputed_develop": 3.717472118959108e-05,
+    "fill_median_pts": 12.0,
+    "unit": "points (MqlRates.spread)",
+    "columns": [
+      "spread_raw_pts",
+      "spread_effective_pts",
+      "spread_imputed"
+    ]
+  },
+  "point_size": 1e-05,
+  "contract_size": 100000.0,
+  "digits": 5,
+  "commission_per_lot": 0.0,
+  "commission_notes": "Standard STP: no separate commission; trading cost is in measured spread. Account type=STANDARD_STP.",
+  "slippage_points": 0.0,
+  "slippage_notes": "UNMEASURED \u2014 left at 0 until demo/live fill sample. Not a claim of zero slip.",
+  "spread_source": "MqlRates.spread from Vantage terminal export (ExportInstrumentHistory)",
+  "broker": "Vantage",
+  "account_type": "STANDARD_STP",
+  "server": "VantageMarkets-Live 5",
+  "login": 27496181,
+  "export_run_id": "4f44b452081041f39fc24f03248b8ca8",
+  "meta_source": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5/Files/mt5_arch/symbol_meta_GBPUSD.csv",
+  "meta_raw": {
+    "key": "value",
+    "requested": "GBPUSD",
+    "resolved": "GBPUSD",
+    "digits": "5",
+    "point": "0.00001000",
+    "contract_size": "100000.0000",
+    "tick_size": "0.00001000",
+    "tick_value": "1.00000000",
+    "currency_base": "GBP",
+    "currency_profit": "USD",
+    "trade_mode": "4"
+  },
+  "hard_errors": [],
+  "quality_flags": [
+    "ZERO_SPREAD_IMPUTED=1",
+    "LARGE_GAPS_GT_72H=3"
+  ],
+  "frozen_at_utc": "2026-08-12T16:48:59.908540+00:00",
+  "published": true
+}

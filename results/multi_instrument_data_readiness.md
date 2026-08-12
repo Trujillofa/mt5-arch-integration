@@ -1,0 +1,1 @@
+instrument_data_packages/CURRENT/multi_instrument_data_readiness.md
