@@ -1,1 +1,1 @@
-instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ad5ba4a3ce39d021/multi_instrument_data_readiness.md
+instrument_data_packages/CURRENT/multi_instrument_data_readiness.md

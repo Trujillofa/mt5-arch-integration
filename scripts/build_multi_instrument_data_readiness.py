@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
 """Phase-0 multi-instrument data readiness — fail-closed (no signals / PF / grids).
 
-Integrity rules (v5):
+Integrity rules (v6):
   * Bar clock = server_clock_as_stored (never false UTC).
   * Attest and consume the same canonical bridge_dir paths only.
   * Challenge/echo exact JSON compare (run_id, symbols, H1, holdout, account).
   * Content-addressed immutable packages; never overwrite a different package.
-  * Live consumer paths are atomic symlinks into the CURRENT package directory.
-  * Abort before live mutation if CURRENT package cannot be resolved for rollback.
-  * Publish failures write evidence beside live set (never clobber restored package).
+  * Live roots are static links through instrument_data_packages/CURRENT/...;
+    only CURRENT is atomically replaced (one consumer boundary).
+  * Validate staged package (lock/SHAs/counts/id) before CURRENT switch;
+    post-switch verify failure rolls CURRENT back.
+  * CURRENT id must be content-ID format and a direct child of PACKAGE_ROOT.
+  * Publish failures write evidence beside live set (never clobber package report).
   * Research CSVs written only after hard DQ passes (no publish on FAIL).
   * build_symbol accepts out_dir (tests must not write repo artifacts).
   * Row symbol vs meta.resolved; H1 timestamps on :00:00.
@@ -40,7 +43,7 @@ ARTIFACT_LOCK = MANIFEST_DIR / "committed_artifact_lock.json"
 PACKAGE_ROOT = ROOT / "results" / "instrument_data_packages"
 CURRENT_POINTER = PACKAGE_ROOT / "CURRENT"
 FAIL_REPORT_PATH = ROOT / "results" / "multi_instrument_data_readiness.FAIL.md"
-PUBLISH_MODEL = "content_addressed_symlink_v5"
+PUBLISH_MODEL = "current_indirection_v6"
 
 SYMBOLS = ("XAUUSD", "EURUSD", "GBPUSD")
 PRIMARY_TF = "H1"
@@ -941,13 +944,13 @@ def write_report(
 ) -> None:
     dest = path if path is not None else REPORT_PATH
     lines = [
-        "# Multi-instrument data readiness (Phase 0 — integrity v5)",
+        "# Multi-instrument data readiness (Phase 0 — integrity v6)",
         "",
         f"**Report generated (UTC wall clock):** {datetime.now(UTC).isoformat()}",
         f"**Gate:** `{gate}`",
         f"**Bar clock contract:** `{CLOCK_CONTRACT}` (not UTC)",
         f"**Develop rule:** server_time `< {DEVELOP_END_SERVER}`",
-        "**Publish model:** content-addressed package + atomic live symlinks (v5)",
+        "**Publish model:** static live roots via packages/CURRENT (v6 atomic pointer)",
         "",
         "## Per-symbol",
         "",
@@ -1049,11 +1052,13 @@ def write_artifact_lock(
 
 
 def verify_committed_artifacts(
-    lock_path: Path = ARTIFACT_LOCK,
+    lock_path: Path | None = None,
     *,
     manifests: list[SymbolManifest] | None = None,
 ) -> list[str]:
     """Assert full + develop CSVs match lock; require exact symbol membership."""
+    if lock_path is None:
+        lock_path = ARTIFACT_LOCK
     if not lock_path.is_file():
         return ["MISSING_ARTIFACT_LOCK"]
     lock = json.loads(lock_path.read_text())
@@ -1127,20 +1132,22 @@ def verify_committed_artifacts(
     return errs
 
 
+
+PACKAGE_ID_RE = re.compile(r"^(?:[0-9a-f]{32}|norun)-[0-9a-f]{16}$")
+
+
 def _required_package_rels() -> list[str]:
     """Files that must exist for a package to be publishable."""
-    rels = [
-        f"instrument_data/{s.lower()}_h1.csv" for s in SYMBOLS
-    ] + [
-        f"instrument_data/{s.lower()}_h1_develop.csv" for s in SYMBOLS
-    ] + [
-        f"instrument_data_manifests/{s.lower()}_h1_manifest.json" for s in SYMBOLS
-    ] + [
-        "instrument_data_manifests/common_develop_window.json",
-        "instrument_data_manifests/committed_artifact_lock.json",
-        "multi_instrument_data_readiness.md",
-    ]
-    return rels
+    return (
+        [f"instrument_data/{s.lower()}_h1.csv" for s in SYMBOLS]
+        + [f"instrument_data/{s.lower()}_h1_develop.csv" for s in SYMBOLS]
+        + [f"instrument_data_manifests/{s.lower()}_h1_manifest.json" for s in SYMBOLS]
+        + [
+            "instrument_data_manifests/common_develop_window.json",
+            "instrument_data_manifests/committed_artifact_lock.json",
+            "multi_instrument_data_readiness.md",
+        ]
+    )
 
 
 def _optional_package_rels() -> list[str]:
@@ -1186,6 +1193,17 @@ def content_package_id(package_dir: Path, run_id: str | None) -> str:
     return f"{rid}-{digest16}"
 
 
+def validate_package_id(package_id: str) -> str:
+    """Require content-ID format; reject path separators / escapes."""
+    if not isinstance(package_id, str) or not package_id:
+        raise ValueError(f"invalid package_id: {package_id!r}")
+    if any(sep in package_id for sep in ("/", "\\", "\0")) or ".." in package_id:
+        raise ValueError(f"PACKAGE_ID_PATH_ESCAPE:{package_id!r}")
+    if not PACKAGE_ID_RE.fullmatch(package_id):
+        raise ValueError(f"invalid package_id format: {package_id!r}")
+    return package_id
+
+
 def seal_package_identity(
     package_dir: Path,
     run_id: str | None,
@@ -1193,21 +1211,10 @@ def seal_package_identity(
     gate: str,
     manifests: list[SymbolManifest],
 ) -> tuple[str, dict[str, Any]]:
-    """Write lock without package_id, freeze content id, then stamp lock with id.
-
-    The content digest intentionally excludes a self-referential package_id field
-    by writing the lock twice: first without package_id (for digest), then with
-    package_id stamped (digest of CSVs/manifests/report still stable if we hash
-    only digest-stable members). We include the stamped lock in the package for
-    audit; the *id* is derived from digest-stable members only.
-    """
+    """Write lock, freeze content id (lock excluded from digest), stamp lock with id."""
     stage_man = package_dir / "instrument_data_manifests"
     stage_data = package_dir / "instrument_data"
-
-    # Digest-stable members: CSVs + per-symbol manifests + common + report + provenance.
-    # Lock is written with package_id after id is known; lock bytes are NOT part of id.
     lock_path = stage_man / "committed_artifact_lock.json"
-    # Temporary lock without package_id so publish can proceed; final lock stamped later.
     lock = write_artifact_lock(
         manifests,
         gate,
@@ -1215,7 +1222,6 @@ def seal_package_identity(
         lock_path=lock_path,
         path_prefix="results/instrument_data",
     )
-    # Compute id from package excluding the lock file (remove lock, digest, restore).
     if lock_path.is_file():
         lock_path.unlink()
     package_id = content_package_id(package_dir, run_id)
@@ -1223,7 +1229,6 @@ def seal_package_identity(
     lock["publish_model"] = PUBLISH_MODEL
     lock["export_run_id"] = run_id
     lock_path.write_text(json.dumps(lock, indent=2) + "\n")
-    # Sanity: recompute id the same way (still excluding lock)
     lock_path.unlink()
     pid2 = content_package_id(package_dir, run_id)
     lock_path.write_text(json.dumps(lock, indent=2) + "\n")
@@ -1247,40 +1252,52 @@ def _live_package_file_map(package_dir: Path) -> list[tuple[Path, Path]]:
 
 
 def _read_current_package_id() -> str | None:
-    """Return CURRENT package id, or None if unset.
+    """Return validated CURRENT package id, or None if unset.
 
-    Supports symlink CURRENT -> <package_name> and plain-text CURRENT.
+    Symlink CURRENT -> <package_id> preferred. Plain-text CURRENT accepted only
+    if it is a single content-ID token (no path separators).
     """
     if not (CURRENT_POINTER.exists() or CURRENT_POINTER.is_symlink()):
         return None
+    raw: str | None = None
     if CURRENT_POINTER.is_symlink():
-        target = CURRENT_POINTER.readlink()
-        name = Path(str(target)).name
-        if name and name not in (".", ".."):
-            return name
-        try:
-            resolved = CURRENT_POINTER.resolve()
-            if resolved.parent == PACKAGE_ROOT or PACKAGE_ROOT in resolved.parents:
-                return resolved.name
-        except OSError:
+        target = Path(str(CURRENT_POINTER.readlink()))
+        # Only single-component relative names (no path escape)
+        if target.is_absolute() or len(target.parts) != 1:
+            raise RuntimeError(
+                f"CURRENT_SYMLINK_ESCAPE: target={target!s} "
+                "(must be single relative package id under PACKAGE_ROOT)"
+            )
+        raw = target.parts[0]
+    elif CURRENT_POINTER.is_file():
+        raw = CURRENT_POINTER.read_text().strip()
+        if not raw:
             return None
+        if any(sep in raw for sep in ("/", "\\", "\0")) or ".." in raw or "\n" in raw:
+            raise RuntimeError(f"CURRENT_TEXT_ESCAPE:{raw!r}")
+    else:
         return None
-    if CURRENT_POINTER.is_file():
-        val = CURRENT_POINTER.read_text().strip()
-        return val or None
-    return None
+    try:
+        return validate_package_id(raw)
+    except ValueError as e:
+        raise RuntimeError(f"CURRENT_INVALID_ID:{e}") from e
 
 
 def resolve_current_package_dir() -> Path | None:
-    """Resolve CURRENT to an existing package directory, or None if unset.
+    """Resolve CURRENT to an existing direct child of PACKAGE_ROOT, or None.
 
-    Raises RuntimeError if CURRENT is set but the package directory is missing
-    (dangling pointer — refuse live mutation until repaired).
+    Raises RuntimeError on dangling/escaped CURRENT (refuse live mutation).
     """
     pid = _read_current_package_id()
     if not pid:
         return None
-    pkg = PACKAGE_ROOT / pid
+    pkg_root = PACKAGE_ROOT.resolve()
+    pkg = (PACKAGE_ROOT / pid).resolve()
+    if pkg.parent != pkg_root:
+        raise RuntimeError(
+            f"CURRENT_PATH_ESCAPE: pointer={pid!r} resolved={pkg} "
+            f"not a direct child of {pkg_root}"
+        )
     if not pkg.is_dir():
         raise RuntimeError(
             f"CURRENT_PACKAGE_MISSING: pointer={pid!r} path={pkg} "
@@ -1290,11 +1307,15 @@ def resolve_current_package_dir() -> Path | None:
 
 
 def _write_current_package_id(package_id: str) -> None:
-    """Atomically point CURRENT at package_id (relative directory symlink)."""
+    """Atomically point CURRENT at package_id (relative single-component symlink)."""
+    package_id = validate_package_id(package_id)
     PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
     target_dir = PACKAGE_ROOT / package_id
     if not target_dir.is_dir():
         raise FileNotFoundError(f"cannot point CURRENT at missing package {package_id}")
+    # Confirm final path is direct child before flip
+    if target_dir.resolve().parent != PACKAGE_ROOT.resolve():
+        raise RuntimeError(f"CURRENT_PATH_ESCAPE on write: {package_id}")
     tmp = CURRENT_POINTER.with_name(".CURRENT.new")
     if tmp.exists() or tmp.is_symlink():
         tmp.unlink()
@@ -1303,12 +1324,7 @@ def _write_current_package_id(package_id: str) -> None:
 
 
 def _atomic_symlink_replace(link: Path, target: Path, *, target_is_directory: bool) -> None:
-    """Replace ``link`` with a symlink to ``target`` via tmp+rename (atomic).
-
-    If ``link`` is a real file/directory (legacy layout), it is renamed aside
-    first so rename can install the symlink. Callers must only invoke this after
-    rollback sources are validated.
-    """
+    """Replace ``link`` with a symlink to ``target`` via tmp+rename (atomic)."""
     import shutil
 
     link.parent.mkdir(parents=True, exist_ok=True)
@@ -1333,49 +1349,110 @@ def _atomic_symlink_replace(link: Path, target: Path, *, target_is_directory: bo
     tmp.replace(link)
 
 
-def _live_symlink_targets(package_dir: Path) -> list[tuple[Path, Path, bool]]:
-    """(live_path, package_subdir_or_file, is_directory) for atomic consumer switch."""
+def _static_live_root_specs() -> list[tuple[Path, str, bool]]:
+    """(live_path, relative target through CURRENT, is_directory).
+
+    Live roots are static; only CURRENT moves. Relative targets are from
+    live_path.parent (results/).
+    """
     return [
-        (OUT_DIR, package_dir / "instrument_data", True),
-        (MANIFEST_DIR, package_dir / "instrument_data_manifests", True),
-        (REPORT_PATH, package_dir / "multi_instrument_data_readiness.md", False),
+        (OUT_DIR, "instrument_data_packages/CURRENT/instrument_data", True),
+        (
+            MANIFEST_DIR,
+            "instrument_data_packages/CURRENT/instrument_data_manifests",
+            True,
+        ),
+        (
+            REPORT_PATH,
+            "instrument_data_packages/CURRENT/multi_instrument_data_readiness.md",
+            False,
+        ),
     ]
 
 
-def install_package_to_live(package_dir: Path) -> None:
-    """Point live consumer paths at ``package_dir`` via atomic symlink replace.
+def ensure_static_live_roots_through_current() -> None:
+    """Ensure live consumer paths are static symlinks via packages/CURRENT/...
 
-    After success, every consumer path is a symlink into one package directory.
-    Concurrent readers see either the previous package set or the new one for each
-    root; roots are switched as whole directories (not file-by-file).
+    Idempotent. Does not flip CURRENT. Safe when CURRENT is missing (links are
+    dangling until CURRENT is set).
+    """
+    import shutil
+
+    for live, rel_target, is_dir in _static_live_root_specs():
+        desired = Path(rel_target)
+        if live.is_symlink():
+            try:
+                if Path(str(live.readlink())) == desired:
+                    continue
+            except OSError:
+                pass
+        live.parent.mkdir(parents=True, exist_ok=True)
+        if live.exists() and not live.is_symlink():
+            displaced = live.with_name(f".{live.name}.displaced_{os.getpid()}")
+            if displaced.exists() or displaced.is_symlink():
+                if displaced.is_dir() and not displaced.is_symlink():
+                    shutil.rmtree(displaced)
+                else:
+                    displaced.unlink()
+            live.rename(displaced)
+        tmp = live.with_name(f".{live.name}.new")
+        if tmp.exists() or tmp.is_symlink():
+            tmp.unlink()
+        tmp.symlink_to(rel_target, target_is_directory=is_dir)
+        tmp.replace(live)
+
+
+def install_package_to_live(package_dir: Path) -> None:
+    """Publish package_dir by ensuring static live roots + flipping CURRENT only.
+
+    The sole atomic consumer boundary is CURRENT. Live roots always go through
+    instrument_data_packages/CURRENT/... so a crash mid-install cannot leave
+    data/manifests/report pointing at different packages.
     """
     if not package_dir.is_dir():
         raise FileNotFoundError(f"package missing: {package_dir}")
+    package_id = package_dir.name
+    validate_package_id(package_id)
+    if package_dir.resolve().parent != PACKAGE_ROOT.resolve():
+        raise RuntimeError(
+            f"package not under PACKAGE_ROOT: {package_dir} parent={package_dir.parent}"
+        )
     for rel in _required_package_rels():
         if not (package_dir / rel).is_file():
             raise FileNotFoundError(f"package incomplete: {rel}")
 
-    for live, target, is_dir in _live_symlink_targets(package_dir):
-        if not target.exists():
-            raise FileNotFoundError(f"package target missing: {target}")
-        _atomic_symlink_replace(live, target, target_is_directory=is_dir)
+    ensure_static_live_roots_through_current()
+    _write_current_package_id(package_id)
 
 
 def verify_live_matches_package(package_dir: Path) -> list[str]:
-    """Assert live consumer paths are symlinks into package_dir with matching bytes."""
+    """Assert live paths resolve through CURRENT into package_dir with matching bytes."""
     errs: list[str] = []
     try:
         pkg_res = package_dir.resolve()
     except OSError as e:
         return [f"PACKAGE_UNRESOLVABLE:{e}"]
 
-    for live, target, _is_dir in _live_symlink_targets(package_dir):
+    # CURRENT must point at this package
+    try:
+        cur = resolve_current_package_dir()
+    except RuntimeError as e:
+        return [f"CURRENT_RESOLVE_FAIL:{e}"]
+    if cur is None:
+        errs.append("CURRENT_UNSET")
+    elif cur.resolve() != pkg_res:
+        errs.append(f"CURRENT_NOT_PACKAGE:current={cur.name} want={package_dir.name}")
+
+    for live, rel_target, _is_dir in _static_live_root_specs():
         if not live.is_symlink():
             errs.append(f"LIVE_NOT_SYMLINK:{live.name}")
             continue
         try:
-            if live.resolve() != target.resolve():
-                errs.append(f"LIVE_SYMLINK_TARGET_MISMATCH:{live.name}")
+            if Path(str(live.readlink())) != Path(rel_target):
+                errs.append(
+                    f"LIVE_NOT_THROUGH_CURRENT:{live.name}:"
+                    f"got={live.readlink()!s} want={rel_target}"
+                )
         except OSError as e:
             errs.append(f"LIVE_SYMLINK_BROKEN:{live.name}:{e}")
 
@@ -1391,36 +1468,148 @@ def verify_live_matches_package(package_dir: Path) -> list[str]:
                 continue
             if _sha256_file(src) != _sha256_file(dst):
                 errs.append(f"LIVE_SHA_MISMATCH:{dst.name}")
-            try:
-                dres = dst.resolve()
-                if pkg_res not in dres.parents and dres.parent != pkg_res:
-                    errs.append(f"LIVE_NOT_UNDER_PACKAGE:{dst.name}")
-            except OSError:
-                errs.append(f"LIVE_UNRESOLVABLE:{dst.name}")
+            dres = dst.resolve()
+            if pkg_res not in dres.parents and dres.parent != pkg_res:
+                errs.append(f"LIVE_NOT_UNDER_PACKAGE:{dst.name}")
         except OSError as e:
             errs.append(f"LIVE_READ_FAIL:{dst.name}:{e}")
     return errs
 
 
+def verify_package_artifacts(
+    package_dir: Path,
+    *,
+    manifests: list[SymbolManifest] | None = None,
+    expected_package_id: str | None = None,
+) -> list[str]:
+    """Validate lock/counts/SHAs/package_id against files *inside* package_dir.
+
+    Does not depend on live CURRENT. Used before promotion.
+    """
+    errs: list[str] = []
+    for rel in _required_package_rels():
+        if not (package_dir / rel).is_file():
+            errs.append(f"PACKAGE_MISSING:{rel}")
+    lock_path = package_dir / "instrument_data_manifests" / "committed_artifact_lock.json"
+    if not lock_path.is_file():
+        errs.append("PACKAGE_MISSING_LOCK")
+        return errs
+    try:
+        lock = json.loads(lock_path.read_text())
+    except json.JSONDecodeError as e:
+        return [f"PACKAGE_LOCK_JSON:{e}"]
+
+    if expected_package_id is not None:
+        if lock.get("package_id") != expected_package_id:
+            errs.append(
+                f"LOCK_PACKAGE_ID_MISMATCH:lock={lock.get('package_id')!r} "
+                f"expected={expected_package_id!r}"
+            )
+        if package_dir.name != expected_package_id:
+            errs.append(
+                f"DIR_PACKAGE_ID_MISMATCH:dir={package_dir.name!r} "
+                f"expected={expected_package_id!r}"
+            )
+        try:
+            validate_package_id(expected_package_id)
+        except ValueError as e:
+            errs.append(f"PACKAGE_ID_INVALID:{e}")
+
+    # Content id (lock excluded): recompute with lock temporarily removed
+    lock_bytes = lock_path.read_bytes()
+    lock_path.unlink()
+    try:
+        recomputed = content_package_id(
+            package_dir,
+            lock.get("export_run_id")
+            if isinstance(lock.get("export_run_id"), str)
+            else None,
+        )
+    finally:
+        lock_path.write_bytes(lock_bytes)
+    if expected_package_id and recomputed != expected_package_id:
+        # seal uses run_id from export; lock export_run_id should match
+        # If lock has package_id field, compare that to recomputed after stripping
+        # package_id is content-derived without lock — must match expected
+        errs.append(
+            f"CONTENT_ID_MISMATCH:recomputed={recomputed} expected={expected_package_id}"
+        )
+
+    arts = lock.get("artifacts") or {}
+    required = set(lock.get("required_symbols") or SYMBOLS)
+    if set(arts.keys()) != required:
+        errs.append(
+            f"SYMBOL_SET_MISMATCH:have={sorted(arts.keys())} need={sorted(required)}"
+        )
+
+    man_by_sym = {m.symbol: m for m in (manifests or [])}
+    data_dir = package_dir / "instrument_data"
+
+    for sym in sorted(required):
+        ent = arts.get(sym)
+        if not ent:
+            errs.append(f"{sym}:missing_from_lock")
+            continue
+        research_name = f"{sym.lower()}_h1.csv"
+        develop_name = f"{sym.lower()}_h1_develop.csv"
+        rp = data_dir / research_name
+        dp = data_dir / develop_name
+        if not rp.is_file():
+            errs.append(f"{sym}:full_file_missing:{research_name}")
+        else:
+            sha = _sha256_file(rp)
+            if sha != ent.get("research_csv_sha256"):
+                errs.append(f"{sym}:full_sha_mismatch")
+            n_lines = sum(1 for _ in rp.open()) - 1
+            if n_lines != int(ent.get("n_rows_h1") or -1):
+                errs.append(
+                    f"{sym}:full_row_count_mismatch:{n_lines}!={ent.get('n_rows_h1')}"
+                )
+            if n_lines < 1000 and int(ent.get("n_rows_h1") or 0) >= 1000:
+                errs.append(f"{sym}:full_suspiciously_small:{n_lines}")
+        if not dp.is_file():
+            errs.append(f"{sym}:develop_file_missing:{develop_name}")
+        else:
+            dsha = _sha256_file(dp)
+            if dsha != ent.get("develop_csv_sha256"):
+                errs.append(f"{sym}:develop_sha_mismatch")
+            dn = sum(1 for _ in dp.open()) - 1
+            if dn != int(ent.get("n_rows_h1_develop") or -1):
+                errs.append(
+                    f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
+                )
+            if dn < 1000 and int(ent.get("n_rows_h1_develop") or 0) >= 1000:
+                errs.append(f"{sym}:develop_suspiciously_small:{dn}")
+        if man_by_sym:
+            m = man_by_sym.get(sym)
+            if m is None:
+                errs.append(f"{sym}:missing_manifest_object")
+            else:
+                if int(m.n_rows_h1) != int(ent.get("n_rows_h1") or -1):
+                    errs.append(f"{sym}:manifest_full_count_mismatch")
+                if int(m.n_rows_h1_develop) != int(ent.get("n_rows_h1_develop") or -1):
+                    errs.append(f"{sym}:manifest_develop_count_mismatch")
+                if m.research_csv_sha256 and m.research_csv_sha256 != ent.get(
+                    "research_csv_sha256"
+                ):
+                    errs.append(f"{sym}:manifest_full_sha_mismatch")
+    return errs
+
+
 def recover_live_from_current() -> str | None:
-    """Startup recovery: if CURRENT resolves, reinstall its symlinks. Return id."""
+    """Startup recovery: ensure static roots through CURRENT; return package id."""
     pkg = resolve_current_package_dir()
+    ensure_static_live_roots_through_current()
     if pkg is None:
         return None
-    install_package_to_live(pkg)
     return pkg.name
 
 
 def finalize_package_dir(package_dir: Path, package_id: str) -> Path:
-    """Place package at PACKAGE_ROOT/package_id without destroying different content.
-
-    - Destination missing: move staging into place.
-    - Destination exists with identical content digest: reuse (idempotent).
-    - Destination exists with different content: refuse.
-    Never deletes an existing package directory.
-    """
+    """Place package at PACKAGE_ROOT/package_id without destroying different content."""
     import shutil
 
+    package_id = validate_package_id(package_id)
     PACKAGE_ROOT.mkdir(parents=True, exist_ok=True)
     final_pkg = PACKAGE_ROOT / package_id
     stage_digest = _package_content_digest(package_dir)
@@ -1446,49 +1635,59 @@ def finalize_package_dir(package_dir: Path, package_id: str) -> Path:
     return final_pkg
 
 
-def publish_versioned_package(package_dir: Path, package_id: str) -> Path:
-    """Promote a fully-built package to CURRENT via atomic live symlink switch.
+def publish_versioned_package(
+    package_dir: Path,
+    package_id: str,
+    *,
+    manifests: list[SymbolManifest] | None = None,
+    prevalidated: bool = False,
+) -> Path:
+    """Promote package to CURRENT via single atomic pointer flip.
 
-    Safety rules (v5):
-    1. Resolve previous CURRENT package *before* any live mutation; dangling
-       CURRENT aborts.
+    Safety rules (v6):
+    1. Resolve previous CURRENT *before* mutation; dangling/escape aborts.
     2. Never overwrite an existing different package (immutable IDs).
-    3. Switch live roots with atomic symlink renames (package directory boundary).
-    4. Flip CURRENT only after live symlinks verify against the new package.
-    5. On failure after live mutation began: reinstall previous package if known.
+    3. Validate staged package lock/SHAs/counts/id *before* CURRENT switch.
+    4. Live roots are static links through CURRENT/...; only CURRENT is replaced.
+    5. Post-switch verify failure rolls CURRENT back to previous package.
     """
-    if not re.fullmatch(r"(?:[0-9a-f]{32}|norun)-[0-9a-f]{16}", package_id) and not re.fullmatch(
-        r"[0-9A-Za-z._-]{8,80}", package_id
-    ):
-        raise ValueError(f"invalid package_id: {package_id!r}")
-
-    # Resolve rollback source BEFORE mutating live or package slots
+    package_id = validate_package_id(package_id)
     prev_pkg = resolve_current_package_dir()
 
     final_pkg = finalize_package_dir(package_dir, package_id)
 
+    if not prevalidated:
+        pre_errs = verify_package_artifacts(
+            final_pkg, manifests=manifests, expected_package_id=package_id
+        )
+        if pre_errs:
+            raise RuntimeError(f"PRE_SWITCH_VALIDATE_FAIL:{pre_errs}")
+
     # Idempotent: already CURRENT and live matches
     cur = _read_current_package_id()
     if cur == package_id:
+        ensure_static_live_roots_through_current()
         live_errs = verify_live_matches_package(final_pkg)
         if not live_errs:
             return final_pkg
-        install_package_to_live(final_pkg)
+        # Repair static roots / CURRENT only
+        ensure_static_live_roots_through_current()
+        _write_current_package_id(package_id)
         live_errs = verify_live_matches_package(final_pkg)
         if live_errs:
             raise RuntimeError(f"LIVE_REPAIR_FAILED:{live_errs}")
         return final_pkg
 
     try:
-        install_package_to_live(final_pkg)
+        ensure_static_live_roots_through_current()
+        _write_current_package_id(package_id)
         live_errs = verify_live_matches_package(final_pkg)
         if live_errs:
             raise RuntimeError(f"LIVE_VERIFY_FAIL:{live_errs}")
-        _write_current_package_id(package_id)
     except Exception:
         if prev_pkg is not None:
             try:
-                install_package_to_live(prev_pkg)
+                ensure_static_live_roots_through_current()
                 _write_current_package_id(prev_pkg.name)
             except Exception as rb_err:
                 raise RuntimeError(
@@ -1561,7 +1760,6 @@ def main() -> int:
     if export_run and isinstance(export_run.get("run_id"), str):
         run_id = str(export_run["run_id"])
 
-    # Pre-flight: dangling CURRENT must abort before any live mutation.
     try:
         prev_pkg = resolve_current_package_dir()
     except RuntimeError as e:
@@ -1570,6 +1768,9 @@ def main() -> int:
         return 1
     if prev_pkg:
         print(f"Previous package (rollback source): {prev_pkg.name}")
+
+    # Ensure live roots use CURRENT indirection (migration from per-package links)
+    ensure_static_live_roots_through_current()
 
     staging_root = Path(tempfile.mkdtemp(prefix="instr_pkg_", dir=str(ROOT / "results")))
     package_stage = staging_root / "staging_pkg"
@@ -1661,8 +1862,18 @@ def main() -> int:
         )
         print(f"Package id (content-addressed): {package_id}")
 
+        # Pre-switch validation on staging (before finalize moves it)
+        # Finalize first so package sits under PACKAGE_ROOT, then validate, then flip.
         try:
-            publish_versioned_package(package_stage, package_id)
+            final_pkg = finalize_package_dir(package_stage, package_id)
+            pre_errs = verify_package_artifacts(
+                final_pkg, manifests=manifests, expected_package_id=package_id
+            )
+            if pre_errs:
+                raise RuntimeError(f"PRE_SWITCH_VALIDATE_FAIL:{pre_errs}")
+            publish_versioned_package(
+                final_pkg, package_id, manifests=manifests, prevalidated=True
+            )
         except Exception as e:
             print("PACKAGE_PUBLISH_FAIL:", e)
             gate = "FAIL_DATA"
@@ -1675,13 +1886,18 @@ def main() -> int:
             shutil.rmtree(staging_root, ignore_errors=True)
             print(f"Gate: {gate}")
             print(f"Fail evidence: {fail_path}")
-            # Confirm live report not clobbered with FAIL if previous package restored
-            print(f"Live report path: {REPORT_PATH} (package report untouched by FAIL write)")
             return 1
 
+        # Post-switch safety net: if still failing, roll back CURRENT
         lock_errs = verify_committed_artifacts(manifests=manifests)
         if lock_errs:
             print("ARTIFACT_LOCK_VERIFY_FAIL:", lock_errs)
+            if prev_pkg is not None:
+                try:
+                    _write_current_package_id(prev_pkg.name)
+                    print(f"Rolled CURRENT back to {prev_pkg.name}")
+                except Exception as rb:
+                    print("ROLLBACK_AFTER_POST_VERIFY_FAIL:", rb)
             gate = "FAIL_DATA"
             write_fail_evidence(manifests, common, gate, export_errs + lock_errs)
             shutil.rmtree(staging_root, ignore_errors=True)

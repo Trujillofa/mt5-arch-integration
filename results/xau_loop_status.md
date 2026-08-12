@@ -1,5 +1,25 @@
 # XAU offline loop status
 
+## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v6** · PASS_DATA_READY_WITH_IMPUTATION
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_DATA_RE_REVIEW`** (integrity v6) → multi-instrument family freeze only if approved |
+| **gate** | **`PASS_DATA_READY_WITH_IMPUTATION`** |
+| **export_run_id** | `4f44b452081041f39fc24f03248b8ca8` |
+| **package_id** | content-addressed; immutable |
+| **live roots** | **static** `…/packages/CURRENT/{instrument_data,manifests,report}` |
+| **atomic switch** | **only CURRENT** symlink replaced |
+| **pre-switch** | `verify_package_artifacts` (lock/SHA/counts/id) before CURRENT flip |
+| **post-switch fail** | CURRENT rolled back to previous package |
+| **CURRENT id** | content-ID format only; path escape rejected |
+| **thesis freeze** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+Integrity v6 closes: multi-root non-atomic switch, post-promotion validation without rollback, CURRENT path escape.
+
+---
+
 ## 2026-08-12 — MULTI-INSTRUMENT Phase 0 integrity **v5** · PASS_DATA_READY_WITH_IMPUTATION
 
 | Field | Value |
