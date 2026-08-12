@@ -701,3 +701,159 @@ def test_develop_is_derived_from_full_h1(tmp_path: Path, monkeypatch: pytest.Mon
     expected = b._develop_from_h1(full2, b.DEVELOP_END_SERVER)
     assert len(dev) == len(expected) == 1
     assert (pd.to_datetime(dev["time"]) < b.DEVELOP_END_SERVER).all()
+
+
+def test_main_publish_derived_develop_no_csv(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """End-to-end main() PASS path with STORE_DEVELOP_CSV=False (no develop files)."""
+    root = _isolate_publish_roots(tmp_path, monkeypatch)
+    assert b.STORE_DEVELOP_CSV is False
+
+    # Costs + holdout required by main
+    costs_path = root / "results" / "xau_research_costs.json"
+    costs_path.parent.mkdir(parents=True, exist_ok=True)
+    costs_path.write_text(
+        json.dumps(
+            {
+                "broker": "Vantage",
+                "login": 27496181,
+                "server": "VantageMarkets-Live 5",
+                "account_type": "STANDARD_STP",
+                "commission_per_lot": 0.0,
+                "slippage_points": 0.0,
+                "slippage_notes": "UNMEASURED",
+                "cost_label": "test",
+            }
+        )
+        + "\n"
+    )
+    monkeypatch.setattr(b, "COSTS_XAU", costs_path)
+    holdout = root / "results" / "xau_holdout_lock.json"
+    holdout.write_text(json.dumps({"holdout_start": "2026-01-01"}) + "\n")
+    monkeypatch.setattr(b, "HOLDOUT_LOCK", holdout)
+
+    # Shrink develop bar requirement for fixture scale
+    monkeypatch.setattr(b, "MIN_DEVELOP_BARS", 5)
+    monkeypatch.setattr(b, "MIN_PUBLISHED_ROWS", 5)
+
+    bridge = tmp_path / "bridge"
+    bridge.mkdir()
+    # Export bundle with enough H1 rows spanning holdout
+    run_id = "a" * 32
+    symbols = list(b.SYMBOLS)
+    files = {}
+    for s in symbols:
+        rows = []
+        # 10 develop bars (2024) + 2 post-holdout (2026)
+        for i in range(10):
+            rows.append(
+                {
+                    "time": f"2024.01.0{1 + i // 24} {i % 24:02d}:00",
+                    "timeframe": "H1",
+                    "symbol": s,
+                    "open": 1.1,
+                    "high": 1.11,
+                    "low": 1.09,
+                    "close": 1.105,
+                    "tick_volume": 100,
+                    "spread": 10,
+                }
+            )
+        rows.append(
+            {
+                "time": "2026.02.01 00:00",
+                "timeframe": "H1",
+                "symbol": s,
+                "open": 1.1,
+                "high": 1.11,
+                "low": 1.09,
+                "close": 1.105,
+                "tick_volume": 100,
+                "spread": 10,
+            }
+        )
+        hist = bridge / f"history_{s}.csv"
+        _write_history(hist, rows)
+        _meta(bridge / f"symbol_meta_{s}.csv", requested=s, resolved=s)
+        st = hist.stat()
+        files[f"history_{s}"] = {
+            "path": str(hist),
+            "sha256": b._sha256_file(hist),
+            "bytes": st.st_size,
+            "mtime_unix": int(st.st_mtime),
+        }
+        meta = bridge / f"symbol_meta_{s}.csv"
+        st2 = meta.stat()
+        files[f"meta_{s}"] = {
+            "path": str(meta),
+            "sha256": b._sha256_file(meta),
+            "bytes": st2.st_size,
+            "mtime_unix": int(st2.st_mtime),
+        }
+    challenge = _challenge(run_id, symbols)
+    (bridge / "export_challenge.json").write_text(
+        json.dumps(challenge, separators=(",", ":")) + "\n"
+    )
+    export_run = {
+        "run_id": run_id,
+        "login": 27496181,
+        "server": "VantageMarkets-Live 5",
+        "export_started_utc": "2026-08-11T20:00:00Z",
+        "export_finished_utc": "2026-08-11T20:01:00Z",
+        "wine_exit_code": 3,
+        "timeframes": "H1",
+        "symbols": symbols,
+        "files": files,
+    }
+    (bridge / "export_run.json").write_text(json.dumps(export_run) + "\n")
+    complete = {
+        "ok": True,
+        "run_id": run_id,
+        "challenge_echo": json.dumps(challenge, separators=(",", ":")),
+        "terminal_connected": True,
+        "account_login": 27496181,
+        "account_server": "VantageMarkets-Live 5",
+        "symbols": [
+            {
+                "requested": s,
+                "resolved": s,
+                "bars": 11,
+                "from": "2024.01.01 00:00",
+                "to": "2026.02.01 00:00",
+                "ok": True,
+            }
+            for s in symbols
+        ],
+    }
+    (bridge / "export_complete.json").write_text(json.dumps(complete) + "\n")
+
+    monkeypatch.setattr(b, "_wine_bridge_dir", lambda: bridge)
+
+    # main creates staging under ROOT/results — ensure dir exists
+    (root / "results").mkdir(parents=True, exist_ok=True)
+
+    rc = b.main()
+    assert rc == 0, "main should PASS and publish with derived develop"
+
+    # No develop CSVs in the published package
+    pkg = b.resolve_current_package_dir()
+    assert pkg is not None
+    for s in b.SYMBOLS:
+        assert (pkg / "instrument_data" / f"{s.lower()}_h1.csv").is_file()
+        assert not (pkg / "instrument_data" / f"{s.lower()}_h1_develop.csv").exists()
+
+    lock = json.loads((pkg / "instrument_data_manifests" / "committed_artifact_lock.json").read_text())
+    for s in b.SYMBOLS:
+        ent = lock["artifacts"][s]
+        assert str(ent["develop_csv"]).startswith("derived:")
+        assert ent.get("develop_mode") == "derived" or str(ent["develop_csv"]).startswith(
+            "derived:"
+        )
+
+    # Snapshot can still load develop via derivation
+    snap = b.load_package_snapshot()
+    dev = snap.read_develop("EURUSD")
+    assert len(dev) >= 5
+    assert (pd.to_datetime(dev["time"]) < b.DEVELOP_END_SERVER).all()
+

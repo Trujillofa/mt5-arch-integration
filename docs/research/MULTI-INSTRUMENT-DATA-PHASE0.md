@@ -1,7 +1,7 @@
 # Multi-instrument data readiness (Phase 0)
 
-**Status:** pipeline + integrity (no thesis freeze).  
-**Symbols:** XAUUSD, EURUSD, GBPUSD (H1).  
+**Status:** pipeline + integrity (no thesis freeze).
+**Symbols:** XAUUSD, EURUSD, GBPUSD (H1).
 **Holdout:** `2026-01-01 00:00:00` server clock (`server_clock_as_stored`).
 
 ## Components

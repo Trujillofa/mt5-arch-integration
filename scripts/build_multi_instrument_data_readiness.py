@@ -58,6 +58,8 @@ CLOCK_CONTRACT = "server_clock_as_stored"
 
 MAX_ZERO_SPREAD_IMPUTE_FRAC = 0.10
 MIN_DEVELOP_BARS = 10_000
+# Soft floor for lock/live verification of published research CSVs
+MIN_PUBLISHED_ROWS = 1000
 # Wine often returns non-zero even after ShutdownTerminal; accept only if MQL
 # completion sentinel is present and export files are fresh.
 ACCEPTED_WINE_EXIT_CODES = frozenset({0, 3, 124})
@@ -1140,7 +1142,7 @@ def verify_committed_artifacts(
                     errs.append(
                         f"{sym}:full_row_count_mismatch:{n_lines}!={ent.get('n_rows_h1')}"
                     )
-                if n_lines < 1000:
+                if n_lines < MIN_PUBLISHED_ROWS:
                     errs.append(f"{sym}:full_suspiciously_small:{n_lines}")
         # Develop (stored CSV or derived from full H1)
         drel = ent.get("develop_csv")
@@ -1164,7 +1166,7 @@ def verify_committed_artifacts(
                         errs.append(
                             f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
                         )
-                    if dn < 1000:
+                    if dn < MIN_PUBLISHED_ROWS:
                         errs.append(f"{sym}:develop_suspiciously_small:{dn}")
         else:
             dp = ROOT / drel if not Path(drel).is_absolute() else Path(drel)
@@ -1179,7 +1181,7 @@ def verify_committed_artifacts(
                     errs.append(
                         f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
                     )
-                if dn < 1000:
+                if dn < MIN_PUBLISHED_ROWS:
                     errs.append(f"{sym}:develop_suspiciously_small:{dn}")
         # Manifest consistency
         if man_by_sym:
@@ -1710,7 +1712,7 @@ def verify_package_artifacts(
                 errs.append(
                     f"{sym}:full_row_count_mismatch:{n_lines}!={ent.get('n_rows_h1')}"
                 )
-            if n_lines < 1000 and int(ent.get("n_rows_h1") or 0) >= 1000:
+            if n_lines < MIN_PUBLISHED_ROWS and int(ent.get("n_rows_h1") or 0) >= MIN_PUBLISHED_ROWS:
                 errs.append(f"{sym}:full_suspiciously_small:{n_lines}")
         if STORE_DEVELOP_CSV:
             if not dp.is_file():
@@ -1724,7 +1726,7 @@ def verify_package_artifacts(
                     errs.append(
                         f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
                     )
-                if dn < 1000 and int(ent.get("n_rows_h1_develop") or 0) >= 1000:
+                if dn < MIN_PUBLISHED_ROWS and int(ent.get("n_rows_h1_develop") or 0) >= MIN_PUBLISHED_ROWS:
                     errs.append(f"{sym}:develop_suspiciously_small:{dn}")
         else:
             # Derive develop from full H1 and check count + content hash
@@ -1741,7 +1743,7 @@ def verify_package_artifacts(
                         errs.append(
                             f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
                         )
-                    if dn < 1000 and int(ent.get("n_rows_h1_develop") or 0) >= 1000:
+                    if dn < MIN_PUBLISHED_ROWS and int(ent.get("n_rows_h1_develop") or 0) >= MIN_PUBLISHED_ROWS:
                         errs.append(f"{sym}:develop_suspiciously_small:{dn}")
                     # Hash only if develop_csv_sha256 claimed
                     if ent.get("develop_csv_sha256"):
@@ -2155,9 +2157,17 @@ def main() -> int:
                 else:
                     m.missing_duplicate_bars["develop_csv"] = f"derived:{DEVELOP_DERIVATION}"
                 sp = stage_data / f"{m.symbol.lower()}_h1.csv"
-                dp = stage_data / f"{m.symbol.lower()}_h1_develop.csv"
                 m.research_csv_sha256 = _sha256_file(sp)
-                m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
+                # Preserve develop hash from build_symbol (derived frame or stored CSV).
+                # Never re-hash a missing develop path when STORE_DEVELOP_CSV is False.
+                if STORE_DEVELOP_CSV:
+                    dp = stage_data / f"{m.symbol.lower()}_h1_develop.csv"
+                    if not dp.is_file():
+                        raise FileNotFoundError(
+                            f"STORE_DEVELOP_CSV set but missing develop file: {dp}"
+                        )
+                    m.missing_duplicate_bars["develop_csv_sha256"] = _sha256_file(dp)
+                # else: keep m.missing_duplicate_bars["develop_csv_sha256"] from build_symbol
                 (stage_man / f"{m.symbol.lower()}_h1_manifest.json").write_text(
                     json.dumps(asdict(m), indent=2) + "\n"
                 )
