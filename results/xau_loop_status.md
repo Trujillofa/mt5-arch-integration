@@ -1,5 +1,22 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 SCREEN HARNESS** (not executed)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_SCREEN_HARNESS_REVIEW`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v4** | SHA `e29b2693…` on main |
+| **fixtures PR** | #7 merged (`eadd846`) |
+| **screen harness** | `scripts/xau_multi_instrument_joint_screen.py` (dry default) |
+| **develop screen** | **not executed / not authorized** |
+| **null / sealed / paper / live** | **not authorized** |
+| **branch** | `research/multi-instrument-joint-london-cosign-flat-v4-screen` |
+
+Dry CLI validates charter + prints plan. `--execute-develop-screen` is gated until harness review AUTHORIZE.
+
+---
+
 ## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 FIXTURES** · implementation only
 
 | Field | Value |
