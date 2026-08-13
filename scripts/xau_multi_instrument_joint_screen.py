@@ -7,8 +7,16 @@ Family: ``scripts/xau_family_joint_london_open_cosign_fade_flat.py``
 This is the only authorized path for scoring multi-instrument joint charters.
 Single-frame ``xau_family_null_maxstat`` / ``xau_sealed_family_cycle`` refuse them.
 
-Default CLI mode is **dry**: validates charter + prints plan without loading package
-or scoring develop. Develop screen requires explicit ``--execute-develop-screen``.
+**Modes**
+
+* Default **dry**: validate charter + print plan (no package load, no score).
+* ``--frames-parquet-dir``: synthetic/non-dispositional score only. Forbidden with
+  ``--write-registry`` or ``--execute-develop-screen``. Never appends the
+  disposition registry.
+* ``--execute-develop-screen``: dispositional develop score. Always requires
+  sealed charter path under ``results/xau_charters/``, clean dispositional tree,
+  exact loaded-cost match to charter, fresh out-dir, and provenance (code commit +
+  costs SHA). Emits canonical ``null_maxstat.json`` for fail-closed accounting.
 
 Null trials, sealed r1, holdout, paper, live: **not** implemented here.
 
@@ -32,10 +40,15 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
 from xau_charter_protocol import (  # noqa: E402
+    CharterError,
     assert_charter_path_for_sealed,
+    assert_clean_dispositional_tree,
+    build_provenance,
+    ensure_fresh_run_dir,
     is_charter_runnable,
     load_charter,
     multi_instrument_single_frame_refuse_message,
+    sha256_file,
     validate_charter_file,
 )
 from xau_family_joint_london_open_cosign_fade_flat import (  # noqa: E402
@@ -56,6 +69,9 @@ DEFAULT_CHARTER = (
     ROOT / "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json"
 )
 DEFAULT_OUT = ROOT / "results/xau_runs" / f"{FAMILY}_screen"
+
+# Artifacts that must not be silently overwritten
+_ARTIFACT_NAMES = ("joint_screen.json", "null_maxstat.json")
 
 
 def _metrics_blob(m: Any) -> dict[str, float | int]:
@@ -100,15 +116,50 @@ def pin_package_id(charter: dict[str, Any]) -> str:
     return pid
 
 
+def assert_costs_match_charter(
+    charter: dict[str, Any],
+    loaded: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Loaded research costs must match charter fixed.costs on sim keys."""
+    fixed = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
+    costs = dict(loaded if loaded is not None else load_research_costs())
+    for k in ("spread_col", "point_size", "commission_per_lot", "slippage_points"):
+        if k not in fixed:
+            continue
+        if k not in costs:
+            raise SystemExit(f"loaded costs missing {k}")
+        a, b = fixed[k], costs[k]
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            if abs(float(a) - float(b)) > 1e-12:
+                raise SystemExit(
+                    f"cost mismatch {k}: charter={a} loaded={b}. "
+                    "Update results/xau_research_costs.json or freeze a new charter."
+                )
+        elif a != b:
+            raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
+    return costs
+
+
+def charter_null_base_seed(charter: dict[str, Any]) -> int:
+    null = charter.get("null") or {}
+    if null.get("base_seed") is None:
+        raise SystemExit("charter null.base_seed required for screen accounting")
+    return int(null["base_seed"])
+
+
+def charter_n_null_planned(charter: dict[str, Any]) -> int:
+    null = charter.get("null") or {}
+    return int(null.get("n_trials") or null.get("min_null_trials") or 0)
+
+
 def load_develop_frames_from_package(
     charter: dict[str, Any],
     *,
     package_dir: Path | None = None,
-) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
+) -> tuple[dict[str, pd.DataFrame], dict[str, Any], Path]:
     """Load develop H1 for all symbols from pinned multi-instrument package.
 
-    Does not score — caller must run ``run_joint_screen``. Prefer not to call
-    until develop screen is explicitly authorized.
+    Returns (frames, meta, data_path_for_provenance).
     """
     from build_multi_instrument_data_readiness import (  # noqa: WPS433
         PACKAGE_ROOT,
@@ -129,120 +180,148 @@ def load_develop_frames_from_package(
         charter.get("instrument") or {}
     ).get("data_package", {}).get("holdout_start_server")
     hs = pd.Timestamp(holdout) if holdout else None
-    frames = {
-        s: snap.read_develop(s, holdout_start=hs) for s in SYMBOLS
-    }
-    # Normalize column names expected by family prepare_symbol
+    frames = {s: snap.read_develop(s, holdout_start=hs) for s in SYMBOLS}
     for s, df in frames.items():
         if "time" not in df.columns:
             raise SystemExit(f"{s} develop frame missing time")
-        # Ensure spread present
         if "spread" not in df.columns:
             raise SystemExit(
                 f"{s} develop frame missing spread; refuse zero-cost default"
             )
+    # Provenance data path: common develop window if present, else first symbol H1
+    common = snap.manifest_dir() / "common_develop_window.json"
+    data_path = common if common.is_file() else snap.history_csv(SYMBOLS[0])
     meta = {
         "package_id": snap.package_id,
         "package_dir": str(snap.package_dir),
         "holdout_start": str(hs) if hs is not None else None,
         "n_rows": {s: int(len(frames[s])) for s in SYMBOLS},
         "package_root": str(PACKAGE_ROOT),
+        "data_path": str(data_path),
     }
-    return frames, meta
+    return frames, meta, data_path
 
 
 def run_joint_screen(
     frames: dict[str, pd.DataFrame],
     charter: dict[str, Any],
     *,
-    costs: dict[str, Any] | None = None,
+    costs: dict[str, Any],
     already_aligned: bool = False,
+    dispositional: bool = False,
+    non_dispositional_reason: str | None = None,
 ) -> dict[str, Any]:
-    """Score sole joint config on provided frames (synthetic or develop).
+    """Score sole joint config. Never runs null trials.
 
-    Never runs null trials. Returns a screen report dict.
+    ``dispositional=True`` marks a real develop-screen attempt that may later
+    enter the registry. Synthetic/fixture frames must pass
+    ``dispositional=False``.
     """
     assert_multi_instrument_charter(charter)
+    if dispositional and non_dispositional_reason:
+        raise SystemExit("internal: dispositional screen cannot carry synthetic reason")
+    if not dispositional and not non_dispositional_reason:
+        non_dispositional_reason = "synthetic_or_unspecified_non_dispositional"
+
     grid = build_grid()
     if len(grid) != 1:
         raise SystemExit(f"search_cardinality must be 1; got {len(grid)} configs")
     params = dict(grid[0])
-    cost_kw = dict(costs or load_research_costs())
-    # point_size is per-symbol in family meta; do not pass XAU point_size globally
-    commission = float(cost_kw.get("commission_per_lot") or 0.0)
-    slippage = float(cost_kw.get("slippage_points") or 0.0)
-    spread_col = str(cost_kw.get("spread_col") or "spread")
+    commission = float(costs.get("commission_per_lot") or 0.0)
+    slippage = float(costs.get("slippage_points") or 0.0)
+    spread_col = str(costs.get("spread_col") or "spread")
 
     aligned = frames if already_aligned else align_joint(frames)
-
     result = simulate_joint(
         aligned,
         already_aligned=True,
         commission_per_lot=commission,
         slippage_points=slippage,
         spread_col=spread_col,
-        **{k: params[k] for k in params if k in (
-            "coincident_hours",
-            "flat_hour",
-            "sl_atr",
-            "tp_atr",
-            "risk_pct",
-            "lot_max",
-            "lot_min",
-            "lot_step",
-        )},
+        **{
+            k: params[k]
+            for k in params
+            if k
+            in (
+                "coincident_hours",
+                "flat_hour",
+                "sl_atr",
+                "tp_atr",
+                "risk_pct",
+                "lot_max",
+                "lot_min",
+                "lot_step",
+            )
+        },
     )
 
     per_soft = {s: soft_pass_per_symbol(result.per_symbol[s]) for s in SYMBOLS}
     joint_soft = soft_pass_joint(result.joint)
     gate_ok = joint_gate_success(result)
     n_pass = n_passers_binary(result)
+    n_null_planned = charter_n_null_planned(charter)
+    base_seed = charter_null_base_seed(charter)
     zero = n_pass == 0
 
     if zero:
         disposition = "SCREEN_FAIL"
         screen_status = "ZERO_PRIMARY_PASSERS"
+        skipped_reason = "ZERO_PRIMARY_PASSERS"
         reason = (
             "Develop joint screen: zero soft primary passers "
             "(binary joint gate). Null trials not executed; r1 unburned."
         )
     else:
         disposition = "SCREEN_PASS_PENDING_NULL_REVIEW"
-        screen_status = "SCREEN_ONLY"
+        screen_status = "PASSERS_GE_1_PENDING_NULL_REVIEW"
+        skipped_reason = "SCREEN_ONLY"
         reason = (
             "Develop joint screen: primary passers=1. Null trials intentionally "
             "not run; external review required before any null/sealed run."
         )
 
-    report: dict[str, Any] = {
-        "family_id": FAMILY,
-        "harness": "xau_multi_instrument_joint_screen",
-        "harness_kind": "multi_instrument_joint_v1",
-        "screen_only": True,
-        "null_trials_executed": 0,
-        "n_null_planned_charter": int((charter.get("null") or {}).get("n_trials") or 0),
-        "sealed_null_attempt": False,
-        "r1_burned": False,
-        "disposition": disposition,
-        "screen_status": screen_status,
-        "promote": False,
-        "live_go": False,
+    if not dispositional:
+        reason = (
+            f"NON_DISPOSITIONAL ({non_dispositional_reason}): " + reason
+            + " Must not write disposition registry."
+        )
+
+    real_block = {
         "n_passers": n_pass,
-        "n_passers_definition": "binary_joint_gate_success",
+        "primary_passers": n_pass,
+        "n_passers_soft": n_pass,
+        "n_passers_classic_status": "not_evaluated",
+        "n_passers_classic": None,
+        **_metrics_blob(result.joint),
+        "joint_start_equity": JOINT_START_EQUITY,
+        "n_signals_cosign": result.n_signals_cosign,
+        "n_signals_entered": result.n_signals_entered,
+        "n_signals_skipped_partial": result.n_signals_skipped_partial,
+        "per_symbol": {s: _metrics_blob(result.per_symbol[s]) for s in SYMBOLS},
         "per_symbol_soft_pass": per_soft,
         "joint_soft_pass": joint_soft,
         "joint_gate_success": gate_ok,
-        "metrics_real_grid_develop": {
-            "primary_passers": n_pass,
-            "n_passers_soft": n_pass,
-            "n_passers_classic": 0,  # classic not used for primary
-            **_metrics_blob(result.joint),
-            "joint_start_equity": JOINT_START_EQUITY,
-            "n_signals_cosign": result.n_signals_cosign,
-            "n_signals_entered": result.n_signals_entered,
-            "n_signals_skipped_partial": result.n_signals_skipped_partial,
-            "per_symbol": {s: _metrics_blob(result.per_symbol[s]) for s in SYMBOLS},
-        },
+        "n_passers_definition": "binary_joint_gate_success",
+    }
+
+    attempt_type = (
+        "DETERMINISTIC_SCREEN" if dispositional else "SYNTHETIC_NON_DISPOSITIONAL"
+    )
+
+    # Canonical null_maxstat-shaped report for fail-closed parse_harness_report
+    report: dict[str, Any] = {
+        "method": "multi_instrument_joint_screen_v1",
+        "family": FAMILY,
+        "family_id": FAMILY,
+        "harness": "xau_multi_instrument_joint_screen",
+        "harness_kind": "multi_instrument_joint_v1",
+        "dispositional": bool(dispositional),
+        "non_dispositional_reason": None
+        if dispositional
+        else str(non_dispositional_reason),
+        "screen_only": True,
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+        "recorded_at_utc": datetime.now(UTC).isoformat(),
         "grid": params,
         "costs": {
             "commission_per_lot": commission,
@@ -250,67 +329,151 @@ def run_joint_screen(
             "spread_col": spread_col,
             "costs_source": str(RESEARCH_COSTS_PATH),
         },
+        "real": real_block,
+        "metrics_real_grid_develop": real_block,
+        "screen": {
+            "zero_primary_passers": bool(zero),
+            "screen_only": True,
+            "rule": (
+                "If real primary passers==0, SCREEN_FAIL without null trials. "
+                "Synthetic/non-dispositional scores must never write the registry."
+            ),
+        },
+        "attempt_accounting": {
+            "attempt_type": attempt_type,
+            "family_screen_attempt": True,
+            "sealed_null_attempt": False,
+            "n_null_planned": n_null_planned,
+            "n_null_executed": 0,
+            "null_trials_executed": 0,
+            "r1_style_null_burned": False,
+            "r1_burned": False,
+            "screen_only": True,
+            "dispositional": bool(dispositional),
+        },
+        "null": {
+            "method": str((charter.get("null") or {}).get("method") or ""),
+            "base_seed": base_seed,
+            "n_trials": 0,
+            "n_null_planned": n_null_planned,
+            "n_null_executed": 0,
+            "skipped_reason": skipped_reason,
+            "trials": [],
+            "p_max_pf": None,
+            "p_n_passers": 1.0 if zero else None,
+            "p_max_pf_status": "not_evaluated",
+            "p_n_passers_status": (
+                "implied_1.0_zero_real_passers" if zero else "not_evaluated_screen_only"
+            ),
+        },
+        "verdict": {
+            "disposition": disposition,
+            "reason": reason,
+            "promote": False,
+            "live_go": False,
+            "screen_status": screen_status,
+            "fail_max_pf": None,
+            "fail_n_passers": bool(zero),
+        },
+        # Convenience mirrors (not required by parser)
+        "disposition": disposition,
+        "screen_status": screen_status,
+        "n_passers": n_pass,
+        "r1_burned": False,
+        "null_trials_executed": 0,
+        "n_null_planned_charter": n_null_planned,
+        "sealed_null_attempt": False,
+        "promote": False,
+        "live_go": False,
         "reason": reason,
-        "recorded_at_utc": datetime.now(UTC).isoformat(),
+        "per_symbol_soft_pass": per_soft,
+        "joint_soft_pass": joint_soft,
+        "joint_gate_success": gate_ok,
+        "n_passers_definition": "binary_joint_gate_success",
     }
     return report
 
 
+def ensure_fresh_artifacts(out_dir: Path) -> Path:
+    """Refuse overwrite of existing screen artifacts."""
+    if out_dir.exists():
+        for name in _ARTIFACT_NAMES:
+            p = out_dir / name
+            if p.exists():
+                raise SystemExit(
+                    f"refuse overwrite existing screen artifact: {p}. "
+                    "Choose a fresh --out-dir."
+                )
+        # Directory exists but empty of our artifacts — still refuse non-empty dir
+        if any(out_dir.iterdir()):
+            raise SystemExit(
+                f"run output directory not empty (refuse overwrite): {out_dir}. "
+                "Choose a fresh --out-dir."
+            )
+        return out_dir
+    return ensure_fresh_run_dir(out_dir)
+
+
 def write_screen_report(report: dict[str, Any], out_dir: Path) -> Path:
+    """Write joint_screen.json and canonical null_maxstat.json (same payload)."""
     out_dir.mkdir(parents=True, exist_ok=True)
+    for name in _ARTIFACT_NAMES:
+        p = out_dir / name
+        if p.exists():
+            raise SystemExit(f"refuse overwrite existing screen artifact: {p}")
     path = out_dir / "joint_screen.json"
-    path.write_text(json.dumps(report, indent=2) + "\n")
-    # Mirror null_maxstat naming for disposition tools that look for this file
-    (out_dir / "null_maxstat.json").write_text(
-        json.dumps(
-            {
-                "screen_only": True,
-                "family_id": report["family_id"],
-                "real": report["metrics_real_grid_develop"],
-                "n_null_executed": 0,
-                "disposition": report["disposition"],
-                "screen_status": report["screen_status"],
-                "joint_screen": report,
-            },
-            indent=2,
-        )
-        + "\n"
-    )
+    text = json.dumps(report, indent=2, default=str) + "\n"
+    path.write_text(text)
+    # Canonical name for parse_harness_report_for_accounting
+    (out_dir / "null_maxstat.json").write_text(text)
     return path
 
 
-def append_disposition_if_requested(
+def append_disposition_registry(
     charter_path: Path,
-    charter: dict[str, Any],
     report: dict[str, Any],
     *,
     screen_artifact: str,
 ) -> None:
-    """Append disposition registry row (only when caller opts in)."""
+    """Append disposition registry row — dispositional develop screens only."""
+    if not report.get("dispositional"):
+        raise SystemExit(
+            "REFUSE_REGISTRY_WRITE: report is non-dispositional "
+            f"({report.get('non_dispositional_reason')!r}); "
+            "synthetic scores must not close the real charter"
+        )
+    if report.get("attempt_accounting", {}).get("attempt_type") != "DETERMINISTIC_SCREEN":
+        raise SystemExit(
+            "REFUSE_REGISTRY_WRITE: attempt_type must be DETERMINISTIC_SCREEN"
+        )
     from xau_charter_protocol import DISPOSITION_REGISTRY, charter_file_sha256
 
     row = {
         "attempt_type": "DETERMINISTIC_SCREEN",
-        "charter_path": str(charter_path.as_posix().replace(str(ROOT) + "/", "")),
+        "charter_path": str(
+            charter_path.as_posix().replace(str(ROOT) + "/", "")
+            if str(charter_path).startswith(str(ROOT))
+            else charter_path
+        ),
         "charter_sha256": charter_file_sha256(charter_path),
-        "disposition": report["disposition"],
+        "disposition": report["verdict"]["disposition"],
         "family_id": FAMILY,
         "family_screen_attempt": True,
         "live_go": False,
-        "metrics_real_grid_develop": report["metrics_real_grid_develop"],
+        "metrics_real_grid_develop": report["real"],
         "n_null_executed": 0,
-        "n_null_planned": int(report.get("n_null_planned_charter") or 0),
-        "n_null_planned_charter": int(report.get("n_null_planned_charter") or 0),
+        "n_null_planned": int(report["null"]["n_null_planned"]),
+        "n_null_planned_charter": int(report["null"]["n_null_planned"]),
         "null_trials_executed": 0,
         "p_max_pf_status": "not_evaluated",
-        "p_n_passers_implied": 1.0 if report["n_passers"] == 0 else None,
+        "p_n_passers_implied": 1.0 if int(report["real"]["n_passers"]) == 0 else None,
         "promote": False,
         "r1_burned": False,
-        "reason": report["reason"],
+        "reason": report["verdict"]["reason"],
         "recorded_at_utc": report["recorded_at_utc"],
         "screen_artifact": screen_artifact,
         "screen_only": True,
-        "screen_status": report["screen_status"],
+        "screen_status": report["verdict"]["screen_status"],
         "sealed_null_attempt": False,
     }
     DISPOSITION_REGISTRY.parent.mkdir(parents=True, exist_ok=True)
@@ -330,14 +493,14 @@ def main(argv: list[str] | None = None) -> int:
         "--out-dir",
         type=Path,
         default=DEFAULT_OUT,
-        help="directory for joint_screen.json / null_maxstat.json",
+        help="fresh directory for joint_screen.json / null_maxstat.json",
     )
     ap.add_argument(
         "--execute-develop-screen",
         action="store_true",
         help=(
-            "Load pinned package develop frames and score. "
-            "Requires explicit authorization; default is dry plan only."
+            "Dispositional: load pinned package develop frames and score. "
+            "Requires sealed charter path + clean tree + cost match."
         ),
     )
     ap.add_argument(
@@ -351,21 +514,37 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help=(
-            "offline synthetic/fixture frames: directory with "
-            "{XAUUSD,EURUSD,GBPUSD}.parquet (skips package load)"
+            "NON-DISPOSITIONAL synthetic frames only "
+            "({XAUUSD,EURUSD,GBPUSD}.parquet). Forbidden with "
+            "--write-registry or --execute-develop-screen."
         ),
     )
     ap.add_argument(
         "--write-registry",
         action="store_true",
-        help="append disposition row after a successful screen evaluation",
-    )
-    ap.add_argument(
-        "--strict-charter-path",
-        action="store_true",
-        help="require sealed charter path under results/xau_charters/",
+        help=(
+            "append disposition registry after dispositional develop screen only "
+            "(forbidden for synthetic)"
+        ),
     )
     args = ap.parse_args(argv)
+
+    # --- mutually exclusive / fail-closed flag combinations ---
+    if args.frames_parquet_dir is not None and args.execute_develop_screen:
+        raise SystemExit(
+            "REFUSE: --frames-parquet-dir is synthetic/non-dispositional and "
+            "cannot combine with --execute-develop-screen"
+        )
+    if args.frames_parquet_dir is not None and args.write_registry:
+        raise SystemExit(
+            "REFUSE: --frames-parquet-dir is synthetic/non-dispositional and "
+            "cannot combine with --write-registry (would close the real charter)"
+        )
+    if args.write_registry and not args.execute_develop_screen:
+        raise SystemExit(
+            "REFUSE: --write-registry requires --execute-develop-screen "
+            "(dispositional develop screen only)"
+        )
 
     charter_path = args.charter.resolve()
     if not charter_path.is_file():
@@ -374,14 +553,6 @@ def main(argv: list[str] | None = None) -> int:
     verrs = validate_charter_file(charter_path)
     if verrs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(verrs))
-    ok_run, why = is_charter_runnable(charter_path)
-    if not ok_run:
-        raise SystemExit(f"charter not runnable: {why}")
-    if args.strict_charter_path:
-        try:
-            assert_charter_path_for_sealed(charter_path)
-        except Exception as e:
-            raise SystemExit(str(e)) from e
 
     charter = load_charter(charter_path)
     assert_multi_instrument_charter(charter)
@@ -394,6 +565,7 @@ def main(argv: list[str] | None = None) -> int:
         flush=True,
     )
 
+    # --- dry plan ---
     if not args.execute_develop_screen and args.frames_parquet_dir is None:
         print(
             "DRY PLAN (develop screen not executed):\n"
@@ -401,55 +573,130 @@ def main(argv: list[str] | None = None) -> int:
             f"  package_id={pkg_id}\n"
             f"  out_dir={args.out_dir}\n"
             "  null_trials=never\n"
-            "Re-run with --execute-develop-screen only after explicit authorization.\n"
-            "Synthetic offline score: --frames-parquet-dir DIR",
+            "  dispositional path requires --execute-develop-screen "
+            "(sealed charter + clean tree + cost match).\n"
+            "  Synthetic offline (non-dispositional): --frames-parquet-dir DIR\n"
+            "Re-run with --execute-develop-screen only after explicit authorization.",
             flush=True,
         )
         return 0
 
+    # --- synthetic non-dispositional ---
     if args.frames_parquet_dir is not None:
-        frames = {}
+        frames: dict[str, pd.DataFrame] = {}
         for s in SYMBOLS:
             p = args.frames_parquet_dir / f"{s}.parquet"
             if not p.is_file():
                 raise SystemExit(f"missing frame parquet: {p}")
             frames[s] = pd.read_parquet(p)
-        data_meta = {"source": "frames_parquet_dir", "dir": str(args.frames_parquet_dir)}
-    else:
-        # Authorized develop path only
-        frames, data_meta = load_develop_frames_from_package(
-            charter, package_dir=args.package_dir
+        # Costs: match charter for numeric integrity even on synthetic
+        costs = assert_costs_match_charter(charter)
+        report = run_joint_screen(
+            frames,
+            charter,
+            costs=costs,
+            already_aligned=False,
+            dispositional=False,
+            non_dispositional_reason="frames_parquet_dir_synthetic",
         )
+        report["charter_path"] = str(charter_path)
+        report["charter_sha256"] = sha
+        report["package_id"] = pkg_id
+        report["data"] = {
+            "source": "frames_parquet_dir",
+            "dir": str(args.frames_parquet_dir),
+            "dispositional": False,
+        }
+        try:
+            out_dir = ensure_fresh_artifacts(args.out_dir.resolve())
+        except CharterError as e:
+            raise SystemExit(str(e)) from e
+        out = write_screen_report(report, out_dir)
+        print(
+            f"NON_DISPOSITIONAL synthetic screen written: {out}\n"
+            f"  disposition={report['verdict']['disposition']} "
+            f"(must not write registry)\n"
+            f"  n_passers={report['real']['n_passers']}",
+            flush=True,
+        )
+        # Always exit 0 for synthetic; never registry
+        return 0
 
-    costs = load_research_costs()
-    report = run_joint_screen(frames, charter, costs=costs, already_aligned=False)
+    # --- dispositional develop screen ---
+    ok_run, why = is_charter_runnable(charter_path)
+    if not ok_run:
+        raise SystemExit(f"charter not runnable: {why}")
+    try:
+        assert_charter_path_for_sealed(charter_path)
+        assert_clean_dispositional_tree()
+    except CharterError as e:
+        raise SystemExit(str(e)) from e
+
+    costs = assert_costs_match_charter(charter)
+    frames, data_meta, data_path = load_develop_frames_from_package(
+        charter, package_dir=args.package_dir
+    )
+    report = run_joint_screen(
+        frames,
+        charter,
+        costs=costs,
+        already_aligned=False,
+        dispositional=True,
+    )
     report["charter_path"] = str(charter_path)
     report["charter_sha256"] = sha
-    report["data"] = data_meta
     report["package_id"] = pkg_id
+    report["data"] = data_meta
 
-    out = write_screen_report(report, args.out_dir)
+    try:
+        out_dir = ensure_fresh_artifacts(args.out_dir.resolve())
+    except CharterError as e:
+        raise SystemExit(str(e)) from e
+
+    base_seed = charter_null_base_seed(charter)
+    provenance = build_provenance(
+        charter_path=charter_path,
+        costs_path=RESEARCH_COSTS_PATH,
+        data_path=data_path,
+        null_seed=base_seed,
+        n_null=0,
+        out_dir=out_dir,
+        require_clean_tree=True,
+        extra={
+            "family": FAMILY,
+            "package_id": pkg_id,
+            "attempt_type": "DETERMINISTIC_SCREEN",
+            "screen_only": True,
+            "n_null_planned": charter_n_null_planned(charter),
+            "n_null_executed": 0,
+            "costs_sha256": sha256_file(RESEARCH_COSTS_PATH),
+        },
+    )
+    report["provenance"] = provenance
+
+    out = write_screen_report(report, out_dir)
     print(
-        f"screen written: {out}\n"
-        f"  disposition={report['disposition']} "
-        f"screen_status={report['screen_status']} "
-        f"n_passers={report['n_passers']} "
-        f"joint_n_trades={report['metrics_real_grid_develop']['n_trades']}",
+        f"DISPOSITIONAL develop screen written: {out}\n"
+        f"  disposition={report['verdict']['disposition']} "
+        f"screen_status={report['verdict']['screen_status']} "
+        f"n_passers={report['real']['n_passers']} "
+        f"joint_n_trades={report['real']['n_trades']}\n"
+        f"  code_commit={provenance.get('code_commit')} "
+        f"costs_sha256={(provenance.get('costs_sha256') or '')[:12]}…",
         flush=True,
     )
 
     if args.write_registry:
-        append_disposition_if_requested(
-            charter_path,
-            charter,
-            report,
-            screen_artifact=str(out.relative_to(ROOT))
+        rel = (
+            str(out.relative_to(ROOT))
             if out.is_relative_to(ROOT)
-            else str(out),
+            else str(out)
         )
+        append_disposition_registry(charter_path, report, screen_artifact=rel)
         print("disposition registry: appended", flush=True)
 
-    return 0 if report["disposition"] != "SCREEN_FAIL" else 2
+    # Fail-closed accounting path requires exit 0 for valid SCREEN_FAIL
+    return 0
 
 
 if __name__ == "__main__":
