@@ -1,5 +1,30 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v3 FREEZE** · v2 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V3`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v3** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json` · SHA `e88161be…` |
+| **v2** | SHA `935534e2…` · **SUPERSEDED** (immutable; registry append only) |
+| **v1** | SHA `2d3fda48…` · **SUPERSEDED** (immutable) |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **sizing** | USD; raw_lots = risk_cash / (SL_price_dist * contract_size); floor step; cap max; never force min; all-or-none basket |
+| **PF zero-denom** | 0 no trades / 99 all winners (house) |
+| **runners** | single-frame null_maxstat + sealed cycle **REFUSE** multi_instrument_joint_v1 |
+| **calendar** | **intersection_only** (real + null) |
+| **harness** | `multi_instrument_joint_v1` (single-frame prohibited) |
+| **gates** | complete joint-soft contract enforced in protocol |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v3 closes BLOCK findings: sizing/all-or-none, runner refuse, multi gate fail-closed, PF zero-denom.
+
+---
+
 ## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v2 FREEZE** · v1 SUPERSEDED · design only
 
 | Field | Value |

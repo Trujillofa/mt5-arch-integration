@@ -44,6 +44,7 @@ from xau_charter_protocol import (  # noqa: E402
     ensure_fresh_run_dir,
     is_charter_runnable,
     load_charter,
+    multi_instrument_single_frame_refuse_message,
     null_spec_from_charter,
     run_output_dir,
     validate_charter_file,
@@ -605,6 +606,12 @@ def main(argv: list[str] | None = None) -> int:
     errs = validate_charter_file(charter_path)
     if errs:
         raise SystemExit("charter validation failed:\n- " + "\n- ".join(errs))
+
+    # Fail closed before fixtures/ledger/null: multi-instrument joint charters must
+    # not use this sealed wrapper (it hardcodes single-frame null_maxstat).
+    _refuse = multi_instrument_single_frame_refuse_message(charter)
+    if _refuse:
+        raise SystemExit(_refuse)
 
     # Dispositional path: sealed path under charters/ + HEAD blob + clean tree
     if not args.dry_fixture_only:
