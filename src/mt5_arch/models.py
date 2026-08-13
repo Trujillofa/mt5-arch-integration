@@ -24,7 +24,7 @@ class AccountInfo:
 
 @dataclass(frozen=True, slots=True)
 class SymbolInfo:
-    """MT5 symbol specification for lot sizing."""
+    """MT5 symbol specification for lot sizing and overnight financing."""
 
     symbol: str
     min_lot: float
@@ -36,6 +36,13 @@ class SymbolInfo:
     tick_value: float
     tick_size: float
     trade_mode: str
+    swap_long: float = 0.0
+    swap_short: float = 0.0
+    swap_mode: str = ""
+    swap_rollover3days: int = 0
+    bid: float | None = None
+    ask: float | None = None
+    requested: str = ""
 
 
 @dataclass(frozen=True, slots=True)

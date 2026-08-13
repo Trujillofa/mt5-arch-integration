@@ -11,15 +11,17 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.22"
+#property version   "1.23"
 #property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
 #property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
 #property description "v1.21: per-bar spread in candles + one-shot deep history dump"
 #property description "v1.22: ResolveSymbol — bare then m/.r/.m/#/pro (Exness raw etc.)"
+#property description "v1.23: export SYMBOL_SWAP_* + expand default FX carry basket"
 
 input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
 // Lean defaults — bare names; ResolveSymbol maps to broker suffixes (EURUSDm, XAUUSD.r, …)
-input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD";
+// Carry-relevant FX included for overnight financing export (Lane 3 / research).
+input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,USDCHF,AUDUSD,NZDUSD,AUDJPY,NZDJPY,USDZAR,XAUUSD,BTCUSD";
 input string InpTimeframes  = "H1,H4,D1";
 input int    InpCandleCount = 30;
 input bool   InpSingleWriter= true;    // Extra instances go standby (must stay true on Wine)
@@ -339,8 +341,23 @@ void WriteSymbols()
       else if(mode == SYMBOL_TRADE_MODE_LONGONLY) mode_s = "LONGONLY";
       else if(mode == SYMBOL_TRADE_MODE_SHORTONLY) mode_s = "SHORTONLY";
       else if(mode == SYMBOL_TRADE_MODE_CLOSEONLY) mode_s = "CLOSEONLY";
+
+      // SYMBOL_SWAP_MODE enum → stable string for Python conversion.
+      long swap_mode = SymbolInfoInteger(sym, SYMBOL_SWAP_MODE);
+      string swap_mode_s = IntegerToString((int)swap_mode);
+      if(swap_mode == SYMBOL_SWAP_MODE_DISABLED) swap_mode_s = "DISABLED";
+      else if(swap_mode == SYMBOL_SWAP_MODE_POINTS) swap_mode_s = "POINTS";
+      else if(swap_mode == SYMBOL_SWAP_MODE_CURRENCY_SYMBOL) swap_mode_s = "CURRENCY_SYMBOL";
+      else if(swap_mode == SYMBOL_SWAP_MODE_CURRENCY_MARGIN) swap_mode_s = "CURRENCY_MARGIN";
+      else if(swap_mode == SYMBOL_SWAP_MODE_CURRENCY_DEPOSIT) swap_mode_s = "CURRENCY_DEPOSIT";
+      else if(swap_mode == SYMBOL_SWAP_MODE_INTEREST_CURRENT) swap_mode_s = "INTEREST_CURRENT";
+      else if(swap_mode == SYMBOL_SWAP_MODE_INTEREST_OPEN) swap_mode_s = "INTEREST_OPEN";
+      else if(swap_mode == SYMBOL_SWAP_MODE_REOPEN_CURRENT) swap_mode_s = "REOPEN_CURRENT";
+      else if(swap_mode == SYMBOL_SWAP_MODE_REOPEN_BID) swap_mode_s = "REOPEN_BID";
+
       j += "{";
       j += "\"symbol\":\"" + Esc(sym) + "\",";
+      j += "\"requested\":\"" + Esc(requested) + "\",";
       j += "\"min_lot\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_VOLUME_MIN), 4) + ",";
       j += "\"max_lot\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_VOLUME_MAX), 4) + ",";
       j += "\"lot_step\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_VOLUME_STEP), 4) + ",";
@@ -349,7 +366,13 @@ void WriteSymbols()
       j += "\"point\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_POINT), 8) + ",";
       j += "\"tick_value\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE), 8) + ",";
       j += "\"tick_size\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE), 8) + ",";
-      j += "\"trade_mode\":\"" + mode_s + "\"";
+      j += "\"trade_mode\":\"" + mode_s + "\",";
+      j += "\"bid\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_BID), 8) + ",";
+      j += "\"ask\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_ASK), 8) + ",";
+      j += "\"swap_long\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_LONG), 8) + ",";
+      j += "\"swap_short\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_SHORT), 8) + ",";
+      j += "\"swap_mode\":\"" + swap_mode_s + "\",";
+      j += "\"swap_rollover3days\":" + IntegerToString((int)SymbolInfoInteger(sym, SYMBOL_SWAP_ROLLOVER3DAYS));
       j += "}";
      }
    j += "]";

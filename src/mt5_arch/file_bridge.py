@@ -118,6 +118,13 @@ class FileBridgeClient:
                     tick_value=float(row.get("tick_value", 0)),
                     tick_size=float(row.get("tick_size", 0)),
                     trade_mode=str(row.get("trade_mode", "FULL")),
+                    swap_long=float(row.get("swap_long", 0) or 0),
+                    swap_short=float(row.get("swap_short", 0) or 0),
+                    swap_mode=str(row.get("swap_mode", "") or ""),
+                    swap_rollover3days=int(row.get("swap_rollover3days", 0) or 0),
+                    bid=(float(row["bid"]) if row.get("bid") is not None else None),
+                    ask=(float(row["ask"]) if row.get("ask") is not None else None),
+                    requested=str(row.get("requested", "") or ""),
                 )
         raise FileBridgeError(
             f"Symbol {symbol!r} not in bridge export. "

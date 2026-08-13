@@ -217,6 +217,12 @@ class MT5ArchClient:
             tick_value=float(data.get("trade_tick_value", 0.0) or 0.0),
             tick_size=float(data.get("trade_tick_size", 0.0) or 0.0),
             trade_mode=trade_mode,
+            swap_long=float(data.get("swap_long", 0.0) or 0.0),
+            swap_short=float(data.get("swap_short", 0.0) or 0.0),
+            swap_mode=str(data.get("swap_mode", "") or ""),
+            swap_rollover3days=int(data.get("swap_rollover3days", 0) or 0),
+            bid=(float(data["bid"]) if data.get("bid") is not None else None),
+            ask=(float(data["ask"]) if data.get("ask") is not None else None),
         )
 
     def copy_rates(
