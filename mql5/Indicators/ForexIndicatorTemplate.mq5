@@ -5,7 +5,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.41"
+#property version     "1.42"
 #property description "EMA cloud (bull/bear) + PDH/PDL/PDO + RSI signals + session/spread panel"
 #property description "iCustom buffer 8 = signal (+1/-1/0). Closed-bar signals only."
 #property strict
@@ -268,9 +268,14 @@ void OnDeinit(const int reason)
    if(g_hEmaBias != INVALID_HANDLE) IndicatorRelease(g_hEmaBias);
    if(g_hAtr     != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
-   // Skip object wipe on REASON_PARAMETERS (EMA tweak) — freezes Wine
+   // Skip object wipe on REASON_PARAMETERS (EMA tweak) and REASON_CHARTCHANGE
+   // (timeframe/symbol switch) — mass GDI delete is what freezes Wine, and on a
+   // timeframe flip it deletes objects that the next instance immediately recreates
+   // under the same ChartID-keyed names. Safe to skip: every draw is ObjectFind
+   // guarded and repositioned by name. See ForexHtfPivotsFib.mq5 OnDeinit for the
+   // captured stacks behind this.
    if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
+      reason == REASON_RECOMPILE)
      {
       ObjectsDeleteAll(0, g_prefix);
       Comment("");

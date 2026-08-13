@@ -13,7 +13,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.10"
+#property version     "1.11"
 #property description "BTC trend pullback v1.10 — fast EMA param change under Wine"
 #property description "H4 bias + H1 reclaim. Signal buffer 7. Closed-bar only."
 #property strict
@@ -219,9 +219,13 @@ void OnDeinit(const int reason)
    if(g_hAtr       != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hHtfEma50  != INVALID_HANDLE) IndicatorRelease(g_hHtfEma50);
    if(g_hHtfEma200 != INVALID_HANDLE) IndicatorRelease(g_hHtfEma200);
-   // EMA tweak = REASON_PARAMETERS — do NOT wipe objects (Wine freeze)
+   // EMA tweak = REASON_PARAMETERS, timeframe/symbol switch = REASON_CHARTCHANGE —
+   // do NOT wipe objects on either (mass GDI delete freezes Wine; see
+   // ForexHtfPivotsFib.mq5 OnDeinit). This indicator currently draws no objects at
+   // all, so the wipe is a no-op today; kept aligned with the other two so adding a
+   // drawing later does not silently reintroduce the freeze.
    if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
+      reason == REASON_RECOMPILE)
      {
       ObjectsDeleteAll(0, g_pfx);
       Comment("");

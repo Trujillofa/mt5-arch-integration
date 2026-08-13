@@ -117,10 +117,57 @@ mt5_terminal_pids() {
 #
 # So: ask each window to close, give MT5 time to write, and only then escalate.
 #
+# Main-thread utime+stime. Same field math as ops/diagnostics/mt5-freeze-watch.sh.
+# Prints "utime stime" (jiffies).
+_mt5_main_times() {
+  awk '{ r=$0; sub(/^[^)]*\) /, "", r); split(r, f, " "); print f[12]+0, f[13]+0 }' \
+    "/proc/$1/task/$1/stat" 2>/dev/null
+}
+
+# True if any listed pid's UI thread matches a freeze mode that cannot honor WM_CLOSE:
+#   spin      SIGSEGV livelock in win32u — ~100% of one core, *system*-time dominant
+#             (kernel handling the fault storm). A merely busy healthy UI is user-time
+#             dominant; matching on CPU alone false-positived against live terminals.
+#   deadlock  0 jiffies, wchan futex_do_wait
+# Observed 2026-08-13: Exness spin ate the full 40s graceful wait, then SIGKILL anyway —
+# chart state was already unsavable the moment the UI thread died.
+_mt5_ui_frozen() {
+  local pid before after bu bs au as udelta sdelta total pct wchan
+  local hz sample=1
+  hz="$(getconf CLK_TCK 2>/dev/null || echo 100)"
+  for pid in "$@"; do
+    [[ -d "/proc/$pid/task/$pid" ]] || continue
+    wchan="$(cat "/proc/$pid/task/$pid/wchan" 2>/dev/null || echo '?')"
+    before="$(_mt5_main_times "$pid")"
+    [[ -z "$before" ]] && continue
+    sleep "$sample"
+    after="$(_mt5_main_times "$pid")"
+    [[ -z "$after" ]] && continue
+    read -r bu bs <<<"$before"
+    read -r au as <<<"$after"
+    udelta=$(( au - bu ))
+    sdelta=$(( as - bs ))
+    total=$(( udelta + sdelta ))
+    pct=$(( total * 100 / (sample * hz) ))
+    # Deadlock: no progress, parked on a raw pthread mutex (win32u AB-BA).
+    if (( total == 0 )) && [[ "$wchan" == futex_do_wait ]]; then
+      return 0
+    fi
+    # Spin: pinned AND kernel-time dominates (SEGV_MAPERR storm). Require a clear
+    # sys/user skew so a busy chart paint doesn't trip this.
+    if (( pct >= 80 && sdelta >= 2 * (udelta + 1) )); then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # Usage: stop_terminal_gracefully [timeout_seconds] [wineprefix]
 # Pass a wineprefix to stop only that broker's terminal and leave the others running.
+# Env: MT5_STOP_SPIN_TIMEOUT (default 8) — used when the UI thread is already frozen.
 stop_terminal_gracefully() {
   local timeout="${1:-40}" want="${2:-}" pids wins w waited closed=0
+  local spin_timeout="${MT5_STOP_SPIN_TIMEOUT:-8}"
   export DISPLAY="${DISPLAY:-:0}"
 
   mapfile -t pids < <(mt5_terminal_pids "$want")
@@ -177,6 +224,12 @@ except Exception:
     warn "No MetaTrader window to close — terminating directly"
     timeout=0
   else
+    # If the UI is already in a win32u freeze, WM_CLOSE will never be handled — don't
+    # burn the full graceful budget (Exness spin, 2026-08-13: 40s wait then SIGKILL).
+    if (( timeout > spin_timeout )) && _mt5_ui_frozen "${pids[@]}"; then
+      warn "UI thread frozen (spin/deadlock) — charts unsavable; shortening wait ${timeout}s → ${spin_timeout}s"
+      timeout="$spin_timeout"
+    fi
     info "Asked MetaTrader to close (WM_CLOSE); waiting up to ${timeout}s for it to save charts..."
   fi
 

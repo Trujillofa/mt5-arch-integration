@@ -1,5 +1,5 @@
 [Unit]
-Description=Watch MetaTrader terminals for the SIGSEGV livelock and capture it at onset
+Description=Watch MetaTrader terminals for a frozen UI thread (spin or win32u deadlock) and capture it at onset
 
 [Service]
 Type=oneshot

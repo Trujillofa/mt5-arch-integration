@@ -99,6 +99,20 @@ for PID in "${PIDS[@]}"; do
     sudo rm -f "/tmp/mt5-strace-raw.$$"
 
     echo
+    echo "=== thread stacks (eu-stack) ==="
+    # Run this BEFORE gdb, and read it first. On the deadlock mode gdb is useless: it
+    # cannot unwind Wine's PE frames without symbols, so the 2026-08-13 10:09 Vantage
+    # capture came back as 25 frames of "?? ()" that are pure garbage past #1. eu-stack
+    # unwound the same process correctly and named the frames outright --
+    #   pthread_mutex_lock <- win32u.so <- NtGdiSelectBitmap <- NtUserDispatchMessage
+    # -- which is the entire diagnosis. It is also far cheaper than a 45s gdb attach.
+    if command -v eu-stack >/dev/null 2>&1; then
+      sudo timeout 30 eu-stack -p "$PID" 2>&1 | head -120
+    else
+      echo "eu-stack not installed (pacman -S elfutils)"
+    fi
+
+    echo
     echo "=== backtrace (gdb) ==="
     # Use gdb, NEVER winedbg. winedbg attaches as a *Windows* debugger, and a Windows
     # debuggee is killed when its debugger exits: attaching it to the frozen terminal on

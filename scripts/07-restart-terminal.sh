@@ -43,10 +43,34 @@ if [[ "$term" == [Cc]:* ]] || [[ "$term" == *Program\ Files* && ! -f "$term" ]];
 fi
 [[ -n "$term" && -f "$term" ]] || die "could not resolve terminal64.exe under $WINEPREFIX"
 
-info "Starting: $term"
-nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
-echo $! >/tmp/mt5-terminal.pid
-info "PID $(cat /tmp/mt5-terminal.pid)  log=/tmp/mt5-terminal.log"
+# Launch, then confirm it survived — and retry if it did not.
+#
+# A terminal killed hard can take its wineserver down with it, and a launch that lands
+# while that wineserver is still shutting down dies about a second later with
+#   wine client error:0: recvmsg: Connection reset by peer
+# Observed 2026-08-13 restarting Vantage out of a win32u deadlock: this script printed
+# a healthy PID, the process was gone moments later, and the account was left with
+# three open positions and no terminal at all until it was launched by hand.
+#
+# Checking liveness after a short settle catches that, and any other instant-exit,
+# without guessing at the cause. Do NOT check $! — that is the wine loader, which
+# exits normally; ask for a terminal64 in this prefix instead.
+launched=0
+for attempt in 1 2 3; do
+  info "Starting: $term (attempt $attempt)"
+  nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
+  echo $! >/tmp/mt5-terminal.pid
+  sleep 5
+  mapfile -t live_pids < <(mt5_terminal_pids "$WINEPREFIX")
+  if [[ ${#live_pids[@]} -gt 0 ]]; then
+    launched=1
+    info "PID ${live_pids[0]}  log=/tmp/mt5-terminal.log"
+    break
+  fi
+  warn "terminal exited immediately (see /tmp/mt5-terminal.log) — retrying in 5s"
+  sleep 5
+done
+[[ "$launched" -eq 1 ]] || die "terminal failed to stay up after 3 attempts; check /tmp/mt5-terminal.log"
 
 # Wait for main shell (not just Login), then move to active Hyprland workspace
 if command -v hyprctl >/dev/null 2>&1; then
