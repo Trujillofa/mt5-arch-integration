@@ -1,5 +1,25 @@
 # XAU offline loop status
 
+## 2026-08-13 — MULTI-INSTRUMENT thesis freeze **DESIGN ONLY** · `joint_london_open_cosign_fade_flat` v1
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW`** — design freeze only; no implementation |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v1.json` · SHA `2d3fda48…` |
+| **thesis_memo** | `docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md` |
+| **data package** | `4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd` (pinned) |
+| **symbols** | XAUUSD + EURUSD + GBPUSD (joint cosign required) |
+| **free knobs** | **0** (cardinality 1) |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **do not** | implement family · peek develop grid · open sealed r1 · revive dead lines |
+
+Phase 0 data readiness remains closed on main. Next: adversarial charter review only.
+
+---
+
 ## 2026-08-11 — day_open_reclaim_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |
