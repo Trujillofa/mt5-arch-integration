@@ -1,0 +1,266 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-08-13",
+  "charter_version": 1,
+  "family_id": "joint_london_open_cosign_fade_flat",
+  "display_name": "Zero-knob joint three-symbol London-proxy open co-sign fade, intraday flat (multi-instrument v1)",
+  "thesis_class": "multi_instrument_joint_cosign_fade",
+  "thesis_memo": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+  "hypothesis": "On the multi-instrument Phase-0 package H1 bars for XAUUSD, EURUSD, and GBPUSD (server_clock_as_stored), if the earliest common intersection bar of each server calendar day with server hour in {7,8,9} shows the same nonzero close-open sign on all three symbols, fading that joint impulse at T* close with fixed ATR SL/TP and same-day flat at hour>=16, under identical risk and Standard STP costs, has no free parameters. Any edge must come from joint co-directional overreaction across gold and the two majors\u2014not from a single-symbol day-open reclaim, prior-day break, or blind hour long. Hours are pure server labels; no London wall-clock claim.",
+  "clock_contract": {
+    "source": "Multi-instrument package H1 time column (Vantage MqlRates via ExportInstrumentHistory)",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "asia_tokyo_wall_clock_claimed": false,
+    "london_open_label_note": "Name only: fixed server-hour window {7,8,9}; not claimed London civil time",
+    "hours_present_develop_note": "Use package develop windows; XAU session \u2282 FX; joint ops on timestamp intersection"
+  },
+  "instrument": {
+    "symbols": [
+      "XAUUSD",
+      "EURUSD",
+      "GBPUSD"
+    ],
+    "timeframe": "H1",
+    "multi_symbol_in_scope": true,
+    "require_all_symbols_for_signal": true,
+    "data_package": {
+      "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+      "content_package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+      "publish_model": "current_indirection_v6",
+      "loader": "load_package_snapshot()",
+      "sha256": {
+        "instrument_data/xauusd_h1.csv": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da",
+        "instrument_data/eurusd_h1.csv": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab",
+        "instrument_data/gbpusd_h1.csv": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd"
+      },
+      "develop_mode": "derived:server_time < holdout_start_server",
+      "holdout_start_server": "2026-01-01 00:00:00",
+      "common_develop_window_ref": "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json",
+      "n_intersection_timestamps_develop": 25557
+    }
+  },
+  "rule": {
+    "direction": "fade_cosign_both_sides",
+    "coincident_bar_T_star": "Per server calendar day D: among timestamps present in the intersection of all three symbols' bars for date D, take the earliest bar with server hour in coincident_hours_server. If none \u2192 no signal that day.",
+    "coincident_hours_server": [
+      7,
+      8,
+      9
+    ],
+    "cosign": "At T*: r_S = close_S - open_S for S in {XAUUSD,EURUSD,GBPUSD}; require all r_S nonzero and sign(r_XAU)=sign(r_EUR)=sign(r_GBP) in {+1,-1}.",
+    "entry": "If cosign holds: for each symbol enter at close of T* in the opposite direction of cosign (fade). Closed-bar only. All three symbols enter on that signal day.",
+    "exit": "SL/TP or force flat at close of bar with hour>=flat_hour same day; no overnight",
+    "flat_hour_server": 16,
+    "intraday_flat": true,
+    "one_entry_per_symbol_per_day": true,
+    "sl_atr_fixed": 1.5,
+    "tp_atr_fixed": 2.0,
+    "atr_period": 14,
+    "identical_rule_across_symbols": true,
+    "execution_contract_ref": "execution_contract"
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "start_balance_per_symbol_book": 10000.0,
+    "joint_equity": "sum of three independent symbol books (no shared margin)",
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "account_type": "STANDARD_STP",
+      "login": 27496181,
+      "server": "VantageMarkets-Live 5",
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0,
+      "slippage_notes": "UNMEASURED",
+      "spread_source": "package H1 spread / spread_effective columns as costed simulate",
+      "cost_timing": "measured at entry, deducted at exit booking"
+    },
+    "point_size_notes": "Use package symbol meta / research costs conventions per symbol (XAU typically 0.01; FX typically 0.00001)"
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "identical_0_1_knob_rule": {
+    "max_free_knobs": 1,
+    "actual_free_knobs": 0,
+    "note": "v1 freezes zero free knobs; any future free knob must be identical across all three symbols (no per-symbol tuning)"
+  },
+  "window": {
+    "develop_rule": "server_time < holdout_start_server (derived from full H1 package)",
+    "holdout_start": "2026-01-01T00:00:00",
+    "holdout_start_server": "2026-01-01 00:00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false,
+    "joint_calendar": "timestamp intersection of three symbols; signal T* must exist on all three"
+  },
+  "gates": {
+    "per_symbol": {
+      "classic": {
+        "n_trades_min": 20,
+        "profit_factor_min": 1.5,
+        "profit_factor_strict_gt": true,
+        "win_rate_min": 55.0,
+        "win_rate_strict_gt": true,
+        "max_drawdown_pct_max": 10.0,
+        "max_drawdown_strict_lt": true,
+        "used_for": "report_only"
+      },
+      "soft": {
+        "n_trades_min": 20,
+        "profit_factor_min": 1.1,
+        "net_profit_gt": 0.0,
+        "used_for": "per_symbol_soft_required_for_joint"
+      }
+    },
+    "joint": {
+      "require_all_symbols_soft_pass": true,
+      "soft": {
+        "n_trades_min": 60,
+        "profit_factor_min": 1.1,
+        "net_profit_gt": 0.0,
+        "max_drawdown_pct_max": 25.0,
+        "equity": "sum of three symbol books"
+      },
+      "primary_n_passers": "joint_soft_binary",
+      "primary_note": "Cardinality 1: joint primary passer is 0 or 1. Requires all three per-symbol soft + joint soft."
+    },
+    "screen": {
+      "zero_primary_passers": "SCREEN_FAIL without null; r1 unburned",
+      "primary_definition": "joint soft passer count (0 or 1)"
+    }
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "implementation_id": "within_day_ohlc_increment_rotate_v1_joint_shared_k",
+    "joint_dependency_preserving": true,
+    "n_trials": 999,
+    "min_null_trials": 999,
+    "k_domain": "per_day Uniform{0,1,...,m-1} including identity k=0; SAME k applied to all three symbols",
+    "algorithm": "Align symbols on develop timestamp intersection. For each calendar day with m joint bars: (1) for each symbol compute OHLC increments vs day path refs as in within_day_ohlc_increment_rotate_v1; (2) draw one shared k for that day; (3) rotate each symbol's increments by the same k; (4) rebuild each symbol's continuous OHLC path; (5) re-evaluate coincident T*, cosign, and fades. Timestamps and spreads fixed. Independent k-per-symbol is forbidden.",
+    "notes": "Joint null preserves cross-symbol dependence structure under a shared within-day rotate. base_seed frozen; no seed shopping.",
+    "invariants": [
+      "time_unchanged",
+      "spread_calendar_aligned",
+      "per_day_bar_count_equal_per_symbol",
+      "shared_k_across_symbols",
+      "within_day_path_continuous_per_symbol",
+      "session_path_association_broken_per_symbol",
+      "cross_symbol_k_locked"
+    ],
+    "forbidden_methods": [
+      "day_block_shuffle",
+      "circular_day_shift",
+      "global_return_shuffle",
+      "within_day_return_rotate",
+      "independent_k_per_symbol",
+      "symbol_wise_independent_null"
+    ],
+    "base_seed": 20260813
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 999,
+      "early_exit_search": false,
+      "costs_required": true,
+      "primary_is_joint": true
+    },
+    "slippage_sensitivity": {
+      "points": [
+        0,
+        5,
+        10,
+        20
+      ],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    },
+    "walk_forward": {
+      "only_after_null_pass": true,
+      "costed": true,
+      "joint": true
+    }
+  },
+  "kill": {
+    "on_null_fail": "KILL_JOINT_LONDON_OPEN_COSIGN_FADE_FLAT",
+    "on_wf_fail": "KILL_JOINT_LONDON_OPEN_COSIGN_FADE_FLAT",
+    "refine_loops": false,
+    "on_screen_zero_passers": "SCREEN_FAIL_ZERO_PRIMARY_PASSERS"
+  },
+  "explicitly_forbidden": [
+    "inspect develop grid / joint metrics before this charter is git-committed and matches HEAD",
+    "implement family module before adversarial freeze review approval",
+    "synthetic fixtures or develop screen before freeze review approval",
+    "rename or filter closed families (bb_rsi, Donchian, prior_day_high_break, tod_london_ny_flat, server_hour_window_flat, early_server_range_break_flat, day_open_reclaim_flat)",
+    "per-symbol free knobs or asymmetric ATR/hours across symbols",
+    "independent_k_per_symbol null or symbol-wise independent sealed nulls",
+    "claim London/Tokyo wall-clock identity without external offset proof",
+    "day_block_shuffle or global_return_shuffle null",
+    "overnight holds",
+    "holdout selection or retune after screen",
+    "paper, live, or promote",
+    "use non-pinned multi-instrument package or mutate package CSVs",
+    "OR-aggregation of per-symbol soft passers as joint primary (must require all three + joint soft)"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false,
+    "paper_go": false
+  },
+  "execution_contract": {
+    "bar": "closed H1 only; entry at close of T* when cosign holds; no open-of-T* entry",
+    "atr": {
+      "period": 14,
+      "estimator": "wilder_ewm",
+      "formula": "TR ewm(alpha=1/14, adjust=False).mean()",
+      "tr": "max(high-low, abs(high-prev_close), abs(low-prev_close))",
+      "value_used_at_entry": "atr[T*] on signal bar close per symbol",
+      "forbidden_alternatives": [
+        "SMA of TR",
+        "per-symbol different period"
+      ]
+    },
+    "entry": "fade cosign at T* close on all three symbols",
+    "exit_priority": "same-bar SL before TP if both touch after entry; then force flat at hour>=16",
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "start_balance": 10000.0,
+      "compounding": "realized_balance_per_symbol_book"
+    },
+    "no_overnight": true,
+    "warmup_bars": 30,
+    "capital": {
+      "start_balance_per_symbol_book": 10000.0,
+      "cost_measured_at": "entry",
+      "cost_deducted_at": "exit_booking"
+    },
+    "required_fixtures": [
+      "cosign_all_three_accept",
+      "cosign_fail_one_symbol_flat_or_disagree_reject",
+      "missing_intersection_hour_window_no_trade",
+      "same_day_force_flat_hour_16",
+      "joint_soft_requires_all_three_symbol_soft"
+    ]
+  },
+  "implementation_status": {
+    "family_module": "not_authorized",
+    "fixtures": "not_authorized",
+    "develop_screen": "not_authorized",
+    "sealed_null": "not_authorized",
+    "next_gate": "AWAIT_ADVERSARIAL_CHARTER_REVIEW"
+  }
+}

@@ -1,5 +1,92 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 FREEZE** · v3 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V4`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v4** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json` · SHA `e29b2693…` |
+| **v3** | SHA `e88161be…` · **SUPERSEDED** (immutable; impossible “approval of v2” rule) |
+| **v2 / v1** | SUPERSEDED (immutable) |
+| **authorization** | fixtures/implement only after approval of **this** charter version (v4) |
+| **gates protocol** | complete joint soft (incl. max DD); joint_soft_is_primary exact true; full per-symbol soft; non-bool PF pins |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v4 closes BLOCK findings: impossible v2 auth, residual gate fail-open, memo/note cleanup.
+
+---
+
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v3 FREEZE** · v2 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V3`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v3** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json` · SHA `e88161be…` |
+| **v2** | SHA `935534e2…` · **SUPERSEDED** (immutable; registry append only) |
+| **v1** | SHA `2d3fda48…` · **SUPERSEDED** (immutable) |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **sizing** | USD; raw_lots = risk_cash / (SL_price_dist * contract_size); floor step; cap max; never force min; all-or-none basket |
+| **PF zero-denom** | 0 no trades / 99 all winners (house) |
+| **runners** | single-frame null_maxstat + sealed cycle **REFUSE** multi_instrument_joint_v1 |
+| **calendar** | **intersection_only** (real + null) |
+| **harness** | `multi_instrument_joint_v1` (single-frame prohibited) |
+| **gates** | complete joint-soft contract enforced in protocol |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v3 closes BLOCK findings: sizing/all-or-none, runner refuse, multi gate fail-closed, PF zero-denom.
+
+---
+
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v2 FREEZE** · v1 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V2`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v2** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v2.json` · SHA `935534e2…` |
+| **v1** | SHA `2d3fda48…` · **SUPERSEDED** (immutable; registry append only) |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **calendar** | **intersection_only** (real + null) |
+| **harness** | `multi_instrument_joint_v1` (single-frame prohibited) |
+| **gates** | top-level joint soft primary; per-symbol soft under multi_instrument |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v2 closes BLOCK findings: nested gates, unequal calendars, execution/cost pins, joint stats, shared-k.
+
+---
+
+## 2026-08-13 — MULTI-INSTRUMENT thesis freeze **DESIGN ONLY** · `joint_london_open_cosign_fade_flat` v1
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW`** — design freeze only; no implementation |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v1.json` · SHA `2d3fda48…` |
+| **thesis_memo** | `docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md` |
+| **data package** | `4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd` (pinned) |
+| **symbols** | XAUUSD + EURUSD + GBPUSD (joint cosign required) |
+| **free knobs** | **0** (cardinality 1) |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **do not** | implement family · peek develop grid · open sealed r1 · revive dead lines |
+
+Phase 0 data readiness remains closed on main. Next: adversarial charter review only.
+
+---
+
 ## 2026-08-11 — day_open_reclaim_flat v2 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |

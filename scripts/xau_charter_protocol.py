@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import subprocess
 from collections.abc import Callable
 from datetime import date
@@ -404,6 +405,47 @@ def write_charter_once(path: Path, charter: dict[str, Any]) -> Path:
     return path
 
 
+def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str | None:
+    """If charter is multi-instrument joint, return refuse text for single-frame runners.
+
+    Pure check (no I/O, no data, no plugin). Callers must raise/SystemExit with this
+    message *before* family plugin import, data load, fixtures, or ledger append.
+    """
+    harness = charter.get("harness") or {}
+    inst = charter.get("instrument") or {}
+    kind = str(harness.get("kind") or "")
+    multi = kind == "multi_instrument_joint_v1" or bool(
+        inst.get("multi_symbol_in_scope")
+    )
+    if not multi:
+        return None
+    return (
+        "REFUSE_SINGLE_FRAME_RUNNER: charter requires dedicated "
+        "multi_instrument_joint_v1 harness; single-frame runners "
+        "(xau_family_null_maxstat / xau_sealed_family_cycle) are forbidden "
+        "(no plugin/data/ledger for multi-instrument joint)"
+    )
+
+
+def _strict_finite_number(val: Any) -> float | None:
+    """Accept only real JSON int/float (not bool, not str); require math.isfinite."""
+    if isinstance(val, bool) or not isinstance(val, (int, float)):
+        return None
+    f = float(val)
+    if not math.isfinite(f):
+        return None
+    return f
+
+
+def _strict_nonneg_int(val: Any) -> int | None:
+    """Accept only non-negative JSON int (not bool, not float/str)."""
+    if isinstance(val, bool) or not isinstance(val, int):
+        return None
+    if val < 0:
+        return None
+    return val
+
+
 def validate_charter_file(path: Path | str) -> list[str]:
     """Validate an on-disk charter; grandfathering uses the file's SHA-256 bytes."""
     p = Path(path)
@@ -503,6 +545,180 @@ def validate_charter(
 
     if not (charter.get("gates") or charter.get("passer_definition_soft")):
         errs.append("gates or passer_definition_soft required")
+
+    # Multi-instrument joint charters: complete contract (not only nested-layout path).
+    inst = charter.get("instrument") or {}
+    multi = bool(inst.get("multi_symbol_in_scope")) or bool(
+        isinstance(inst.get("symbols"), list) and len(inst.get("symbols") or []) > 1
+    )
+    gates = charter.get("gates") or {}
+    # Nested-only layout without top-level soft is always invalid
+    if (
+        (gates.get("per_symbol") is not None or gates.get("joint") is not None)
+        and (not isinstance(gates.get("soft"), dict) or not gates.get("soft"))
+    ):
+        errs.append(
+            "multi-instrument/nested joint charter requires top-level gates.soft "
+            "(gates.per_symbol/gates.joint alone are invisible to gates_from_charter)"
+        )
+    if multi:
+        # Complete joint-soft contract for every multi-instrument charter.
+        # Soft joint keys: n, PF, NP, max DD (DD was fail-open if omitted).
+        _joint_soft_required = (
+            "n_trades_min",
+            "profit_factor_min",
+            "net_profit_gt",
+            "max_drawdown_pct_max",
+        )
+        _per_symbol_soft_required = (
+            "n_trades_min",
+            "profit_factor_min",
+            "net_profit_gt",
+        )
+
+        def _gate_number_ok(key: str, val: Any) -> str | None:
+            """Return error suffix if invalid; None if ok."""
+            if key == "n_trades_min":
+                if _strict_nonneg_int(val) is None:
+                    return (
+                        "must be a non-negative JSON integer "
+                        "(not bool/float/str/NaN/Inf)"
+                    )
+                return None
+            if _strict_finite_number(val) is None:
+                return (
+                    "must be a finite JSON int/float "
+                    "(not bool/str/NaN/Inf)"
+                )
+            return None
+
+        if not isinstance(gates.get("soft"), dict) or not gates.get("soft"):
+            errs.append(
+                "multi-instrument charter requires top-level gates.soft (joint soft primary)"
+            )
+        else:
+            soft = gates["soft"]
+            for k in _joint_soft_required:
+                if k not in soft:
+                    errs.append(f"multi-instrument gates.soft missing required key {k!r}")
+                else:
+                    why = _gate_number_ok(k, soft.get(k))
+                    if why is not None:
+                        errs.append(f"multi-instrument gates.soft.{k} {why}")
+        if gates.get("primary_n_passers") != "soft":
+            errs.append(
+                "multi-instrument charter requires gates.primary_n_passers='soft' "
+                f"(got {gates.get('primary_n_passers')!r})"
+            )
+        mi = gates.get("multi_instrument") or {}
+        if not isinstance(mi, dict) or not mi:
+            errs.append("multi-instrument charter requires gates.multi_instrument object")
+        else:
+            if mi.get("n_passers_definition") != "binary_joint_gate_success":
+                errs.append(
+                    "multi-instrument gates.multi_instrument.n_passers_definition "
+                    "must be 'binary_joint_gate_success'"
+                )
+            if mi.get("require_all_symbols_soft_pass") is not True:
+                errs.append(
+                    "multi-instrument gates.multi_instrument.require_all_symbols_soft_pass "
+                    "must be true (exact boolean)"
+                )
+            if mi.get("joint_soft_is_primary") is not True:
+                errs.append(
+                    "multi-instrument gates.multi_instrument.joint_soft_is_primary "
+                    "must be true (exact boolean)"
+                )
+            ps = mi.get("per_symbol_soft")
+            if not isinstance(ps, dict) or not ps:
+                errs.append(
+                    "multi-instrument gates.multi_instrument.per_symbol_soft required"
+                )
+            else:
+                for k in _per_symbol_soft_required:
+                    if k not in ps:
+                        errs.append(
+                            "multi-instrument gates.multi_instrument.per_symbol_soft "
+                            f"missing required key {k!r}"
+                        )
+                    else:
+                        why = _gate_number_ok(k, ps.get(k))
+                        if why is not None:
+                            errs.append(
+                                "multi-instrument gates.multi_instrument.per_symbol_soft."
+                                f"{k} {why}"
+                            )
+        harness = charter.get("harness") or {}
+        if harness.get("kind") != "multi_instrument_joint_v1":
+            errs.append(
+                "multi-instrument charter requires harness.kind="
+                "'multi_instrument_joint_v1' (dedicated joint screen/null harness)"
+            )
+        cal = charter.get("analysis_calendar") or {}
+        if cal.get("mode") != "intersection_only":
+            errs.append(
+                "multi-instrument charter requires analysis_calendar.mode="
+                "'intersection_only' for real and null"
+            )
+        null = charter.get("null") or {}
+        if null.get("joint_dependency_preserving") is not True:
+            errs.append(
+                "multi-instrument charter requires null.joint_dependency_preserving "
+                "true (exact boolean)"
+            )
+        sk = null.get("shared_k_spec") or {}
+        if not isinstance(sk, dict) or not sk.get("trial_seed"):
+            errs.append(
+                "multi-instrument charter requires null.shared_k_spec.trial_seed "
+                "(reproducible shared-k draws)"
+            )
+        # PF zero-denominator must be pinned for multi-instrument joint PF / null max-PF
+        # House convention: PF=0 no trades; PF=99 when gross loss is 0 with gross profit > 0.
+        # Reject bool (float(False)==0) — require real int/float numbers.
+        js = charter.get("joint_statistics") or {}
+        pzd = js.get("profit_factor_zero_denominator") or {}
+        if not isinstance(pzd, dict):
+            errs.append(
+                "multi-instrument charter requires "
+                "joint_statistics.profit_factor_zero_denominator object"
+            )
+        else:
+            no_trades_pf = pzd.get("no_trades")
+            nt = _strict_finite_number(no_trades_pf)
+            if no_trades_pf is None:
+                errs.append(
+                    "multi-instrument charter requires "
+                    "joint_statistics.profit_factor_zero_denominator.no_trades"
+                )
+            elif nt is None:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator.no_trades "
+                    "must be a finite JSON number 0 (not bool/str/NaN/Inf; house convention)"
+                )
+            elif nt != 0.0:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator.no_trades "
+                    "must be 0 (house convention)"
+                )
+            glz_key = "gross_loss_zero_and_gross_profit_positive"
+            glz_pf = pzd.get(glz_key)
+            glz = _strict_finite_number(glz_pf)
+            if glz_pf is None:
+                errs.append(
+                    "multi-instrument charter requires "
+                    f"joint_statistics.profit_factor_zero_denominator.{glz_key}"
+                )
+            elif glz is None:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator."
+                    f"{glz_key} must be a finite JSON number 99 "
+                    "(not bool/str/NaN/Inf; house convention)"
+                )
+            elif glz != 99.0:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator."
+                    f"{glz_key} must be 99 (house convention)"
+                )
     costs = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
     if "commission_per_lot" not in costs and "costs_source" not in (charter.get("fixed") or {}):
         errs.append("fixed.costs or fixed.costs_source required")

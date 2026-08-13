@@ -76,6 +76,7 @@ from xau_charter_protocol import (  # noqa: E402, I001
     is_charter_runnable,
     load_charter,
     make_pass_fns,
+    multi_instrument_single_frame_refuse_message,
     null_spec_from_charter,
     validate_charter_file,
 )
@@ -807,6 +808,10 @@ def main(argv: list[str] | None = None) -> int:
                 print("WARNING charter validation:", verrs, flush=True)
             else:
                 raise SystemExit("charter validation failed:\n- " + "\n- ".join(verrs))
+        # Fail closed: multi-instrument joint charters must not use this single-frame runner
+        _refuse = multi_instrument_single_frame_refuse_message(charter)
+        if _refuse:
+            raise SystemExit(_refuse)
         if args.strict_charter and not args.quick:
             try:
                 assert_clean_dispositional_tree()
