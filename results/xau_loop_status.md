@@ -1,5 +1,22 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 FIXTURES** · implementation only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_IMPLEMENTATION_RE_REVIEW`** (empty-joint refuse + clock derivation + true MTM fixture) |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v4** | SHA `e29b2693…` (immutable; freeze PR #6 merged) |
+| **module** | `scripts/xau_family_joint_london_open_cosign_fade_flat.py` |
+| **fixtures** | synthetic only (`tests/test_joint_london_open_cosign_fade_flat.py`) |
+| **develop screen / null / sealed / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+| **branch** | `research/multi-instrument-joint-london-cosign-flat-v4-fixtures` |
+
+Authorized scope: dedicated joint harness + synthetic fixtures. Stop for implementation review.
+
+---
+
 ## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 FREEZE** · v3 SUPERSEDED · design only
 
 | Field | Value |
