@@ -153,21 +153,37 @@ def _sma_atr(d: pd.DataFrame, period: int = ATR_PERIOD) -> pd.Series:
     return pd.Series(tr.rolling(period).mean(), index=d.index, dtype=float)
 
 
+class EmptyJointIntersectionError(ValueError):
+    """Raised when the three-symbol joint calendar I is empty (not a zero-trade result)."""
+
+
 def align_joint(
     frames: dict[str, pd.DataFrame],
     *,
     symbols: tuple[str, ...] = SYMBOLS,
 ) -> dict[str, pd.DataFrame]:
-    """Restrict to timestamp intersection I and recompute Wilder ATR on I."""
+    """Restrict to timestamp intersection I and recompute Wilder ATR on I.
+
+    Empty intersection is a hard error (``EmptyJointIntersectionError``), never a
+    silent zero-trade JointResult (would masquerade as SCREEN_FAIL).
+    """
     if set(symbols) - set(frames):
         missing = set(symbols) - set(frames)
         raise ValueError(f"missing symbols: {sorted(missing)}")
     prepared = {s: prepare_symbol(frames[s]) for s in symbols}
+    # Schema on prepared frames even if intersection will be empty
+    for s in symbols:
+        for col in ("time", "open", "high", "low", "close", "spread", "hour", "day_id"):
+            if col not in prepared[s].columns:
+                raise ValueError(f"{s} missing required column {col!r} before align")
     # Intersection of times (ordered)
     sets = [set(prepared[s]["time"].tolist()) for s in symbols]
     common = sets[0].intersection(*sets[1:])
     if not common:
-        return {s: prepared[s].iloc[0:0].copy() for s in symbols}
+        raise EmptyJointIntersectionError(
+            "EMPTY_JOINT_INTERSECTION: no common timestamps across "
+            f"{list(symbols)}; refuse evaluation (not a zero-trade result)"
+        )
     out: dict[str, pd.DataFrame] = {}
     common_list = sorted(common)
     for s in symbols:
@@ -189,6 +205,8 @@ def validate_joint_frames(
     """Fail closed: identical ordered timestamps, row counts, day/hour, required cols.
 
     Prevents ``already_aligned=True`` from bypassing the intersection calendar.
+    Empty frames are invalid (``EmptyJointIntersectionError``), not a zero-trade pass.
+    hour/day_id must derive from time; timestamps must be unique and strictly increasing.
     """
     if set(symbols) - set(frames):
         missing = set(symbols) - set(frames)
@@ -196,40 +214,60 @@ def validate_joint_frames(
     required = ["time", "open", "high", "low", "close", "spread", "hour", "day_id"]
     if require_atr:
         required = [*required, "atr"]
-    ref = frames[symbols[0]]
-    n = len(ref)
-    if n == 0:
-        for s in symbols[1:]:
-            if len(frames[s]) != 0:
-                raise ValueError("joint frames length mismatch on empty ref")
-        return
-    t0 = pd.to_datetime(ref["time"])
-    if getattr(t0.dtype, "tz", None) is not None:
-        raise ValueError("joint time must be timezone-naive server_clock_as_stored")
-    h0 = ref["hour"].to_numpy(int)
-    d0 = ref["day_id"].astype(str).to_numpy()
+    # Schema first (including empty frames)
     for s in symbols:
         d = frames[s]
         for col in required:
             if col not in d.columns:
                 raise ValueError(f"{s} missing required joint column {col!r}")
-        if len(d) != n:
+    ref = frames[symbols[0]]
+    n = len(ref)
+    for s in symbols[1:]:
+        if len(frames[s]) != n:
             raise ValueError(
-                f"joint frame row count mismatch: {s} has {len(d)}, expected {n}"
+                f"joint frame row count mismatch: {s} has {len(frames[s])}, expected {n}"
             )
-        ts = pd.to_datetime(d["time"])
+    if n == 0:
+        raise EmptyJointIntersectionError(
+            "EMPTY_JOINT_INTERSECTION: joint frames have zero rows; "
+            "refuse evaluation (not a zero-trade result)"
+        )
+    t0 = pd.to_datetime(ref["time"])
+    if getattr(t0.dtype, "tz", None) is not None:
+        raise ValueError("joint time must be timezone-naive server_clock_as_stored")
+    t0 = t0.reset_index(drop=True)
+    # Strictly increasing + unique on ref (shared by all symbols after identity check)
+    t_ns = t0.astype("int64").to_numpy()
+    if t_ns.size >= 2 and np.any(np.diff(t_ns) <= 0):
+        raise ValueError(
+            "joint timestamps must be strictly increasing and unique "
+            "(duplicate or out-of-order time)"
+        )
+    for s in symbols:
+        d = frames[s]
+        ts = pd.to_datetime(d["time"]).reset_index(drop=True)
         if getattr(ts.dtype, "tz", None) is not None:
             raise ValueError(
                 f"{s} time must be timezone-naive server_clock_as_stored"
             )
-        if not ts.reset_index(drop=True).equals(t0.reset_index(drop=True)):
+        if not ts.equals(t0):
             raise ValueError(
                 f"joint timestamps not identical for {s} (intersection calendar required)"
             )
-        if not np.array_equal(d["hour"].to_numpy(int), h0):
-            raise ValueError(f"joint hour column mismatch for {s}")
-        if not np.array_equal(d["day_id"].astype(str).to_numpy(), d0):
-            raise ValueError(f"joint day_id column mismatch for {s}")
+        # hour / day_id must derive from time (not free-floating labels)
+        exp_hour = ts.dt.hour.to_numpy(dtype=int)
+        exp_day = ts.dt.strftime("%Y-%m-%d").to_numpy()
+        got_hour = d["hour"].to_numpy(dtype=int)
+        got_day = d["day_id"].astype(str).to_numpy()
+        if not np.array_equal(got_hour, exp_hour):
+            raise ValueError(
+                f"{s}.hour must equal time.dt.hour (derived server clock; got mismatch)"
+            )
+        if not np.array_equal(got_day, exp_day):
+            raise ValueError(
+                f"{s}.day_id must equal time.dt.strftime('%Y-%m-%d') "
+                "(derived server clock; got mismatch)"
+            )
         # Spreads fail-closed here; OHLC non-finite is handled at entry/exit use
         # (invalid entry fill cancels the basket rather than partial entry).
         spr = d["spread"].to_numpy(float)
@@ -246,7 +284,6 @@ def validate_joint_frames(
             # ATR may be NaN during warmup; only non-finite Inf is hard-fail globally.
             if np.any(np.isinf(atr)):
                 raise ValueError(f"{s}.atr contains Inf")
-
 
 def _floor_lots(raw_lots: float, *, lot_step: float, lot_max: float) -> float:
     if raw_lots <= 0 or not np.isfinite(raw_lots):
@@ -372,13 +409,10 @@ def simulate_joint(
         aligned = align_joint(frames, symbols=symbols)
     ref = aligned[symbols[0]]
     n = len(ref)
-    empty_m = Metrics(0.0, 0.0, 0.0, 0.0, 0, 0, 0)
+    # validate_joint_frames already refuses n==0; belt-and-suspenders
     if n == 0:
-        return JointResult(
-            per_symbol=dict.fromkeys(symbols, empty_m),
-            joint=empty_m,
-            trade_log=[],
-            joint_equity=[],
+        raise EmptyJointIntersectionError(
+            "EMPTY_JOINT_INTERSECTION: refuse evaluation (not a zero-trade result)"
         )
 
     # Arrays per symbol — spreads required, finite, nonnegative (no nan_to_num)

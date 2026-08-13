@@ -715,9 +715,13 @@ def test_sl_before_tp_when_both_touch():
 
 
 def test_joint_mtm_drawdown_uses_floating_equity():
-    """Joint max DD must reflect adverse MTM while position open, not flat books only."""
+    """Joint DD must use floating MTM while open — adverse close stays inside SL.
+
+    A realized-only equity path would show no drawdown until exit; we assert the
+    mid bar does not exit and joint equity equals exact floating mark.
+    """
     day = "2024-01-05"
-    # Cosign down → fade long; then push all closes down hard before time flat
+    # Cosign down → fade long
     sig = _signal_day_frames(day, cosign="down", t_star_hour=7, include_hour16=True)
     aligned = _merge_warmup_signal(sig)
     ref = aligned["XAUUSD"]
@@ -725,24 +729,165 @@ def test_joint_mtm_drawdown_uses_floating_equity():
         np.flatnonzero(((ref["day_id"] == day) & (ref["hour"] == 7)).to_numpy())[0]
     )
     entry_i = t_star_i + 1
-    # After entry, set intermediate bar deep underwater then recover at hour 16
     mid = entry_i + 2
+    fills: dict[str, float] = {}
+    atrs: dict[str, float] = {}
     for s in fam.SYMBOLS:
         aligned[s] = aligned[s].copy()
         fill = float(aligned[s]["open"].iloc[entry_i])
-        # Keep range quiet on entry so no SL/TP; then dump close on mid bar
-        aligned[s].loc[aligned[s].index[entry_i], "high"] = fill + 1e-6
-        aligned[s].loc[aligned[s].index[entry_i], "low"] = fill - 1e-6
+        atr_v = float(aligned[s]["atr"].iloc[t_star_i])
+        fills[s] = fill
+        atrs[s] = atr_v
+        stop = 1.5 * atr_v
+        # Quiet entry bar (no SL/TP)
+        aligned[s].loc[aligned[s].index[entry_i], "high"] = fill + 1e-9
+        aligned[s].loc[aligned[s].index[entry_i], "low"] = fill - 1e-9
         aligned[s].loc[aligned[s].index[entry_i], "close"] = fill
-        crash = fill * 0.5 if s == "XAUUSD" else fill * 0.98
-        aligned[s].loc[aligned[s].index[mid], "close"] = crash
-        aligned[s].loc[aligned[s].index[mid], "high"] = fill
-        aligned[s].loc[aligned[s].index[mid], "low"] = crash
-    res = fam.simulate_joint(aligned, already_aligned=True)
+        # Adverse mid: close halfway to SL, low still strictly above SL
+        adverse = fill - 0.5 * stop  # half stop distance against long
+        assert adverse > fill - stop + 1e-12
+        aligned[s].loc[aligned[s].index[mid], "close"] = adverse
+        aligned[s].loc[aligned[s].index[mid], "high"] = fill + 1e-9
+        aligned[s].loc[aligned[s].index[mid], "low"] = adverse  # still > SL
+        # Quiet bars between entry and mid / after mid until time flat
+        for j in range(entry_i + 1, mid):
+            aligned[s].loc[aligned[s].index[j], "high"] = fill + 1e-9
+            aligned[s].loc[aligned[s].index[j], "low"] = fill - 1e-9
+            aligned[s].loc[aligned[s].index[j], "close"] = fill
+    log: list[dict] = []
+    res = fam.simulate_joint(aligned, already_aligned=True, trade_log=log)
     assert res.n_signals_entered == 1
-    # Equity series must go below joint start at the crash bar
-    assert min(res.joint_equity) < fam.JOINT_START_EQUITY - 1.0
-    assert res.joint.max_drawdown_pct > 0.0
+    # No exit on the MTM bar
+    assert all(t["exit_bar"] != mid for t in log)
+    assert all(t["reason"] != "sl" or t["exit_bar"] != mid for t in log)
+    # Expected floating equity at mid (still open on all three)
+    expected_eq = 0.0
+    for s in fam.SYMBOLS:
+        lots = fam.size_lots(
+            balance=fam.START_BALANCE,
+            atr_tstar=atrs[s],
+            contract_size=fam.PER_SYMBOL_META[s]["contract_size"],
+        )
+        assert lots is not None
+        close_mid = float(aligned[s]["close"].iloc[mid])
+        open_pnl = (
+            (close_mid - fills[s])
+            * fam.PER_SYMBOL_META[s]["contract_size"]
+            * lots
+            * 1  # long
+        )
+        expected_eq += fam.START_BALANCE + open_pnl
+    assert res.joint_equity[mid] == pytest.approx(expected_eq, rel=0, abs=1e-6)
+    assert res.joint_equity[mid] < fam.JOINT_START_EQUITY
+    # Peak is at least joint start (or entry bar equity ≈ start); DD from peak
+    peak = max(res.joint_equity[: mid + 1])
+    exp_dd = 100.0 * (peak - res.joint_equity[mid]) / peak
+    assert res.joint.max_drawdown_pct >= exp_dd - 1e-6
+    assert exp_dd > 0.0
+
+
+def test_empty_joint_intersection_refuses_not_zero_trade():
+    """Disjoint calendars must raise, not return a valid 0-trade JointResult."""
+    warm = _warmup_days(2)
+    # Shift EUR entirely off the shared calendar
+    eur = warm["EURUSD"].copy()
+    eur["time"] = eur["time"] + pd.Timedelta(365, unit="D")
+    frames = {
+        "XAUUSD": warm["XAUUSD"],
+        "EURUSD": eur,
+        "GBPUSD": warm["GBPUSD"],
+    }
+    with pytest.raises(fam.EmptyJointIntersectionError, match="EMPTY_JOINT_INTERSECTION"):
+        fam.align_joint(frames)
+    with pytest.raises(fam.EmptyJointIntersectionError, match="EMPTY_JOINT_INTERSECTION"):
+        fam.simulate_joint(frames, already_aligned=False)
+
+
+def test_empty_frames_missing_schema_refuses_before_zero_trade():
+    """All-empty frames without hour/day_id/atr must not become 0-trade success."""
+    empty = pd.DataFrame(
+        {
+            "time": pd.to_datetime([]),
+            "open": [],
+            "high": [],
+            "low": [],
+            "close": [],
+            "spread": [],
+        }
+    )
+    frames = {s: empty.copy() for s in fam.SYMBOLS}
+    with pytest.raises(ValueError, match="missing required|EMPTY_JOINT"):
+        fam.simulate_joint(frames, already_aligned=True)
+
+
+def test_empty_aligned_with_schema_still_refuses():
+    """Empty frames that have schema columns are still EMPTY_JOINT_INTERSECTION."""
+    empty = pd.DataFrame(
+        {
+            "time": pd.to_datetime([]),
+            "open": pd.Series(dtype=float),
+            "high": pd.Series(dtype=float),
+            "low": pd.Series(dtype=float),
+            "close": pd.Series(dtype=float),
+            "spread": pd.Series(dtype=float),
+            "hour": pd.Series(dtype=int),
+            "day_id": pd.Series(dtype=str),
+            "atr": pd.Series(dtype=float),
+        }
+    )
+    frames = {s: empty.copy() for s in fam.SYMBOLS}
+    with pytest.raises(fam.EmptyJointIntersectionError, match="EMPTY_JOINT_INTERSECTION"):
+        fam.simulate_joint(frames, already_aligned=True)
+
+
+def test_hour_must_derive_from_time():
+    day = "2024-01-05"
+    aligned = _merge_warmup_signal(_signal_day_frames(day, cosign="up"))
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        aligned[s]["hour"] = (aligned[s]["hour"].astype(int) + 1) % 24
+    with pytest.raises(ValueError, match=r"hour must equal time\.dt\.hour"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_day_id_must_derive_from_time():
+    day = "2024-01-05"
+    aligned = _merge_warmup_signal(_signal_day_frames(day, cosign="up"))
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        aligned[s]["day_id"] = "1999-01-01"
+    with pytest.raises(ValueError, match="day_id must equal"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_duplicate_timestamps_refused():
+    day = "2024-01-05"
+    aligned = _merge_warmup_signal(_signal_day_frames(day, cosign="up"))
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        # Duplicate second row time onto first
+        aligned[s].loc[aligned[s].index[1], "time"] = aligned[s]["time"].iloc[0]
+        # Keep hour/day consistent with (now duplicate) times
+        aligned[s]["hour"] = pd.to_datetime(aligned[s]["time"]).dt.hour
+        aligned[s]["day_id"] = pd.to_datetime(aligned[s]["time"]).dt.strftime("%Y-%m-%d")
+    with pytest.raises(ValueError, match="strictly increasing|unique"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_out_of_order_timestamps_refused():
+    day = "2024-01-05"
+    aligned = _merge_warmup_signal(_signal_day_frames(day, cosign="up"))
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        # Swap two adjacent times
+        t0 = aligned[s]["time"].iloc[5]
+        t1 = aligned[s]["time"].iloc[6]
+        aligned[s].loc[aligned[s].index[5], "time"] = t1
+        aligned[s].loc[aligned[s].index[6], "time"] = t0
+        aligned[s]["hour"] = pd.to_datetime(aligned[s]["time"]).dt.hour
+        aligned[s]["day_id"] = pd.to_datetime(aligned[s]["time"]).dt.strftime("%Y-%m-%d")
+    with pytest.raises(ValueError, match="strictly increasing|unique|out-of-order"):
+        fam.simulate_joint(aligned, already_aligned=True)
 
 
 def test_two_cycle_realized_balance_compounding():
