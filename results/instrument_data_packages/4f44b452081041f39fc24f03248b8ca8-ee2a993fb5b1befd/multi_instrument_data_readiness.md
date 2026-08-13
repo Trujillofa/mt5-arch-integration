@@ -8,7 +8,7 @@
 
 **Publish model:** `current_indirection_v6`
 
-**Package id:** `4f44b452081041f39fc24f03248b8ca8-ea80f1003a1e8958`
+**Package id:** `4f44b452081041f39fc24f03248b8ca8-495b44e8c37819ad`
 
 **Symbols:** XAUUSD, EURUSD, GBPUSD (full H1)
 
@@ -18,5 +18,4 @@
 
 ## PR note
 
-Data-only PR: one package + CURRENT + SHA manifests. Pipeline lives in
-`research/multi-instrument-pipeline-v1`.
+Data-only PR: one package + CURRENT + SHA manifests. Pipeline: PR #4 / main.

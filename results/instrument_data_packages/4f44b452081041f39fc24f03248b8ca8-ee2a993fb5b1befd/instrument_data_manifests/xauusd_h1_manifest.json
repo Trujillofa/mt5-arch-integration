@@ -19,8 +19,8 @@
   "missing_duplicate_bars": {
     "duplicate_timestamps": 0,
     "bad_ohlc_rows": 0,
-    "develop_csv": "results/instrument_data/xauusd_h1_develop.csv",
-    "develop_csv_sha256": "d78f3ffa010521acb3dab3eb7f06182b2584eed439579eb1b32d1a0632a61ccd"
+    "develop_csv": "derived:server_time < holdout_start_server",
+    "develop_csv_sha256": "92a938a99c47253b06833b5881d9fddb5e996a13cefd4080508d9725a8ecc3c2"
   },
   "gap_report": {
     "n_gaps_gt_72h": 9,

@@ -19,8 +19,8 @@
   "missing_duplicate_bars": {
     "duplicate_timestamps": 0,
     "bad_ohlc_rows": 0,
-    "develop_csv": "results/instrument_data/eurusd_h1_develop.csv",
-    "develop_csv_sha256": "ad01989eb40056dbc6686f1425987a9cae23eb29396693745f8744e79a3815f5"
+    "develop_csv": "derived:server_time < holdout_start_server",
+    "develop_csv_sha256": "169a39e4f60b2d450d99ef5956fda98ae6d9ab477aa6a394e71ec2b8a22928fe"
   },
   "gap_report": {
     "n_gaps_gt_72h": 3,

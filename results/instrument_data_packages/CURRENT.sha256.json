@@ -1,5 +1,5 @@
 {
-  "package_id": "4f44b452081041f39fc24f03248b8ca8-e679a7e8bc5e5a34",
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
   "publish_model": "current_indirection_v6",
   "required_symbols": [
     "XAUUSD",
@@ -20,7 +20,7 @@
       "bytes": 3221764
     },
     "instrument_data_manifests/committed_artifact_lock.json": {
-      "sha256": "041813d4527713e7622b635cd887b544771d450a39edeb0088c1412885a3c61f",
+      "sha256": "20de3c8c35be1e0828cfb14e25141797d8dd98d2aefecfe2805b1d5b3f876af8",
       "bytes": 2572
     },
     "instrument_data_manifests/common_develop_window.json": {
@@ -28,8 +28,8 @@
       "bytes": 913
     },
     "instrument_data_manifests/eurusd_h1_manifest.json": {
-      "sha256": "b55d6f7af46e989bb9a432335eebe05b8bfef0e9a8a282ac9e46da2865f08cf1",
-      "bytes": 3335
+      "sha256": "2a8ea6ede057b5adffdaad638fcd5e3626010ea7466f7317a0cf301974340f9e",
+      "bytes": 3332
     },
     "instrument_data_manifests/export_challenge.json": {
       "sha256": "1a3b29cf1a377625bb982145a3316c508f55aac0ced719009359555926276553",
@@ -44,17 +44,17 @@
       "bytes": 2557
     },
     "instrument_data_manifests/gbpusd_h1_manifest.json": {
-      "sha256": "543ee1eb9e724e5d5f8792b9e96dd6c598d2e73b9c0442f3b98e26a36f49c982",
-      "bytes": 3335
+      "sha256": "183d522bfd0c4f39b75a3e202c5429c3f9fda56c80faae3d3a93d7077b9e744d",
+      "bytes": 3332
     },
     "instrument_data_manifests/xauusd_h1_manifest.json": {
-      "sha256": "d773317c2ebbd3ae28d62cab0ac5a9087a24b08f893fb7166acf742fad64cc81",
-      "bytes": 4075
+      "sha256": "b61c7213fd83e11281abdb711cafd0d31415aefe4074904757d345d9fc3fe13b",
+      "bytes": 4072
     },
     "multi_instrument_data_readiness.md": {
-      "sha256": "323bc674d5cadb7f6478320d90786d81acdf0d53338a5e8d64da867cad706d37",
-      "bytes": 652
+      "sha256": "073d3cf27bdeda77e22f9ed66ca89ecd2713890e055d8aa5e730dd2cbd5a9988",
+      "bytes": 617
     }
   },
-  "content_package_id": "4f44b452081041f39fc24f03248b8ca8-e679a7e8bc5e5a34"
+  "content_package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd"
 }

@@ -19,8 +19,8 @@
   "missing_duplicate_bars": {
     "duplicate_timestamps": 0,
     "bad_ohlc_rows": 0,
-    "develop_csv": "results/instrument_data/gbpusd_h1_develop.csv",
-    "develop_csv_sha256": "240b490750eb131313155abcd81966d916046708c581ee20a912e21a54136fb0"
+    "develop_csv": "derived:server_time < holdout_start_server",
+    "develop_csv_sha256": "91413b1c641f85696d11cdd31a3669191c0b2bf2a8081a46712e1fa9b6d0ed6e"
   },
   "gap_report": {
     "n_gaps_gt_72h": 3,
