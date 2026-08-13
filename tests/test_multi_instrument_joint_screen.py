@@ -187,16 +187,120 @@ def test_exit_code_two_would_fail_parser(tmp_path: Path):
 
 def test_cost_mismatch_refused():
     ch = load_charter(CHARTER)
-    with pytest.raises(SystemExit, match="cost mismatch"):
+    with pytest.raises(SystemExit, match="cost mismatch|identity"):
         screen.assert_costs_match_charter(
             ch,
             loaded={
+                "account_type": "STANDARD_STP",
+                "login": 27496181,
+                "server": "VantageMarkets-Live 5",
                 "commission_per_lot": 7.0,
                 "slippage_points": 3.0,
                 "spread_col": "spread",
                 "point_size": 0.01,
             },
         )
+
+
+def test_cost_identity_missing_refused():
+    ch = load_charter(CHARTER)
+    with pytest.raises(SystemExit, match="identity|missing"):
+        screen.assert_costs_match_charter(
+            ch,
+            loaded={
+                "commission_per_lot": 0.0,
+                "slippage_points": 0.0,
+                "spread_col": "spread",
+                "point_size": 0.01,
+            },
+        )
+
+
+def test_cost_identity_wrong_login_refused():
+    ch = load_charter(CHARTER)
+    with pytest.raises(SystemExit, match="identity mismatch login"):
+        screen.assert_costs_match_charter(
+            ch,
+            loaded={
+                "account_type": "STANDARD_STP",
+                "login": 999,
+                "server": "VantageMarkets-Live 5",
+                "commission_per_lot": 0.0,
+                "slippage_points": 0.0,
+                "spread_col": "spread",
+                "point_size": 0.01,
+            },
+        )
+
+
+def test_positive_passer_report_parses_ok(tmp_path: Path):
+    """Both screen outcomes: force n_passers=1 and prove parser OK unburned."""
+    ch = load_charter(CHARTER)
+    costs = screen.assert_costs_match_charter(ch)
+    report = screen.run_joint_screen(
+        _aligned_zero_spread(),
+        ch,
+        costs=costs,
+        already_aligned=True,
+        dispositional=True,
+    )
+    # Synthetically force the positive-screen shape (binary joint sole config)
+    report["real"]["n_passers"] = 1
+    report["real"]["primary_passers"] = 1
+    report["real"]["n_passers_soft"] = 1
+    report["verdict"]["disposition"] = "SCREEN_PASS_PENDING_NULL_REVIEW"
+    report["verdict"]["screen_status"] = "PASSERS_GE_1_PENDING_NULL_REVIEW"
+    report["verdict"]["fail_n_passers"] = False
+    report["screen"]["zero_primary_passers"] = False
+    report["null"]["skipped_reason"] = "SCREEN_ONLY"
+    report["disposition"] = "SCREEN_PASS_PENDING_NULL_REVIEW"
+    report["screen_status"] = "PASSERS_GE_1_PENDING_NULL_REVIEW"
+    report["n_passers"] = 1
+    out = tmp_path / "pass"
+    out.mkdir()
+    screen.write_screen_report(report, out)
+    acct = parse_harness_report_for_accounting(
+        result_json=out / "null_maxstat.json",
+        n_null_planned=int(report["null"]["n_null_planned"]),
+        exit_code=0,
+        expected_null_seed=int(report["null"]["base_seed"]),
+    )
+    assert acct["execution_state"] == "OK"
+    assert acct["disposition"] == "SCREEN_PASS_PENDING_NULL_REVIEW"
+    assert acct["r1_burned"] is False
+    assert acct["n_null_executed"] == 0
+
+
+def test_freshness_before_package_load_and_score(tmp_path: Path, monkeypatch):
+    """Occupied out-dir must refuse before loader or scorer run."""
+    occupied = tmp_path / "occupied"
+    occupied.mkdir()
+    (occupied / "joint_screen.json").write_text("{}\n")
+
+    calls: list[str] = []
+
+    def _load(*_a, **_k):
+        calls.append("package_load")
+        raise AssertionError("package_load must not run")
+
+    def _score(*_a, **_k):
+        calls.append("score")
+        raise AssertionError("score must not run")
+
+    monkeypatch.setattr(screen, "load_develop_frames_from_package", _load)
+    monkeypatch.setattr(screen, "run_joint_screen", _score)
+
+    with pytest.raises(SystemExit, match="refuse overwrite|not empty"):
+        screen.main(
+            [
+                "--charter",
+                str(CHARTER),
+                "--execute-develop-screen",
+                "--out-dir",
+                str(occupied),
+            ]
+        )
+    assert calls == []
 
 
 def test_refuse_overwrite_artifacts(tmp_path: Path):

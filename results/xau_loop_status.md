@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **next_step** | **`AWAIT_ADVERSARIAL_SCREEN_HARNESS_RE_REVIEW`** (sealed dispositional path + non-dispositional synthetic + canonical accounting) |
+| **next_step** | **`AWAIT_ADVERSARIAL_SCREEN_HARNESS_RE_REVIEW`** (SCREEN_ONLY parser + early freshness + cost identity) |
 | **family_id** | `joint_london_open_cosign_fade_flat` |
 | **charter v4** | SHA `e29b2693…` on main |
 | **fixtures PR** | #7 merged (`eadd846`) |

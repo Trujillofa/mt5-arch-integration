@@ -63,7 +63,11 @@ from xau_family_joint_london_open_cosign_fade_flat import (  # noqa: E402
     soft_pass_joint,
     soft_pass_per_symbol,
 )
-from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs  # noqa: E402
+from xau_research_costs import (  # noqa: E402
+    RESEARCH_COSTS_PATH,
+    load_research_costs,
+    load_research_costs_full,
+)
 
 DEFAULT_CHARTER = (
     ROOT / "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json"
@@ -71,7 +75,7 @@ DEFAULT_CHARTER = (
 DEFAULT_OUT = ROOT / "results/xau_runs" / f"{FAMILY}_screen"
 
 # Artifacts that must not be silently overwritten
-_ARTIFACT_NAMES = ("joint_screen.json", "null_maxstat.json")
+_ARTIFACT_NAMES = ("joint_screen.json", "null_maxstat.json", "STARTED.json")
 
 
 def _metrics_blob(m: Any) -> dict[str, float | int]:
@@ -116,19 +120,47 @@ def pin_package_id(charter: dict[str, Any]) -> str:
     return pid
 
 
+# Sim keys + frozen account identity (must match full research costs document).
+_COST_SIM_KEYS = ("spread_col", "point_size", "commission_per_lot", "slippage_points")
+_COST_IDENTITY_KEYS = ("account_type", "login", "server")
+
+
 def assert_costs_match_charter(
     charter: dict[str, Any],
     loaded: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Loaded research costs must match charter fixed.costs on sim keys."""
+    """Full costs document must match charter fixed.costs on sim + identity keys.
+
+    Returns sim kwargs suitable for ``simulate_joint`` (subset of full document).
+    Identity fields (account_type / login / server) are required from the full
+    research-costs document and must match the charter freeze.
+    """
     fixed = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
-    costs = dict(loaded if loaded is not None else load_research_costs())
-    for k in ("spread_col", "point_size", "commission_per_lot", "slippage_points"):
+    full = dict(loaded if loaded is not None else load_research_costs_full())
+
+    # Identity must be present on both sides
+    for k in _COST_IDENTITY_KEYS:
+        if k not in fixed:
+            raise SystemExit(f"charter fixed.costs missing identity key {k!r}")
+        if k not in full:
+            raise SystemExit(
+                f"loaded costs missing identity key {k!r} "
+                "(use full research costs document, not sim subset alone)"
+            )
+        a, b = fixed[k], full[k]
+        # login may be int in both; compare numerically when both numeric
+        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+            if abs(float(a) - float(b)) > 1e-12:
+                raise SystemExit(f"cost identity mismatch {k}: charter={a} loaded={b}")
+        elif str(a) != str(b):
+            raise SystemExit(f"cost identity mismatch {k}: charter={a!r} loaded={b!r}")
+
+    for k in _COST_SIM_KEYS:
         if k not in fixed:
             continue
-        if k not in costs:
+        if k not in full:
             raise SystemExit(f"loaded costs missing {k}")
-        a, b = fixed[k], costs[k]
+        a, b = fixed[k], full[k]
         if isinstance(a, (int, float)) and isinstance(b, (int, float)):
             if abs(float(a) - float(b)) > 1e-12:
                 raise SystemExit(
@@ -137,7 +169,39 @@ def assert_costs_match_charter(
                 )
         elif a != b:
             raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
-    return costs
+
+    # Return sim kwargs for callers
+    sim = load_research_costs() if loaded is None else {
+        k: full[k] for k in _COST_SIM_KEYS if k in full
+    }
+    for k in _COST_SIM_KEYS:
+        if k in full:
+            sim[k] = full[k]
+    return sim
+
+
+def write_started_marker(
+    out_dir: Path,
+    *,
+    charter_path: Path,
+    package_id: str,
+    mode: str,
+) -> Path:
+    """Write STARTED marker before package load / score so interruptions are visible."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / "STARTED.json"
+    if path.exists():
+        raise SystemExit(f"refuse overwrite existing STARTED marker: {path}")
+    body = {
+        "execution_state": "STARTED",
+        "family_id": FAMILY,
+        "mode": mode,
+        "charter_path": str(charter_path),
+        "package_id": package_id,
+        "started_at_utc": datetime.now(UTC).isoformat(),
+    }
+    path.write_text(json.dumps(body, indent=2) + "\n")
+    return path
 
 
 def charter_null_base_seed(charter: dict[str, Any]) -> int:
@@ -415,9 +479,12 @@ def ensure_fresh_artifacts(out_dir: Path) -> Path:
 
 
 def write_screen_report(report: dict[str, Any], out_dir: Path) -> Path:
-    """Write joint_screen.json and canonical null_maxstat.json (same payload)."""
+    """Write joint_screen.json and canonical null_maxstat.json (same payload).
+
+    STARTED.json may already exist (written before score); final reports must not.
+    """
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name in _ARTIFACT_NAMES:
+    for name in ("joint_screen.json", "null_maxstat.json"):
         p = out_dir / name
         if p.exists():
             raise SystemExit(f"refuse overwrite existing screen artifact: {p}")
@@ -581,15 +648,26 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
 
+    # Freshness BEFORE any package load / score (fail-closed order).
+    try:
+        out_dir = ensure_fresh_artifacts(args.out_dir.resolve())
+    except CharterError as e:
+        raise SystemExit(str(e)) from e
+
     # --- synthetic non-dispositional ---
     if args.frames_parquet_dir is not None:
+        write_started_marker(
+            out_dir,
+            charter_path=charter_path,
+            package_id=pkg_id,
+            mode="synthetic_non_dispositional",
+        )
         frames: dict[str, pd.DataFrame] = {}
         for s in SYMBOLS:
             p = args.frames_parquet_dir / f"{s}.parquet"
             if not p.is_file():
                 raise SystemExit(f"missing frame parquet: {p}")
             frames[s] = pd.read_parquet(p)
-        # Costs: match charter for numeric integrity even on synthetic
         costs = assert_costs_match_charter(charter)
         report = run_joint_screen(
             frames,
@@ -607,10 +685,6 @@ def main(argv: list[str] | None = None) -> int:
             "dir": str(args.frames_parquet_dir),
             "dispositional": False,
         }
-        try:
-            out_dir = ensure_fresh_artifacts(args.out_dir.resolve())
-        except CharterError as e:
-            raise SystemExit(str(e)) from e
         out = write_screen_report(report, out_dir)
         print(
             f"NON_DISPOSITIONAL synthetic screen written: {out}\n"
@@ -619,7 +693,6 @@ def main(argv: list[str] | None = None) -> int:
             f"  n_passers={report['real']['n_passers']}",
             flush=True,
         )
-        # Always exit 0 for synthetic; never registry
         return 0
 
     # --- dispositional develop screen ---
@@ -633,6 +706,13 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(str(e)) from e
 
     costs = assert_costs_match_charter(charter)
+    # STARTED before package load so interrupted attempts remain visible
+    write_started_marker(
+        out_dir,
+        charter_path=charter_path,
+        package_id=pkg_id,
+        mode="execute_develop_screen",
+    )
     frames, data_meta, data_path = load_develop_frames_from_package(
         charter, package_dir=args.package_dir
     )
@@ -647,11 +727,6 @@ def main(argv: list[str] | None = None) -> int:
     report["charter_sha256"] = sha
     report["package_id"] = pkg_id
     report["data"] = data_meta
-
-    try:
-        out_dir = ensure_fresh_artifacts(args.out_dir.resolve())
-    except CharterError as e:
-        raise SystemExit(str(e)) from e
 
     base_seed = charter_null_base_seed(charter)
     provenance = build_provenance(
@@ -695,7 +770,7 @@ def main(argv: list[str] | None = None) -> int:
         append_disposition_registry(charter_path, report, screen_artifact=rel)
         print("disposition registry: appended", flush=True)
 
-    # Fail-closed accounting path requires exit 0 for valid SCREEN_FAIL
+    # Fail-closed accounting: exit 0 for both SCREEN_FAIL and pending-null pass
     return 0
 
 
