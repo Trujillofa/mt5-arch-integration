@@ -1,10 +1,10 @@
 # Thesis memo — `joint_london_open_cosign_fade_flat` v3
 
-**Date:** 2026-08-13  
-**Status:** FREEZE_ONLY — immutable charter frozen; **no implementation**; **no develop grid inspection**  
-**Branch:** `research/multi-instrument-joint-london-cosign-flat-v1`  
-**Charter:** `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json`  
-**SHA:** `e88161be27ab09542e2c49b96da32781454436791666570bc6b06d3eecb51c65`  
+**Date:** 2026-08-13
+**Status:** FREEZE_ONLY — immutable charter frozen; **no implementation**; **no develop grid inspection**
+**Branch:** `research/multi-instrument-joint-london-cosign-flat-v1`
+**Charter:** `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json`
+**SHA:** `e88161be27ab09542e2c49b96da32781454436791666570bc6b06d3eecb51c65`
 **Supersedes:** v2 SHA `935534e2…` and v1 SHA `2d3fda48…` (byte-immutable; registry **SUPERSEDED** only)
 
 ## Why v3 (adversarial freeze review BLOCK on v2)
@@ -18,10 +18,10 @@
 
 ## Mechanism (unchanged intent)
 
-Joint calendar **I** = timestamp intersection of XAU/EUR/GBP develop H1 from package  
+Joint calendar **I** = timestamp intersection of XAU/EUR/GBP develop H1 from package
 `4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd`.
 
-Per day: earliest joint bar T\* with hour ∈ {7,8,9}; co-sign all three nonzero equal;  
+Per day: earliest joint bar T\* with hour ∈ {7,8,9}; co-sign all three nonzero equal;
 **fade** all three at **open of T\*+1** only if all three legs have valid ATR + risk-sized lots ≥ lot_min after floor-to-step; SL 1.5 / TP 2.0 ATR(14 Wilder on I); flat hour ≥16 or last bar of day; no overnight.
 
 **Zero free knobs.**

@@ -200,7 +200,49 @@ def test_multi_instrument_pf_no_trades_bool_false_rejected():
     ch = _deepcopy(_load(V4))
     ch["joint_statistics"]["profit_factor_zero_denominator"]["no_trades"] = False
     errs = validate_charter(ch)
-    assert any("no_trades" in e and ("non-boolean" in e or "bool" in e) for e in errs), errs
+    assert any("no_trades" in e and ("bool" in e or "finite JSON" in e) for e in errs), errs
+
+
+def test_multi_instrument_soft_pf_string_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["soft"]["profit_factor_min"] = "1.1"
+    errs = validate_charter(ch)
+    assert any("profit_factor_min" in e and ("str" in e or "finite JSON" in e) for e in errs), errs
+
+
+def test_multi_instrument_soft_pf_nan_string_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["soft"]["profit_factor_min"] = "NaN"
+    errs = validate_charter(ch)
+    assert any("profit_factor_min" in e for e in errs), errs
+
+
+def test_multi_instrument_soft_pf_float_nan_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["soft"]["profit_factor_min"] = float("nan")
+    errs = validate_charter(ch)
+    assert any("profit_factor_min" in e and ("NaN" in e or "finite" in e) for e in errs), errs
+
+
+def test_multi_instrument_soft_dd_infinity_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["soft"]["max_drawdown_pct_max"] = float("inf")
+    errs = validate_charter(ch)
+    assert any("max_drawdown_pct_max" in e and ("Inf" in e or "finite" in e) for e in errs), errs
+
+
+def test_multi_instrument_soft_fractional_n_trades_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["soft"]["n_trades_min"] = 20.9
+    errs = validate_charter(ch)
+    assert any("n_trades_min" in e and "integer" in e for e in errs), errs
+
+
+def test_multi_instrument_per_symbol_fractional_n_trades_rejected():
+    ch = _deepcopy(_load(V4))
+    ch["gates"]["multi_instrument"]["per_symbol_soft"]["n_trades_min"] = 20.9
+    errs = validate_charter(ch)
+    assert any("per_symbol_soft" in e and "n_trades_min" in e for e in errs), errs
 
 
 def test_multi_instrument_primary_classic_rejected():

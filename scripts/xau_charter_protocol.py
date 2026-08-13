@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import subprocess
 from collections.abc import Callable
 from datetime import date
@@ -426,6 +427,25 @@ def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str
     )
 
 
+def _strict_finite_number(val: Any) -> float | None:
+    """Accept only real JSON int/float (not bool, not str); require math.isfinite."""
+    if isinstance(val, bool) or not isinstance(val, (int, float)):
+        return None
+    f = float(val)
+    if not math.isfinite(f):
+        return None
+    return f
+
+
+def _strict_nonneg_int(val: Any) -> int | None:
+    """Accept only non-negative JSON int (not bool, not float/str)."""
+    if isinstance(val, bool) or not isinstance(val, int):
+        return None
+    if val < 0:
+        return None
+    return val
+
+
 def validate_charter_file(path: Path | str) -> list[str]:
     """Validate an on-disk charter; grandfathering uses the file's SHA-256 bytes."""
     p = Path(path)
@@ -556,20 +576,20 @@ def validate_charter(
             "net_profit_gt",
         )
 
-        def _strict_number(val: Any, *, allow_bool: bool = False) -> float | None:
-            """Parse numeric; reject bool (bool is a subclass of int)."""
-            if val is None:
+        def _gate_number_ok(key: str, val: Any) -> str | None:
+            """Return error suffix if invalid; None if ok."""
+            if key == "n_trades_min":
+                if _strict_nonneg_int(val) is None:
+                    return (
+                        "must be a non-negative JSON integer "
+                        "(not bool/float/str/NaN/Inf)"
+                    )
                 return None
-            if isinstance(val, bool) and not allow_bool:
-                return None
-            if isinstance(val, (int, float)):
-                return float(val)
-            try:
-                # Reject bool-like strings only via type; plain numeric strings ok
-                if isinstance(val, str) and val.strip() != "":
-                    return float(val)
-            except (TypeError, ValueError):
-                return None
+            if _strict_finite_number(val) is None:
+                return (
+                    "must be a finite JSON int/float "
+                    "(not bool/str/NaN/Inf)"
+                )
             return None
 
         if not isinstance(gates.get("soft"), dict) or not gates.get("soft"):
@@ -581,10 +601,10 @@ def validate_charter(
             for k in _joint_soft_required:
                 if k not in soft:
                     errs.append(f"multi-instrument gates.soft missing required key {k!r}")
-                elif _strict_number(soft.get(k)) is None:
-                    errs.append(
-                        f"multi-instrument gates.soft.{k} must be a non-boolean number"
-                    )
+                else:
+                    why = _gate_number_ok(k, soft.get(k))
+                    if why is not None:
+                        errs.append(f"multi-instrument gates.soft.{k} {why}")
         if gates.get("primary_n_passers") != "soft":
             errs.append(
                 "multi-instrument charter requires gates.primary_n_passers='soft' "
@@ -621,11 +641,13 @@ def validate_charter(
                             "multi-instrument gates.multi_instrument.per_symbol_soft "
                             f"missing required key {k!r}"
                         )
-                    elif _strict_number(ps.get(k)) is None:
-                        errs.append(
-                            "multi-instrument gates.multi_instrument.per_symbol_soft."
-                            f"{k} must be a non-boolean number"
-                        )
+                    else:
+                        why = _gate_number_ok(k, ps.get(k))
+                        if why is not None:
+                            errs.append(
+                                "multi-instrument gates.multi_instrument.per_symbol_soft."
+                                f"{k} {why}"
+                            )
         harness = charter.get("harness") or {}
         if harness.get("kind") != "multi_instrument_joint_v1":
             errs.append(
@@ -662,7 +684,7 @@ def validate_charter(
             )
         else:
             no_trades_pf = pzd.get("no_trades")
-            nt = _strict_number(no_trades_pf)
+            nt = _strict_finite_number(no_trades_pf)
             if no_trades_pf is None:
                 errs.append(
                     "multi-instrument charter requires "
@@ -671,7 +693,7 @@ def validate_charter(
             elif nt is None:
                 errs.append(
                     "multi-instrument profit_factor_zero_denominator.no_trades "
-                    "must be a non-boolean number 0 (house convention; bool False rejected)"
+                    "must be a finite JSON number 0 (not bool/str/NaN/Inf; house convention)"
                 )
             elif nt != 0.0:
                 errs.append(
@@ -680,7 +702,7 @@ def validate_charter(
                 )
             glz_key = "gross_loss_zero_and_gross_profit_positive"
             glz_pf = pzd.get(glz_key)
-            glz = _strict_number(glz_pf)
+            glz = _strict_finite_number(glz_pf)
             if glz_pf is None:
                 errs.append(
                     "multi-instrument charter requires "
@@ -689,7 +711,8 @@ def validate_charter(
             elif glz is None:
                 errs.append(
                     "multi-instrument profit_factor_zero_denominator."
-                    f"{glz_key} must be a non-boolean number 99 (house convention)"
+                    f"{glz_key} must be a finite JSON number 99 "
+                    "(not bool/str/NaN/Inf; house convention)"
                 )
             elif glz != 99.0:
                 errs.append(
