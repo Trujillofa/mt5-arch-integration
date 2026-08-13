@@ -1,5 +1,26 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 FREEZE** · v3 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V4`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v4** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json` · SHA `e29b2693…` |
+| **v3** | SHA `e88161be…` · **SUPERSEDED** (immutable; impossible “approval of v2” rule) |
+| **v2 / v1** | SUPERSEDED (immutable) |
+| **authorization** | fixtures/implement only after approval of **this** charter version (v4) |
+| **gates protocol** | complete joint soft (incl. max DD); joint_soft_is_primary exact true; full per-symbol soft; non-bool PF pins |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v4 closes BLOCK findings: impossible v2 auth, residual gate fail-open, memo/note cleanup.
+
+---
+
 ## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v3 FREEZE** · v2 SUPERSEDED · design only
 
 | Field | Value |

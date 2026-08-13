@@ -542,16 +542,49 @@ def validate_charter(
             "(gates.per_symbol/gates.joint alone are invisible to gates_from_charter)"
         )
     if multi:
-        # Complete joint-soft contract for every multi-instrument charter
+        # Complete joint-soft contract for every multi-instrument charter.
+        # Soft joint keys: n, PF, NP, max DD (DD was fail-open if omitted).
+        _joint_soft_required = (
+            "n_trades_min",
+            "profit_factor_min",
+            "net_profit_gt",
+            "max_drawdown_pct_max",
+        )
+        _per_symbol_soft_required = (
+            "n_trades_min",
+            "profit_factor_min",
+            "net_profit_gt",
+        )
+
+        def _strict_number(val: Any, *, allow_bool: bool = False) -> float | None:
+            """Parse numeric; reject bool (bool is a subclass of int)."""
+            if val is None:
+                return None
+            if isinstance(val, bool) and not allow_bool:
+                return None
+            if isinstance(val, (int, float)):
+                return float(val)
+            try:
+                # Reject bool-like strings only via type; plain numeric strings ok
+                if isinstance(val, str) and val.strip() != "":
+                    return float(val)
+            except (TypeError, ValueError):
+                return None
+            return None
+
         if not isinstance(gates.get("soft"), dict) or not gates.get("soft"):
             errs.append(
                 "multi-instrument charter requires top-level gates.soft (joint soft primary)"
             )
         else:
             soft = gates["soft"]
-            for k in ("n_trades_min", "profit_factor_min", "net_profit_gt"):
+            for k in _joint_soft_required:
                 if k not in soft:
                     errs.append(f"multi-instrument gates.soft missing required key {k!r}")
+                elif _strict_number(soft.get(k)) is None:
+                    errs.append(
+                        f"multi-instrument gates.soft.{k} must be a non-boolean number"
+                    )
         if gates.get("primary_n_passers") != "soft":
             errs.append(
                 "multi-instrument charter requires gates.primary_n_passers='soft' "
@@ -569,13 +602,30 @@ def validate_charter(
             if mi.get("require_all_symbols_soft_pass") is not True:
                 errs.append(
                     "multi-instrument gates.multi_instrument.require_all_symbols_soft_pass "
-                    "must be true"
+                    "must be true (exact boolean)"
+                )
+            if mi.get("joint_soft_is_primary") is not True:
+                errs.append(
+                    "multi-instrument gates.multi_instrument.joint_soft_is_primary "
+                    "must be true (exact boolean)"
                 )
             ps = mi.get("per_symbol_soft")
             if not isinstance(ps, dict) or not ps:
                 errs.append(
                     "multi-instrument gates.multi_instrument.per_symbol_soft required"
                 )
+            else:
+                for k in _per_symbol_soft_required:
+                    if k not in ps:
+                        errs.append(
+                            "multi-instrument gates.multi_instrument.per_symbol_soft "
+                            f"missing required key {k!r}"
+                        )
+                    elif _strict_number(ps.get(k)) is None:
+                        errs.append(
+                            "multi-instrument gates.multi_instrument.per_symbol_soft."
+                            f"{k} must be a non-boolean number"
+                        )
         harness = charter.get("harness") or {}
         if harness.get("kind") != "multi_instrument_joint_v1":
             errs.append(
@@ -589,9 +639,10 @@ def validate_charter(
                 "'intersection_only' for real and null"
             )
         null = charter.get("null") or {}
-        if not null.get("joint_dependency_preserving"):
+        if null.get("joint_dependency_preserving") is not True:
             errs.append(
-                "multi-instrument charter requires null.joint_dependency_preserving true"
+                "multi-instrument charter requires null.joint_dependency_preserving "
+                "true (exact boolean)"
             )
         sk = null.get("shared_k_spec") or {}
         if not isinstance(sk, dict) or not sk.get("trial_seed"):
@@ -601,6 +652,7 @@ def validate_charter(
             )
         # PF zero-denominator must be pinned for multi-instrument joint PF / null max-PF
         # House convention: PF=0 no trades; PF=99 when gross loss is 0 with gross profit > 0.
+        # Reject bool (float(False)==0) — require real int/float numbers.
         js = charter.get("joint_statistics") or {}
         pzd = js.get("profit_factor_zero_denominator") or {}
         if not isinstance(pzd, dict):
@@ -610,42 +662,40 @@ def validate_charter(
             )
         else:
             no_trades_pf = pzd.get("no_trades")
+            nt = _strict_number(no_trades_pf)
             if no_trades_pf is None:
                 errs.append(
                     "multi-instrument charter requires "
                     "joint_statistics.profit_factor_zero_denominator.no_trades"
                 )
-            else:
-                try:
-                    if float(no_trades_pf) != 0.0:
-                        errs.append(
-                            "multi-instrument profit_factor_zero_denominator.no_trades "
-                            "must be 0 (house convention)"
-                        )
-                except (TypeError, ValueError):
-                    errs.append(
-                        "multi-instrument profit_factor_zero_denominator.no_trades "
-                        "must be numeric 0"
-                    )
+            elif nt is None:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator.no_trades "
+                    "must be a non-boolean number 0 (house convention; bool False rejected)"
+                )
+            elif nt != 0.0:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator.no_trades "
+                    "must be 0 (house convention)"
+                )
             glz_key = "gross_loss_zero_and_gross_profit_positive"
             glz_pf = pzd.get(glz_key)
+            glz = _strict_number(glz_pf)
             if glz_pf is None:
                 errs.append(
                     "multi-instrument charter requires "
                     f"joint_statistics.profit_factor_zero_denominator.{glz_key}"
                 )
-            else:
-                try:
-                    if float(glz_pf) != 99.0:
-                        errs.append(
-                            "multi-instrument profit_factor_zero_denominator."
-                            f"{glz_key} must be 99 (house convention)"
-                        )
-                except (TypeError, ValueError):
-                    errs.append(
-                        "multi-instrument profit_factor_zero_denominator."
-                        f"{glz_key} must be numeric 99"
-                    )
+            elif glz is None:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator."
+                    f"{glz_key} must be a non-boolean number 99 (house convention)"
+                )
+            elif glz != 99.0:
+                errs.append(
+                    "multi-instrument profit_factor_zero_denominator."
+                    f"{glz_key} must be 99 (house convention)"
+                )
     costs = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
     if "commission_per_lot" not in costs and "costs_source" not in (charter.get("fixed") or {}):
         errs.append("fixed.costs or fixed.costs_source required")
