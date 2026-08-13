@@ -44,3 +44,13 @@ dev = snap.read_all_develop()  # derived filter
 | **Data** | exactly one package tree + `CURRENT` + `*.sha256.json` (prefer Git LFS) |
 
 Do not merge bulk CSVs into the pipeline PR.
+
+## Snapshot status (this checkout)
+
+- **Status:** activated data snapshot (data-only PR).
+- **Package id:** `4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd`
+- **CURRENT** → that package (atomic symlink).
+- **Contents:** full H1 only for XAUUSD / EURUSD / GBPUSD; develop derived (no `*_h1_develop.csv`).
+- **SHA inventory:** `CURRENT.sha256.json` and `<package_id>.sha256.json`.
+- **Pipeline:** merged via PR #4 (`main`).
+- **Git LFS:** not used on this host; CSVs tracked as plain Git blobs for this one package.

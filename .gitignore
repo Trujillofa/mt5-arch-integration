@@ -52,8 +52,8 @@ winetricks.log
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
 
-# Multi-instrument packages: pipeline PRs never ship activated CSV blobs.
-# SHA manifests and README are tracked; package trees are data-PR / local only.
+# Multi-instrument packages: future package dirs ignored (already-tracked snapshot stays tracked).
+# SHA manifests and schema README stay tracked; bulk CSV trees for new packages stay local-only.
 results/instrument_data_packages/*/
 results/instrument_data_packages/CURRENT
 !results/instrument_data_packages/README.md
