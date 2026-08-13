@@ -93,17 +93,39 @@ def _develop_from_h1(h1: pd.DataFrame, holdout_start: pd.Timestamp) -> pd.DataFr
     return h1.loc[tcol < holdout_start].reset_index(drop=True)
 
 
+# Columns hashed for derived develop integrity (matches research CSV body sans clock).
+DEVELOP_HASH_COLS = (
+    "time",
+    "timeframe",
+    "symbol",
+    "open",
+    "high",
+    "low",
+    "close",
+    "tick_volume",
+    "spread_raw_pts",
+    "spread_effective_pts",
+    "spread_imputed",
+    "spread",
+)
+
+
 def _sha256_develop_frame(dev: pd.DataFrame) -> str:
-    """Content hash of develop frame for lock integrity without a stored CSV."""
-    if dev.empty:
+    """Content hash of develop frame for lock integrity without a stored CSV.
+
+    Stable across seal (in-memory) and verify (re-read full H1 CSV): same columns,
+    time format ``%Y-%m-%d %H:%M:%S``, CSV index=False.
+    """
+    if dev is None or len(dev) == 0:
         return hashlib.sha256(b"empty_develop").hexdigest()
     out = dev.copy()
     if "time" in out.columns:
-        if pd.api.types.is_datetime64_any_dtype(out["time"]):
-            out["time"] = out["time"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        else:
-            out["time"] = out["time"].astype(str)
-    # Stable CSV bytes
+        out["time"] = pd.to_datetime(out["time"]).dt.strftime("%Y-%m-%d %H:%M:%S")
+    cols = [c for c in DEVELOP_HASH_COLS if c in out.columns]
+    if not cols:
+        # Fallback: all columns sorted for determinism
+        cols = sorted(out.columns.astype(str))
+    out = out.loc[:, cols]
     payload = out.to_csv(index=False).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
@@ -1150,6 +1172,9 @@ def verify_committed_artifacts(
             errs.append(f"{sym}:missing_develop_csv")
         elif str(drel).startswith("derived:"):
             rel = ent.get("research_csv")
+            claimed = ent.get("develop_csv_sha256")
+            if not isinstance(claimed, str) or not re.fullmatch(r"[0-9a-f]{64}", claimed):
+                errs.append(f"{sym}:develop_sha_missing_or_invalid")
             if not rel:
                 errs.append(f"{sym}:missing_research_csv_for_develop_derive")
             else:
@@ -1168,6 +1193,12 @@ def verify_committed_artifacts(
                         )
                     if dn < MIN_PUBLISHED_ROWS:
                         errs.append(f"{sym}:develop_suspiciously_small:{dn}")
+                    if (
+                        isinstance(claimed, str)
+                        and re.fullmatch(r"[0-9a-f]{64}", claimed)
+                        and _sha256_develop_frame(dev_df) != claimed
+                    ):
+                        errs.append(f"{sym}:develop_sha_mismatch")
         else:
             dp = ROOT / drel if not Path(drel).is_absolute() else Path(drel)
             if not dp.is_file():
@@ -1729,29 +1760,32 @@ def verify_package_artifacts(
                 if dn < MIN_PUBLISHED_ROWS and int(ent.get("n_rows_h1_develop") or 0) >= MIN_PUBLISHED_ROWS:
                     errs.append(f"{sym}:develop_suspiciously_small:{dn}")
         else:
-            # Derive develop from full H1 and check count + content hash
-            if rp.is_file():
+            # Derive develop from full H1; require locked develop_csv_sha256 match.
+            claimed = ent.get("develop_csv_sha256")
+            if not isinstance(claimed, str) or not re.fullmatch(r"[0-9a-f]{64}", claimed):
+                errs.append(f"{sym}:develop_sha_missing_or_invalid")
+            if not rp.is_file():
+                errs.append(f"{sym}:full_file_missing_for_develop:{research_name}")
+            else:
                 try:
                     full_df = pd.read_csv(rp)
                     if "time" in full_df.columns:
                         full_df["time"] = pd.to_datetime(full_df["time"])
-                    holdout = DEVELOP_END_SERVER
-                    # Prefer lock holdout if present later; default sealed holdout
-                    dev_df = _develop_from_h1(full_df, holdout)
+                    dev_df = _develop_from_h1(full_df, DEVELOP_END_SERVER)
                     dn = len(dev_df)
                     if dn != int(ent.get("n_rows_h1_develop") or -1):
                         errs.append(
                             f"{sym}:develop_row_count_mismatch:{dn}!={ent.get('n_rows_h1_develop')}"
                         )
-                    if dn < MIN_PUBLISHED_ROWS and int(ent.get("n_rows_h1_develop") or 0) >= MIN_PUBLISHED_ROWS:
+                    if (
+                        dn < MIN_PUBLISHED_ROWS
+                        and int(ent.get("n_rows_h1_develop") or 0) >= MIN_PUBLISHED_ROWS
+                    ):
                         errs.append(f"{sym}:develop_suspiciously_small:{dn}")
-                    # Hash only if develop_csv_sha256 claimed
-                    if ent.get("develop_csv_sha256"):
-                        # Recompute using same columns as publish when possible
+                    if isinstance(claimed, str) and re.fullmatch(r"[0-9a-f]{64}", claimed):
                         dsha = _sha256_develop_frame(dev_df)
-                        if dsha != ent.get("develop_csv_sha256"):
-                            # softer: count is authoritative; sha may use subset cols
-                            pass  # counts already checked; full OHLC hash optional
+                        if dsha != claimed:
+                            errs.append(f"{sym}:develop_sha_mismatch")
                 except Exception as e:
                     errs.append(f"{sym}:develop_derive_fail:{e}")
         if man_by_sym:

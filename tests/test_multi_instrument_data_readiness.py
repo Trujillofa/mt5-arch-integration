@@ -441,18 +441,18 @@ def _lock_for_pkg(pkg: Path, package_id: str, marker: str, **overrides: object) 
     for s in b.SYMBOLS:
         full = data / f"{s.lower()}_h1.csv"
         n_full = sum(1 for _ in full.open()) - 1
-        # derive develop count
-        import pandas as pd
+        # derive develop count + content hash (fail-closed lock field)
         df = pd.read_csv(full)
         df["time"] = pd.to_datetime(df["time"])
-        n_dev = len(b._develop_from_h1(df, b.DEVELOP_END_SERVER))
+        dev = b._develop_from_h1(df, b.DEVELOP_END_SERVER)
+        n_dev = len(dev)
         arts[s] = {
             "research_csv": f"results/instrument_data/{s.lower()}_h1.csv",
             "research_csv_sha256": b._sha256_file(full),
             "n_rows_h1": n_full,
             "n_rows_h1_develop": n_dev,
             "develop_csv": f"derived:{b.DEVELOP_DERIVATION}",
-            "develop_csv_sha256": "",
+            "develop_csv_sha256": b._sha256_develop_frame(dev),
             "develop_mode": "derived",
         }
     run_id = package_id.split("-", 1)[0]
@@ -857,3 +857,23 @@ def test_main_publish_derived_develop_no_csv(
     assert len(dev) >= 5
     assert (pd.to_datetime(dev["time"]) < b.DEVELOP_END_SERVER).all()
 
+def test_derived_develop_sha_tamper_rejected(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """Lock-only develop_csv_sha256 tamper must fail package validation."""
+    _isolate_publish_roots(tmp_path, monkeypatch)
+    final = _promote_content_addressed("TAMPER", "a" * 32)
+    lock_path = final / "instrument_data_manifests" / "committed_artifact_lock.json"
+    lock = json.loads(lock_path.read_text())
+    # Sanity: clean lock validates
+    assert b.verify_package_artifacts(final, expected_package_id=final.name) == []
+    # Tamper only EURUSD develop hash (content-id excludes lock)
+    lock["artifacts"]["EURUSD"]["develop_csv_sha256"] = "0" * 64
+    lock_path.write_text(json.dumps(lock) + "\n")
+    errs = b.verify_package_artifacts(final, expected_package_id=final.name)
+    assert any("develop_sha_mismatch" in e for e in errs), errs
+    # Empty/invalid sha also fails
+    lock["artifacts"]["EURUSD"]["develop_csv_sha256"] = ""
+    lock_path.write_text(json.dumps(lock) + "\n")
+    errs2 = b.verify_package_artifacts(final, expected_package_id=final.name)
+    assert any("develop_sha_missing_or_invalid" in e for e in errs2), errs2
