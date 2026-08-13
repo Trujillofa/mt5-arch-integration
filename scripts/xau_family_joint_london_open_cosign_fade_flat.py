@@ -101,20 +101,35 @@ def grid(*, max_n: int = 1200, seed: int = 42) -> list[dict]:
 
 
 def prepare_symbol(raw: pd.DataFrame) -> pd.DataFrame:
-    """Normalize OHLCV + server hour/day. ATR is recomputed after joint align."""
+    """Normalize OHLCV + server hour/day (timezone-naive server_clock_as_stored).
+
+    ATR is recomputed after joint align. Does **not** invent missing spreads —
+    the ``spread`` column must already be present (fail-closed costs).
+    """
     d = raw.copy()
     if "time" not in d.columns:
         raise ValueError("frame requires time column")
-    d["time"] = pd.to_datetime(d["time"], utc=True)
+    # Fail closed: never attach UTC to server timestamps; require naive wall clock.
+    t = pd.to_datetime(d["time"])
+    tz = getattr(t.dtype, "tz", None)
+    if tz is not None:
+        raise ValueError(
+            "time must be timezone-naive server_clock_as_stored "
+            "(do not label server bars as UTC)"
+        )
+    d["time"] = t
     d = d.sort_values("time").drop_duplicates(subset=["time"], keep="last")
-    d["hour"] = d["time"].dt.hour
+    d["hour"] = d["time"].dt.hour.astype(int)
     d["day_id"] = d["time"].dt.strftime("%Y-%m-%d")
     for col in ("open", "high", "low", "close"):
+        if col not in d.columns:
+            raise ValueError(f"frame requires {col} column")
         d[col] = d[col].astype(float)
     if "spread" not in d.columns:
-        d["spread"] = 0.0
-    else:
-        d["spread"] = d["spread"].astype(float).fillna(0.0)
+        raise ValueError(
+            "frame requires spread column (points); missing costs must not default to 0"
+        )
+    d["spread"] = d["spread"].astype(float)
     return d.reset_index(drop=True)
 
 
@@ -124,7 +139,18 @@ def _wilder_atr(d: pd.DataFrame, period: int = ATR_PERIOD) -> pd.Series:
     c = d["close"].astype(float)
     prev = c.shift(1)
     tr = pd.concat([(h - lo), (h - prev).abs(), (lo - prev).abs()], axis=1).max(axis=1)
-    return tr.ewm(alpha=1 / period, adjust=False).mean()
+    out = tr.ewm(alpha=1 / period, adjust=False).mean()
+    return pd.Series(out, index=d.index, dtype=float)
+
+
+def _sma_atr(d: pd.DataFrame, period: int = ATR_PERIOD) -> pd.Series:
+    """Forbidden alternative estimator — exposed only for fixture discrimination."""
+    h = d["high"].astype(float)
+    lo = d["low"].astype(float)
+    c = d["close"].astype(float)
+    prev = c.shift(1)
+    tr = pd.concat([(h - lo), (h - prev).abs(), (lo - prev).abs()], axis=1).max(axis=1)
+    return pd.Series(tr.rolling(period).mean(), index=d.index, dtype=float)
 
 
 def align_joint(
@@ -137,24 +163,89 @@ def align_joint(
         missing = set(symbols) - set(frames)
         raise ValueError(f"missing symbols: {sorted(missing)}")
     prepared = {s: prepare_symbol(frames[s]) for s in symbols}
-    # Intersection of times
+    # Intersection of times (ordered)
     sets = [set(prepared[s]["time"].tolist()) for s in symbols]
     common = sets[0].intersection(*sets[1:])
     if not common:
         return {s: prepared[s].iloc[0:0].copy() for s in symbols}
     out: dict[str, pd.DataFrame] = {}
+    common_list = sorted(common)
     for s in symbols:
         d = prepared[s]
-        d = d.loc[d["time"].isin(common)].sort_values("time").reset_index(drop=True)
+        d = d.loc[d["time"].isin(common_list)].sort_values("time").reset_index(drop=True)
         d = d.copy()
         d["atr"] = _wilder_atr(d)
         out[s] = d
-    # Sanity: equal lengths and identical times
-    t0 = out[symbols[0]]["time"]
-    for s in symbols[1:]:
-        if not out[s]["time"].equals(t0):
-            raise RuntimeError(f"joint align failed for {s}")
+    validate_joint_frames(out, symbols=symbols, require_atr=True)
     return out
+
+
+def validate_joint_frames(
+    frames: dict[str, pd.DataFrame],
+    *,
+    symbols: tuple[str, ...] = SYMBOLS,
+    require_atr: bool = True,
+) -> None:
+    """Fail closed: identical ordered timestamps, row counts, day/hour, required cols.
+
+    Prevents ``already_aligned=True`` from bypassing the intersection calendar.
+    """
+    if set(symbols) - set(frames):
+        missing = set(symbols) - set(frames)
+        raise ValueError(f"missing symbols for joint frames: {sorted(missing)}")
+    required = ["time", "open", "high", "low", "close", "spread", "hour", "day_id"]
+    if require_atr:
+        required = [*required, "atr"]
+    ref = frames[symbols[0]]
+    n = len(ref)
+    if n == 0:
+        for s in symbols[1:]:
+            if len(frames[s]) != 0:
+                raise ValueError("joint frames length mismatch on empty ref")
+        return
+    t0 = pd.to_datetime(ref["time"])
+    if getattr(t0.dtype, "tz", None) is not None:
+        raise ValueError("joint time must be timezone-naive server_clock_as_stored")
+    h0 = ref["hour"].to_numpy(int)
+    d0 = ref["day_id"].astype(str).to_numpy()
+    for s in symbols:
+        d = frames[s]
+        for col in required:
+            if col not in d.columns:
+                raise ValueError(f"{s} missing required joint column {col!r}")
+        if len(d) != n:
+            raise ValueError(
+                f"joint frame row count mismatch: {s} has {len(d)}, expected {n}"
+            )
+        ts = pd.to_datetime(d["time"])
+        if getattr(ts.dtype, "tz", None) is not None:
+            raise ValueError(
+                f"{s} time must be timezone-naive server_clock_as_stored"
+            )
+        if not ts.reset_index(drop=True).equals(t0.reset_index(drop=True)):
+            raise ValueError(
+                f"joint timestamps not identical for {s} (intersection calendar required)"
+            )
+        if not np.array_equal(d["hour"].to_numpy(int), h0):
+            raise ValueError(f"joint hour column mismatch for {s}")
+        if not np.array_equal(d["day_id"].astype(str).to_numpy(), d0):
+            raise ValueError(f"joint day_id column mismatch for {s}")
+        # Spreads fail-closed here; OHLC non-finite is handled at entry/exit use
+        # (invalid entry fill cancels the basket rather than partial entry).
+        spr = d["spread"].to_numpy(float)
+        if not np.all(np.isfinite(spr)):
+            raise ValueError(
+                f"{s}.spread contains non-finite values (NaN/Inf costs refuse evaluation)"
+            )
+        if np.any(spr < 0):
+            raise ValueError(
+                f"{s}.spread contains negative points (costs refuse evaluation)"
+            )
+        if require_atr:
+            atr = d["atr"].to_numpy(float)
+            # ATR may be NaN during warmup; only non-finite Inf is hard-fail globally.
+            if np.any(np.isinf(atr)):
+                raise ValueError(f"{s}.atr contains Inf")
 
 
 def _floor_lots(raw_lots: float, *, lot_step: float, lot_max: float) -> float:
@@ -256,15 +347,29 @@ def simulate_joint(
     start_balance: float = START_BALANCE,
     commission_per_lot: float = 0.0,
     slippage_points: float = 0.0,
-    spread_col: str | None = "spread",
+    spread_col: str = "spread",
     already_aligned: bool = False,
     trade_log: list[dict[str, Any]] | None = None,
     **_extra: Any,
 ) -> JointResult:
-    """Simulate all-or-none three-leg fade on joint calendar I."""
+    """Simulate all-or-none three-leg fade on joint calendar I.
+
+    Costs are fail-closed: every symbol must expose ``spread_col`` with finite
+    nonnegative points at every bar; commission/slippage must be finite and >= 0.
+    Invalid costs refuse evaluation (raise) rather than defaulting to zero.
+    """
     symbols = SYMBOLS
     hours_ok = frozenset(coincident_hours or COINCIDENT_HOURS)
-    aligned = frames if already_aligned else align_joint(frames, symbols=symbols)
+    if not np.isfinite(float(commission_per_lot)) or float(commission_per_lot) < 0:
+        raise ValueError("commission_per_lot must be finite and nonnegative")
+    if not np.isfinite(float(slippage_points)) or float(slippage_points) < 0:
+        raise ValueError("slippage_points must be finite and nonnegative")
+    if already_aligned:
+        # Never trust caller alignment without verifying the intersection contract.
+        validate_joint_frames(frames, symbols=symbols, require_atr=True)
+        aligned = frames
+    else:
+        aligned = align_joint(frames, symbols=symbols)
     ref = aligned[symbols[0]]
     n = len(ref)
     empty_m = Metrics(0.0, 0.0, 0.0, 0.0, 0, 0, 0)
@@ -276,16 +381,29 @@ def simulate_joint(
             joint_equity=[],
         )
 
-    # Arrays per symbol
+    # Arrays per symbol — spreads required, finite, nonnegative (no nan_to_num)
     open_a = {s: aligned[s]["open"].to_numpy(float) for s in symbols}
     high_a = {s: aligned[s]["high"].to_numpy(float) for s in symbols}
     low_a = {s: aligned[s]["low"].to_numpy(float) for s in symbols}
     close_a = {s: aligned[s]["close"].to_numpy(float) for s in symbols}
     atr_a = {s: aligned[s]["atr"].to_numpy(float) for s in symbols}
-    if spread_col and spread_col in aligned[symbols[0]].columns:
-        spread_a = {s: np.nan_to_num(aligned[s][spread_col].to_numpy(float), nan=0.0) for s in symbols}
-    else:
-        spread_a = {s: np.zeros(n) for s in symbols}
+    spread_a: dict[str, np.ndarray] = {}
+    for s in symbols:
+        if spread_col not in aligned[s].columns:
+            raise ValueError(
+                f"{s} missing cost column {spread_col!r}; refuse evaluation "
+                "(missing costs must not become zero)"
+            )
+        spr = aligned[s][spread_col].to_numpy(float)
+        if not np.all(np.isfinite(spr)):
+            raise ValueError(
+                f"{s}.{spread_col} has non-finite values; refuse evaluation"
+            )
+        if np.any(spr < 0):
+            raise ValueError(
+                f"{s}.{spread_col} has negative points; refuse evaluation"
+            )
+        spread_a[s] = spr
 
     hour = ref["hour"].to_numpy(int)
     day = ref["day_id"].to_numpy()
@@ -444,8 +562,12 @@ def simulate_joint(
             if cosign_ok and len(set(signs)) == 1:
                 n_cosign += 1
                 fade = -signs[0]  # opposite cosign
-                # Size all legs; any fail → skip basket
-                planned: dict[str, float] = {}
+                # Preflight all legs (size + fill + cost) before mutating any position.
+                planned_lots: dict[str, float] = {}
+                planned_fill: dict[str, float] = {}
+                planned_cost: dict[str, float] = {}
+                planned_sl: dict[str, float] = {}
+                planned_tp: dict[str, float] = {}
                 leg_ok = True
                 for s in symbols:
                     atr_v = float(atr_a[s][t_star])
@@ -463,39 +585,61 @@ def simulate_joint(
                     if lots_s is None:
                         leg_ok = False
                         break
-                    planned[s] = lots_s
+                    fill = float(open_a[s][i])
+                    if not np.isfinite(fill) or fill <= 0.0:
+                        leg_ok = False
+                        break
+                    stop_dist = float(sl_atr) * atr_v
+                    if not np.isfinite(stop_dist) or stop_dist <= 0.0:
+                        leg_ok = False
+                        break
+                    ps = PER_SYMBOL_META[s]["point_size"]
+                    spr_i = float(spread_a[s][i])
+                    if not np.isfinite(spr_i) or spr_i < 0.0:
+                        # Should already be caught at load; belt-and-suspenders
+                        raise ValueError(
+                            f"{s} entry spread invalid at bar {i}; refuse evaluation"
+                        )
+                    cost = (
+                        (spr_i + 2.0 * float(slippage_points))
+                        * ps
+                        * cs
+                        * lots_s
+                        + 2.0 * float(commission_per_lot) * lots_s
+                    )
+                    if not np.isfinite(cost) or cost < 0.0:
+                        raise ValueError(
+                            f"{s} trade cost non-finite or negative; refuse evaluation"
+                        )
+                    if fade > 0:
+                        sl_v = fill - stop_dist
+                        tp_v = fill + float(tp_atr) * atr_v
+                    else:
+                        sl_v = fill + stop_dist
+                        tp_v = fill - float(tp_atr) * atr_v
+                    if not (np.isfinite(sl_v) and np.isfinite(tp_v)):
+                        leg_ok = False
+                        break
+                    planned_lots[s] = lots_s
+                    planned_fill[s] = fill
+                    planned_cost[s] = cost
+                    planned_sl[s] = sl_v
+                    planned_tp[s] = tp_v
                 if not leg_ok:
                     n_skipped += 1
                     entered_days.add(dkey)  # no re-try same day
                 else:
-                    # Enter all three at open of T*+1
+                    # Commit all three only after full preflight
                     for s in symbols:
-                        atr_v = float(atr_a[s][t_star])
-                        stop_dist = float(sl_atr) * atr_v
-                        fill = float(open_a[s][i])
-                        ps = PER_SYMBOL_META[s]["point_size"]
-                        cs = PER_SYMBOL_META[s]["contract_size"]
-                        lz = planned[s]
-                        cost = (
-                            (float(spread_a[s][i]) + 2.0 * float(slippage_points))
-                            * ps
-                            * cs
-                            * lz
-                            + 2.0 * float(commission_per_lot) * lz
-                        )
                         bal_at_entry[s] = bal[s]
                         pos[s] = int(fade)
-                        entry_px[s] = fill
-                        lots[s] = lz
-                        trade_cost[s] = cost
+                        entry_px[s] = planned_fill[s]
+                        lots[s] = planned_lots[s]
+                        trade_cost[s] = planned_cost[s]
                         entry_bar[s] = i
                         pos_day[s] = dkey
-                        if fade > 0:
-                            sl_px[s] = fill - stop_dist
-                            tp_px[s] = fill + float(tp_atr) * atr_v
-                        else:
-                            sl_px[s] = fill + stop_dist
-                            tp_px[s] = fill - float(tp_atr) * atr_v
+                        sl_px[s] = planned_sl[s]
+                        tp_px[s] = planned_tp[s]
                     n_entered += 1
                     entered_days.add(dkey)
                     # Same-bar exit allowed on entry bar (j >= T*+1)

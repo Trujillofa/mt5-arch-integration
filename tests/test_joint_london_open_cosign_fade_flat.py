@@ -55,7 +55,8 @@ def _bars(
     for j, h in enumerate(hours):
         rows.append(
             {
-                "time": pd.Timestamp(f"{day} {h:02d}:00:00", tz="UTC"),
+                # Timezone-naive server_clock_as_stored (not UTC-labeled)
+                "time": pd.Timestamp(f"{day} {h:02d}:00:00"),
                 "open": opens[j],
                 "high": highs[j],
                 "low": lows[j],
@@ -96,7 +97,7 @@ def _warmup_days(n_days: int = 3, start: str = "2024-01-02") -> dict[str, pd.Dat
     """Shared joint hours 1–20 for several days so ATR warmup passes."""
     bases = {"XAUUSD": 2000.0, "EURUSD": 1.1000, "GBPUSD": 1.2500}
     hours = list(range(1, 21))
-    start_ts = pd.Timestamp(start, tz="UTC")
+    start_ts = pd.Timestamp(start)  # naive server calendar
     frames: dict[str, list[pd.DataFrame]] = {s: [] for s in fam.SYMBOLS}
     for d in range(n_days):
         day = (start_ts + pd.DateOffset(days=int(d))).strftime("%Y-%m-%d")
@@ -279,7 +280,6 @@ def test_cosign_all_three_accept_entry_at_tstar_plus_1_open():
         aligned,
         already_aligned=True,
         trade_log=log,
-        spread_col=None,
         commission_per_lot=0.0,
         slippage_points=0.0,
     )
@@ -324,7 +324,6 @@ def test_reject_exit_using_tstar_range():
         aligned,
         already_aligned=True,
         trade_log=log,
-        spread_col=None,
     )
     assert res.n_signals_entered == 1
     assert res.joint.n_trades == 3
@@ -342,7 +341,7 @@ def test_cosign_fail_disagree_or_zero_return():
     for cosign in ("disagree", "zero_xau"):
         sig = _signal_day_frames(day, cosign=cosign, t_star_hour=7)
         aligned = _merge_warmup_signal(sig)
-        res = fam.simulate_joint(aligned, already_aligned=True, spread_col=None)
+        res = fam.simulate_joint(aligned, already_aligned=True)
         assert res.n_signals_cosign == 0, cosign
         assert res.n_signals_entered == 0, cosign
         assert res.joint.n_trades == 0, cosign
@@ -362,7 +361,7 @@ def test_missing_intersection_or_missing_tstar_plus_1_no_trade():
     for s in fam.SYMBOLS:
         aligned[s] = aligned[s].copy()
         aligned[s]["atr"] = DEFAULT_ATR[s]
-    res = fam.simulate_joint(aligned, already_aligned=True, spread_col=None)
+    res = fam.simulate_joint(aligned, already_aligned=True)
     assert res.n_signals_entered == 0
     assert res.joint.n_trades == 0
 
@@ -375,7 +374,7 @@ def test_missing_intersection_or_missing_tstar_plus_1_no_trade():
             & (sig2[s]["time"].dt.hour <= 9)
         ].reset_index(drop=True)
     aligned2 = _merge_warmup_signal(sig2)
-    res2 = fam.simulate_joint(aligned2, already_aligned=True, spread_col=None)
+    res2 = fam.simulate_joint(aligned2, already_aligned=True)
     # T*=9 is last bar of day → no T*+1 same day
     assert res2.n_signals_entered == 0
     assert res2.joint.n_trades == 0
@@ -389,7 +388,7 @@ def test_force_flat_last_bar_if_no_hour_16():
     aligned = _merge_warmup_signal(sig)
     log: list[dict] = []
     res = fam.simulate_joint(
-        aligned, already_aligned=True, trade_log=log, spread_col=None
+        aligned, already_aligned=True, trade_log=log
     )
     assert res.n_signals_entered == 1
     assert res.joint.n_trades == 3
@@ -487,7 +486,7 @@ def test_lot_floor_step_min_max_and_fx_vs_xau_point_sizes():
         sig,
         atr_force={"XAUUSD": 1000.0, "EURUSD": 0.001, "GBPUSD": 0.001},
     )
-    res = fam.simulate_joint(aligned, already_aligned=True, spread_col=None)
+    res = fam.simulate_joint(aligned, already_aligned=True)
     assert res.n_signals_cosign == 1
     assert res.n_signals_entered == 0
     assert res.n_signals_skipped_partial == 1
@@ -516,3 +515,278 @@ def test_align_joint_intersection_only():
     assert n == len(warm["EURUSD"])
     # Extra XAU-only bar dropped
     assert not ((aligned["XAUUSD"]["day_id"] == "2024-01-10").any())
+
+
+# --- fail-closed / discriminating regressions (v4 re-review BLOCK) -------------
+
+
+def test_costs_missing_spread_column_refuses():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up")
+    aligned = _merge_warmup_signal(sig)
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].drop(columns=["spread"])
+    with pytest.raises(ValueError, match="spread|cost"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_costs_nan_spread_refuses():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up", spreads=5.0)
+    aligned = _merge_warmup_signal(sig)
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        aligned[s].loc[aligned[s].index[0], "spread"] = float("nan")
+    with pytest.raises(ValueError, match="non-finite|spread"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_costs_negative_spread_refuses():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up", spreads=5.0)
+    aligned = _merge_warmup_signal(sig)
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        aligned[s]["spread"] = -5.0
+    with pytest.raises(ValueError, match="negative"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_costs_inf_spread_refuses():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up", spreads=1.0)
+    aligned = _merge_warmup_signal(sig)
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        aligned[s]["spread"] = float("inf")
+    with pytest.raises(ValueError, match="non-finite|Inf|inf"):
+        fam.simulate_joint(aligned, already_aligned=True)
+
+
+def test_already_aligned_shifted_eur_timestamps_refused():
+    """Intersection calendar must not be bypassable via already_aligned=True."""
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up")
+    aligned = _merge_warmup_signal(sig)
+    bad = {s: aligned[s].copy() for s in fam.SYMBOLS}
+    bad["EURUSD"]["time"] = bad["EURUSD"]["time"] + pd.Timedelta(1, unit="h")
+    with pytest.raises(ValueError, match="timestamps|intersection"):
+        fam.simulate_joint(bad, already_aligned=True)
+
+
+def test_nan_entry_open_cancels_entire_basket():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up", t_star_hour=7)
+    aligned = _merge_warmup_signal(sig)
+    ref = aligned["XAUUSD"]
+    t_star_i = int(
+        np.flatnonzero(((ref["day_id"] == day) & (ref["hour"] == 7)).to_numpy())[0]
+    )
+    entry_i = t_star_i + 1
+    aligned["EURUSD"] = aligned["EURUSD"].copy()
+    aligned["EURUSD"].loc[aligned["EURUSD"].index[entry_i], "open"] = float("nan")
+    log: list[dict] = []
+    res = fam.simulate_joint(aligned, already_aligned=True, trade_log=log)
+    assert res.n_signals_cosign == 1
+    assert res.n_signals_entered == 0
+    assert res.n_signals_skipped_partial == 1
+    assert res.joint.n_trades == 0
+    assert log == []
+
+
+def test_server_time_is_timezone_naive():
+    day = "2024-01-05"
+    sig = _signal_day_frames(day, cosign="up")
+    for s in fam.SYMBOLS:
+        assert getattr(sig[s]["time"].dtype, "tz", None) is None
+    aligned = _merge_warmup_signal(sig)
+    for s in fam.SYMBOLS:
+        assert getattr(aligned[s]["time"].dtype, "tz", None) is None
+    # UTC-labeled input must refuse
+    utc = {s: aligned[s].copy() for s in fam.SYMBOLS}
+    for s in fam.SYMBOLS:
+        utc[s]["time"] = pd.to_datetime(utc[s]["time"], utc=True)
+    with pytest.raises(ValueError, match="timezone-naive|server_clock"):
+        fam.simulate_joint(utc, already_aligned=True)
+
+
+def test_wilder_atr_not_sma():
+    """prepare/align must use Wilder ewm, not SMA of TR."""
+    # Two full days of H1 with expanding ranges so Wilder != SMA
+    parts_xau = []
+    parts_eur = []
+    parts_gbp = []
+    i_global = 0
+    for day in ("2024-02-01", "2024-02-02"):
+        hours = list(range(0, 24))
+        opens = [2000.0 + i_global * 0.1 + j * 0.1 for j in range(len(hours))]
+        highs = [o + 1.0 + ((i_global + j) % 7) for j, o in enumerate(opens)]
+        lows = [o - 0.8 - ((i_global + j) % 5) * 0.2 for j, o in enumerate(opens)]
+        closes = [o + 0.3 for o in opens]
+        parts_xau.append(
+            _bars(day, hours, opens=opens, highs=highs, lows=lows, closes=closes)
+        )
+        parts_eur.append(
+            _bars(
+                day,
+                hours,
+                opens=[1.1 + j * 1e-5 for j in range(24)],
+                highs=[1.101 + j * 1e-5 for j in range(24)],
+                lows=[1.099 + j * 1e-5 for j in range(24)],
+                closes=[1.1005 + j * 1e-5 for j in range(24)],
+            )
+        )
+        parts_gbp.append(
+            _bars(
+                day,
+                hours,
+                opens=[1.25 + j * 1e-5 for j in range(24)],
+                highs=[1.251 + j * 1e-5 for j in range(24)],
+                lows=[1.249 + j * 1e-5 for j in range(24)],
+                closes=[1.2505 + j * 1e-5 for j in range(24)],
+            )
+        )
+        i_global += 24
+    raw = {
+        "XAUUSD": pd.concat(parts_xau, ignore_index=True),
+        "EURUSD": pd.concat(parts_eur, ignore_index=True),
+        "GBPUSD": pd.concat(parts_gbp, ignore_index=True),
+    }
+    aligned = fam.align_joint(raw)
+    d = aligned["XAUUSD"]
+    wilder = fam._wilder_atr(d)
+    sma = fam._sma_atr(d)
+    mask = np.isfinite(wilder.to_numpy()) & np.isfinite(sma.to_numpy())
+    assert mask.sum() > 10
+    assert not np.allclose(wilder.to_numpy()[mask], sma.to_numpy()[mask], rtol=0, atol=1e-9)
+    np.testing.assert_allclose(d["atr"].to_numpy(), wilder.to_numpy(), rtol=0, atol=1e-12)
+
+
+def test_positive_spread_cost_arithmetic_and_timing():
+    """Full RT spread cost measured at entry, deducted at exit (balance unchanged at fill)."""
+    day = "2024-01-05"
+    spread_pts = 20.0
+    sig = _signal_day_frames(day, cosign="up", t_star_hour=7, spreads=spread_pts)
+    aligned = _merge_warmup_signal(sig)
+    log: list[dict] = []
+    res = fam.simulate_joint(aligned, already_aligned=True, trade_log=log)
+    assert res.n_signals_entered == 1
+    assert len(log) == 3
+    for t in log:
+        s = t["symbol"]
+        ps = fam.PER_SYMBOL_META[s]["point_size"]
+        cs = fam.PER_SYMBOL_META[s]["contract_size"]
+        expected = spread_pts * ps * cs * t["lots"]
+        assert t["trade_cost"] == pytest.approx(expected, rel=0, abs=1e-9)
+        # Cost deducted at exit: pnl = gross - cost
+        assert t["pnl"] == pytest.approx(t["gross"] - t["trade_cost"], rel=0, abs=1e-9)
+        # Balance at entry unchanged by cost booking
+        assert t["bal_at_entry"] == pytest.approx(fam.START_BALANCE, rel=0, abs=1e-9)
+        assert t["bal_after_exit"] == pytest.approx(
+            t["bal_at_entry"] + t["pnl"], rel=0, abs=1e-9
+        )
+
+
+def test_sl_before_tp_when_both_touch():
+    """On a bar that spans both SL and TP, short/long must take SL first."""
+    day = "2024-01-05"
+    # Cosign up → fade short; entry open = base; wide range hits both SL and TP
+    sig = _signal_day_frames(day, cosign="up", t_star_hour=7, include_hour16=True)
+    atr = DEFAULT_ATR
+    aligned = _merge_warmup_signal(sig)
+    ref = aligned["XAUUSD"]
+    t_star_i = int(
+        np.flatnonzero(((ref["day_id"] == day) & (ref["hour"] == 7)).to_numpy())[0]
+    )
+    entry_i = t_star_i + 1
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        fill = float(aligned[s]["open"].iloc[entry_i])
+        stop = 1.5 * atr[s]
+        # Short SL = fill+stop, TP = fill-2*atr; make bar span both
+        aligned[s].loc[aligned[s].index[entry_i], "high"] = fill + stop + 1.0
+        aligned[s].loc[aligned[s].index[entry_i], "low"] = fill - 2.0 * atr[s] - 1.0
+        aligned[s].loc[aligned[s].index[entry_i], "close"] = fill
+    log: list[dict] = []
+    res = fam.simulate_joint(aligned, already_aligned=True, trade_log=log)
+    assert res.n_signals_entered == 1
+    assert all(t["reason"] == "sl" for t in log)
+    assert all(t["exit_bar"] == entry_i for t in log)
+
+
+def test_joint_mtm_drawdown_uses_floating_equity():
+    """Joint max DD must reflect adverse MTM while position open, not flat books only."""
+    day = "2024-01-05"
+    # Cosign down → fade long; then push all closes down hard before time flat
+    sig = _signal_day_frames(day, cosign="down", t_star_hour=7, include_hour16=True)
+    aligned = _merge_warmup_signal(sig)
+    ref = aligned["XAUUSD"]
+    t_star_i = int(
+        np.flatnonzero(((ref["day_id"] == day) & (ref["hour"] == 7)).to_numpy())[0]
+    )
+    entry_i = t_star_i + 1
+    # After entry, set intermediate bar deep underwater then recover at hour 16
+    mid = entry_i + 2
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        fill = float(aligned[s]["open"].iloc[entry_i])
+        # Keep range quiet on entry so no SL/TP; then dump close on mid bar
+        aligned[s].loc[aligned[s].index[entry_i], "high"] = fill + 1e-6
+        aligned[s].loc[aligned[s].index[entry_i], "low"] = fill - 1e-6
+        aligned[s].loc[aligned[s].index[entry_i], "close"] = fill
+        crash = fill * 0.5 if s == "XAUUSD" else fill * 0.98
+        aligned[s].loc[aligned[s].index[mid], "close"] = crash
+        aligned[s].loc[aligned[s].index[mid], "high"] = fill
+        aligned[s].loc[aligned[s].index[mid], "low"] = crash
+    res = fam.simulate_joint(aligned, already_aligned=True)
+    assert res.n_signals_entered == 1
+    # Equity series must go below joint start at the crash bar
+    assert min(res.joint_equity) < fam.JOINT_START_EQUITY - 1.0
+    assert res.joint.max_drawdown_pct > 0.0
+
+
+def test_two_cycle_realized_balance_compounding():
+    """Second-day lots must size from post-trade-1 realized balance, not START_BALANCE."""
+    atr_xau = 8.4
+    # stop_dist = 12.6 → risk 100 / (12.6*100) = 0.07936 → floor 0.07
+    # TP = 2*ATR → gross per lot large enough to lift lots next day
+    day1 = "2024-01-05"
+    day2 = "2024-01-08"
+    sig1 = _signal_day_frames(day1, cosign="down", t_star_hour=7, include_hour16=True)
+    sig2 = _signal_day_frames(day2, cosign="down", t_star_hour=7, include_hour16=True)
+    warm = _warmup_days(3)
+    frames = {
+        s: pd.concat([warm[s], sig1[s], sig2[s]], ignore_index=True) for s in fam.SYMBOLS
+    }
+    aligned = fam.align_joint(frames)
+    for s in fam.SYMBOLS:
+        aligned[s] = aligned[s].copy()
+        if s == "XAUUSD":
+            aligned[s]["atr"] = atr_xau
+        else:
+            aligned[s]["atr"] = 0.0010
+    # Force TP on hour 8 (entry) for day1 only — long fade hits high TP
+    for day in (day1,):
+        ref = aligned["XAUUSD"]
+        t_star_i = int(
+            np.flatnonzero(((ref["day_id"] == day) & (ref["hour"] == 7)).to_numpy())[0]
+        )
+        entry_i = t_star_i + 1
+        for s in fam.SYMBOLS:
+            fill = float(aligned[s]["open"].iloc[entry_i])
+            atr_v = float(aligned[s]["atr"].iloc[t_star_i])
+            tp = fill + 2.0 * atr_v
+            aligned[s].loc[aligned[s].index[entry_i], "high"] = tp + atr_v
+            aligned[s].loc[aligned[s].index[entry_i], "low"] = fill - 0.1 * atr_v
+            aligned[s].loc[aligned[s].index[entry_i], "close"] = tp
+    log: list[dict] = []
+    res = fam.simulate_joint(aligned, already_aligned=True, trade_log=log)
+    xau_trades = [t for t in log if t["symbol"] == "XAUUSD"]
+    assert len(xau_trades) >= 2
+    assert xau_trades[0]["reason"] == "tp"
+    lots1 = xau_trades[0]["lots"]
+    lots2 = xau_trades[1]["lots"]
+    # After TP, balance grows → second day floors to a higher lot step
+    assert lots1 == pytest.approx(0.07, abs=1e-9)
+    assert lots2 > lots1
+    assert res.n_signals_entered >= 2

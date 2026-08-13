@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|--------|
-| **next_step** | **`AWAIT_ADVERSARIAL_IMPLEMENTATION_REVIEW`** |
+| **next_step** | **`AWAIT_ADVERSARIAL_IMPLEMENTATION_RE_REVIEW`** (fail-closed costs/align/fill + discriminating fixtures) |
 | **family_id** | `joint_london_open_cosign_fade_flat` |
 | **charter v4** | SHA `e29b2693…` (immutable; freeze PR #6 merged) |
 | **module** | `scripts/xau_family_joint_london_open_cosign_fade_flat.py` |
