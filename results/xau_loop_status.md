@@ -1,5 +1,26 @@
 # XAU offline loop status
 
+## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v2 FREEZE** · v1 SUPERSEDED · design only
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_CHARTER_REVIEW_V2`** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v2** | `results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v2.json` · SHA `935534e2…` |
+| **v1** | SHA `2d3fda48…` · **SUPERSEDED** (immutable; registry append only) |
+| **package** | `4f44b452…-ee2a993fb5b1befd` pinned |
+| **calendar** | **intersection_only** (real + null) |
+| **harness** | `multi_instrument_joint_v1` (single-frame prohibited) |
+| **gates** | top-level joint soft primary; per-symbol soft under multi_instrument |
+| **free knobs** | **0** |
+| **develop metrics** | **not inspected** |
+| **fixtures / screen / null / paper / live** | **not authorized** |
+| **promote / live_go** | **no / false** |
+
+v2 closes BLOCK findings: nested gates, unequal calendars, execution/cost pins, joint stats, shared-k.
+
+---
+
 ## 2026-08-13 — MULTI-INSTRUMENT thesis freeze **DESIGN ONLY** · `joint_london_open_cosign_fade_flat` v1
 
 | Field | Value |
