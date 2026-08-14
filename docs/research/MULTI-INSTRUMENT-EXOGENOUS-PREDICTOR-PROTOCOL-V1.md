@@ -4,7 +4,17 @@
 **Status:** **SPECIFICATION ONLY** — not implemented · not enforced · not freeze-ready for thesis
 **Branch:** `research/exogenous-predictor-protocol-v1` from `main@a492f2c`
 **Parent:** extends family protocol 2.2 (`docs/research/XAU-FAMILY-PROTOCOL-V2.md`) without replacing it for single-frame / joint-cosign families
-**Revision:** Phase A amend 2 (executable null algorithm, pre-entry events, identity, accounting boundary)
+**Revision:** Phase A amend 2b (HEAD) — same four gaps closed; residual wording tightened for re-review
+
+### Reviewer map (do not re-cite pre-0e1cf6c line numbers)
+
+| Finding | Status on this HEAD | Where |
+|---------|---------------------|-------|
+| Null engine not executable / deferred to charter | **Closed** | §5.1, §5.5–§5.6 pin one algorithm; §5.8 forbids alternate engines |
+| E defined by successful completion | **Closed** | §5.3 \(P_{\text{entry}}\) only; §5.3 R4 post-entry fail → UNKNOWN, never drop event |
+| Full identity can enter counted trials | **Closed** | §5.5 complete-identity rejection + \(|\mathcal{D}|≥M+1\); §5.7 forced-identity RNG test |
+| Failure accounting ambiguous | **Closed** | §8.1–§8.4 pre-STARTED preflight vs post-STARTED FAILED_RUN_UNKNOWN |
+| Open-catalog promotion | **Closed** | §7.1 provisional PASS; paper/live forbidden while catalog open |
 
 ## Standing loop disposition (unchanged)
 
@@ -179,8 +189,8 @@ Admit \(c\) into \(E\) **iff all** hold (no post-entry information):
 1. Next bar \(t_e = \text{index}(t^\*)+1\) exists on **I**.
 2. `day_id(t_e) == day_id(t^\*)`.
 3. Bars \(t_e, t_e+1, \ldots, t_e+H-1\) all exist on **I** and share `day_id(t_e)`.
-4. ATR at freeze source bar (canonical: **atr at \(t^\*\)** on traded series on **I**, Wilder 14 unless thesis freezes another **before Phase C** — default Wilder 14) is finite and \(> 0\).
-5. Lots from canonical sizing (§5.6) using balance at decision time and that ATR satisfy lots ≥ lot_min after floor-to-step and ≤ lot_max.
+4. ATR at \(t^\*\) on the traded series on **I** using **Wilder period 14** only (`TR.ewm(alpha=1/14, adjust=False).mean()`); must be finite and \(> 0\). (v1 does **not** allow charter-chosen ATR estimators.)
+5. Lots from §5.6 sizing using start_balance compounding on the traded book and that ATR: `risk_cash = risk_pct * balance`; `raw = risk_cash / (sl_atr * atr_tstar * contract_size)`; floor to `lot_step`; cap `lot_max`; require ≥ `lot_min` (never force min).
 6. Spread at \(t_e\) on traded symbol is finite and ≥ 0.
 7. side is ±1.
 
@@ -223,18 +233,18 @@ Donor \(d\) at entry index \(i = \text{donor_id}\) is **eligible** iff \(P_{\tex
 rng_j = numpy.random.Generator(numpy.random.PCG64(base_seed + j))
 ```
 
-**Assignment (without replacement, no overlap within trial):**
+**Assignment (without replacement, no overlap within trial) — Phase B implements exactly this:**
 
-1. Require \(|\mathcal{D}| ≥ M\). If not → **donor preflight failure** (§8.3).
-2. Draw a random permutation of \(\mathcal{D}\) via `rng_j.permutation(len(D))` applied to sorted \(\mathcal{D}\).
-3. Take the first \(M\) donor_ids in that permutation as \((d_0,\ldots,d_{M-1})\) assigned to events \(e_0,\ldots,e_{M-1}\) in order.
-4. **Complete-identity rejection:** let \(d_m^{\text{id}} = \text{index}(e_m.t_entry)\). If \((d_0,\ldots,d_{M-1}) = (d_0^{\text{id}},\ldots,d_{M-1}^{\text{id}})\), **discard** and redraw from the **same** `rng_j` (continue consuming RNG state) until the assignment is **not** the full identity vector, or until `MAX_IDENTITY_REDRAWS = 1000` failures → **trial invalid** / run UNKNOWN (should be astronomically rare when \(|\mathcal{D}| > M\); if \(|\mathcal{D}| = M\) the only permutation may be identity — then protocol refuse at preflight: require \(|\mathcal{D}| ≥ M+1\) **or** \(|\mathcal{D}| ≥ M\) and \(M ≥ 1\) with at least one non-identity permutation available; **v1 pin: require \(|\mathcal{D}| ≥ max(M+1, M)\) and if the only possible assignments are identity, preflight fails**).
+1. **Preflight (mandatory before any counted trial, and before STARTED for dispositional null):** require \(M ≥ 1\) implies \(|\mathcal{D}| ≥ M + 1\); if \(M = 0\), null is not run (screen path only). Failure → §8.1 step 2 / §8.3 as applicable. **Never** use threshold \(|\mathcal{D}| ≥ M\) alone.
+2. Let `D_sorted = sorted(D)` (ascending donor_id).
+3. `perm = rng_j.permutation(len(D_sorted))`; `order = [D_sorted[k] for k in perm]`.
+4. Candidate assignment: \((d_0,\ldots,d_{M-1}) = order[0:M]\) mapped to events in event_id order.
+5. **Complete-identity rejection (deterministic):** let \(d_m^{\text{id}} = \text{index}(e_m.t_entry)\). While the candidate equals \((d_0^{\text{id}},\ldots,d_{M-1}^{\text{id}})\) and redraws \(< 1000\): draw a **new** `perm = rng_j.permutation(len(D_sorted))` (continue RNG stream) and rebuild candidate. If still identity after 1000 redraws → **trial invalid** (§8.3 after STARTED).
+6. Store the non-identity assignment; execute §5.6 for every event.
 
-**v1 pin on pool size:** \(|\mathcal{D}| ≥ M + 1\) when \(M ≥ 1\), guaranteeing at least one non-identity injection-style assignment under without-replacement of M distinct donors (when M=1, need ≥2 donors).
+**Per-event self-pairing:** **allowed** (some \(d_m = d_m^{\text{id}}\) OK) **iff** the full M-vector is not the complete identity assignment.
 
-**Per-event self-pairing:** **allowed** (an event may draw its own real donor_id) **provided** the full M-vector is not the complete identity assignment. No ban on partial self-hits.
-
-**Forbidden in v1:** with-replacement; overlapping donors within a trial; strata; free charter overrides of this pairing.
+**Forbidden in v1 (charter naming these is a validation error):** with-replacement; overlapping donors within a trial; strata; charter-supplied pairing pseudocode; OHLC-rotate signal recompute; unfilled events.
 
 ### 5.6 Path transplant, sizing, costs (canonical)
 
@@ -351,10 +361,11 @@ multiplicity.identity_excluded_from_null_trials = true
 ### 8.1 Dispositional screen / null launch order
 
 1. Validate charter + kind + clean tree + sealed path + cost match.
-2. **Non-dispositional donor preflight (optional but recommended):** build \(\mathcal{D}\) and check \(|\mathcal{D}| ≥ M+1\) (after real E is known). If this preflight is run **before** STARTED, failure → exit non-zero, **no** registry row, **r1 not burned** (attempt never dispositionally opened).
-3. Create fresh out-dir; write **STARTED** (dispositional attempt open).
-4. Package load / score / null as applicable.
-5. Write terminal report; append terminal ledger row.
+2. Run real path through event admission (build \(E\), \(M\)). If screen-only and \(n_{\text{passers}}=0\), stop as SCREEN_FAIL without null (no null STARTED required beyond screen accounting).
+3. **Mandatory non-dispositional null preflight (before null STARTED):** build \(\mathcal{D}\); require \(|\mathcal{D}| ≥ M+1\) when \(M ≥ 1\). Failure → exit non-zero, **no** null STARTED, **no** registry KILL/UNKNOWN for null, **r1 not burned** by null. (Screen disposition already terminal if SCREEN_FAIL.)
+4. Create fresh null out-dir; write **STARTED** for sealed/dispositional null (attempt open).
+5. Run N counted trials (§5.5–§5.6). On any assignment/T≠M/post-entry failure after STARTED → §8.3 UNKNOWN burned terminal.
+6. Write success terminal report; append terminal ledger row.
 
 ### 8.2 Success terminals
 
