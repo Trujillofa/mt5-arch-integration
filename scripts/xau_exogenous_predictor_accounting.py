@@ -4,8 +4,10 @@
 Implements §8 of MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md.
 
 * SCREEN_STARTED before package load / real score — failures do **not** burn r1
-* NULL_STARTED after positive screen + donor preflight — **arms** sealed-null r1;
-  any incomplete attempt with only NULL_STARTED present is treated as burned
+* NULL_STARTED after positive screen + donor preflight — **consumes** sealed-null r1
+  immediately (``r1_burned=true`` on the marker); existence of NULL_STARTED is
+  authoritative for burn inference even if a contradictory terminal appears
+* Terminal reports are **write-once** (refuse overwrite)
 * Reserved accounting fields cannot be overridden by caller ``extra``
 
 SAFETY: offline research only. No registry write helpers for real charters here
@@ -57,13 +59,24 @@ _RESERVED_FAILED = frozenset(
         "finished_at_utc",
     }
 )
+_RESERVED_SUCCESS = frozenset(
+    {
+        "disposition",
+        "execution_state",
+        "r1_burned",
+        "sealed_null_attempt",
+        "finished_at_utc",
+    }
+)
 
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
 
 
-def _merge_extra(base: dict[str, Any], extra: dict[str, Any] | None, reserved: frozenset[str]) -> dict[str, Any]:
+def _merge_extra(
+    base: dict[str, Any], extra: dict[str, Any] | None, reserved: frozenset[str]
+) -> dict[str, Any]:
     """Apply extra first, then force reserved base keys (base wins)."""
     out: dict[str, Any] = {}
     if extra:
@@ -73,6 +86,13 @@ def _merge_extra(base: dict[str, Any], extra: dict[str, Any] | None, reserved: f
             out[k] = v
     out.update(base)
     return out
+
+
+def _write_once(path: Path, body: dict[str, Any]) -> Path:
+    if path.exists():
+        raise FileExistsError(f"refuse overwrite existing terminal/marker: {path}")
+    path.write_text(json.dumps(body, indent=2) + "\n")
+    return path
 
 
 def write_screen_started(
@@ -87,8 +107,6 @@ def write_screen_started(
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / SCREEN_STARTED_NAME
-    if path.exists():
-        raise FileExistsError(f"refuse overwrite existing SCREEN_STARTED: {path}")
     base: dict[str, Any] = {
         "execution_state": "SCREEN_STARTED",
         "r1_burned": False,
@@ -101,8 +119,7 @@ def write_screen_started(
         "started_at_utc": _utc_now(),
     }
     body = _merge_extra(base, extra, _RESERVED_SCREEN_STARTED)
-    path.write_text(json.dumps(body, indent=2) + "\n")
-    return path
+    return _write_once(path, body)
 
 
 def write_null_started(
@@ -117,20 +134,16 @@ def write_null_started(
 ) -> Path:
     """§8.2 step 2 — after positive screen + successful donor preflight.
 
-    Arms the sealed-null r1 burn boundary. ``r1_burned`` stays false until a
-    terminal success or FAILED_RUN_UNKNOWN is written, but
-    ``r1_burn_armed=true`` / ``arms_r1_burn_on_failure=true`` mean any crash
-    with only this marker present **must** be treated as burned (§8.3).
+    Writing NULL_STARTED **consumes** the sealed-null r1 attempt:
+    ``r1_burned=true`` on the marker itself. Existence of this file is
+    authoritative for burn inference (§8.3).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / NULL_STARTED_NAME
-    if path.exists():
-        raise FileExistsError(f"refuse overwrite existing NULL_STARTED: {path}")
     base: dict[str, Any] = {
         "execution_state": "NULL_STARTED",
-        # Terminal burn flag is false until success/fail terminal; armed is true.
-        "r1_burned": False,
+        "r1_burned": True,
         "r1_burn_armed": True,
         "sealed_null_attempt": True,
         "arms_r1_burn_on_failure": True,
@@ -142,8 +155,7 @@ def write_null_started(
         "started_at_utc": _utc_now(),
     }
     body = _merge_extra(base, extra, _RESERVED_NULL_STARTED)
-    path.write_text(json.dumps(body, indent=2) + "\n")
-    return path
+    return _write_once(path, body)
 
 
 def write_failed_run_unknown(
@@ -155,10 +167,14 @@ def write_failed_run_unknown(
     family_id: str | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
-    """Terminal FAILED_RUN_UNKNOWN; r1_burned per §8.1 vs §8.3."""
+    """Terminal FAILED_RUN_UNKNOWN (write-once); r1_burned per §8.1 vs §8.3."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / FAILED_UNKNOWN_NAME
+    # If null was armed, force burned regardless of caller args.
+    if (out_dir / NULL_STARTED_NAME).is_file():
+        r1_burned = True
+        sealed_null_attempt = True
     base: dict[str, Any] = {
         "disposition": "FAILED_RUN_UNKNOWN",
         "execution_state": "UNKNOWN",
@@ -170,8 +186,31 @@ def write_failed_run_unknown(
         "finished_at_utc": _utc_now(),
     }
     body = _merge_extra(base, extra, _RESERVED_FAILED)
-    path.write_text(json.dumps(body, indent=2) + "\n")
-    return path
+    return _write_once(path, body)
+
+
+def write_null_success(
+    out_dir: Path,
+    *,
+    family_id: str | None = None,
+    n_null_executed: int | None = None,
+    extra: dict[str, Any] | None = None,
+) -> Path:
+    """Successful sealed null terminal (write-once); r1 remains burned."""
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / NULL_SUCCESS_NAME
+    base: dict[str, Any] = {
+        "disposition": "NULL_COMPLETE",
+        "execution_state": "SUCCESS",
+        "r1_burned": True,
+        "sealed_null_attempt": True,
+        "n_null_executed": n_null_executed,
+        "family_id": family_id,
+        "finished_at_utc": _utc_now(),
+    }
+    body = _merge_extra(base, extra, _RESERVED_SUCCESS)
+    return _write_once(path, body)
 
 
 def screen_phase_failure_report(
@@ -199,7 +238,7 @@ def null_phase_failure_report(
     family_id: str | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
-    """After NULL_STARTED: burned UNKNOWN (reserved fields not overrideable)."""
+    """After NULL_STARTED: burned UNKNOWN (write-once; reserved fields locked)."""
     return write_failed_run_unknown(
         out_dir,
         r1_burned=True,
@@ -213,11 +252,13 @@ def null_phase_failure_report(
 def infer_r1_burned_from_outdir(out_dir: Path) -> bool:
     """Fail-closed accounting when a process dies after arming.
 
-    * NULL_STARTED present and no successful null terminal → burned
-    * FAILED_RUN_UNKNOWN with r1_burned true → burned
-    * SCREEN_STARTED only → not burned
+    **NULL_STARTED is authoritative:** if present, always burned — even when a
+    contradictory terminal claims ``r1_burned=false`` (should not be writable
+    after arming; defense in depth).
     """
     out_dir = Path(out_dir)
+    if (out_dir / NULL_STARTED_NAME).is_file():
+        return True
     fail = out_dir / FAILED_UNKNOWN_NAME
     if fail.is_file():
         body = load_json(fail)
@@ -226,8 +267,7 @@ def infer_r1_burned_from_outdir(out_dir: Path) -> bool:
     if success.is_file():
         body = load_json(success)
         return bool(body.get("r1_burned", True))
-    # Marker-only crash after arming: conservative burn
-    return (out_dir / NULL_STARTED_NAME).is_file()
+    return False
 
 
 def load_json(path: Path) -> dict[str, Any]:

@@ -718,12 +718,13 @@ def execute_fixed_events_mtm(
     slippage_points: float = 0.0,
     start_balance: float = 10_000.0,
     h: int = H_DEFAULT,
+    donor_by_event_id: dict[int, int] | None = None,
 ) -> tuple[list[TradeResult], list[float], float]:
     """Execute a fixed event list on a path with full floating-MTM equity.
 
+    Chronology is **event reserved intervals** on the analysis calendar
+    (``t_entry_idx`` / ``i_start`` / ``i_end``), not donor wall-clock order.
     Same bar order as the real path (§4.2): open entries → SL/TP → mark.
-    Events must already carry frozen lots/side/atr and path entry indices
-    (``t_entry_idx`` / ``i_start`` / ``i_end`` / ``spread_entry``).
     """
     n = len(open_)
     by_entry: dict[int, Event] = {}
@@ -740,6 +741,11 @@ def execute_fixed_events_mtm(
     for i in range(n):
         if open_trade is None and i in by_entry:
             pending = by_entry[i]
+            d_id = (
+                int(donor_by_event_id[pending.event_id])
+                if donor_by_event_id is not None
+                else int(pending.t_entry_idx)
+            )
             open_trade = {
                 "event": pending,
                 "entry_price": float(open_[i]),
@@ -753,7 +759,7 @@ def execute_fixed_events_mtm(
                     if pending.side > 0
                     else float(open_[i]) - tp_atr * pending.atr_tstar
                 ),
-                "donor_id": pending.t_entry_idx,
+                "donor_id": d_id,
             }
 
         if open_trade is not None:
@@ -832,32 +838,56 @@ def execute_fixed_events_mtm(
     return trades_sorted, equity, float(balance)
 
 
-def map_events_to_assignment(
+def transplant_donor_ohlc_into_event_windows(
     events: Sequence[Event],
     assignment: Sequence[int],
     *,
+    open_: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
     spread: np.ndarray,
     h: int = H_DEFAULT,
-) -> list[Event]:
-    """§5.6 transplant: freeze side/lots/atr; entry + spread from donor."""
+) -> tuple[list[Event], np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[int, int]]:
+    """§5.6: copy each donor's H-bar OHLC into the event's **reserved** interval.
+
+    Preserves frozen event chronology (``t_entry_idx`` / ``i_start`` / ``i_end``).
+    Does **not** re-time events to donor wall-clock indices — that would reorder
+    equity realization relative to event order and distort DD.
+    """
     if len(assignment) != len(events):
         raise ProtocolError("assignment length != M")
-    out: list[Event] = []
+    n = len(open_)
+    open_t = np.array(open_, dtype=float, copy=True)
+    high_t = np.array(high, dtype=float, copy=True)
+    low_t = np.array(low, dtype=float, copy=True)
+    close_t = np.array(close, dtype=float, copy=True)
+    out_events: list[Event] = []
+    donor_by_event_id: dict[int, int] = {}
     for ev, donor in zip(events, assignment, strict=True):
         d = int(donor)
+        if d < 0 or d + h - 1 >= n:
+            raise ProtocolError(f"donor window out of range: donor_id={d}")
+        if ev.i_end >= n or ev.i_start < 0:
+            raise ProtocolError(f"event reserved window out of range: {ev}")
+        if ev.i_end - ev.i_start + 1 != h:
+            raise ProtocolError(
+                f"event reserved length != H: event_id={ev.event_id}"
+            )
+        for k in range(h):
+            dst = ev.i_start + k
+            src = d + k
+            open_t[dst] = float(open_[src])
+            high_t[dst] = float(high[src])
+            low_t[dst] = float(low[src])
+            close_t[dst] = float(close[src])
         sp = float(spread[d])
         if not (np.isfinite(sp) and sp >= 0):
             raise ProtocolError(f"invalid donor spread at {d}")
-        out.append(
-            replace(
-                ev,
-                t_entry_idx=d,
-                i_start=d,
-                i_end=d + h - 1,
-                spread_entry=sp,
-            )
-        )
-    return out
+        # Keep real reserved indices; only costs source (spread) and OHLC path change.
+        out_events.append(replace(ev, spread_entry=sp))
+        donor_by_event_id[int(ev.event_id)] = d
+    return out_events, open_t, high_t, low_t, close_t, donor_by_event_id
 
 
 def run_null_trial(
@@ -879,14 +909,27 @@ def run_null_trial(
     h: int = H_DEFAULT,
     trial_id: int = 0,
 ) -> NullTrialResult:
-    """§5.6 path transplant for one assignment; full MTM equity; require T=M."""
-    mapped = map_events_to_assignment(events, assignment, spread=spread, h=h)
-    trades, equity, final_bal = execute_fixed_events_mtm(
-        mapped,
+    """§5.6 path transplant; event-order MTM equity; require T=M.
+
+    Donor H-bar OHLC is spliced into each event's reserved calendar window so
+    trade realization order follows frozen event chronology (not donor time order).
+    """
+    mapped, o_t, h_t, l_t, c_t, donor_map = transplant_donor_ohlc_into_event_windows(
+        events,
+        assignment,
         open_=open_,
         high=high,
         low=low,
         close=close,
+        spread=spread,
+        h=h,
+    )
+    trades, equity, final_bal = execute_fixed_events_mtm(
+        mapped,
+        open_=o_t,
+        high=h_t,
+        low=l_t,
+        close=c_t,
         sl_atr=sl_atr,
         tp_atr=tp_atr,
         point_size=point_size,
@@ -895,7 +938,10 @@ def run_null_trial(
         slippage_points=slippage_points,
         start_balance=start_balance,
         h=h,
+        donor_by_event_id=donor_map,
     )
+    # Trades already event_id-sorted; P&L list must match that order for PF,
+    # while equity/DD follows calendar event chronology (same order for H-disjoint).
     m = metrics_from_pnls(
         [t.pnl for t in trades], equity, start_balance=start_balance
     )

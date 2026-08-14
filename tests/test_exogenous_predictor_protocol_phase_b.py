@@ -105,8 +105,22 @@ def _minimal_exogenous_charter(**overrides: object) -> dict:
             "method": "finite_catalog_bonferroni_open_catalog",
             "K_prior": 8,
             "K": 9,
+            "alpha_uncorrected": 0.05,
+            "alpha_adjusted": 0.05 / 9,
+            "prior_scored_family_ids": [
+                "tod_london_ny_flat",
+                "server_hour_window_flat",
+                "early_server_range_break_flat",
+                "day_open_reclaim_flat",
+                "joint_london_open_cosign_fade_flat",
+                "bb_rsi",
+                "Donchian",
+                "prior_day_high_break",
+            ],
             "pass_status": "provisional_while_catalog_open",
             "paper_live_while_open": False,
+            "revalidation_on_K_increase": True,
+            "identity_excluded_from_null_trials": True,
         },
         "fixed": {
             "costs": {
@@ -650,6 +664,7 @@ def test_null_started_extra_cannot_override_reserved(tmp_path: Path):
     )
     body = acct.load_json(tmp_path / "NULL_STARTED.json")
     assert body["execution_state"] == "NULL_STARTED"
+    assert body["r1_burned"] is True  # consumed at arm time
     assert body["r1_burn_armed"] is True
     assert body["arms_r1_burn_on_failure"] is True
     assert body["sealed_null_attempt"] is True
@@ -734,3 +749,174 @@ def test_validator_mutation_matrix_fail_closed():
     errs = validate_exogenous_predictor_charter(bad)
     assert any("hold_bars" in e or "H" in e for e in errs)
     assert any("entry" in e for e in errs)
+
+    # K != K_prior+1
+    bad = _minimal_exogenous_charter()
+    bad["multiplicity"]["K"] = 8
+    assert any("K_prior+1" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # noncanonical multiplicity method alias
+    bad = _minimal_exogenous_charter()
+    bad["multiplicity"]["method"] = "finite_catalog_bonferroni"
+    assert any("aliases forbidden" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # bad costs
+    bad = _minimal_exogenous_charter()
+    bad["fixed"]["costs"]["commission_per_lot"] = "bad"
+    assert any("commission_per_lot" in e for e in validate_exogenous_predictor_charter(bad))
+    bad = _minimal_exogenous_charter()
+    bad["fixed"]["costs"]["slippage_points"] = float("nan")
+    assert any("slippage_points" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # contradictory H fields
+    bad = _minimal_exogenous_charter()
+    bad["rule"]["H"] = 3
+    bad["fixed"]["H"] = 99
+    assert any("disagree" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # duplicate symbols
+    bad = _minimal_exogenous_charter()
+    bad["instrument"]["symbols"] = ["XAUUSD", "XAUUSD"]
+    bad["instrument"]["predictor_symbols"] = ["XAUUSD"]
+    assert any("unique" in e for e in validate_exogenous_predictor_charter(bad))
+
+
+def test_reversed_donor_assignment_event_order_dd():
+    """Equity/DD follow frozen event chronology, not donor wall-clock order.
+
+    Event0 reserved early, Event1 later. Reversed donors would reorder if
+    executed by donor time; transplant keeps event-order realization.
+    """
+    n = 40
+    open_ = np.full(n, 100.0)
+    high = np.full(n, 101.0)
+    low = np.full(n, 99.0)
+    close = np.full(n, 100.0)
+    spread = np.zeros(n)
+    # Build two H=3 windows with deterministic P&L if entered long:
+    # Window A at 10: time-exit +20 cash path via close mark...
+    # Use fixed absolute prices so transplant is obvious.
+    # Event0 entry=10: win +20 gross on 1 lot before costs if exit close=120...
+    # Simpler: use simulate path with known pnls via execute after transplant.
+
+    # Donor windows:
+    # d=10: flat then exit at +20 price move (long)
+    # d=20: flat then exit at -10 price move (long)
+    for base, end_close in ((10, 120.0), (20, 90.0)):
+        open_[base] = 100.0
+        high[base] = 101.0
+        low[base] = 99.0
+        close[base] = 100.0
+        open_[base + 1] = 100.0
+        high[base + 1] = 101.0
+        low[base + 1] = 99.0
+        close[base + 1] = 100.0
+        open_[base + 2] = 100.0
+        high[base + 2] = max(100.0, end_close) + 1
+        low[base + 2] = min(100.0, end_close) - 1
+        close[base + 2] = end_close
+
+    # Real events at reserved 10 and 20 (identity donors) — construct Event objs
+    e0 = core.Event(
+        event_id=0,
+        t_star_idx=9,
+        t_entry_idx=10,
+        side=1,
+        atr_tstar=1.0,
+        lots=1.0,
+        spread_entry=0.0,
+        i_start=10,
+        i_end=12,
+    )
+    e1 = core.Event(
+        event_id=1,
+        t_star_idx=19,
+        t_entry_idx=20,
+        side=1,
+        atr_tstar=1.0,
+        lots=1.0,
+        spread_entry=0.0,
+        i_start=20,
+        i_end=22,
+    )
+    events = [e0, e1]
+    # Identity first: event-order pnls [+20*cs, -10*cs] with cs=1
+    id_trial = core.run_null_trial(
+        events,
+        [10, 20],
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=spread,
+        sl_atr=100.0,  # no SL
+        tp_atr=100.0,  # no TP
+        point_size=1.0,
+        contract_size=1.0,
+        commission_per_lot=0.0,
+        slippage_points=0.0,
+        start_balance=100.0,
+        h=3,
+    )
+    assert [t.pnl for t in id_trial.trades] == pytest.approx([20.0, -10.0])
+    # Event-order equity peaks: 100 → ... → 120 → ... → 110; peak 120 DD=10/120≈8.333%
+    assert id_trial.metrics["max_drawdown_pct"] == pytest.approx(100.0 * 10.0 / 120.0)
+
+    # Reversed donors: still realize event0 first with donor-20 path (-10), then +20
+    # Wait — transplant puts donor OHLC into event windows. Event0 window gets donor20
+    # OHLC (lose 10 first), event1 window gets donor10 (win 20). Event-order DD:
+    # 100 → 90 (dd 10%) → 110. peak 100 then 110, max dd from peak 100 is 10%.
+    # Event-order stored P&L list is still by event_id: first trade is event0 = -10.
+    rev = core.run_null_trial(
+        events,
+        [20, 10],
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=spread,
+        sl_atr=100.0,
+        tp_atr=100.0,
+        point_size=1.0,
+        contract_size=1.0,
+        start_balance=100.0,
+        h=3,
+    )
+    assert [t.pnl for t in rev.trades] == pytest.approx([-10.0, 20.0])
+    assert rev.assignment == [20, 10]
+    # Must NOT report donor-time order DD of 10% from wrong reordering as if
+    # event-order +20 then -10 (that would be 8.33% from peak 120).
+    # Correct event-order with reversed donors: -10 then +20 → DD 10%.
+    assert rev.metrics["max_drawdown_pct"] == pytest.approx(10.0)
+    # Discriminator vs wrong donor-time execution of assignment [20,10] on
+    # wall clock (would process donor20 first then donor10... same bars as
+    # event order here). Stronger check: entry_idx remain event reserved times.
+    assert rev.trades[0].entry_idx == 10
+    assert rev.trades[1].entry_idx == 20
+    assert rev.trades[0].donor_id == 20
+    assert rev.trades[1].donor_id == 10
+
+
+def test_terminal_write_once_refuses_overwrite(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1")
+    acct.null_phase_failure_report(tmp_path, reason="first", family_id="f1")
+    with pytest.raises(FileExistsError):
+        acct.screen_phase_failure_report(tmp_path, reason="cleanup", family_id="f1")
+    body = acct.load_json(tmp_path / "FAILED_RUN_UNKNOWN.json")
+    assert body["r1_burned"] is True
+    assert body["reason"] == "first"
+
+
+def test_null_started_authoritative_over_contradictory_terminal(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1")
+    # Manually plant a contradictory terminal that claims unburned (legacy/corrupt).
+    bad = {
+        "disposition": "FAILED_RUN_UNKNOWN",
+        "execution_state": "UNKNOWN",
+        "r1_burned": False,
+        "sealed_null_attempt": False,
+    }
+    (tmp_path / "FAILED_RUN_UNKNOWN.json").write_text(
+        __import__("json").dumps(bad) + "\n"
+    )
+    assert acct.infer_r1_burned_from_outdir(tmp_path) is True

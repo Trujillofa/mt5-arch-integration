@@ -472,23 +472,33 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
     symbols = inst.get("symbols")
     traded = inst.get("traded_symbols")
     predictors = inst.get("predictor_symbols")
-    if not isinstance(symbols, list) or not symbols:
-        errs.append("exogenous instrument.symbols must be a non-empty list")
-        symbols = []
-    if not isinstance(traded, list):
-        errs.append("exogenous instrument.traded_symbols must be a list of length 1")
-        traded = []
-    elif len(traded) != 1:
+
+    def _role_list(name: str, raw: Any, *, min_len: int) -> list[str]:
+        if not isinstance(raw, list) or len(raw) < min_len:
+            errs.append(
+                f"exogenous instrument.{name} must be a list with length >= {min_len}"
+            )
+            return []
+        out: list[str] = []
+        for i, x in enumerate(raw):
+            if not isinstance(x, str) or not x.strip():
+                errs.append(
+                    f"exogenous instrument.{name}[{i}] must be a non-empty string"
+                )
+                continue
+            out.append(x)
+        if out and len(out) != len(set(out)):
+            errs.append(f"exogenous instrument.{name} must have unique entries")
+        return out
+
+    symbols = _role_list("symbols", symbols, min_len=1)
+    traded = _role_list("traded_symbols", traded, min_len=1)
+    predictors = _role_list("predictor_symbols", predictors, min_len=1)
+    if traded and len(traded) != 1:
         errs.append(
             f"exogenous instrument.traded_symbols must have exactly one symbol "
             f"(got {len(traded)})"
         )
-    if not isinstance(predictors, list) or len(predictors) < 1:
-        errs.append(
-            "exogenous instrument.predictor_symbols must be a non-empty list "
-            "(zero predictors forbidden)"
-        )
-        predictors = []
     if inst.get("multi_symbol_in_scope") is not True:
         errs.append(
             "exogenous instrument.multi_symbol_in_scope must be true (exact boolean)"
@@ -557,7 +567,8 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
         errs.append(
             "exogenous analysis_calendar.mode must be 'intersection_only'"
         )
-    # H=3 + next-bar open execution contract (protocol §5.2)
+    # H=3 + next-bar open execution contract (protocol §5.2).
+    # Every supplied duplicate field must agree (no first-wins).
     rule: dict[str, Any] = (
         dict(charter["rule"]) if isinstance(charter.get("rule"), dict) else {}
     )
@@ -569,58 +580,104 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
         if isinstance(charter.get("execution"), dict)
         else {}
     )
-    h_raw: Any = None
-    for src in (execution, rule, fixed):
-        if "hold_bars" in src:
-            h_raw = src["hold_bars"]
-            break
-        if "H" in src:
-            h_raw = src["H"]
-            break
-    if h_raw is None:
+    srcs = (execution, rule, fixed)
+
+    def _collect(keys: tuple[str, ...]) -> list[Any]:
+        found: list[Any] = []
+        for src in srcs:
+            for k in keys:
+                if k in src:
+                    found.append(src[k])
+        return found
+
+    h_vals = _collect(("hold_bars", "H"))
+    if not h_vals:
         errs.append(
             "exogenous execution contract requires hold_bars/H=3 "
             "(under execution, rule, or fixed)"
         )
     else:
-        h_num = _strict_nonneg_int(h_raw)
-        if h_num is None:
-            h_f = _strict_finite_number(h_raw)
-            if h_f is None or h_f != 3.0:
-                errs.append(
-                    f"exogenous hold_bars/H must be integer 3 (got {h_raw!r})"
-                )
-        elif h_num != 3:
-            errs.append(f"exogenous hold_bars/H must be 3 (got {h_num})")
-    entry = (
-        execution.get("entry")
-        or execution.get("entry_timing")
-        or rule.get("entry")
-        or rule.get("entry_timing")
-        or fixed.get("entry")
-    )
+        norm_h: list[int] = []
+        for hv in h_vals:
+            hn = _strict_nonneg_int(hv)
+            if hn is None:
+                hf = _strict_finite_number(hv)
+                if hf is None or hf != 3.0:
+                    errs.append(
+                        f"exogenous hold_bars/H must be integer 3 (got {hv!r})"
+                    )
+                    continue
+                hn = 3
+            norm_h.append(hn)
+        if norm_h and any(x != norm_h[0] for x in norm_h):
+            errs.append(
+                "exogenous hold_bars/H disagree across execution/rule/fixed "
+                f"(got {h_vals!r})"
+            )
+        elif norm_h and norm_h[0] != 3:
+            errs.append(f"exogenous hold_bars/H must be 3 (got {norm_h[0]})")
+
     allowed_entry = {
         "next_bar_open",
         "next_joint_bar_open",
         "open_of_next_joint_bar",
     }
-    if entry not in allowed_entry:
+    entry_vals = _collect(("entry", "entry_timing"))
+    if not entry_vals:
         errs.append(
             "exogenous execution contract requires entry/entry_timing in "
-            f"{sorted(allowed_entry)} (next-bar open; got {entry!r})"
+            f"{sorted(allowed_entry)} (next-bar open)"
         )
-    same_day = (
-        execution.get("same_day_hold")
-        if "same_day_hold" in execution
-        else rule.get("same_day_hold")
-        if "same_day_hold" in rule
-        else fixed.get("same_day_hold")
-    )
-    if same_day is not True:
+    else:
+        if any(e not in allowed_entry for e in entry_vals):
+            errs.append(
+                "exogenous execution contract requires entry/entry_timing in "
+                f"{sorted(allowed_entry)} (got {entry_vals!r})"
+            )
+        if len(set(entry_vals)) > 1:
+            errs.append(
+                "exogenous entry/entry_timing disagree across execution/rule/fixed "
+                f"(got {entry_vals!r})"
+            )
+
+    same_vals = _collect(("same_day_hold",))
+    if not same_vals:
         errs.append(
             "exogenous execution contract requires same_day_hold=true "
             "(exact boolean)"
         )
+    else:
+        if any(v is not True for v in same_vals):
+            errs.append(
+                "exogenous same_day_hold must be true (exact boolean) everywhere set "
+                f"(got {same_vals!r})"
+            )
+
+    # Cost identity (strict finite non-boolean numbers)
+    costs = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
+    if costs is None and isinstance(charter.get("costs"), dict):
+        costs = dict(charter["costs"])
+    if not isinstance(costs, dict) or not costs:
+        errs.append(
+            "exogenous fixed.costs (or top-level costs) object required "
+            "with commission_per_lot, slippage_points, spread_col"
+        )
+    else:
+        for ck in ("commission_per_lot", "slippage_points"):
+            if ck not in costs:
+                errs.append(f"exogenous costs.{ck} required")
+            else:
+                cv = _strict_finite_number(costs.get(ck))
+                if cv is None or cv < 0:
+                    errs.append(
+                        f"exogenous costs.{ck} must be a finite non-negative JSON "
+                        f"number (not str/bool/NaN/Inf; got {costs.get(ck)!r})"
+                    )
+        sc = costs.get("spread_col")
+        if not isinstance(sc, str) or not sc.strip():
+            errs.append(
+                "exogenous costs.spread_col must be a non-empty string"
+            )
     gates = charter.get("gates") or {}
     if gates.get("primary_n_passers") != "soft":
         errs.append(
@@ -717,36 +774,90 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
             "(finite-catalog Bonferroni; catalog open)"
         )
     else:
-        if mult.get("method") not in (
-            "finite_catalog_bonferroni_open_catalog",
-            "finite_catalog_bonferroni",
-        ):
+        if mult.get("method") != "finite_catalog_bonferroni_open_catalog":
             errs.append(
-                "exogenous multiplicity.method must be "
-                "finite_catalog_bonferroni_open_catalog "
-                f"(got {mult.get('method')!r})"
+                "exogenous multiplicity.method must be exactly "
+                "'finite_catalog_bonferroni_open_catalog' "
+                f"(got {mult.get('method')!r}; aliases forbidden)"
             )
-        if _strict_nonneg_int(mult.get("K_prior")) is None:
+        k_prior = _strict_nonneg_int(mult.get("K_prior"))
+        k_val = _strict_nonneg_int(mult.get("K"))
+        if k_prior is None:
             errs.append(
                 "exogenous multiplicity.K_prior must be a non-negative JSON integer"
             )
-        if _strict_nonneg_int(mult.get("K")) is None:
+        if k_val is None:
             errs.append(
                 "exogenous multiplicity.K must be a non-negative JSON integer"
             )
-        if mult.get("pass_status") not in (
-            "provisional_while_catalog_open",
-            "provisional",
-        ):
+        if k_prior is not None and k_val is not None and k_val != k_prior + 1:
             errs.append(
-                "exogenous multiplicity.pass_status must be "
-                "provisional_while_catalog_open "
+                f"exogenous multiplicity.K must equal K_prior+1 "
+                f"(got K_prior={k_prior}, K={k_val})"
+            )
+        a0 = _strict_finite_number(mult.get("alpha_uncorrected"))
+        if a0 is None:
+            errs.append(
+                "exogenous multiplicity.alpha_uncorrected required finite number "
+                "(protocol 0.05)"
+            )
+        elif abs(a0 - 0.05) > 1e-15:
+            errs.append(
+                f"exogenous multiplicity.alpha_uncorrected must be 0.05 (got {a0})"
+            )
+        a_adj = _strict_finite_number(mult.get("alpha_adjusted"))
+        if a_adj is None:
+            errs.append(
+                "exogenous multiplicity.alpha_adjusted required finite number "
+                "(alpha_uncorrected / K)"
+            )
+        elif a0 is not None and k_val is not None and k_val > 0:
+            expected = a0 / float(k_val)
+            if abs(a_adj - expected) > 1e-12:
+                errs.append(
+                    "exogenous multiplicity.alpha_adjusted must equal "
+                    f"alpha_uncorrected/K ({expected}); got {a_adj}"
+                )
+        priors = mult.get("prior_scored_family_ids")
+        if not isinstance(priors, list):
+            errs.append(
+                "exogenous multiplicity.prior_scored_family_ids must be a list"
+            )
+        else:
+            if any(not isinstance(x, str) or not x.strip() for x in priors):
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids entries "
+                    "must be non-empty strings"
+                )
+            if len(priors) != len(set(priors)):
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids must be unique"
+                )
+            if k_prior is not None and len(priors) != k_prior:
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids length must "
+                    f"equal K_prior={k_prior} (got {len(priors)})"
+                )
+        if mult.get("pass_status") != "provisional_while_catalog_open":
+            errs.append(
+                "exogenous multiplicity.pass_status must be exactly "
+                "'provisional_while_catalog_open' "
                 f"(got {mult.get('pass_status')!r})"
             )
         if mult.get("paper_live_while_open") is not False:
             errs.append(
                 "exogenous multiplicity.paper_live_while_open must be false "
                 "(exact boolean) while catalog open"
+            )
+        if mult.get("revalidation_on_K_increase") is not True:
+            errs.append(
+                "exogenous multiplicity.revalidation_on_K_increase must be true "
+                "(exact boolean)"
+            )
+        if mult.get("identity_excluded_from_null_trials") is not True:
+            errs.append(
+                "exogenous multiplicity.identity_excluded_from_null_trials "
+                "must be true (exact boolean)"
             )
     return errs
 
