@@ -152,6 +152,21 @@ def known_broker(registry: SymbolRegistry, broker: str) -> bool:
     return name in registry.brokers()
 
 
+def mappings_for_broker(registry: SymbolRegistry, broker: str) -> tuple[SymbolMapping, ...]:
+    """Return every explicit mapping for ``broker`` (empty if the broker is listed blank)."""
+    b = _norm_broker(broker)
+    return tuple(m for m in registry.mappings if m.broker == b)
+
+
+def missing_mapped_canonicals(
+    registry: SymbolRegistry, broker: str, present: set[str]
+) -> list[str]:
+    """Canonicals mapped for ``broker`` that do not appear in ``present``."""
+    want = {m.canonical for m in mappings_for_broker(registry, broker)}
+    have = {_norm_symbol(s) for s in present}
+    return sorted(want - have)
+
+
 def resolve(registry: SymbolRegistry, broker: str, requested: str) -> SymbolMapping:
     """Return the unique mapping for (broker, canonical or broker_symbol).
 
@@ -251,6 +266,7 @@ def verify_capability_dump(
         raise SymbolRegistryError("capability dump symbols[] is empty")
     errors: list[str] = []
     mapped_ok = 0
+    dump_canons: set[str] = set()
     for row in rows:
         if not isinstance(row, dict):
             errors.append("symbol row is not an object")
@@ -265,6 +281,7 @@ def verify_capability_dump(
                     f"{row.get('error')!r} (want not_in_registry)"
                 )
             continue
+        dump_canons.add(mapping.canonical)
         if str(row.get("broker_symbol") or "") != mapping.broker_symbol:
             errors.append(
                 f"{mapping.canonical} broker_symbol {row.get('broker_symbol')!r} "
@@ -285,6 +302,13 @@ def verify_capability_dump(
         mapped_ok += 1
     if mapped_ok == 0 and broker not in reg.empty_brokers:
         errors.append(f"no mapped symbols succeeded for {broker}")
+    if str(raw.get("source") or "") == "mql5_export":
+        missing = missing_mapped_canonicals(reg, broker, dump_canons)
+        if missing:
+            errors.append(
+                "mql5_export missing mapped canonical(s) for "
+                f"{broker}: {', '.join(missing)}"
+            )
     if errors:
         preview = "\n  ".join(errors[:20])
         extra = f" (+{len(errors) - 20} more)" if len(errors) > 20 else ""

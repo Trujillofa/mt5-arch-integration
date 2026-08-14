@@ -169,8 +169,9 @@ The v1.45 Vantage dump is evidence for **one** slice:
 
 Broadening any one of those axes is a larger step than the v1.44/v1.45
 causality fixes. Priority 2 (broker symbol registry) is a separate package:
-[SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md). Priorities 3–5 (MT5-versus-package
-sync audit, tester provenance wrapper, `OnTradeTransaction` journal,
+[SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md). Priority 3 (MT5-versus-package
+sync audit) is a separate package: [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
+Priorities 4–6 (tester provenance wrapper, `OnTradeTransaction` journal,
 article-intake gate, chronological logger replay) are untouched.
 
 ## Adversarial cases the tests already cover
@@ -191,7 +192,8 @@ article-intake gate, chronological logger replay) are untouched.
 ## Out of scope (later PRs)
 
 - Broker symbol capability registry — **done separately**: [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md).
-- MT5-versus-package multi-symbol synchronization audit.
+- MT5-versus-package multi-symbol synchronization audit — **done separately**:
+  [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) (offline rules; live dump optional).
 - Strategy Tester reproducibility wrapper around `19-run-htf-fib-backtest.sh`.
 - Read-only `OnTradeTransaction` journal.
 - Article-intake gate / new research charters.

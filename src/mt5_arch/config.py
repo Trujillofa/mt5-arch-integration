@@ -75,7 +75,7 @@ class Settings(BaseSettings):
     )
     broker: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("BROKER", "broker"),
+        validation_alias=AliasChoices("MT5_BROKER", "BROKER", "mt5_broker", "broker"),
     )
 
     @field_validator("mt5_terminal_path", "wineprefix", "mt5_bridge_dir", mode="before")

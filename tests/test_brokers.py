@@ -65,10 +65,12 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert fpm.server == "FPMarketsSC-Live"
     assert "mt5-fpmarkets" in fpm.wineprefix
 
-    # as_exports never includes password keys
+    # as_exports never includes password keys; Settings reads MT5_BROKER
     exp = vant.as_exports()
     assert "MT5_PASSWORD" not in exp
     assert exp["MT5_SERVER"] == "VantageMarkets-Live 5"
+    assert exp["MT5_BROKER"] == "vantage"
+    assert exp["BROKER"] == "vantage"
 
 
 def test_load_missing_profile_raises() -> None:

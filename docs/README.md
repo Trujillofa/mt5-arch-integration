@@ -17,6 +17,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
 | [MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md) | HTF Fib buffer / ATR / pivot-timing check (no orders) |
 | [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md) | Explicit broker → symbol maps (no suffix first-match) |
+| [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) | Multi-symbol H1 calendar vs package (no averaged symbol) |
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |

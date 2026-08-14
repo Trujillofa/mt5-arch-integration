@@ -17,6 +17,7 @@ resolving `XAUUSD` by walking `m`, `.r`, `.m`, `#`, `pro` and taking the first
 | MQL5 include lockstep with the JSON | Proven (`render_mql5_include`) |
 | Suffix walk removed from bridge / history exporter / S/R strip | Proven by source grep |
 | Live `SymbolSelect` + digits/point/contract/bars on every broker | **Not claimed** until a capability dump is verified |
+| `source=mql5_export` must list every mapped canonical | Proven (`test_capability_mql5_export_missing_mapped_canonical_fails`) |
 | WSF mappings | **None.** Broker is listed so resolve fails closed |
 | Exness beyond `XAUUSD → XAUUSDm` | **Not claimed** |
 | `GOLD` ↔ `XAUUSD` | **Not mapped** |
@@ -77,12 +78,14 @@ Optional live dump (Vantage only; set `InpBroker=vantage`):
 3. Run `ExportSymbolCapabilities` on a chart.
 4. `uv run python scripts/verify_symbol_registry.py /path/to/dump`
 
-With `BROKER=fpmarkets`, `mt5-arch symbols XAUUSD` looks up the bridge row
-named `XAUUSD.r`. Without `BROKER`, the CLI stays exact-name (old behaviour).
+With `MT5_BROKER=fpmarkets` (`BROKER` is still accepted), `mt5-arch symbols XAUUSD`
+looks up the bridge row named `XAUUSD.r`. Without a broker env, the CLI stays
+exact-name (old behaviour).
 
 ## What this does not do
 
-- Priority 3: MT5-versus-package synchronization audit.
+- Priority 3: MT5-versus-package synchronization audit — **separate package**:
+  [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
 - Priority 4: Strategy Tester provenance wrapper.
 - Priority 5: `OnTradeTransaction` journal.
 - Fuzzy substring matching from the MQL5.com broker-agnostic article.
