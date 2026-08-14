@@ -30,7 +30,9 @@ if [[ ! -d "$EXPERTS" ]]; then
   fi
 fi
 
-mkdir -p "$EXPERTS"
+mkdir -p "$EXPERTS" "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include"
+cp -f "$REPO_ROOT/mql5/Include/FxSymbolRegistry.mqh" \
+  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/FxSymbolRegistry.mqh"
 cp -f "$SRC" "$EXPERTS/Mt5ArchBridge.mq5"
 info "Copied EA source to $EXPERTS/Mt5ArchBridge.mq5"
 # Verify deploy (gating for install path)
@@ -43,6 +45,9 @@ if ! grep -q 'OnTick' "$EXPERTS/Mt5ArchBridge.mq5"; then
 fi
 if ! grep -q 'terminal_connected' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing terminal_connected account field"
+fi
+if ! grep -q 'FxResolveSymbol' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing FxResolveSymbol (explicit registry)"
 fi
 if ! grep -q 'IsEffectivelyConnected' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing IsEffectivelyConnected (Wine TERMINAL_CONNECTED fallback)"
@@ -96,6 +101,8 @@ Next (in the MetaTrader 5 GUI):
        ☑ Allow DLL imports  (optional)
   3. Navigator → Expert Advisors → Mt5ArchBridge
      Drag onto any chart (e.g. EURUSD H1)
+     Set InpBroker=vantage|fpmarkets|exness|wsf (required).
+     Empty/wrong InpBroker fails OnInit; Python then sees a stale heartbeat.
   4. Allow live trading in the EA dialog → OK
   5. Window → Tile Windows  (fixes large black empty chart area)
 

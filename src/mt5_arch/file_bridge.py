@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from mt5_arch.models import AccountInfo, Candle, CandlesResult, SymbolInfo, TerminalInfo
+from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 
 
 class FileBridgeError(Exception):
@@ -42,9 +43,22 @@ class FileBridgeClient:
         *,
         max_age_seconds: float = 10.0,
         wineprefix: Path | None = None,
+        broker: str | None = None,
     ) -> None:
         self.bridge_dir = Path(bridge_dir) if bridge_dir else default_bridge_dir(wineprefix)
         self.max_age_seconds = max_age_seconds
+        self.broker = broker
+
+    def _mapped_symbol(self, symbol: str) -> str:
+        if not self.broker:
+            return symbol
+        try:
+            return resolve(load_registry(), self.broker, symbol).broker_symbol
+        except SymbolRegistryError as exc:
+            raise FileBridgeError(
+                f"unmapped symbol {symbol!r} on broker {self.broker!r} "
+                f"(fail closed; no raw-name fallback): {exc}"
+            ) from exc
 
     def ensure_alive(self) -> None:
         hb = self.bridge_dir / "heartbeat.txt"
@@ -104,7 +118,7 @@ class FileBridgeClient:
         rows = self._read_json("symbols.json")
         if not isinstance(rows, list):
             raise FileBridgeError("symbols.json is not a list")
-        want = symbol.upper()
+        want = self._mapped_symbol(symbol).upper()
         for row in rows:
             if str(row.get("symbol", "")).upper() == want:
                 return SymbolInfo(
@@ -127,10 +141,11 @@ class FileBridgeClient:
     def copy_rates(self, symbol: str, timeframe: str = "H1", count: int = 200) -> CandlesResult:
         self.ensure_alive()
         tf = timeframe.upper()
-        path = self.bridge_dir / f"candles_{symbol}_{tf}.json"
+        file_symbol = self._mapped_symbol(symbol)
+        path = self.bridge_dir / f"candles_{file_symbol}_{tf}.json"
         if not path.exists():
             # try case variants
-            matches = list(self.bridge_dir.glob(f"candles_{symbol}_*.json"))
+            matches = list(self.bridge_dir.glob(f"candles_{file_symbol}_*.json"))
             raise FileBridgeError(
                 f"Missing {path.name}. Available: {[p.name for p in matches[:10]]}"
             )

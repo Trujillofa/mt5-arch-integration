@@ -97,6 +97,7 @@ uv run mt5-arch candles EURUSD --tf H1 --count 10
 | `mt5-arch symbols SYM...` | Lot min/max/step, ticks |
 | `mt5-arch candles SYM [--tf H1] [--count 10]` | OHLCV |
 | `mt5-arch brokers [name]` | List multi-broker profiles (`config/brokers/*.env`) |
+| `mt5-arch resolve BROKER SYM` | Canonical ↔ broker symbol (`config/symbols/registry.json`) |
 | `mt5-arch config` | Redacted settings |
 
 Add `--json` for machine-readable output. `-v` / `-vv` for logs.

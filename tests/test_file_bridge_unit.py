@@ -80,3 +80,30 @@ def test_missing_candles_raises(tmp_path: Path) -> None:
     client = FileBridgeClient(bridge, max_age_seconds=30.0)
     with pytest.raises(FileBridgeError, match="Missing"):
         client.copy_rates("EURUSD", timeframe="M5")
+
+
+def test_wsf_unmapped_symbol_refuses(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    client = FileBridgeClient(bridge, max_age_seconds=30.0, broker="wsf")
+    with pytest.raises(FileBridgeError, match="fail closed"):
+        client.symbol_info("XAUUSD")
+    with pytest.raises(FileBridgeError, match="fail closed"):
+        client._mapped_symbol("XAUUSD")
+
+
+def test_mapped_symbol_without_broker_keeps_exact_name(tmp_path: Path) -> None:
+    client = FileBridgeClient(tmp_path, broker=None)
+    assert client._mapped_symbol("XAUUSD") == "XAUUSD"
+    empty = FileBridgeClient(tmp_path, broker="")
+    assert empty._mapped_symbol("XAUUSD") == "XAUUSD"
+
+
+def test_copy_rates_available_glob_uses_mapped_name(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "candles_XAUUSD.r_M15.json").write_text("{}", encoding="utf-8")
+    client = FileBridgeClient(bridge, max_age_seconds=30.0, broker="fpmarkets")
+    with pytest.raises(FileBridgeError, match="candles_XAUUSD.r_M15") as exc:
+        client.copy_rates("XAUUSD", timeframe="H1")
+    assert "candles_XAUUSD.r_M15.json" in str(exc.value)
