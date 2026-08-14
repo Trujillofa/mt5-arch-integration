@@ -86,6 +86,7 @@ exact-name (old behaviour).
 
 - Priority 3: MT5-versus-package synchronization audit — **separate package**:
   [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
-- Priority 4: Strategy Tester provenance wrapper.
+- Priority 4: Strategy Tester provenance wrapper — **separate package**:
+  [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md).
 - Priority 5: `OnTradeTransaction` journal.
 - Fuzzy substring matching from the MQL5.com broker-agnostic article.

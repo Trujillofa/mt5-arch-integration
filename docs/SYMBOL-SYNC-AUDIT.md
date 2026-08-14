@@ -70,7 +70,8 @@ counts as proof the calendars match — timestamps are required.
 
 ## What this does not do
 
-- Priority 4: Strategy Tester provenance wrapper.
+- Priority 4: Strategy Tester provenance wrapper — **separate package**:
+  [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md).
 - Priority 5: `OnTradeTransaction` journal.
 - Priority 6: article-intake gate.
 - Live orders, fuzzy symbol matching, or a blended synthetic instrument.
