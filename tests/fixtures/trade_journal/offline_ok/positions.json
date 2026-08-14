@@ -1,0 +1,11 @@
+{
+  "positions": [
+    {
+      "ticket": 3001,
+      "symbol": "XAUUSD",
+      "side": "buy",
+      "volume": 0.01,
+      "status": "open"
+    }
+  ]
+}

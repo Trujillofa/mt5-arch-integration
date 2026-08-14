@@ -174,8 +174,11 @@ Broadening any one of those axes is a larger step than the v1.44/v1.45
 causality fixes. Priority 2 (broker symbol registry) is a separate package:
 [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md). Priority 3 (MT5-versus-package
 sync audit) is a separate package: [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
-Priorities 4–6 (tester provenance wrapper, `OnTradeTransaction` journal,
-article-intake gate, chronological logger replay) are untouched.
+Priority 4 (tester provenance wrapper) is a separate package:
+[TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline schema; no live tester run).
+Priority 5 (`OnTradeTransaction` journal) is a separate package:
+[TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline schema; no live attach claimed).
+Priority 6 (article-intake gate, chronological logger replay) is untouched.
 
 ## Adversarial cases the tests already cover
 
@@ -197,8 +200,10 @@ article-intake gate, chronological logger replay) are untouched.
 - Broker symbol capability registry — **done separately**: [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md).
 - MT5-versus-package multi-symbol synchronization audit — **done separately**:
   [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) (offline rules; live dump optional).
-- Strategy Tester reproducibility wrapper around `19-run-htf-fib-backtest.sh`.
-- Read-only `OnTradeTransaction` journal.
+- Strategy Tester reproducibility wrapper — **done separately**:
+  [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline rules; live tester optional).
+- Read-only `OnTradeTransaction` journal — **done separately**:
+  [TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline rules; live attach optional).
 - Article-intake gate / new research charters.
 - Chronological bar-by-bar replay that would be required to call the logger live-safe.
 

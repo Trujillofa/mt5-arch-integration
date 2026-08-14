@@ -72,6 +72,7 @@ counts as proof the calendars match — timestamps are required.
 
 - Priority 4: Strategy Tester provenance wrapper — **separate package**:
   [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md).
-- Priority 5: `OnTradeTransaction` journal.
+- Priority 5: `OnTradeTransaction` journal — **separate package**:
+  [TRADE-JOURNAL.md](TRADE-JOURNAL.md).
 - Priority 6: article-intake gate.
 - Live orders, fuzzy symbol matching, or a blended synthetic instrument.
