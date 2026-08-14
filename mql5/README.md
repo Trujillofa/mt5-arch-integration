@@ -7,7 +7,8 @@
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
-| `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — buffer 8 + ATR SL/TP |
+| `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
+| `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
 | `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.22) |
 | `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
 
@@ -32,6 +33,7 @@ MetaEditor **F7** compile order:
 2. `Indicators/BtcTrendPullback.mq5`
 3. `Indicators/ForexIndicatorTemplate.mq5` (optional)
 4. `Experts/ForexSignalLogger.mq5` (optional)
+5. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
 
 ## Chart recipe — FX / gold
 
@@ -98,23 +100,27 @@ Static snapshot — regenerate after re-drawing zones. Full notes:
 
 ### ForexHtfPivotsFib buffers (`iCustom`)
 
+Authoritative map (v1.42+). Do not use the old signal-at-7 table.
+Parity harness: [docs/MQL5-PYTHON-PARITY.md](../docs/MQL5-PYTHON-PARITY.md).
+
 | Index | Content |
 |------:|---------|
-| 0 | EMA50 |
-| 1 | EMA200 |
-| 2 | Long arrow |
-| 3 | Short arrow |
-| 4 | Fib 61.8 |
-| 5 | Fib 78.6 |
-| 6 | Swing direction (+1/−1) |
-| **7** | **Signal (+1/−1/0)** |
-| 8 | RSI |
-| 9 | RSI-MA |
+| 0 | EMA fast |
+| 1 | EMA slow |
+| 2 | EMA bias |
+| 3 | Long arrow |
+| 4 | Short arrow |
+| 5 | Fib 61.8 |
+| 6 | Fib 78.6 |
+| 7 | Swing direction (+1/−1) |
+| **8** | **Signal (+1/−1/0)** |
+| 9 | RSI |
+| 10 | RSI-MA |
 
 ```mql5
 double sig[];
 ArraySetAsSeries(sig, true);
-CopyBuffer(handle, 7, 1, 1, sig);  // last closed bar
+CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 ```
 
 ### ForexIndicatorTemplate buffers
@@ -144,6 +150,8 @@ CopyBuffer(handle, 7, 1, 1, sig);  // last closed bar
 - BTC: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
 - Writes `MQL5/Files/forex_signals/<SYMBOL>_<TF>.csv`
 - **Never** calls `OrderSend`
+- Parity dump: `Scripts/ExportHtfFibParityFixture.mq5` →
+  [docs/MQL5-PYTHON-PARITY.md](../docs/MQL5-PYTHON-PARITY.md)
 
 ## Design sources
 

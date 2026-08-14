@@ -38,6 +38,11 @@ SRC_EA=(
   "${ROOT}/mql5/Experts/ForexHtfFibTester.mq5"
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
 )
+SRC_SCRIPTS=(
+  "${ROOT}/mql5/Scripts/ExportHtfFibParityFixture.mq5"
+  "${ROOT}/mql5/Scripts/ExportXauHistory.mq5"
+  "${ROOT}/mql5/Scripts/ExportInstrumentHistory.mq5"
+)
 # Runtime data (no recompile needed — regenerate with scripts/tpl_to_sr_levels.py)
 SRC_FILES=(
   "${ROOT}/mql5/Files/forex_sr_levels.csv"
@@ -56,7 +61,7 @@ for mql5 in "${CANDIDATES[@]}"; do
   [[ -n "${SEEN[$real]+x}" ]] && continue
   SEEN[$real]=1
 
-  mkdir -p "${mql5}/Indicators" "${mql5}/Include" "${mql5}/Experts" "${mql5}/Files"
+  mkdir -p "${mql5}/Indicators" "${mql5}/Include" "${mql5}/Experts" "${mql5}/Scripts" "${mql5}/Files"
   cp -v "${SRC_INC}" "${mql5}/Include/ForexUtils.mqh"
   for f in "${SRC_FILES[@]}"; do
     [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Files/"
@@ -70,6 +75,9 @@ for mql5 in "${CANDIDATES[@]}"; do
       # Bridge lives as EA in Experts (and historically Advisors) — keep Experts
       cp -v "${f}" "${mql5}/Experts/${base}"
     fi
+  done
+  for f in "${SRC_SCRIPTS[@]}"; do
+    [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Scripts/"
   done
   echo "Installed → ${mql5}"
   installed=$((installed + 1))
@@ -99,6 +107,7 @@ Next steps:
        Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
        Indicators/ForexIndicatorTemplate.mq5
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
+       Scripts/ExportHtfFibParityFixture.mq5 ← optional MQL5↔Python dump
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)

@@ -1,0 +1,93 @@
+{
+  "schema": "mql5-python-parity/v1",
+  "source": "synthetic",
+  "symbol": "PARITY",
+  "chart_tf": "H1",
+  "htf_tf": "H1",
+  "left": 5,
+  "right": 5,
+  "atr_period": 14,
+  "atr_method": "wilder",
+  "signal_buffer": 8,
+  "signal_shift": 1,
+  "closed_bar_only": true,
+  "signal_kind": "zone",
+  "export_ok": true,
+  "htf_scan_bars": 64,
+  "compare_from_chart_idx": 0,
+  "indicator": "ForexHtfPivotsFib",
+  "buffer_map": {
+    "0": "ema_fast",
+    "1": "ema_slow",
+    "2": "ema_bias",
+    "3": "long_arrow",
+    "4": "short_arrow",
+    "5": "fib_618",
+    "6": "fib_786",
+    "7": "swing_dir",
+    "8": "signal",
+    "9": "rsi",
+    "10": "rsi_ma"
+  },
+  "copy": {
+    "rates": {
+      "requested": 64,
+      "copied": 64
+    },
+    "htf_rates": {
+      "requested": 64,
+      "copied": 64
+    },
+    "buffers": {
+      "0": {
+        "requested": 64,
+        "copied": 64
+      },
+      "1": {
+        "requested": 64,
+        "copied": 64
+      },
+      "2": {
+        "requested": 64,
+        "copied": 64
+      },
+      "3": {
+        "requested": 64,
+        "copied": 64
+      },
+      "4": {
+        "requested": 64,
+        "copied": 64
+      },
+      "5": {
+        "requested": 64,
+        "copied": 64
+      },
+      "6": {
+        "requested": 64,
+        "copied": 64
+      },
+      "7": {
+        "requested": 64,
+        "copied": 64
+      },
+      "8": {
+        "requested": 64,
+        "copied": 64
+      },
+      "9": {
+        "requested": 64,
+        "copied": 64
+      },
+      "10": {
+        "requested": 64,
+        "copied": 64
+      }
+    }
+  },
+  "n_bars": 64,
+  "n_htf_bars": 64,
+  "n_pivots": 2,
+  "abs_tol": 1e-08,
+  "notes": "Frozen synthetic H1=HTF series. Expected fib/ATR/signal columns are hand-derived (PLANTED_*/FIB_*), not htf_fib_core output. No indicator_version: this fixture never ran ForexHtfPivotsFib. Live dump: ExportHtfFibParityFixture (signal_kind=indicator_buffer)."
+}

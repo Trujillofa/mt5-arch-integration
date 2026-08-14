@@ -317,6 +317,9 @@ On a **closed** bar, a marker can fire when **all** of the following hold:
 
 ## 8. iCustom buffers (EAs / logger)
 
+Authoritative map and the MQL5 ↔ Python check:
+[MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md). Signal is buffer **8**, shift **1**.
+
 | Index | Content |
 |------:|---------|
 | 0 | EMA fast |

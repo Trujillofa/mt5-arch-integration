@@ -9,12 +9,12 @@
 //| Chart: use at or below H4 (M15/H1 recommended).                  |
 //| Fib source falls back to Daily if chart TF > H4.                 |
 //|                                                                  |
-//| iCustom signal buffer = 7  (+1 long / -1 short / 0)              |
+//| iCustom signal buffer = 8  (+1 long / -1 short / 0)              |
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.43"
-#property description "HTF pivots + Fib v1.43 (imported .tpl S/R levels)"
+#property version     "1.45"
+#property description "HTF pivots + Fib v1.45 (confirm-close fib snaps)"
 #property description "Non-repaint pivots. Signal buffer 8. RSI=9 RSI-MA=10."
 #property strict
 
@@ -24,7 +24,9 @@
 // #property takes a literal and cannot read this, so keep the two in step by hand.
 // 1.42: skip ObjectsDeleteAll on REASON_CHARTCHANGE (Wine win32u freeze trigger).
 // 1.43: S/R levels imported from .tpl templates (yellow/white/blue by relevance).
-#define HTF_FIB_VER "1.43"
+// 1.44: stamp fib snaps at confirm-bar open; no global FibAt fallback.
+// 1.45: stamp at confirm-bar close; FibAt sees chart-bar close (MTF parity).
+#define HTF_FIB_VER "1.45"
 
 #property indicator_chart_window
 #property indicator_buffers 11
@@ -237,6 +239,44 @@ bool EffectiveShow4h()
    return g_mode.show_4h_pivots && InpShow4hLines;
   }
 
+datetime BarCloseTime(const datetime bar_open, const ENUM_TIMEFRAMES tf)
+  {
+   int sec = PeriodSeconds(tf);
+   if(sec <= 0)
+      sec = PeriodSeconds(_Period);
+   return bar_open + (datetime)sec;
+  }
+
+datetime ChartBarClose(const datetime bar_open)
+  {
+   return BarCloseTime(bar_open, PERIOD_CURRENT);
+  }
+
+void WriteEffectiveConfig()
+  {
+   bool use4h = (PeriodSeconds(PERIOD_CURRENT) <= PeriodSeconds(PERIOD_H4));
+   bool fib_h4 = (EffectiveFibSource() == 0) && use4h;
+   int left  = fib_h4 ? InpLeft4h  : InpLeftDaily;
+   int right = fib_h4 ? InpRight4h : InpRightDaily;
+   int src   = fib_h4 ? 0 : 1;
+   FolderCreate("mt5_arch");
+   string path = "mt5_arch\\htf_fib_effective_" + _Symbol + ".txt";
+   int h = FileOpen(path, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+     {
+      Print("ForexHtfPivotsFib: effective-config write fail err=", GetLastError());
+      return;
+     }
+   FileWriteString(h, "version=" + HTF_FIB_VER + "\n");
+   FileWriteString(h, "symbol=" + _Symbol + "\n");
+   FileWriteString(h, "chart_tf=" + EnumToString(Period()) + "\n");
+   FileWriteString(h, "left=" + IntegerToString(left) + "\n");
+   FileWriteString(h, "right=" + IntegerToString(right) + "\n");
+   FileWriteString(h, "fib_source=" + IntegerToString(src) + "\n");
+   FileWriteString(h, "fib_source_name=" + (src == 0 ? "H4" : "D1") + "\n");
+   FileClose(h);
+  }
+
 //+------------------------------------------------------------------+
 int OnInit()
   {
@@ -247,6 +287,7 @@ int OnInit()
    ApplyTradingMode();
    // Strategy Tester often has H1 only until MTF bars are requested
    FxEnsureMtfHistory(_Symbol, 500);
+   WriteEffectiveConfig();
    Print("ForexHtfPivotsFib v" + HTF_FIB_VER + " mode=", g_mode.mode_name,
          " EMA ", g_mode.ema_fast, "/", g_mode.ema_slow, " bias=", g_mode.ema_bias,
          " fib=", (EffectiveFibSource() == 1 ? "Daily" : "H4"),
@@ -381,11 +422,21 @@ int OnCalculate(const int rates_total,
       DrawAllLevels(time[rates_total - 1]);
       // Stamp fib/swing buffers immediately (even if nested MA not ready)
       int k0 = MathMax(0, rates_total - 3000);
+      // Bars older than the 3000-bar restamp window must not read as price 0.
+      if(cold && k0 > 0)
+        {
+         for(int k = 0; k < k0; k++)
+           {
+            BufSwingDir[k] = 0.0;
+            BufFib618[k]   = EMPTY_VALUE;
+            BufFib786[k]   = EMPTY_VALUE;
+           }
+        }
       for(int k = k0; k < rates_total; k++)
         {
          int sd = 0;
          double a618 = 0.0, a786 = 0.0;
-         if(FibAt(time[k], sd, a618, a786))
+         if(FibAt(ChartBarClose(time[k]), sd, a618, a786))
            {
             BufSwingDir[k] = (double)sd;
             BufFib618[k]   = a618;
@@ -393,9 +444,9 @@ int OnCalculate(const int rates_total,
            }
          else
            {
-            BufSwingDir[k] = (double)g_swingDir;
-            BufFib618[k]   = g_fibValid ? g_fib618 : EMPTY_VALUE;
-            BufFib786[k]   = g_fibValid ? g_fib786 : EMPTY_VALUE;
+            BufSwingDir[k] = 0.0;
+            BufFib618[k]   = EMPTY_VALUE;
+            BufFib786[k]   = EMPTY_VALUE;
            }
         }
      }
@@ -473,7 +524,7 @@ int OnCalculate(const int rates_total,
 
       int    sd = 0;
       double a618 = 0.0, a786 = 0.0;
-      if(FibAt(time[k], sd, a618, a786))
+      if(FibAt(ChartBarClose(time[k]), sd, a618, a786))
         {
          BufSwingDir[k] = (double)sd;
          BufFib618[k]   = a618;
@@ -481,9 +532,9 @@ int OnCalculate(const int rates_total,
         }
       else
         {
-         BufSwingDir[k] = (double)g_swingDir;
-         BufFib618[k]   = g_fibValid ? g_fib618 : EMPTY_VALUE;
-         BufFib786[k]   = g_fibValid ? g_fib786 : EMPTY_VALUE;
+         BufSwingDir[k] = 0.0;
+         BufFib618[k]   = EMPTY_VALUE;
+         BufFib786[k]   = EMPTY_VALUE;
         }
      }
 
@@ -545,14 +596,7 @@ int ConfluenceSignalLocal(const int li,
 
    int    dir = 0;
    double f618 = 0.0, f786 = 0.0;
-   bool   have = FibAt(bar_time, dir, f618, f786);
-   if(!have && g_fibValid && g_swingDir != 0)
-     {
-      dir  = g_swingDir;
-      f618 = g_fib618;
-      f786 = g_fib786;
-      have = true;
-     }
+   bool   have = FibAt(ChartBarClose(bar_time), dir, f618, f786);
    if(InpRequireGoldenZone && !have)
       return 0;
 
@@ -703,7 +747,7 @@ void PushFibSnap(const datetime t)
   }
 
 //+------------------------------------------------------------------+
-//| Latest fib snapshot with t0 <= bar_time                          |
+//| Latest fib snapshot with t0 <= bar_time (pass chart-bar close)   |
 //+------------------------------------------------------------------+
 bool FibAt(const datetime bar_time, int &dir, double &f618, double &f786)
   {
@@ -743,15 +787,16 @@ bool ScanLatestPivot(const ENUM_TIMEFRAMES tf,
    FxEnsureHistory(_Symbol, tf, need);
    MqlRates r[];
    int n = CopyRatesChrono(_Symbol, tf, need, r);
-   if(n < L + R + 2)
+   if(n < L + R + 3)
       return false;
 
-   // Chrono: 0 = oldest. Prefer most recent center (highest index)
-   for(int c = n - 1 - R; c >= L; c--)
+   // Last bar is forming — not a confirmation wing.
+   int n_closed = n - 1;
+   for(int c = n_closed - 1 - R; c >= L; c--)
      {
       bool ok = find_high
-                ? IsPivotHighRates(r, n, c, L, R)
-                : IsPivotLowRates(r, n, c, L, R);
+                ? IsPivotHighRates(r, n_closed, c, L, R)
+                : IsPivotLowRates(r, n_closed, c, L, R);
       if(ok)
         {
          out_price = find_high ? r[c].high : r[c].low;
@@ -802,10 +847,11 @@ void RebuildSwingFromHistory(const bool use4h)
    int left  = MathMax(1, fib_from_4h ? InpLeft4h  : InpLeftDaily);
    int right = MathMax(1, fib_from_4h ? InpRight4h : InpRightDaily);
 
-   int want = 1200;
+   int want = FX_HTF_PIVOT_SCAN_BARS;
    FxEnsureHistory(_Symbol, tf, want);
    MqlRates r[];
    int n = CopyRatesChrono(_Symbol, tf, want, r);
+   ENUM_TIMEFRAMES scan_tf = tf;
 
    // Fallback: chart / H1 if HTF empty
    if(n < left + right + 3)
@@ -815,6 +861,7 @@ void RebuildSwingFromHistory(const bool use4h)
          fb = PERIOD_CURRENT;
       FxEnsureHistory(_Symbol, fb, want);
       n = CopyRatesChrono(_Symbol, fb, want, r);
+      scan_tf = fb;
       static bool s_warned_fb = false;
       if(!s_warned_fb)
         {
@@ -837,33 +884,41 @@ void RebuildSwingFromHistory(const bool use4h)
         }
      }
 
-   // Chronological pivot events
-   double  px[];
-   datetime tm[];
-   int     ty[];
+   // Chronological pivot events. Snapshots stamp at confirm-bar close
+   // (open + PeriodSeconds(scan_tf)), never the center and never the open —
+   // a one-shot CopyBuffer must not see fib on [center, confirm_close).
+   double   px[];
+   datetime t_confirm[];
+   datetime t_available[];
+   int      ty[];
    int cnt = 0;
    ArrayResize(px, n);
-   ArrayResize(tm, n);
+   ArrayResize(t_confirm, n);
+   ArrayResize(t_available, n);
    ArrayResize(ty, n);
 
-   for(int c = left; c <= n - 1 - right; c++)
+   // Last copied bar is forming — it must not be a confirmation wing.
+   int n_closed = (n > 0 ? n - 1 : 0);
+   for(int c = left; c <= n_closed - 1 - right; c++)
      {
-      bool isH = IsPivotHighRates(r, n, c, left, right);
-      bool isL = IsPivotLowRates(r, n, c, left, right);
+      bool isH = IsPivotHighRates(r, n_closed, c, left, right);
+      bool isL = IsPivotLowRates(r, n_closed, c, left, right);
       if(isH && isL)
          continue;
       if(isH)
         {
-         px[cnt] = r[c].high;
-         tm[cnt] = r[c].time;
-         ty[cnt] = 1;
+         px[cnt]          = r[c].high;
+         t_confirm[cnt]   = r[c + right].time;
+         t_available[cnt] = BarCloseTime(r[c + right].time, scan_tf);
+         ty[cnt]          = 1;
          cnt++;
         }
       else if(isL)
         {
-         px[cnt] = r[c].low;
-         tm[cnt] = r[c].time;
-         ty[cnt] = -1;
+         px[cnt]          = r[c].low;
+         t_confirm[cnt]   = r[c + right].time;
+         t_available[cnt] = BarCloseTime(r[c + right].time, scan_tf);
+         ty[cnt]          = -1;
          cnt++;
         }
      }
@@ -881,14 +936,13 @@ void RebuildSwingFromHistory(const bool use4h)
 
    for(int k = 0; k < cnt; k++)
      {
-      int prev_dir = g_swingDir;
-      bool prev_valid = g_fibValid;
-      ProcessPivotEvent(ty[k], px[k], tm[k]);
-      if(g_swingDir != 0 && g_swingHigh > 0 && g_swingLow > 0 && g_swingHigh > g_swingLow)
+      ProcessPivotEvent(ty[k], px[k], t_confirm[k]);
+      if(g_swingDir != 0 && g_swingHigh > 0 && g_swingLow > 0 &&
+         g_swingHigh > g_swingLow)
         {
          ComputeFibLevels();
-         if(g_fibValid && (g_swingDir != prev_dir || !prev_valid || true))
-            PushFibSnap(tm[k]);
+         if(g_fibValid)
+            PushFibSnap(t_available[k]);
         }
      }
 
@@ -896,11 +950,11 @@ void RebuildSwingFromHistory(const bool use4h)
    if(g_swingDir == 0 && cnt >= 2)
      {
       double lh = 0, ll = 0;
-      datetime th = 0, tl = 0;
+      datetime th = 0, tl = 0, th_avail = 0, tl_avail = 0;
       for(int k = 0; k < cnt; k++)
         {
-         if(ty[k] == 1)  { lh = px[k]; th = tm[k]; }
-         if(ty[k] == -1) { ll = px[k]; tl = tm[k]; }
+         if(ty[k] == 1)  { lh = px[k]; th = t_confirm[k]; th_avail = t_available[k]; }
+         if(ty[k] == -1) { ll = px[k]; tl = t_confirm[k]; tl_avail = t_available[k]; }
         }
       if(lh > 0.0 && ll > 0.0 && lh > ll)
         {
@@ -911,7 +965,7 @@ void RebuildSwingFromHistory(const bool use4h)
          g_swingDir = (th >= tl) ? 1 : -1;
          ComputeFibLevels();
          if(g_fibValid)
-            PushFibSnap(MathMax(th, tl));
+            PushFibSnap(MathMax(th_avail, tl_avail));
         }
      }
    else if(g_swingDir != 0 && g_swingHigh > g_swingLow)
@@ -1047,19 +1101,7 @@ int ConfluenceSignal(const int i,
   {
    int    dir = 0;
    double f618 = 0.0, f786 = 0.0;
-   bool   have = FibAt(bar_time, dir, f618, f786);
-   // Fall back to latest globals if snap missing (early bars)
-   if(!have)
-     {
-      if(g_fibValid && g_swingDir != 0)
-        {
-         dir  = g_swingDir;
-         f618 = g_fib618;
-         f786 = g_fib786;
-         have = true;
-        }
-     }
-
+   bool   have = FibAt(ChartBarClose(bar_time), dir, f618, f786);
    if(InpRequireGoldenZone && !have)
       return 0;
 
