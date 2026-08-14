@@ -18,6 +18,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md) | HTF Fib buffer / ATR / pivot-timing check (no orders) |
 | [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md) | Explicit broker → symbol maps (no suffix first-match) |
 | [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) | Multi-symbol H1 calendar vs package (no averaged symbol) |
+| [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) | Strategy Tester reproducibility record (no live run claimed) |
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |
@@ -54,6 +55,8 @@ Details and “one install for all brokers?” answer: [MULTI-BROKER-MT5.md](MUL
 | `scripts/16-use-broker.sh` | Activate `config/brokers/<name>.env` |
 | `scripts/17-install-desktop-launchers.sh` | App menu + Desktop icons (`mt5-fpmarkets`, etc.) |
 | `scripts/18-install-forex-indicator.sh` | Deploy Fib/logger/utils + bridge sources into Wine MQL5 |
+| `scripts/19-run-htf-fib-backtest.sh` | Headless HTF Fib Strategy Tester (kills terminal64 by default) |
+| `scripts/20-run-htf-fib-backtest-provenance.sh` | 19-run wrapper + `provenance.json` (requires `MT5_BROKER`) |
 | `scripts/wine-net/force_src_bind.so` | Prefer LAN source IP under multi-homed hosts |
 
 ## Safety / secrets

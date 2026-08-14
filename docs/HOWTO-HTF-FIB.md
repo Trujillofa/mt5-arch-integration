@@ -436,14 +436,15 @@ Treat markers as **observe / journal** until you have a written edge and risk pl
 
 Ensure history is downloaded (open EURUSD H1 chart and scroll left first).
 
-Headless Single tester (Wine): use `scripts/19-run-htf-fib-backtest.sh` (Login from `common.ini`, ASCII config, EA v1.40 `.set`). Example: `WINEPREFIX=~/.mt5-vantage KILL_EXISTING=1 ./scripts/19-run-htf-fib-backtest.sh XAUUSD H1 2024.01.01 2025.01.01`. GUI Strategy Tester remains fine if preferred.
+Headless Single tester (Wine): use `scripts/19-run-htf-fib-backtest.sh` (Login from `common.ini`, ASCII config, EA v1.40 `.set`). Example: `WINEPREFIX=~/.mt5-vantage KILL_EXISTING=1 ./scripts/19-run-htf-fib-backtest.sh XAUUSD H1 2024.01.01 2025.01.01`. For a reproducibility record (broker registry, hashes, history identity) wrap that with `scripts/20-run-htf-fib-backtest-provenance.sh` and `MT5_BROKER` — see [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md). GUI Strategy Tester remains fine if preferred. `KILL_EXISTING=1` kills a running terminal.
 
 Helper script (compile + config template):
 
 ```bash
 export WINEPREFIX=~/.mt5-vantage   # or fpmarkets / wsf
+export MT5_BROKER=vantage
 cd ~/Projects/trading/mt5-arch-integration
-./scripts/19-run-htf-fib-backtest.sh EURUSD H1 2024.06.01 2025.01.01
+./scripts/20-run-htf-fib-backtest-provenance.sh EURUSD H1 2024.06.01 2025.01.01
 ```
 
 ### 13.3 Offline research script (Dukascopy CSV)
