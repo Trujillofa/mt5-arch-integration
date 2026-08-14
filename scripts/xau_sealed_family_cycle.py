@@ -395,6 +395,75 @@ def parse_harness_report_for_accounting(
         }
 
     # ------------------------------------------------------------------
+    # Path 1b: Screen-only positive passers (pending null) — r1_burned=false
+    # ------------------------------------------------------------------
+    if base_exit == 0 and reported_disposition == "SCREEN_PASS_PENDING_NULL_REVIEW":
+        block_err = _require_ok_blocks()
+        if block_err:
+            return _fail(block_err)
+        assert verdict is not None and null_block is not None and acct is not None
+        if screen is None:
+            return _fail("missing_screen_block")
+        if real is None:
+            return _fail("missing_real_block")
+        if acct.get("attempt_type") != "DETERMINISTIC_SCREEN":
+            return _fail("attempt_type_not_deterministic_screen")
+        if str(verdict.get("screen_status") or "") != "PASSERS_GE_1_PENDING_NULL_REVIEW":
+            return _fail("screen_status_not_passers_pending_null")
+        if str(null_block.get("skipped_reason") or "") != "SCREEN_ONLY":
+            return _fail("skipped_reason_not_screen_only")
+        if screen.get("zero_primary_passers") is not False:
+            return _fail("screen.zero_primary_passers_not_false")
+        if screen.get("screen_only") is not True:
+            return _fail("screen.screen_only_not_true")
+        real_n, real_err = _field_strict_int(real, "n_passers")
+        if real_err:
+            return _fail(f"real.{real_err}")
+        if real_n != 1:
+            return _fail("real.n_passers_not_one")
+        if acct.get("family_screen_attempt") is not True:
+            return _fail("family_screen_attempt_not_true")
+        if acct.get("sealed_null_attempt") is not False:
+            return _fail("sealed_null_attempt_not_false")
+        if acct.get("screen_only") is not True:
+            return _fail("attempt_accounting.screen_only_not_true")
+
+        n_exec, _n_plan, cerr = _load_paired_counts(
+            expected_exec=0, expected_planned=charter_planned
+        )
+        if cerr:
+            return _fail(cerr)
+        assert n_exec == 0
+
+        trials_err = _screen_trials_empty_ok(null_block)
+        if trials_err:
+            return _fail(trials_err)
+
+        verified_seed, seed_err = _verify_reported_null_seed(
+            null_block, expected_null_seed
+        )
+        if seed_err:
+            return _fail(seed_err)
+        assert verified_seed is not None
+
+        return {
+            "n_null_planned": charter_planned,
+            "exit_code": base_exit,
+            "disposition": "SCREEN_PASS_PENDING_NULL_REVIEW",
+            "reported_disposition": reported_disposition,
+            "execution_state": "OK",
+            "n_null_executed": 0,
+            "null_trials_executed": 0,
+            "attempt_type": "DETERMINISTIC_SCREEN",
+            "family_screen_attempt": True,
+            "sealed_null_attempt": False,
+            "r1_burned": False,
+            "report_status": "ok",
+            "null_seed": verified_seed,
+            "report": report,
+        }
+
+    # ------------------------------------------------------------------
     # Path 2: Full-null success OK
     # ------------------------------------------------------------------
     if base_exit == 0:

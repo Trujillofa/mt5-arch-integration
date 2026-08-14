@@ -345,9 +345,28 @@ def test_untracked_charter_refused(tmp_path: Path, monkeypatch):
 
 
 def test_dirty_registry_in_dispositional_globs():
+    import fnmatch
+
     from xau_charter_protocol import DISPOSITIONAL_PATH_GLOBS
 
     assert "results/xau_charter_disposition_registry.jsonl" in DISPOSITIONAL_PATH_GLOBS
+    # Multi-instrument joint screen harness is dispositional-protected
+    assert any(
+        fnmatch.fnmatch("scripts/xau_multi_instrument_joint_screen.py", pat)
+        for pat in DISPOSITIONAL_PATH_GLOBS
+    )
+
+
+def test_dirty_multi_instrument_screen_harness_refused(monkeypatch):
+    """Uncommitted screen harness must not look clean under dispositional guard."""
+    from xau_charter_protocol import CharterError, assert_clean_dispositional_tree
+
+    monkeypatch.setattr(
+        "xau_charter_protocol.git_dirty_tracked_paths",
+        lambda repo=None: ["scripts/xau_multi_instrument_joint_screen.py"],
+    )
+    with pytest.raises(CharterError, match="dirty|xau_multi_instrument"):
+        assert_clean_dispositional_tree()
 
 
 def test_screen_fail_zero_passers_accounting(tmp_path: Path):
@@ -486,6 +505,62 @@ def test_parse_harness_screen_ok_unburned(tmp_path: Path):
     assert a["attempt_type"] == "DETERMINISTIC_SCREEN"
     assert a["sealed_null_attempt"] is False
     assert a["disposition"] == "SCREEN_FAIL"
+
+
+def _full_screen_pass_pending_report(**overrides: object) -> dict:
+    """Valid SCREEN_ONLY positive-passer report (pending null)."""
+    base = {
+        "verdict": {
+            "disposition": "SCREEN_PASS_PENDING_NULL_REVIEW",
+            "screen_status": "PASSERS_GE_1_PENDING_NULL_REVIEW",
+        },
+        "screen": {"zero_primary_passers": False, "screen_only": True},
+        "real": {"n_passers": 1, "n_passers_soft": 1, "n_passers_classic_status": "not_evaluated"},
+        "null": {
+            "base_seed": 1,
+            "n_trials": 0,
+            "n_null_planned": 999,
+            "n_null_executed": 0,
+            "skipped_reason": "SCREEN_ONLY",
+            "trials": [],
+        },
+        "attempt_accounting": {
+            "attempt_type": "DETERMINISTIC_SCREEN",
+            "family_screen_attempt": True,
+            "sealed_null_attempt": False,
+            "n_null_planned": 999,
+            "n_null_executed": 0,
+            "null_trials_executed": 0,
+            "screen_only": True,
+        },
+    }
+    base.update(overrides)
+    return base
+
+
+def test_parse_harness_screen_pass_pending_null_ok_unburned(tmp_path: Path):
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(json.dumps(_full_screen_pass_pending_report()))
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "OK"
+    assert a["n_null_executed"] == 0
+    assert a["r1_burned"] is False
+    assert a["attempt_type"] == "DETERMINISTIC_SCREEN"
+    assert a["disposition"] == "SCREEN_PASS_PENDING_NULL_REVIEW"
+
+
+def test_parse_harness_screen_pass_pending_wrong_n_passers_unknown(tmp_path: Path):
+    p = tmp_path / "null_maxstat.json"
+    p.write_text(
+        json.dumps(_full_screen_pass_pending_report(real={"n_passers": 0}))
+    )
+    a = _parse_acct(
+        result_json=p, n_null_planned=999, exit_code=0, expected_null_seed=1
+    )
+    assert a["execution_state"] == "UNKNOWN"
+    assert a["r1_burned"] is True
 
 
 def test_parse_harness_exit0_partial_null_unknown(tmp_path: Path):
