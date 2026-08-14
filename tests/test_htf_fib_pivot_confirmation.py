@@ -64,6 +64,40 @@ def test_signal_time_not_before_confirmation():
                 assert i >= active_idx
 
 
+def test_same_tf_fib_live_on_confirmation_bar():
+    """Same-TF: fib may be live at confirm_idx (consumed via shift 1)."""
+    left, right = 3, 5
+    n = 60
+    high = np.full(n, 100.0)
+    low = np.full(n, 99.0)
+    low[12] = 80.0
+    high[30] = 130.0
+    events = confirmed_pivots(high, low, left, right)
+    states = walk_swing_and_fibs(events)
+    direction, f_a, _f_b = expand_fib_states(n, states)
+    assert states
+    for active_idx, *_ in states:
+        if active_idx > 0:
+            assert direction[active_idx - 1] == 0 or np.isnan(f_a[active_idx - 1])
+        assert not np.isnan(f_a[active_idx])
+
+
+def test_forming_bar_is_not_a_confirm_wing():
+    """Last bar is forming — exclude_forming must not use it as right wing."""
+    left, right = 2, 2
+    n = 12
+    high = np.full(n, 10.0)
+    low = np.full(n, 9.0)
+    # Unique high at c=9 would confirm at 11 (the last / forming bar).
+    high[9] = 20.0
+    with_forming = confirmed_pivots_with_centers(high, low, left, right)
+    closed_only = confirmed_pivots_with_centers(
+        high, low, left, right, exclude_forming=True
+    )
+    assert any(c == 9 for *_rest, c in with_forming)
+    assert not any(c == 9 for *_rest, c in closed_only)
+
+
 def test_legacy_center_stamp_would_fail_causal_rule():
     """Document the old bug: stamping at center violates signal >= center+right."""
     right = 5

@@ -9,6 +9,12 @@
 #ifndef FOREX_UTILS_MQH
 #define FOREX_UTILS_MQH
 
+// HTF pivot replay window used by ForexHtfPivotsFib and the parity exporter.
+// Keep these in lockstep — a shorter export window is a false mismatch.
+#ifndef FX_HTF_PIVOT_SCAN_BARS
+#define FX_HTF_PIVOT_SCAN_BARS 1200
+#endif
+
 //--- Session IDs (broker SERVER time — adjust offsets in inputs)
 enum ENUM_FX_SESSION
   {

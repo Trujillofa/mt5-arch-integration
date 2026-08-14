@@ -9,14 +9,24 @@
 //| Chart: use at or below H4 (M15/H1 recommended).                  |
 //| Fib source falls back to Daily if chart TF > H4.                 |
 //|                                                                  |
-//| iCustom signal buffer = 7  (+1 long / -1 short / 0)              |
+//| iCustom signal buffer = 8  (+1 long / -1 short / 0)              |
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.41"
-#property description "HTF pivots + Fib v1.41 (BarsCalculated wait for nested MA/RSI)"
+#property version     "1.45"
+#property description "HTF pivots + Fib v1.45 (confirm-close fib snaps)"
 #property description "Non-repaint pivots. Signal buffer 8. RSI=9 RSI-MA=10."
 #property strict
+
+// Single source of truth for the version shown at runtime. The on-chart panel used to
+// hardcode "v1.31" while #property/Print said 1.41, so the one thing the panel exists
+// to prove -- that the recompile actually took -- was the one thing it got wrong.
+// #property takes a literal and cannot read this, so keep the two in step by hand.
+// 1.42: skip ObjectsDeleteAll on REASON_CHARTCHANGE (Wine win32u freeze trigger).
+// 1.43: S/R levels imported from .tpl templates (yellow/white/blue by relevance).
+// 1.44: stamp fib snaps at confirm-bar open; no global FibAt fallback.
+// 1.45: stamp at confirm-bar close; FibAt sees chart-bar close (MTF parity).
+#define HTF_FIB_VER "1.45"
 
 #property indicator_chart_window
 #property indicator_buffers 11
@@ -117,6 +127,21 @@ input group "=== Display ==="
 input bool   InpShowPanel        = true;
 input double InpArrowOffsetPips  = 4.0;
 
+input group "=== S/R levels (imported from .tpl templates) ==="
+// Default OFF under Wine: each HLINE is a GDI object; FP freezes correlated with
+// object churn. Enable per chart only when you need the imported zones.
+input bool            InpShowSrLevels = false;             // Draw imported S/R levels
+input string          InpSrFile       = "forex_sr_levels.csv"; // In MQL5\Files (or Common\Files)
+input bool            InpSrShowHigh   = true;              // Show HIGH tier (yellow)
+input bool            InpSrShowMed    = true;              // Show MED tier (white)
+input bool            InpSrShowLow    = false;             // LOW (M5/M1) — noisy; off by default
+input color           InpSrColHigh    = clrYellow;         // HIGH relevance (MN/W1/D1/H4)
+input color           InpSrColMed     = clrWhite;          // MED relevance (H1/M30/M15)
+input color           InpSrColLow     = clrDodgerBlue;     // LOW relevance (M5/M1)
+input ENUM_LINE_STYLE InpSrStyle      = STYLE_DOT;         // Line style (templates use dotted)
+input bool            InpSrShowLabels = false;             // Attach tier text to each line
+input int             InpSrMaxLevels  = 80;                // Hard cap (Wine GDI guard)
+
 //+------------------------------------------------------------------+
 //| Buffers: 0 fast | 1 slow | 2 bias | 3 Long | 4 Short             |
 //|          5 fib618 | 6 fib786 | 7 swingDir | 8 signal             |
@@ -169,6 +194,21 @@ struct FibSnap
 FibSnap g_snaps[];
 int     g_nsnaps = 0;
 
+//--- imported S/R levels (static snapshot from hand-drawn .tpl zones)
+#define SR_TIER_LOW  0
+#define SR_TIER_MED  1
+#define SR_TIER_HIGH 2
+
+struct SrLevel
+  {
+   double price;
+   int    tier;   // SR_TIER_*
+   string tf;     // template timeframe the line was drawn on
+  };
+SrLevel g_sr[];
+int     g_nsr       = 0;
+bool    g_sr_dirty  = true;   // reload/redraw pending
+
 //+------------------------------------------------------------------+
 void ApplyTradingMode()
   {
@@ -199,6 +239,44 @@ bool EffectiveShow4h()
    return g_mode.show_4h_pivots && InpShow4hLines;
   }
 
+datetime BarCloseTime(const datetime bar_open, const ENUM_TIMEFRAMES tf)
+  {
+   int sec = PeriodSeconds(tf);
+   if(sec <= 0)
+      sec = PeriodSeconds(_Period);
+   return bar_open + (datetime)sec;
+  }
+
+datetime ChartBarClose(const datetime bar_open)
+  {
+   return BarCloseTime(bar_open, PERIOD_CURRENT);
+  }
+
+void WriteEffectiveConfig()
+  {
+   bool use4h = (PeriodSeconds(PERIOD_CURRENT) <= PeriodSeconds(PERIOD_H4));
+   bool fib_h4 = (EffectiveFibSource() == 0) && use4h;
+   int left  = fib_h4 ? InpLeft4h  : InpLeftDaily;
+   int right = fib_h4 ? InpRight4h : InpRightDaily;
+   int src   = fib_h4 ? 0 : 1;
+   FolderCreate("mt5_arch");
+   string path = "mt5_arch\\htf_fib_effective_" + _Symbol + ".txt";
+   int h = FileOpen(path, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+     {
+      Print("ForexHtfPivotsFib: effective-config write fail err=", GetLastError());
+      return;
+     }
+   FileWriteString(h, "version=" + HTF_FIB_VER + "\n");
+   FileWriteString(h, "symbol=" + _Symbol + "\n");
+   FileWriteString(h, "chart_tf=" + EnumToString(Period()) + "\n");
+   FileWriteString(h, "left=" + IntegerToString(left) + "\n");
+   FileWriteString(h, "right=" + IntegerToString(right) + "\n");
+   FileWriteString(h, "fib_source=" + IntegerToString(src) + "\n");
+   FileWriteString(h, "fib_source_name=" + (src == 0 ? "H4" : "D1") + "\n");
+   FileClose(h);
+  }
+
 //+------------------------------------------------------------------+
 int OnInit()
   {
@@ -209,7 +287,8 @@ int OnInit()
    ApplyTradingMode();
    // Strategy Tester often has H1 only until MTF bars are requested
    FxEnsureMtfHistory(_Symbol, 500);
-   Print("ForexHtfPivotsFib v1.41 mode=", g_mode.mode_name,
+   WriteEffectiveConfig();
+   Print("ForexHtfPivotsFib v" + HTF_FIB_VER + " mode=", g_mode.mode_name,
          " EMA ", g_mode.ema_fast, "/", g_mode.ema_slow, " bias=", g_mode.ema_bias,
          " fib=", (EffectiveFibSource() == 1 ? "Daily" : "H4"),
          " show4h=", (EffectiveShow4h() ? "yes" : "no"),
@@ -267,6 +346,11 @@ int OnInit()
    g_pfx = "HTFFIB_" + IntegerToString(ChartID()) + "_";
    // Do NOT ObjectsDeleteAll here — param changes call OnInit after OnDeinit(REASON_PARAMETERS).
    // Mass object delete under Wine freezes the UI when tweaking EMAs.
+
+   // OnInit re-runs on both REASON_PARAMETERS and REASON_CHARTCHANGE, so this is
+   // also what re-reads the table after a symbol switch or an input tweak.
+   LoadSrLevels();
+   g_sr_dirty = true;
    return INIT_SUCCEEDED;
   }
 
@@ -278,14 +362,35 @@ void OnDeinit(const int reason)
    if(g_hEmaBias != INVALID_HANDLE) IndicatorRelease(g_hEmaBias);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
 
-   // Only wipe drawings when really leaving the chart — not on EMA/input tweak
+   // Only wipe drawings when really leaving the chart — not on EMA/input tweak,
+   // and NOT on REASON_CHARTCHANGE.
+   //
+   // REASON_CHARTCHANGE fires on every symbol *and timeframe* switch, and g_pfx is
+   // keyed on ChartID(), which does not change when the timeframe does. So the old
+   // code deleted all ~18 objects and OnInit + the first OnCalculate immediately
+   // recreated the same ~18 under the same names -- a pure delete-all/recreate-all
+   // cycle, for nothing, on every flip of the timeframe button.
+   //
+   // That is a mass GDI teardown, which is exactly what the OnInit comment above
+   // already warns freezes the UI under Wine. Measured on 2026-08-13: Vantage (65
+   // indicator load/remove events) froze at 09:26 and FP Markets (31 events) at
+   // 09:56, both with the main thread dead inside win32u.so -- one deadlocked on
+   // pthread_mutex_lock under NtUserDispatchMessage/NtGdiSelectBitmap, the other in
+   // an endless SEGV_MAPERR loop under NtUserGetMessage. Exness, same host and Wine
+   // build but 0 such events, ran 22h clean.
+   //
+   // Dropping the wipe here is safe because every draw path is idempotent: each
+   // object is created only when ObjectFind() misses, then repositioned by name, and
+   // every hidden branch deletes its own keys explicitly. A surviving object is
+   // adopted and moved by the next instance within one OnCalculate.
    if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
+      reason == REASON_RECOMPILE)
      {
       ObjectsDeleteAll(0, g_pfx);
       Comment("");
      }
-   // REASON_PARAMETERS / REASON_ACCOUNT / etc.: keep objects, just release handles
+   // REASON_PARAMETERS / REASON_CHARTCHANGE / REASON_ACCOUNT: keep objects, just
+   // release handles
   }
 
 //+------------------------------------------------------------------+
@@ -317,11 +422,21 @@ int OnCalculate(const int rates_total,
       DrawAllLevels(time[rates_total - 1]);
       // Stamp fib/swing buffers immediately (even if nested MA not ready)
       int k0 = MathMax(0, rates_total - 3000);
+      // Bars older than the 3000-bar restamp window must not read as price 0.
+      if(cold && k0 > 0)
+        {
+         for(int k = 0; k < k0; k++)
+           {
+            BufSwingDir[k] = 0.0;
+            BufFib618[k]   = EMPTY_VALUE;
+            BufFib786[k]   = EMPTY_VALUE;
+           }
+        }
       for(int k = k0; k < rates_total; k++)
         {
          int sd = 0;
          double a618 = 0.0, a786 = 0.0;
-         if(FibAt(time[k], sd, a618, a786))
+         if(FibAt(ChartBarClose(time[k]), sd, a618, a786))
            {
             BufSwingDir[k] = (double)sd;
             BufFib618[k]   = a618;
@@ -329,9 +444,9 @@ int OnCalculate(const int rates_total,
            }
          else
            {
-            BufSwingDir[k] = (double)g_swingDir;
-            BufFib618[k]   = g_fibValid ? g_fib618 : EMPTY_VALUE;
-            BufFib786[k]   = g_fibValid ? g_fib786 : EMPTY_VALUE;
+            BufSwingDir[k] = 0.0;
+            BufFib618[k]   = EMPTY_VALUE;
+            BufFib786[k]   = EMPTY_VALUE;
            }
         }
      }
@@ -409,7 +524,7 @@ int OnCalculate(const int rates_total,
 
       int    sd = 0;
       double a618 = 0.0, a786 = 0.0;
-      if(FibAt(time[k], sd, a618, a786))
+      if(FibAt(ChartBarClose(time[k]), sd, a618, a786))
         {
          BufSwingDir[k] = (double)sd;
          BufFib618[k]   = a618;
@@ -417,9 +532,9 @@ int OnCalculate(const int rates_total,
         }
       else
         {
-         BufSwingDir[k] = (double)g_swingDir;
-         BufFib618[k]   = g_fibValid ? g_fib618 : EMPTY_VALUE;
-         BufFib786[k]   = g_fibValid ? g_fib786 : EMPTY_VALUE;
+         BufSwingDir[k] = 0.0;
+         BufFib618[k]   = EMPTY_VALUE;
+         BufFib786[k]   = EMPTY_VALUE;
         }
      }
 
@@ -481,14 +596,7 @@ int ConfluenceSignalLocal(const int li,
 
    int    dir = 0;
    double f618 = 0.0, f786 = 0.0;
-   bool   have = FibAt(bar_time, dir, f618, f786);
-   if(!have && g_fibValid && g_swingDir != 0)
-     {
-      dir  = g_swingDir;
-      f618 = g_fib618;
-      f786 = g_fib786;
-      have = true;
-     }
+   bool   have = FibAt(ChartBarClose(bar_time), dir, f618, f786);
    if(InpRequireGoldenZone && !have)
       return 0;
 
@@ -639,7 +747,7 @@ void PushFibSnap(const datetime t)
   }
 
 //+------------------------------------------------------------------+
-//| Latest fib snapshot with t0 <= bar_time                          |
+//| Latest fib snapshot with t0 <= bar_time (pass chart-bar close)   |
 //+------------------------------------------------------------------+
 bool FibAt(const datetime bar_time, int &dir, double &f618, double &f786)
   {
@@ -679,15 +787,16 @@ bool ScanLatestPivot(const ENUM_TIMEFRAMES tf,
    FxEnsureHistory(_Symbol, tf, need);
    MqlRates r[];
    int n = CopyRatesChrono(_Symbol, tf, need, r);
-   if(n < L + R + 2)
+   if(n < L + R + 3)
       return false;
 
-   // Chrono: 0 = oldest. Prefer most recent center (highest index)
-   for(int c = n - 1 - R; c >= L; c--)
+   // Last bar is forming — not a confirmation wing.
+   int n_closed = n - 1;
+   for(int c = n_closed - 1 - R; c >= L; c--)
      {
       bool ok = find_high
-                ? IsPivotHighRates(r, n, c, L, R)
-                : IsPivotLowRates(r, n, c, L, R);
+                ? IsPivotHighRates(r, n_closed, c, L, R)
+                : IsPivotLowRates(r, n_closed, c, L, R);
       if(ok)
         {
          out_price = find_high ? r[c].high : r[c].low;
@@ -738,10 +847,11 @@ void RebuildSwingFromHistory(const bool use4h)
    int left  = MathMax(1, fib_from_4h ? InpLeft4h  : InpLeftDaily);
    int right = MathMax(1, fib_from_4h ? InpRight4h : InpRightDaily);
 
-   int want = 1200;
+   int want = FX_HTF_PIVOT_SCAN_BARS;
    FxEnsureHistory(_Symbol, tf, want);
    MqlRates r[];
    int n = CopyRatesChrono(_Symbol, tf, want, r);
+   ENUM_TIMEFRAMES scan_tf = tf;
 
    // Fallback: chart / H1 if HTF empty
    if(n < left + right + 3)
@@ -751,6 +861,7 @@ void RebuildSwingFromHistory(const bool use4h)
          fb = PERIOD_CURRENT;
       FxEnsureHistory(_Symbol, fb, want);
       n = CopyRatesChrono(_Symbol, fb, want, r);
+      scan_tf = fb;
       static bool s_warned_fb = false;
       if(!s_warned_fb)
         {
@@ -773,33 +884,41 @@ void RebuildSwingFromHistory(const bool use4h)
         }
      }
 
-   // Chronological pivot events
-   double  px[];
-   datetime tm[];
-   int     ty[];
+   // Chronological pivot events. Snapshots stamp at confirm-bar close
+   // (open + PeriodSeconds(scan_tf)), never the center and never the open —
+   // a one-shot CopyBuffer must not see fib on [center, confirm_close).
+   double   px[];
+   datetime t_confirm[];
+   datetime t_available[];
+   int      ty[];
    int cnt = 0;
    ArrayResize(px, n);
-   ArrayResize(tm, n);
+   ArrayResize(t_confirm, n);
+   ArrayResize(t_available, n);
    ArrayResize(ty, n);
 
-   for(int c = left; c <= n - 1 - right; c++)
+   // Last copied bar is forming — it must not be a confirmation wing.
+   int n_closed = (n > 0 ? n - 1 : 0);
+   for(int c = left; c <= n_closed - 1 - right; c++)
      {
-      bool isH = IsPivotHighRates(r, n, c, left, right);
-      bool isL = IsPivotLowRates(r, n, c, left, right);
+      bool isH = IsPivotHighRates(r, n_closed, c, left, right);
+      bool isL = IsPivotLowRates(r, n_closed, c, left, right);
       if(isH && isL)
          continue;
       if(isH)
         {
-         px[cnt] = r[c].high;
-         tm[cnt] = r[c].time;
-         ty[cnt] = 1;
+         px[cnt]          = r[c].high;
+         t_confirm[cnt]   = r[c + right].time;
+         t_available[cnt] = BarCloseTime(r[c + right].time, scan_tf);
+         ty[cnt]          = 1;
          cnt++;
         }
       else if(isL)
         {
-         px[cnt] = r[c].low;
-         tm[cnt] = r[c].time;
-         ty[cnt] = -1;
+         px[cnt]          = r[c].low;
+         t_confirm[cnt]   = r[c + right].time;
+         t_available[cnt] = BarCloseTime(r[c + right].time, scan_tf);
+         ty[cnt]          = -1;
          cnt++;
         }
      }
@@ -817,14 +936,13 @@ void RebuildSwingFromHistory(const bool use4h)
 
    for(int k = 0; k < cnt; k++)
      {
-      int prev_dir = g_swingDir;
-      bool prev_valid = g_fibValid;
-      ProcessPivotEvent(ty[k], px[k], tm[k]);
-      if(g_swingDir != 0 && g_swingHigh > 0 && g_swingLow > 0 && g_swingHigh > g_swingLow)
+      ProcessPivotEvent(ty[k], px[k], t_confirm[k]);
+      if(g_swingDir != 0 && g_swingHigh > 0 && g_swingLow > 0 &&
+         g_swingHigh > g_swingLow)
         {
          ComputeFibLevels();
-         if(g_fibValid && (g_swingDir != prev_dir || !prev_valid || true))
-            PushFibSnap(tm[k]);
+         if(g_fibValid)
+            PushFibSnap(t_available[k]);
         }
      }
 
@@ -832,11 +950,11 @@ void RebuildSwingFromHistory(const bool use4h)
    if(g_swingDir == 0 && cnt >= 2)
      {
       double lh = 0, ll = 0;
-      datetime th = 0, tl = 0;
+      datetime th = 0, tl = 0, th_avail = 0, tl_avail = 0;
       for(int k = 0; k < cnt; k++)
         {
-         if(ty[k] == 1)  { lh = px[k]; th = tm[k]; }
-         if(ty[k] == -1) { ll = px[k]; tl = tm[k]; }
+         if(ty[k] == 1)  { lh = px[k]; th = t_confirm[k]; th_avail = t_available[k]; }
+         if(ty[k] == -1) { ll = px[k]; tl = t_confirm[k]; tl_avail = t_available[k]; }
         }
       if(lh > 0.0 && ll > 0.0 && lh > ll)
         {
@@ -847,7 +965,7 @@ void RebuildSwingFromHistory(const bool use4h)
          g_swingDir = (th >= tl) ? 1 : -1;
          ComputeFibLevels();
          if(g_fibValid)
-            PushFibSnap(MathMax(th, tl));
+            PushFibSnap(MathMax(th_avail, tl_avail));
         }
      }
    else if(g_swingDir != 0 && g_swingHigh > g_swingLow)
@@ -983,19 +1101,7 @@ int ConfluenceSignal(const int i,
   {
    int    dir = 0;
    double f618 = 0.0, f786 = 0.0;
-   bool   have = FibAt(bar_time, dir, f618, f786);
-   // Fall back to latest globals if snap missing (early bars)
-   if(!have)
-     {
-      if(g_fibValid && g_swingDir != 0)
-        {
-         dir  = g_swingDir;
-         f618 = g_fib618;
-         f786 = g_fib786;
-         have = true;
-        }
-     }
-
+   bool   have = FibAt(ChartBarClose(bar_time), dir, f618, f786);
    if(InpRequireGoldenZone && !have)
       return 0;
 
@@ -1088,6 +1194,13 @@ void DrawAllLevels(const datetime t_now)
    datetime t2 = t_now + PeriodSeconds() * 5;
    bool use4h = (PeriodSeconds(PERIOD_CURRENT) <= PeriodSeconds(PERIOD_H4));
 
+   // Static levels: only touched after a (re)load, never per bar.
+   if(g_sr_dirty)
+     {
+      DrawSrLevels();
+      g_sr_dirty = false;
+     }
+
    if(EffectiveShow4h() && use4h)
      {
       if(g_th4 > 0) HLine("P4H", g_ph4, g_th4, t2, InpCol4hHigh, InpShow4hLabels ? "4H H" : "");
@@ -1105,6 +1218,16 @@ void DrawAllLevels(const datetime t_now)
      {
       if(g_thD > 0) HLine("PDH", g_phD, g_thD, t2, InpColDailyHigh, InpShowDailyLabels ? "D H" : "");
       if(g_tlD > 0) HLine("PDL", g_plD, g_tlD, t2, InpColDailyLow,  InpShowDailyLabels ? "D L" : "");
+     }
+   else
+     {
+      // Mirror the 4H branch. Without this, toggling InpShowDailyLines off orphaned
+      // the daily lines for good: REASON_PARAMETERS deliberately does not wipe, so
+      // nothing else ever deleted them.
+      ObjectDelete(0, g_pfx + "PDH");
+      ObjectDelete(0, g_pfx + "PDL");
+      ObjectDelete(0, g_pfx + "PDH_lbl");
+      ObjectDelete(0, g_pfx + "PDL_lbl");
      }
 
    // Fib levels
@@ -1190,6 +1313,178 @@ void HLine(const string key, const double price,
       ObjectSetString(0, lname, OBJPROP_TEXT, " " + label + " " + DoubleToString(price, _Digits));
       ObjectSetInteger(0, lname, OBJPROP_COLOR, clr);
      }
+   else
+     {
+      // Callers pass "" to hide a label (InpShow4hLabels / InpShowDailyLabels). Without
+      // this delete the previously drawn label object survived that toggle forever,
+      // since REASON_PARAMETERS deliberately keeps objects.
+      ObjectDelete(0, g_pfx + key + "_lbl");
+     }
+  }
+
+//+------------------------------------------------------------------+
+//| Imported S/R levels                                              |
+//|                                                                  |
+//| Levels come from scripts/tpl_to_sr_levels.py, which turns the     |
+//| hand-drawn OBJ_HLINE zones of the manual .tpl chart templates     |
+//| into MQL5\Files\forex_sr_levels.csv. Reading the table at runtime |
+//| (rather than baking it into this source) means re-drawing zones   |
+//| needs a regenerate + redeploy, not a MetaEditor recompile.        |
+//|                                                                  |
+//| The table is a static snapshot: it does not follow price, and it  |
+//| only covers the symbols that were exported.                      |
+//+------------------------------------------------------------------+
+
+//| Strip a broker suffix so XAUUSDm / XAUUSD.r / XAUUSD all match.
+//| Mirrors the suffix list ResolveSymbol() uses in Mt5ArchBridge.mq5.
+string SrSymbolBase(const string sym)
+  {
+   string t = sym;
+   StringToUpper(t);
+   string suffixes[] = {".RAW", ".ECN", ".PRO", ".R", ".M", "MICRO", "PRO", "ECN", "#", "M"};
+   for(int i = 0; i < ArraySize(suffixes); i++)
+     {
+      int slen = StringLen(suffixes[i]);
+      // Require something substantial to survive the strip, so a short symbol is
+      // never eaten down to a prefix that collides with an unrelated instrument.
+      if(StringLen(t) > slen + 2 && StringSubstr(t, StringLen(t) - slen) == suffixes[i])
+         return StringSubstr(t, 0, StringLen(t) - slen);
+     }
+   return t;
+  }
+
+int SrTierFromText(const string s)
+  {
+   if(s == "HIGH") return SR_TIER_HIGH;
+   if(s == "LOW")  return SR_TIER_LOW;
+   return SR_TIER_MED;
+  }
+
+color SrTierColor(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return InpSrColHigh;
+   if(tier == SR_TIER_LOW)  return InpSrColLow;
+   return InpSrColMed;
+  }
+
+string SrTierName(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return "HIGH";
+   if(tier == SR_TIER_LOW)  return "LOW";
+   return "MED";
+  }
+
+//| Filtering here rather than at draw time keeps the object indices dense,
+//| so the tail sweep in DrawSrLevels() removes whatever a toggle dropped.
+bool SrTierVisible(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return InpSrShowHigh;
+   if(tier == SR_TIER_LOW)  return InpSrShowLow;
+   return InpSrShowMed;
+  }
+
+//| Read the CSV, keeping only rows whose symbol matches this chart.
+//| Tries MQL5\Files first, then Common\Files (the Strategy Tester agent
+//| sandbox only sees the shared Common folder).
+void LoadSrLevels()
+  {
+   g_nsr = 0;
+   ArrayResize(g_sr, 0);
+   if(!InpShowSrLevels || StringLen(InpSrFile) == 0)
+      return;
+
+   int h = FileOpen(InpSrFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+      h = FileOpen(InpSrFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ | FILE_COMMON);
+   if(h == INVALID_HANDLE)
+     {
+      Print("ForexHtfPivotsFib: S/R file '", InpSrFile,
+            "' not found in MQL5\\Files or Common\\Files (err ", GetLastError(),
+            ") — run scripts/tpl_to_sr_levels.py, then scripts/18-install-forex-indicator.sh");
+      return;
+     }
+
+   string want = SrSymbolBase(_Symbol);
+   int skipped = 0;   // rows for other symbols
+   int hidden  = 0;   // rows for this symbol dropped by a tier toggle
+   while(!FileIsEnding(h) && g_nsr < InpSrMaxLevels)
+     {
+      string line = FileReadString(h);
+      StringTrimLeft(line);
+      StringTrimRight(line);
+      if(StringLen(line) == 0 || StringGetCharacter(line, 0) == '#')
+         continue;
+
+      string parts[];
+      if(StringSplit(line, ',', parts) < 3)
+         continue;
+      if(SrSymbolBase(parts[0]) != want)
+        { skipped++; continue; }
+
+      double price = StringToDouble(parts[1]);
+      if(price <= 0.0)
+         continue;
+      int tier = SrTierFromText(parts[2]);
+      if(!SrTierVisible(tier))
+        { hidden++; continue; }
+
+      ArrayResize(g_sr, g_nsr + 1);
+      g_sr[g_nsr].price = price;
+      g_sr[g_nsr].tier  = tier;
+      g_sr[g_nsr].tf    = (ArraySize(parts) > 3) ? parts[3] : "?";
+      g_nsr++;
+     }
+   FileClose(h);
+
+   int n_high = 0, n_med = 0, n_low = 0;
+   for(int i = 0; i < g_nsr; i++)
+     {
+      if(g_sr[i].tier == SR_TIER_HIGH)      n_high++;
+      else if(g_sr[i].tier == SR_TIER_MED)  n_med++;
+      else                                  n_low++;
+     }
+   Print("ForexHtfPivotsFib: S/R levels for ", _Symbol, " (base ", want, "): ",
+         g_nsr, " drawn (high=", n_high, " med=", n_med, " low=", n_low,
+         "), ", hidden, " hidden by tier toggles, ",
+         skipped, " rows for other symbols");
+   if(g_nsr == 0 && hidden == 0 && skipped > 0)
+      Print("ForexHtfPivotsFib: no S/R rows matched ", want,
+            " — re-export a template for this symbol");
+  }
+
+//| Idempotent like every other draw path here: create on miss, then move
+//| by name. Only runs when g_sr_dirty is set, so a chart tick never
+//| touches ~100 objects (mass GDI work is what freezes MT5 under Wine).
+void DrawSrLevels()
+  {
+   for(int i = 0; i < g_nsr; i++)
+     {
+      string name = g_pfx + "SR" + IntegerToString(i);
+      if(ObjectFind(0, name) < 0)
+        {
+         ObjectCreate(0, name, OBJ_HLINE, 0, 0, g_sr[i].price);
+         ObjectSetInteger(0, name, OBJPROP_BACK, true);
+         ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+         ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+         ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+        }
+      ObjectSetDouble(0, name, OBJPROP_PRICE, 0, g_sr[i].price);
+      ObjectSetInteger(0, name, OBJPROP_COLOR, SrTierColor(g_sr[i].tier));
+      ObjectSetInteger(0, name, OBJPROP_STYLE, InpSrStyle);
+      ObjectSetInteger(0, name, OBJPROP_WIDTH, (g_sr[i].tier == SR_TIER_HIGH) ? 2 : 1);
+
+      string tag = SrTierName(g_sr[i].tier) + " " + g_sr[i].tf + " " +
+                   DoubleToString(g_sr[i].price, _Digits);
+      ObjectSetString(0, name, OBJPROP_TOOLTIP, tag);
+      ObjectSetString(0, name, OBJPROP_TEXT, InpSrShowLabels ? tag : "");
+     }
+
+   // Sweep the tail: toggling InpShowSrLevels off, switching to a symbol with
+   // fewer levels, or regenerating a shorter CSV must not leave orphans behind.
+   // ObjectDelete on a missing name is a cheap no-op, so the bounded sweep is
+   // safe to run on every (rare) reload.
+   for(int i = g_nsr; i < InpSrMaxLevels; i++)
+      ObjectDelete(0, g_pfx + "SR" + IntegerToString(i));
   }
 
 //+------------------------------------------------------------------+
@@ -1254,7 +1549,7 @@ void DrawPanel(const double close_px,
    string fib_src = (EffectiveFibSource() == 1) ? "Daily" : "4H";
 
    string panel =
-      "HTF Fib v1.31\n" +
+      "HTF Fib v" + HTF_FIB_VER + "\n" +
       StringFormat("Mode   %s  (%s)\n", g_mode.mode_name, g_mode.chart_hint) +
       StringFormat("EMAs   %d/%d bias %d\n",
                    g_mode.ema_fast, g_mode.ema_slow, g_mode.ema_bias) +
