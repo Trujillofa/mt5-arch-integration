@@ -413,6 +413,19 @@ EXOGENOUS_PREDICTOR_HARNESS_KIND = "multi_instrument_exogenous_predictor_v1"
 EXOGENOUS_NULL_IMPLEMENTATION_ID = "conditional_fixed_signal_events_fixed_trades_v1"
 JOINT_HARNESS_KIND = "multi_instrument_joint_v1"
 
+# Protocol §7.3 baseline (2026-08-14): cannot undercount; self-attested empty priors banned.
+EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS: tuple[str, ...] = (
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat",
+    "joint_london_open_cosign_fade_flat",
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+)
+EXOGENOUS_BASELINE_K_PRIOR = len(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)  # 8
+
 
 def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str | None:
     """If charter is multi-instrument (joint or exogenous), refuse single-frame runners.
@@ -653,14 +666,14 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                 f"(got {same_vals!r})"
             )
 
-    # Cost identity (strict finite non-boolean numbers)
+    # Cost identity + sim keys (Phase C must exact-match loaded research costs doc)
     costs = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
     if costs is None and isinstance(charter.get("costs"), dict):
         costs = dict(charter["costs"])
     if not isinstance(costs, dict) or not costs:
         errs.append(
             "exogenous fixed.costs (or top-level costs) object required "
-            "with commission_per_lot, slippage_points, spread_col"
+            "with identity + sim keys"
         )
     else:
         for ck in ("commission_per_lot", "slippage_points"):
@@ -673,10 +686,31 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                         f"exogenous costs.{ck} must be a finite non-negative JSON "
                         f"number (not str/bool/NaN/Inf; got {costs.get(ck)!r})"
                     )
-        sc = costs.get("spread_col")
-        if not isinstance(sc, str) or not sc.strip():
+        for sk in ("account_type", "server", "cost_label", "spread_col"):
+            sv = costs.get(sk)
+            if not isinstance(sv, str) or not sv.strip():
+                errs.append(
+                    f"exogenous costs.{sk} required non-empty string (cost identity)"
+                )
+        login = costs.get("login")
+        if isinstance(login, bool) or not isinstance(login, int):
             errs.append(
-                "exogenous costs.spread_col must be a non-empty string"
+                "exogenous costs.login required non-bool JSON integer (cost identity)"
+            )
+        # Pinned research-costs document SHA (hex, 64 chars)
+        sha = (
+            costs.get("costs_document_sha256")
+            or costs.get("cost_document_sha256")
+            or costs.get("research_costs_sha256")
+        )
+        if not isinstance(sha, str) or len(sha) != 64:
+            errs.append(
+                "exogenous costs.costs_document_sha256 required "
+                "(64-char hex pin of research costs document)"
+            )
+        elif any(c not in "0123456789abcdef" for c in sha.lower()):
+            errs.append(
+                "exogenous costs.costs_document_sha256 must be hexadecimal"
             )
     gates = charter.get("gates") or {}
     if gates.get("primary_n_passers") != "soft":
@@ -786,6 +820,12 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
             errs.append(
                 "exogenous multiplicity.K_prior must be a non-negative JSON integer"
             )
+        elif k_prior < EXOGENOUS_BASELINE_K_PRIOR:
+            errs.append(
+                f"exogenous multiplicity.K_prior must be >= "
+                f"{EXOGENOUS_BASELINE_K_PRIOR} (protocol baseline; "
+                f"undercounting banned; got {k_prior})"
+            )
         if k_val is None:
             errs.append(
                 "exogenous multiplicity.K must be a non-negative JSON integer"
@@ -838,6 +878,39 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                     "exogenous multiplicity.prior_scored_family_ids length must "
                     f"equal K_prior={k_prior} (got {len(priors)})"
                 )
+            # Authoritative baseline: all eight protocol-audited IDs required.
+            missing = [
+                fid
+                for fid in EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS
+                if fid not in priors
+            ]
+            if missing:
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids missing "
+                    f"baseline audited families: {missing}"
+                )
+            # Current family must not appear in priors (would undercount K).
+            fam = charter.get("family_id")
+            if isinstance(fam, str) and fam and fam in priors:
+                errs.append(
+                    f"exogenous multiplicity.prior_scored_family_ids must not "
+                    f"include the current family_id={fam!r}"
+                )
+            # Additions beyond baseline only when K_prior > baseline.
+            if (
+                k_prior is not None
+                and k_prior == EXOGENOUS_BASELINE_K_PRIOR
+                and set(priors) != set(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)
+            ):
+                extras = sorted(
+                    set(priors) - set(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)
+                )
+                if extras:
+                    errs.append(
+                        "exogenous multiplicity.prior_scored_family_ids at "
+                        f"K_prior={EXOGENOUS_BASELINE_K_PRIOR} must equal the "
+                        f"baseline set exactly (unexpected extras {extras})"
+                    )
         if mult.get("pass_status") != "provisional_while_catalog_open":
             errs.append(
                 "exogenous multiplicity.pass_status must be exactly "

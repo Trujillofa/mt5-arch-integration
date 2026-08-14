@@ -838,6 +838,89 @@ def execute_fixed_events_mtm(
     return trades_sorted, equity, float(balance)
 
 
+def _require_strict_int(name: str, val: Any) -> int:
+    """JSON/python int only — reject bool (bool is a subclass of int)."""
+    if isinstance(val, bool) or not isinstance(val, int):
+        raise ProtocolError(f"{name} must be a non-bool int (got {val!r})")
+    return int(val)
+
+
+def validate_events_and_assignment(
+    events: Sequence[Event],
+    assignment: Sequence[int],
+    *,
+    h: int = H_DEFAULT,
+    n_bars: int | None = None,
+) -> None:
+    """Structural invariants before any counted null trial (fail closed)."""
+    if h < 1:
+        raise ProtocolError(f"h must be >= 1, got {h}")
+    m = len(events)
+    if len(assignment) != m:
+        raise ProtocolError(f"assignment length {len(assignment)} != M={m}")
+    if m == 0:
+        return
+
+    event_ids: list[int] = []
+    for i, ev in enumerate(events):
+        eid = _require_strict_int(f"events[{i}].event_id", ev.event_id)
+        event_ids.append(eid)
+        i_start = _require_strict_int(f"events[{i}].i_start", ev.i_start)
+        i_end = _require_strict_int(f"events[{i}].i_end", ev.i_end)
+        t_entry = _require_strict_int(f"events[{i}].t_entry_idx", ev.t_entry_idx)
+        if t_entry != i_start:
+            raise ProtocolError(
+                f"event_id={eid}: t_entry_idx={t_entry} must equal i_start={i_start}"
+            )
+        if i_end != i_start + h - 1:
+            raise ProtocolError(
+                f"event_id={eid}: i_end={i_end} must equal i_start+H-1="
+                f"{i_start + h - 1}"
+            )
+        if n_bars is not None and (i_start < 0 or i_end >= n_bars):
+            raise ProtocolError(
+                f"event_id={eid}: reserved window [{i_start},{i_end}] "
+                f"out of range for n_bars={n_bars}"
+            )
+        if ev.side not in (-1, 1):
+            raise ProtocolError(f"event_id={eid}: side must be ±1 (got {ev.side!r})")
+    if len(event_ids) != len(set(event_ids)):
+        raise ProtocolError("event_id values must be unique")
+
+    # Pairwise H-disjoint reserved event intervals
+    starts = [int(ev.i_start) for ev in events]
+    for a in range(m):
+        for b in range(a + 1, m):
+            if segment_overlap(starts[a], starts[b], h):
+                raise ProtocolError(
+                    f"event reserved intervals overlap: "
+                    f"event_ids {event_ids[a]}@{starts[a]} and "
+                    f"{event_ids[b]}@{starts[b]} (H={h})"
+                )
+
+    donors: list[int] = []
+    for j, raw in enumerate(assignment):
+        d = _require_strict_int(f"assignment[{j}]", raw)
+        if d < 0:
+            raise ProtocolError(f"assignment[{j}] donor_id={d} must be >= 0")
+        if n_bars is not None and d + h - 1 >= n_bars:
+            raise ProtocolError(
+                f"assignment[{j}] donor_id={d} window out of range for n_bars={n_bars}"
+            )
+        donors.append(d)
+    if len(donors) != len(set(donors)):
+        raise ProtocolError(
+            "assignment donor_ids must be unique (without-replacement packing)"
+        )
+    for a in range(m):
+        for b in range(a + 1, m):
+            if segment_overlap(donors[a], donors[b], h):
+                raise ProtocolError(
+                    f"assignment donor intervals overlap: "
+                    f"{donors[a]} and {donors[b]} (H={h})"
+                )
+
+
 def transplant_donor_ohlc_into_event_windows(
     events: Sequence[Event],
     assignment: Sequence[int],
@@ -855,9 +938,8 @@ def transplant_donor_ohlc_into_event_windows(
     Does **not** re-time events to donor wall-clock indices — that would reorder
     equity realization relative to event order and distort DD.
     """
-    if len(assignment) != len(events):
-        raise ProtocolError("assignment length != M")
     n = len(open_)
+    validate_events_and_assignment(events, assignment, h=h, n_bars=n)
     open_t = np.array(open_, dtype=float, copy=True)
     high_t = np.array(high, dtype=float, copy=True)
     low_t = np.array(low, dtype=float, copy=True)
@@ -866,14 +948,6 @@ def transplant_donor_ohlc_into_event_windows(
     donor_by_event_id: dict[int, int] = {}
     for ev, donor in zip(events, assignment, strict=True):
         d = int(donor)
-        if d < 0 or d + h - 1 >= n:
-            raise ProtocolError(f"donor window out of range: donor_id={d}")
-        if ev.i_end >= n or ev.i_start < 0:
-            raise ProtocolError(f"event reserved window out of range: {ev}")
-        if ev.i_end - ev.i_start + 1 != h:
-            raise ProtocolError(
-                f"event reserved length != H: event_id={ev.event_id}"
-            )
         for k in range(h):
             dst = ev.i_start + k
             src = d + k

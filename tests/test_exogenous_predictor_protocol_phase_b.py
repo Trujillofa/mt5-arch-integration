@@ -127,6 +127,11 @@ def _minimal_exogenous_charter(**overrides: object) -> dict:
                 "commission_per_lot": 0.0,
                 "slippage_points": 0.0,
                 "spread_col": "spread",
+                "account_type": "STANDARD_STP",
+                "login": 27496181,
+                "server": "VantageMarkets-Live 5",
+                "cost_label": "account_matched_spread_commission_only",
+                "costs_document_sha256": "a" * 64,
             },
             "H": 3,
             "entry": "next_bar_open",
@@ -920,3 +925,89 @@ def test_null_started_authoritative_over_contradictory_terminal(tmp_path: Path):
         __import__("json").dumps(bad) + "\n"
     )
     assert acct.infer_r1_burned_from_outdir(tmp_path) is True
+
+
+def test_cross_terminal_exclusivity_success_then_fail(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+    acct.write_null_success(tmp_path, family_id="f1", n_null_executed=999)
+    with pytest.raises(FileExistsError, match="one terminal"):
+        acct.null_phase_failure_report(tmp_path, reason="late", family_id="f1")
+    assert (tmp_path / "null_success.json").is_file()
+    assert not (tmp_path / "FAILED_RUN_UNKNOWN.json").exists()
+
+
+def test_null_success_requires_started_family_and_count(tmp_path: Path):
+    with pytest.raises(acct.AccountingError, match="NULL_STARTED"):
+        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=10)
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+    with pytest.raises(acct.AccountingError, match="family_id"):
+        acct.write_null_success(tmp_path, family_id="other", n_null_executed=999)
+    with pytest.raises(acct.AccountingError, match="n_null_executed"):
+        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=10)
+
+
+def test_geometry_rejects_mismatched_entry_vs_reserved():
+    ev = core.Event(
+        event_id=0,
+        t_star_idx=4,
+        t_entry_idx=5,  # wrong: not equal to i_start
+        side=1,
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=10,
+        i_end=12,
+    )
+    with pytest.raises(core.ProtocolError, match="t_entry_idx"):
+        core.validate_events_and_assignment([ev], [10], h=3, n_bars=20)
+
+
+def test_geometry_rejects_overlapping_donors():
+    e0 = core.Event(
+        event_id=0,
+        t_star_idx=9,
+        t_entry_idx=10,
+        side=1,
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=10,
+        i_end=12,
+    )
+    e1 = core.Event(
+        event_id=1,
+        t_star_idx=19,
+        t_entry_idx=20,
+        side=1,
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=20,
+        i_end=22,
+    )
+    with pytest.raises(core.ProtocolError, match="donor intervals overlap"):
+        core.validate_events_and_assignment([e0, e1], [20, 21], h=3, n_bars=40)
+
+
+def test_validator_rejects_k_prior_zero_self_attest():
+    bad = _minimal_exogenous_charter()
+    bad["multiplicity"]["K_prior"] = 0
+    bad["multiplicity"]["K"] = 1
+    bad["multiplicity"]["prior_scored_family_ids"] = []
+    bad["multiplicity"]["alpha_adjusted"] = 0.05
+    errs = validate_exogenous_predictor_charter(bad)
+    assert any("K_prior" in e and "8" in e for e in errs)
+    assert any("baseline" in e or "prior_scored" in e for e in errs)
+
+
+def test_validator_requires_cost_identity():
+    bad = _minimal_exogenous_charter()
+    bad["fixed"]["costs"] = {
+        "commission_per_lot": 0.0,
+        "slippage_points": 0.0,
+        "spread_col": "spread",
+    }
+    errs = validate_exogenous_predictor_charter(bad)
+    assert any("account_type" in e for e in errs)
+    assert any("login" in e for e in errs)
+    assert any("costs_document_sha256" in e for e in errs)

@@ -7,7 +7,9 @@ Implements §8 of MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md.
 * NULL_STARTED after positive screen + donor preflight — **consumes** sealed-null r1
   immediately (``r1_burned=true`` on the marker); existence of NULL_STARTED is
   authoritative for burn inference even if a contradictory terminal appears
-* Terminal reports are **write-once** (refuse overwrite)
+* At most **one** terminal report per out-dir (cross-filename exclusivity)
+* Null success requires NULL_STARTED, matching family_id, and
+  ``n_null_executed == n_null_planned``
 * Reserved accounting fields cannot be overridden by caller ``extra``
 
 SAFETY: offline research only. No registry write helpers for real charters here
@@ -24,6 +26,9 @@ SCREEN_STARTED_NAME = "SCREEN_STARTED.json"
 NULL_STARTED_NAME = "NULL_STARTED.json"
 FAILED_UNKNOWN_NAME = "FAILED_RUN_UNKNOWN.json"
 NULL_SUCCESS_NAME = "null_success.json"
+
+# One terminal report only (protocol §8.3: single terminal disposition).
+_TERMINAL_NAMES = frozenset({FAILED_UNKNOWN_NAME, NULL_SUCCESS_NAME})
 
 # Callers may attach diagnostics via ``extra`` but must never override these.
 _RESERVED_SCREEN_STARTED = frozenset(
@@ -46,6 +51,8 @@ _RESERVED_NULL_STARTED = frozenset(
         "arms_r1_burn_on_failure",
         "family_id",
         "started_at_utc",
+        "n_null_planned",
+        "m",
     }
 )
 _RESERVED_FAILED = frozenset(
@@ -65,9 +72,16 @@ _RESERVED_SUCCESS = frozenset(
         "execution_state",
         "r1_burned",
         "sealed_null_attempt",
+        "n_null_executed",
+        "n_null_planned",
+        "family_id",
         "finished_at_utc",
     }
 )
+
+
+class AccountingError(RuntimeError):
+    """Hard fail-closed accounting contract violation."""
 
 
 def _utc_now() -> str:
@@ -86,6 +100,19 @@ def _merge_extra(
             out[k] = v
     out.update(base)
     return out
+
+
+def _existing_terminals(out_dir: Path) -> list[str]:
+    return sorted(name for name in _TERMINAL_NAMES if (out_dir / name).is_file())
+
+
+def _refuse_if_terminal_exists(out_dir: Path) -> None:
+    existing = _existing_terminals(out_dir)
+    if existing:
+        raise FileExistsError(
+            f"refuse second terminal report in {out_dir}: already have {existing} "
+            "(protocol: one terminal report)"
+        )
 
 
 def _write_once(path: Path, body: dict[str, Any]) -> Path:
@@ -140,6 +167,12 @@ def write_null_started(
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    if n_null_planned is not None and (
+        isinstance(n_null_planned, bool) or not isinstance(n_null_planned, int)
+    ):
+        raise AccountingError("n_null_planned must be a non-bool int or None")
+    if n_null_planned is not None and n_null_planned < 0:
+        raise AccountingError("n_null_planned must be >= 0")
     path = out_dir / NULL_STARTED_NAME
     base: dict[str, Any] = {
         "execution_state": "NULL_STARTED",
@@ -167,9 +200,10 @@ def write_failed_run_unknown(
     family_id: str | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
-    """Terminal FAILED_RUN_UNKNOWN (write-once); r1_burned per §8.1 vs §8.3."""
+    """Terminal FAILED_RUN_UNKNOWN (write-once, exclusive); r1_burned per §8."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    _refuse_if_terminal_exists(out_dir)
     path = out_dir / FAILED_UNKNOWN_NAME
     # If null was armed, force burned regardless of caller args.
     if (out_dir / NULL_STARTED_NAME).is_file():
@@ -192,13 +226,44 @@ def write_failed_run_unknown(
 def write_null_success(
     out_dir: Path,
     *,
-    family_id: str | None = None,
-    n_null_executed: int | None = None,
+    family_id: str,
+    n_null_executed: int,
     extra: dict[str, Any] | None = None,
 ) -> Path:
-    """Successful sealed null terminal (write-once); r1 remains burned."""
+    """Successful sealed null terminal (write-once, exclusive).
+
+    Requires:
+    * NULL_STARTED present
+    * family_id matches NULL_STARTED.family_id
+    * n_null_executed is non-bool int and equals NULL_STARTED.n_null_planned
+    * no other terminal already written
+    """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    _refuse_if_terminal_exists(out_dir)
+    started_path = out_dir / NULL_STARTED_NAME
+    if not started_path.is_file():
+        raise AccountingError(
+            "null_success requires NULL_STARTED.json (null never armed)"
+        )
+    started = load_json(started_path)
+    if started.get("family_id") != family_id:
+        raise AccountingError(
+            f"null_success family_id={family_id!r} does not match "
+            f"NULL_STARTED.family_id={started.get('family_id')!r}"
+        )
+    planned = started.get("n_null_planned")
+    if isinstance(planned, bool) or not isinstance(planned, int):
+        raise AccountingError(
+            "NULL_STARTED.n_null_planned must be a non-bool int for success terminal"
+        )
+    if isinstance(n_null_executed, bool) or not isinstance(n_null_executed, int):
+        raise AccountingError("n_null_executed must be a non-bool int")
+    if n_null_executed != planned:
+        raise AccountingError(
+            f"n_null_executed={n_null_executed} must equal "
+            f"NULL_STARTED.n_null_planned={planned}"
+        )
     path = out_dir / NULL_SUCCESS_NAME
     base: dict[str, Any] = {
         "disposition": "NULL_COMPLETE",
@@ -206,6 +271,7 @@ def write_null_success(
         "r1_burned": True,
         "sealed_null_attempt": True,
         "n_null_executed": n_null_executed,
+        "n_null_planned": planned,
         "family_id": family_id,
         "finished_at_utc": _utc_now(),
     }
@@ -238,7 +304,7 @@ def null_phase_failure_report(
     family_id: str | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
-    """After NULL_STARTED: burned UNKNOWN (write-once; reserved fields locked)."""
+    """After NULL_STARTED: burned UNKNOWN (write-once exclusive; reserved locked)."""
     return write_failed_run_unknown(
         out_dir,
         r1_burned=True,
