@@ -159,6 +159,7 @@ windowrule = float on, match:class ^(MetaEditor64\.exe)$
 | Process running, no window (**ghost**) | `./scripts/10-recover-terminal.sh --fullscreen` |
 | Window vanishes after **chart click** | Same — Wine unmapped the surface; run recover (not “lost forever”) |
 | Window tiny on shared workspace | `./scripts/09-fullscreen-terminal.sh` (uses `fullscreenstate 1`) |
+| **New Order (F9) glitches / slides** | Wine restores stale coords; Hyprland `center` was animating the fight. Rules in `ops/hyprland/mt5-window-rules.conf` use `float` + `center` + `no_anim` for `Order:` (and other non-shell dialogs). `hyprctl reload` after edits. Keep focus on the MT5 monitor when opening — center follows the focused monitor. |
 
 ## Clipboard / paste (Ctrl+V)
 
@@ -213,6 +214,24 @@ Optional Hyprland rules: `ops/hyprland/mt5-window-rules.conf`
 - Opening **Market** store tab for long periods  
 - Multiple `terminal64.exe` instances  
 - MetaQuotes-Demo login for WSFunded accounts  
+- Spamming timeframe buttons on a chart with `ForexHtfPivotsFib` — prefer **one chart tab per TF**; see [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) §3  
+
+## Freeze watchdog
+
+`ops/diagnostics/mt5-freeze-watch.sh` (user timer `mt5-freeze-watch.timer`) samples each terminal’s **main** thread and captures on:
+
+| Mode | Signature | Example |
+|------|-----------|---------|
+| spin | ~100% of one core, `wchan=0` | SIGSEGV livelock in win32u |
+| deadlock | 0 jiffies, `wchan=futex_do_wait` for 3 ticks | win32u AB–BA lock |
+
+On fire it: logs → **desktop notify** → capture (eu-stack + gdb) → optional webhook (`MT5_WATCH_WEBHOOK_URL`). **Does not restart** unless `MT5_WATCH_RESTART=1` (opt-in; chart state risk).
+
+```bash
+systemctl --user status mt5-freeze-watch.timer
+journalctl --user -u mt5-freeze-watch.service -f
+ls "${XDG_RUNTIME_DIR}/mt5-freeze-watch/"
+```
 
 ## Account shows 0 balance in `mt5-arch account`
 

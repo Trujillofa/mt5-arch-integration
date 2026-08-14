@@ -1,0 +1,11 @@
+[Unit]
+Description=Poll MetaTrader terminals for a frozen (spinning) main thread
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=60s
+AccuracySec=5s
+Unit=mt5-freeze-watch.service
+
+[Install]
+WantedBy=timers.target

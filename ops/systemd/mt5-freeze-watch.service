@@ -1,0 +1,7 @@
+[Unit]
+Description=Watch MetaTrader terminals for a frozen UI thread (spin or win32u deadlock) and capture it at onset
+
+[Service]
+Type=oneshot
+Environment=DISPLAY=:0
+ExecStart=/home/yderf/Projects/trading/mt5-arch-integration/ops/diagnostics/mt5-freeze-watch.sh

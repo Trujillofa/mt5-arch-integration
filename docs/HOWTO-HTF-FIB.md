@@ -1,7 +1,7 @@
 # How to use: ForexHtfPivotsFib
 
 **Indicator:** `MQL5/Indicators/ForexHtfPivotsFib.mq5`  
-**Version covered:** 1.31+  
+**Version covered:** 1.42+  
 **Role:** Primary **forex** visual / signal tool — confirmed higher-timeframe pivots, directional Fibonacci, EMA regime, RSI + RSI-MA confluence.  
 **Not an EA:** does not place orders. Optional journal via `ForexSignalLogger`.
 
@@ -37,7 +37,7 @@ In the MT5 terminal you trade with:
 
 1. **MetaEditor** (F4) → open `Indicators/ForexHtfPivotsFib.mq5`  
 2. **Compile** (F7) — 0 errors  
-3. Confirm short name / panel shows **v1.31** (or later)
+3. Confirm short name / panel shows **v1.42** (or later)
 
 Depends on `Include/ForexUtils.mqh` (copied by the install script).
 
@@ -55,6 +55,8 @@ Depends on `Include/ForexUtils.mqh` (copied by the install script).
 
 **Symbols:** majors / minors / gold (`XAUUSD`, `XAUUSD.r`, etc.). Not for BTC (use `BtcTrendPullback`).
 
+**One chart per timeframe (Wine):** do **not** spam the TF toolbar on a chart that carries this indicator. Each flip still unload/reloads the indicator (journal: loaded/removed). v1.42 no longer mass-deletes GDI objects on that path — that was the measured freeze trigger on 2026-08-13 — but OnInit/OnDeinit churn remains. Prefer one tab per TF (e.g. US30 M1 + US30 M15) and switch tabs instead of flipping one chart.
+
 ### Steps
 
 1. Open symbol → prefer **chart tab** (do not undock under Wine).  
@@ -67,7 +69,7 @@ Depends on `Include/ForexUtils.mqh` (copied by the install script).
 Top-left panel should look like:
 
 ```text
-HTF Fib v1.31
+HTF Fib v1.42
 Mode   INTRADAY  (M15-H1 ...)
 EMAs   20/50 bias 200
 Fib src 4H
@@ -300,7 +302,8 @@ if(CopyBuffer(handle, 8, 1, 1, sig) > 0)
 | Charts | Tabs only; undocked chart windows often black |
 | Panel | Uses `Comment()` (Wine-safe); not multi-color labels |
 | Mouse | Prefer **primary** monitor; no Wine virtual desktop |
-| EMA tweaks | Changing inputs reloads indicator; v1.31+ softens freezes — still avoid spam-editing on huge histories |
+| EMA tweaks | Changing inputs reloads indicator; avoid spam-editing on huge histories |
+| TF flipping | Prefer one chart per TF (see §3); v1.42 skips ObjectsDeleteAll on chartchange |
 | Sessions | Fib indicator does **not** hard-block Asian like Template; manage sessions yourself in INTRADAY |
 
 Switch broker:
@@ -322,7 +325,7 @@ cd ~/Projects/trading/mt5-arch-integration
 | EMA numbers don’t change | Set **`InpManualOverride=true`**, or switch **Mode** (mode owns EMAs when override false) |
 | No Fib / “need swing” | Wait for confirmed pivots; or lower left/right; check chart ≤ H4 for 4H source |
 | No arrows | Closed bar only; check bias side, golden zone, RSI + RSI-MA filters |
-| Freezes on param change | Update to v1.31+; fewer charts; one bridge EA only |
+| Freezes on param / TF change | Panel must show **v1.42+**; one chart per TF; fewer charts; one bridge EA only. Watchdog: `mt5-freeze-watch.timer` |
 | Logger ≠ chart signals | Logger `iCustom` uses **default** inputs unless extended; align mode defaults |
 | Gold symbol | Use your broker’s name (`XAUUSD` vs `XAUUSD.r`) |
 

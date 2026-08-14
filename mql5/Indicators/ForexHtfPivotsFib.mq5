@@ -13,10 +13,17 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.41"
-#property description "HTF pivots + Fib v1.41 (BarsCalculated wait for nested MA/RSI)"
+#property version     "1.42"
+#property description "HTF pivots + Fib v1.42 (no ObjectsDeleteAll on TF switch)"
 #property description "Non-repaint pivots. Signal buffer 8. RSI=9 RSI-MA=10."
 #property strict
+
+// Single source of truth for the version shown at runtime. The on-chart panel used to
+// hardcode "v1.31" while #property/Print said 1.41, so the one thing the panel exists
+// to prove -- that the recompile actually took -- was the one thing it got wrong.
+// #property takes a literal and cannot read this, so keep the two in step by hand.
+// 1.42: skip ObjectsDeleteAll on REASON_CHARTCHANGE (Wine win32u freeze trigger).
+#define HTF_FIB_VER "1.42"
 
 #property indicator_chart_window
 #property indicator_buffers 11
@@ -209,7 +216,7 @@ int OnInit()
    ApplyTradingMode();
    // Strategy Tester often has H1 only until MTF bars are requested
    FxEnsureMtfHistory(_Symbol, 500);
-   Print("ForexHtfPivotsFib v1.41 mode=", g_mode.mode_name,
+   Print("ForexHtfPivotsFib v" + HTF_FIB_VER + " mode=", g_mode.mode_name,
          " EMA ", g_mode.ema_fast, "/", g_mode.ema_slow, " bias=", g_mode.ema_bias,
          " fib=", (EffectiveFibSource() == 1 ? "Daily" : "H4"),
          " show4h=", (EffectiveShow4h() ? "yes" : "no"),
@@ -278,14 +285,35 @@ void OnDeinit(const int reason)
    if(g_hEmaBias != INVALID_HANDLE) IndicatorRelease(g_hEmaBias);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
 
-   // Only wipe drawings when really leaving the chart — not on EMA/input tweak
+   // Only wipe drawings when really leaving the chart — not on EMA/input tweak,
+   // and NOT on REASON_CHARTCHANGE.
+   //
+   // REASON_CHARTCHANGE fires on every symbol *and timeframe* switch, and g_pfx is
+   // keyed on ChartID(), which does not change when the timeframe does. So the old
+   // code deleted all ~18 objects and OnInit + the first OnCalculate immediately
+   // recreated the same ~18 under the same names -- a pure delete-all/recreate-all
+   // cycle, for nothing, on every flip of the timeframe button.
+   //
+   // That is a mass GDI teardown, which is exactly what the OnInit comment above
+   // already warns freezes the UI under Wine. Measured on 2026-08-13: Vantage (65
+   // indicator load/remove events) froze at 09:26 and FP Markets (31 events) at
+   // 09:56, both with the main thread dead inside win32u.so -- one deadlocked on
+   // pthread_mutex_lock under NtUserDispatchMessage/NtGdiSelectBitmap, the other in
+   // an endless SEGV_MAPERR loop under NtUserGetMessage. Exness, same host and Wine
+   // build but 0 such events, ran 22h clean.
+   //
+   // Dropping the wipe here is safe because every draw path is idempotent: each
+   // object is created only when ObjectFind() misses, then repositioned by name, and
+   // every hidden branch deletes its own keys explicitly. A surviving object is
+   // adopted and moved by the next instance within one OnCalculate.
    if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
+      reason == REASON_RECOMPILE)
      {
       ObjectsDeleteAll(0, g_pfx);
       Comment("");
      }
-   // REASON_PARAMETERS / REASON_ACCOUNT / etc.: keep objects, just release handles
+   // REASON_PARAMETERS / REASON_CHARTCHANGE / REASON_ACCOUNT: keep objects, just
+   // release handles
   }
 
 //+------------------------------------------------------------------+
@@ -1106,6 +1134,16 @@ void DrawAllLevels(const datetime t_now)
       if(g_thD > 0) HLine("PDH", g_phD, g_thD, t2, InpColDailyHigh, InpShowDailyLabels ? "D H" : "");
       if(g_tlD > 0) HLine("PDL", g_plD, g_tlD, t2, InpColDailyLow,  InpShowDailyLabels ? "D L" : "");
      }
+   else
+     {
+      // Mirror the 4H branch. Without this, toggling InpShowDailyLines off orphaned
+      // the daily lines for good: REASON_PARAMETERS deliberately does not wipe, so
+      // nothing else ever deleted them.
+      ObjectDelete(0, g_pfx + "PDH");
+      ObjectDelete(0, g_pfx + "PDL");
+      ObjectDelete(0, g_pfx + "PDH_lbl");
+      ObjectDelete(0, g_pfx + "PDL_lbl");
+     }
 
    // Fib levels
    string fib_keys[] = {"F236","F382","F500","F618","F786"};
@@ -1190,6 +1228,13 @@ void HLine(const string key, const double price,
       ObjectSetString(0, lname, OBJPROP_TEXT, " " + label + " " + DoubleToString(price, _Digits));
       ObjectSetInteger(0, lname, OBJPROP_COLOR, clr);
      }
+   else
+     {
+      // Callers pass "" to hide a label (InpShow4hLabels / InpShowDailyLabels). Without
+      // this delete the previously drawn label object survived that toggle forever,
+      // since REASON_PARAMETERS deliberately keeps objects.
+      ObjectDelete(0, g_pfx + key + "_lbl");
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -1254,7 +1299,7 @@ void DrawPanel(const double close_px,
    string fib_src = (EffectiveFibSource() == 1) ? "Daily" : "4H";
 
    string panel =
-      "HTF Fib v1.31\n" +
+      "HTF Fib v" + HTF_FIB_VER + "\n" +
       StringFormat("Mode   %s  (%s)\n", g_mode.mode_name, g_mode.chart_hint) +
       StringFormat("EMAs   %d/%d bias %d\n",
                    g_mode.ema_fast, g_mode.ema_slow, g_mode.ema_bias) +
