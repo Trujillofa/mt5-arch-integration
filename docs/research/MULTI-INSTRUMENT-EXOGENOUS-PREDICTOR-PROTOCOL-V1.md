@@ -144,7 +144,7 @@ Empty **I** → `EMPTY_JOINT_INTERSECTION` (hard error).
 v1 **forbids** concurrent open positions and **forbids** overlapping fixed hold intervals on the real path.
 
 - Each admitted event \(e\) reserves a **fixed** entry interval \(I_e = \{i_e, i_e+1, \ldots, i_e+H-1\}\) where \(i_e = \text{index}(t_{\text{entry}})\), independent of early SL/TP exit.
-- A later candidate is admitted only if its prospective \(I_e\) is **pairwise non-segment-overlapping** with every already-admitted \(I_e\) (§5.3 R2 item 8).
+- A later candidate is admitted only if its prospective \(I_e\) is **pairwise non-segment-overlapping** with every already-admitted \(I_e\) (§5.3 R2 item 5).
 - Early exit of a prior trade **does not** free bars inside its reserved \(I_e\) for a new admission.
 - Consequence: real identity donor segments are pairwise H-disjoint — the **same geometry** every counted null assignment must satisfy (§5.4–§5.5). Observed PF/DD dependence structure matches the null support.
 
