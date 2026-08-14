@@ -175,7 +175,9 @@ Priority 4 (tester provenance wrapper) is a separate package:
 [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline schema; no live tester run).
 Priority 5 (`OnTradeTransaction` journal) is a separate package:
 [TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline schema; no live attach claimed).
-Priority 6 (article-intake gate, chronological logger replay) is untouched.
+Priority 6 (article-intake gate) is a separate package:
+[ARTICLE-INTAKE.md](ARTICLE-INTAKE.md) (offline schema; catalog PF is not evidence).
+Chronological logger replay is untouched.
 
 ## Adversarial cases the tests already cover
 
@@ -201,7 +203,8 @@ Priority 6 (article-intake gate, chronological logger replay) is untouched.
   [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline rules; live tester optional).
 - Read-only `OnTradeTransaction` journal — **done separately**:
   [TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline rules; live attach optional).
-- Article-intake gate / new research charters.
+- Article-intake gate — **done separately**: [ARTICLE-INTAKE.md](ARTICLE-INTAKE.md)
+  (offline schema; catalog PF is not evidence; no new strategy engine).
 - Chronological bar-by-bar replay that would be required to call the logger live-safe.
 
 Do not copy MQL5.com catalog experts into the research loop because a blog PF
