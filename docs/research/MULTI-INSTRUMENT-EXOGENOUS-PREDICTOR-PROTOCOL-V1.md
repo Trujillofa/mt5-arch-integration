@@ -4,17 +4,17 @@
 **Status:** **SPECIFICATION ONLY** — not implemented · not enforced · not freeze-ready for thesis
 **Branch:** `research/exogenous-predictor-protocol-v1` from `main@a492f2c`
 **Parent:** extends family protocol 2.2 (`docs/research/XAU-FAMILY-PROTOCOL-V2.md`) without replacing it for single-frame / joint-cosign families
-**Revision:** Phase A amend 2b (HEAD) — same four gaps closed; residual wording tightened for re-review
+**Revision:** Phase A amend 3 (HEAD) — segment non-overlap pairing; dual SCREEN/NULL STARTED; concurrent books
 
-### Reviewer map (do not re-cite pre-0e1cf6c line numbers)
+### Reviewer map (re-review this HEAD only)
 
-| Finding | Status on this HEAD | Where |
-|---------|---------------------|-------|
-| Null engine not executable / deferred to charter | **Closed** | §5.1, §5.5–§5.6 pin one algorithm; §5.8 forbids alternate engines |
-| E defined by successful completion | **Closed** | §5.3 \(P_{\text{entry}}\) only; §5.3 R4 post-entry fail → UNKNOWN, never drop event |
-| Full identity can enter counted trials | **Closed** | §5.5 complete-identity rejection + \(|\mathcal{D}|≥M+1\); §5.7 forced-identity RNG test |
-| Failure accounting ambiguous | **Closed** | §8.1–§8.4 pre-STARTED preflight vs post-STARTED FAILED_RUN_UNKNOWN |
-| Open-catalog promotion | **Closed** | §7.1 provisional PASS; paper/live forbidden while catalog open |
+| Finding | Status | Where |
+|---------|--------|-------|
+| Prior four gaps (executable null, pre-entry E, identity, accounting) | **Closed** (amend 2/2b) | §5, §8 |
+| Distinct donor_ids still allow H-bar segment overlap | **Closed this amend** | §5.4–§5.5 interval packing |
+| Develop score before any STARTED | **Closed this amend** | §8.1 dual-phase SCREEN_STARTED / NULL_STARTED |
+| Concurrent events undefined | **Closed this amend** | §5.3 R4 / §4.1 concurrent MTM |
+| Open-catalog promotion | **Closed** | §7.1 provisional PASS; paper/live forbidden while open |
 
 ## Standing loop disposition (unchanged)
 
@@ -140,15 +140,37 @@ Empty **I** → `EMPTY_JOINT_INTERSECTION` (hard error).
 
 ## 4. MTM equity and drawdown (traded book only)
 
+### 4.1 Concurrent positions (canonical)
+
+Concurrent open positions on the single traded symbol **S** are **allowed**.
+
+- Admission does **not** require a flat book and does **not** apply an H-window occupancy filter (§5.3 R2).
+- Signals fewer than H bars apart may both enter; early exit of one does not cancel the other.
+- Each admitted event is an independent lot-sized trade with its own SL/TP/time-flat clock from its own entry bar.
+
+### 4.2 Same-bar order processing and balance
+
+Process each bar \(t \in I\) in this **fixed** order:
+
+1. **Exits first:** evaluate SL → TP → time-flat for every open position whose exit rules fire on \(t\), ordered by ascending `event_id`. Book realized P&L into the cash balance after each exit.
+2. **Entries second:** open any events with \(t_{\text{entry}} = t\), ordered by ascending `event_id`. Lot sizing for a new entry uses the **realized cash balance after all exits on this bar and before any new entries on this bar** (same balance for all same-bar entries; no intra-bar compounding across concurrent opens).
+3. **Mark last:** mark all still-open positions at close(\(t\)).
+
+### 4.3 Equity series
+
 For traded symbol **S** and each \(t \in I\):
 
 \[
-\text{equity}_S(t) = B_S(t) + \text{open\_pnl}_S(t)
+\text{equity}_S(t) = B_S(t) + \sum_{p \in \text{open}(t)} \text{floating\_pnl}_p(t)
 \]
 
-with mark = close on **I** by default; DD uses full equity series including floating open P&L.
-**Ban:** realized-only step equity for gate DD.
-Multiple traded books: **not in v1**.
+where \(B_S(t)\) is realized cash after the exit step on \(t\), and floating P&L is the **sum** over all still-open positions marked at close(\(t\)).
+
+- Soft DD gates use this full equity series (realized + summed floating).
+- **Ban:** realized-only step equity for gate DD.
+- Multiple traded books: **not in v1**.
+
+**Phase B regression:** two consecutive admitted signals; first hits SL early before second entry; assert both trades booked, intervening bars have concurrent floating sum when both open, final \(T=2\).
 
 ---
 
@@ -163,7 +185,7 @@ null.estimand = fixed_real_preentry_events_fixed_trade_count
 ```
 
 **Unsupported alternatives are protocol errors** if a charter names them under this kind:
-with-replacement sampling, within-trial donor overlap, strata sampling, OHLC-rotate signal recompute,
+with-replacement sampling, within-trial **segment-overlapping** donors (distinct ids alone do not satisfy non-overlap), strata sampling, OHLC-rotate signal recompute,
 outcome-dependent donors, unfilled events, free-form “algorithm text” overrides of §5.5–§5.7.
 
 Phase C freezes only **parameters** listed in §5.8 (H, risk, lot bounds, N, seed, package pins, signal predicate) — not alternate engines.
@@ -184,46 +206,66 @@ Phase C freezes only **parameters** listed in §5.8 (H, risk, lot bounds, N, see
 On each \(t \in I\) (after warmup as frozen by thesis), evaluate the **charter signal predicate** using only data allowed by the freeze (predictors + traded history through \(t\), features from \(t-L..t-1\) when applicable). Produce candidate \(c = (t^\*=t, \text{side} \in \{+1,-1\})\).
 
 **Step R2 — pre-entry eligibility predicate \(P_{\text{entry}}(c)\).**
-Admit \(c\) into \(E\) **iff all** hold (no post-entry information):
+Admit \(c\) into \(E\) **iff all** hold (no post-entry information; **no flat-book / occupancy filter** — concurrency allowed):
 
 1. Next bar \(t_e = \text{index}(t^\*)+1\) exists on **I**.
 2. `day_id(t_e) == day_id(t^\*)`.
 3. Bars \(t_e, t_e+1, \ldots, t_e+H-1\) all exist on **I** and share `day_id(t_e)`.
-4. ATR at \(t^\*\) on the traded series on **I** using **Wilder period 14** only (`TR.ewm(alpha=1/14, adjust=False).mean()`); must be finite and \(> 0\). (v1 does **not** allow charter-chosen ATR estimators.)
-5. Lots from §5.6 sizing using start_balance compounding on the traded book and that ATR: `risk_cash = risk_pct * balance`; `raw = risk_cash / (sl_atr * atr_tstar * contract_size)`; floor to `lot_step`; cap `lot_max`; require ≥ `lot_min` (never force min).
+4. ATR at \(t^\*\) on the traded series on **I** using **Wilder period 14** only (`TR.ewm(alpha=1/14, adjust=False).mean()`); must be finite and \(> 0\).
+5. Lots from §5.6 sizing using **realized balance before any same-bar new entries** (see §4.2) and that ATR: `risk_cash = risk_pct * balance`; `raw = risk_cash / (sl_atr * atr_tstar * contract_size)`; floor to `lot_step`; cap `lot_max`; require ≥ `lot_min` (never force min).
 6. Spread at \(t_e\) on traded symbol is finite and ≥ 0.
 7. side is ±1.
 
 Candidates failing \(P_{\text{entry}}\) are **rejected** and **never** enter \(E\).
+Signals fewer than H bars apart **may both be admitted** (concurrent positions).
 
 **Step R3 — event list.**
 \(E = (e_1,\ldots,e_M)\) is the ordered list of admitted candidates. Each event stores at least:
 `event_id` (0..M-1), `t_star`, `t_entry`, `side`, `atr_tstar`, `lots` (as computed at real admission), `spread_entry` (real traded spread at \(t_e\)).
 
-**Step R4 — post-entry execution (must complete).**
-For each \(e_m \in E\), enter at open(\(t_{\text{entry}}\)) with stored side/lots; apply SL/TP/time on the H bars using real traded OHLC on **I**.
-**Every** \(e_m\) **must** produce exactly one closed trade (exit by SL, TP, or time-flat at last hold bar).
+**Step R4 — post-entry execution (must complete; concurrency allowed).**
+Process the develop calendar bar-by-bar with §4.2 ordering. Each \(e_m \in E\) enters at open(\(t_{\text{entry}}\)) and **must** produce exactly one closed trade by SL, TP, or time-flat at \(t_{\text{entry}}+H-1\).
 
-If any admitted event cannot complete (missing bar that passed eligibility — should be impossible —, non-finite mark mid-hold, engine bug, etc.):
-→ **run invalid**: disposition `FAILED_RUN_UNKNOWN` (if dispositional STARTED already written) with r1 burned; **do not** drop the event from \(M\) or silently skip the trade.
+If any admitted event cannot complete:
+→ **run invalid**: if **SCREEN_STARTED** or **NULL_STARTED** already written, terminal `FAILED_RUN_UNKNOWN` with burn rules in §8; **do not** drop the event from \(M\).
 
-Therefore on every **valid** real run: **\(T_{\text{real}} = M\)**.
+On every **valid** real run: **\(T_{\text{real}} = M\)**.
 
-### 5.4 Donor segment definition
+**Phase B regression:** two consecutive admitted signals with first exiting early (SL) before second entry; assert both trades exist, concurrent floating sum on intervening bars, and final \(T=2\).
+
+### 5.4 Donor segment definition (interval geometry)
 
 A **donor** is a contiguous traded-path segment on **I** identified by a stable **`donor_id`**.
 
-**Canonical donor_id:** integer index of the **entry bar** \(t_e\) on the joint calendar **I** (0-based position in the aligned traded frame).
+**Canonical donor_id:** integer index of the **entry bar** \(i\) on joint calendar **I** (0-based).
 
-Donor \(d\) at entry index \(i = \text{donor_id}\) is **eligible** iff \(P_{\text{donor}}(i)\):
+**Occupied bar interval** of donor_id \(i\):
 
-1. Bars \(i, i+1, \ldots, i+H-1\) exist on **I**, same `day_id`.
+\[
+I(i) = \{i, i+1, \ldots, i+H-1\}
+\]
+
+Two donors \(i,j\) **segment-overlap** iff \(I(i) \cap I(j) \neq \emptyset\) (equivalently: not (\(i+H-1 < j\) or \(j+H-1 < i\))).
+
+**Distinct donor_ids are not sufficient for non-overlap.** Example: \(H=3\), \(\mathcal{D}=\{0,1,2\}\): every pair segment-overlaps; a “pick M distinct ids” rule is **not** a non-overlap rule.
+
+Donor \(i\) is **eligible** iff \(P_{\text{donor}}(i)\):
+
+1. Bars in \(I(i)\) exist on **I**, same `day_id`.
 2. OHLC finite on those bars; spread at \(i\) finite and ≥ 0.
-3. (No outcome filter: eligibility **must not** depend on future P&L, win/loss, or gate metrics.)
+3. No outcome filter (eligibility independent of P&L / gates).
 
-**Eligible donor pool \(\mathcal{D}\):** sorted list of all eligible `donor_id` values on develop **I**.
+**Eligible donor pool \(\mathcal{D}\):** sorted ascending list of all eligible `donor_id` values on develop **I**.
 
-**Real identity donor** for event \(e_m\): `donor_id = index(e_m.t_entry)` (must be in \(\mathcal{D}\) on a valid real run).
+**Real identity donor** for event \(e_m\): `donor_id = index(e_m.t_entry)` (must ∈ \(\mathcal{D}\) on a valid real run).
+
+**Packing capacity** `pack_capacity(D)`: size of a maximum set of pairwise non-segment-overlapping donors from \(\mathcal{D}\). Canonical computation (deterministic):
+
+1. Sort eligible ids ascending: \(i_1 < i_2 < \ldots\).
+2. Greedy earliest-start: accept next id if it does not segment-overlap any already accepted; else skip.
+3. `pack_capacity =` number accepted.
+
+(This greedy is optimal for interval scheduling by start time with fixed length H.)
 
 ### 5.5 Canonical pairing algorithm (counted null trials)
 
@@ -233,18 +275,35 @@ Donor \(d\) at entry index \(i = \text{donor_id}\) is **eligible** iff \(P_{\tex
 rng_j = numpy.random.Generator(numpy.random.PCG64(base_seed + j))
 ```
 
-**Assignment (without replacement, no overlap within trial) — Phase B implements exactly this:**
+**Preflight (mandatory before NULL_STARTED when \(M ≥ 1\)):**
 
-1. **Preflight (mandatory before any counted trial, and before STARTED for dispositional null):** require \(M ≥ 1\) implies \(|\mathcal{D}| ≥ M + 1\); if \(M = 0\), null is not run (screen path only). Failure → §8.1 step 2 / §8.3 as applicable. **Never** use threshold \(|\mathcal{D}| ≥ M\) alone.
-2. Let `D_sorted = sorted(D)` (ascending donor_id).
-3. `perm = rng_j.permutation(len(D_sorted))`; `order = [D_sorted[k] for k in perm]`.
-4. Candidate assignment: \((d_0,\ldots,d_{M-1}) = order[0:M]\) mapped to events in event_id order.
-5. **Complete-identity rejection (deterministic):** let \(d_m^{\text{id}} = \text{index}(e_m.t_entry)\). While the candidate equals \((d_0^{\text{id}},\ldots,d_{M-1}^{\text{id}})\) and redraws \(< 1000\): draw a **new** `perm = rng_j.permutation(len(D_sorted))` (continue RNG stream) and rebuild candidate. If still identity after 1000 redraws → **trial invalid** (§8.3 after STARTED).
-6. Store the non-identity assignment; execute §5.6 for every event.
+1. Build \(\mathcal{D}\).
+2. Require `pack_capacity(D) ≥ M` (pairwise non-segment-overlapping capacity, not mere \(|\mathcal{D}|\)).
+3. Identity is **not** preflight-gated by a second capacity test; §5.5 assignment **rejects** the full identity vector at draw time (up to 1000 redraws). If every feasible size-M packing is only the identity, counted trials fail after NULL_STARTED → §8.3.
 
-**Per-event self-pairing:** **allowed** (some \(d_m = d_m^{\text{id}}\) OK) **iff** the full M-vector is not the complete identity assignment.
+**Refuse preflight** when `pack_capacity(D) < M`. Canonical adjacent-id regression: \(\mathcal{D}=\{0,1,2\}\), \(H=3\), \(M=2\) → every pair segment-overlaps → `pack_capacity=1` → preflight refuse (no NULL_STARTED, r1 unburned).
 
-**Forbidden in v1 (charter naming these is a validation error):** with-replacement; overlapping donors within a trial; strata; charter-supplied pairing pseudocode; OHLC-rotate signal recompute; unfilled events.
+**Do not** treat \(|\mathcal{D}| ≥ M\) or \(|\mathcal{D}| ≥ M+1\) alone as sufficient — those admit overlapping H-bar segments.
+
+**Assignment — Phase B implements exactly this (segment non-overlap + no full identity):**
+
+1. If \(M = 0\): no null trials.
+2. `D_sorted = sorted(D)`.
+3. `redraws = 0`.
+4. Loop:
+   a. `perm = rng_j.permutation(len(D_sorted))`; `order = [D_sorted[k] for k in perm]`.
+   b. **Greedy pack from `order`:** walk `order` left to right; accept donor if it does **not segment-overlap** any already accepted donor in this trial; stop when M accepted or order exhausted.
+   c. If fewer than M accepted: `redraws += 1`; if `redraws ≥ 1000` → trial/run invalid; else continue loop.
+   d. Let assignment map event_id `m` → `accepted[m]` (order of acceptance is event_id order 0..M-1).
+   e. If assignment equals full identity vector \((d_0^{\text{id}},\ldots)\): `redraws += 1`; if `redraws ≥ 1000` → invalid; else continue loop.
+   f. Else: accept assignment; break.
+5. Execute §5.6 for every event with its donor_id.
+
+**Per-event self-pairing:** allowed iff the full assignment is not complete identity **and** all pairs are non-segment-overlapping (self-pair is a single interval; always “non-overlapping” with itself as one donor).
+
+**Forbidden in v1:** with-replacement; **segment-overlapping** donors within a trial (not merely distinct ids); strata; charter-supplied pairing; OHLC-rotate signal recompute; unfilled events.
+
+**Phase B regression (adjacent donors):** \(\mathcal{D}=\{0,1,2\}\), \(H=3\), \(M=2\) → preflight fail (`pack_capacity=1`). Separate case: non-overlapping pool e.g. `{0,3,6}` with \(H=3\), \(M=2\) → assignments must never include `(0,1)`-style overlap; assert every stored trial has pairwise disjoint intervals.
 
 ### 5.6 Path transplant, sizing, costs (canonical)
 
@@ -282,6 +341,8 @@ Charter **must** set `null.implementation_id = conditional_fixed_signal_events_f
 | Predictors on null | not re-simulated for signals |
 | Identity | diagnostic only; full identity assignment rejected in counted trials |
 | Attrition | forbidden |
+| Donor non-overlap | pairwise non-segment-overlapping intervals \(I(d)\); not distinct-id-only |
+| Concurrency | concurrent traded positions allowed; equity = realized + sum floating |
 
 ### 5.10 Screen vs null
 
@@ -358,48 +419,65 @@ multiplicity.identity_excluded_from_null_trials = true
 
 ## 8. STARTED / terminal accounting and failure boundary
 
-### 8.1 Dispositional screen / null launch order
+### 8.0 Two dispositional arming phases (mandatory)
+
+| Phase marker | File (canonical name) | When written | Purpose |
+|--------------|----------------------|--------------|---------|
+| **SCREEN_STARTED** | `SCREEN_STARTED.json` | **Before** package load and **before** real develop score | Makes a scored develop attempt visible if the process crashes mid-screen |
+| **NULL_STARTED** | `NULL_STARTED.json` (or `STARTED.json` only for null-only tools) | **After** positive screen **and** successful donor preflight, **before** any counted null trial | Arms sealed null; failures after this burn r1 |
+
+Screen and null may share one out-dir tree with both markers, or separate out-dirs; markers must exist before the work they protect.
+
+### 8.1 Screen phase (dispositional develop score)
 
 1. Validate charter + kind + clean tree + sealed path + cost match.
-2. Run real path through event admission (build \(E\), \(M\)). If screen-only and \(n_{\text{passers}}=0\), stop as SCREEN_FAIL without null (no null STARTED required beyond screen accounting).
-3. **Mandatory non-dispositional null preflight (before null STARTED):** build \(\mathcal{D}\); require \(|\mathcal{D}| ≥ M+1\) when \(M ≥ 1\). Failure → exit non-zero, **no** null STARTED, **no** registry KILL/UNKNOWN for null, **r1 not burned** by null. (Screen disposition already terminal if SCREEN_FAIL.)
-4. Create fresh null out-dir; write **STARTED** for sealed/dispositional null (attempt open).
-5. Run N counted trials (§5.5–§5.6). On any assignment/T≠M/post-entry failure after STARTED → §8.3 UNKNOWN burned terminal.
-6. Write success terminal report; append terminal ledger row.
+2. Fresh screen out-dir (refuse overwrite).
+3. Write **SCREEN_STARTED** (`execution_state=SCREEN_STARTED`, `r1_burned=false`, family/charter/package pins).
+4. Package load + real path (build \(E\), execute trades, gates).
+5. Terminal screen report:
+   - **SCREEN_FAIL** (\(n_{\text{passers}}=0\)): exit 0, r1_burned=false, null not armed; registry optional per program policy.
+   - **SCREEN_PASS_PENDING_NULL_REVIEW** (\(n_{\text{passers}}=1\)): exit 0, r1_burned=false; may proceed to null preflight.
+6. **Crash / failure after SCREEN_STARTED but before successful screen terminal:**
+   - Write terminal `FAILED_RUN_UNKNOWN` if possible;
+   - `execution_state=UNKNOWN`;
+   - **`r1_burned=false`** (screen-phase failures do **not** burn sealed-null r1);
+   - `sealed_null_attempt=false`;
+   - attempt remains visible via SCREEN_STARTED + terminal row.
 
-### 8.2 Success terminals
+**Phase B tests:** kill/raise before package load after SCREEN_STARTED; raise mid-score; assert marker present and r1_burned=false on terminal accounting.
 
-| Outcome | exit | r1_burned | notes |
-|---------|------|-----------|-------|
-| SCREEN_FAIL (n_passers=0) | 0 | false | empty trials |
-| SCREEN_PASS_PENDING_NULL_REVIEW (n_passers=1) | 0 | false | skipped_reason=SCREEN_ONLY |
-| Full null success | 0 | true | N trials, each T=M, no full-identity assignment stored |
+### 8.2 Null phase (only if n_passers=1)
 
-### 8.3 Failure after STARTED (canonical burned path)
+1. **Donor preflight (before NULL_STARTED):** build \(\mathcal{D}\); require `pack_capacity(D) ≥ M` (§5.5). Failure → exit non-zero, **no** NULL_STARTED, **r1_burned=false** (null never armed); screen PASS remains pending human decision.
+2. Fresh null out-dir (or subdir); write **NULL_STARTED** (`execution_state=NULL_STARTED`, arms burn).
+3. Run N counted trials (§5.5–§5.6).
+4. Success terminal: full null report, r1_burned=true, trials id set `== range(N)`, each \(T=M\).
+5. **Any failure after NULL_STARTED** → §8.3 burned UNKNOWN.
 
-Once STARTED exists for a dispositional run, **any** of the following produces **one** terminal report with:
+**Phase B tests:** raise after preflight success before first trial; raise mid-trial; assert NULL_STARTED present and r1_burned=true.
+
+### 8.3 Failure after NULL_STARTED (canonical burned path)
+
+Produces **one** terminal report:
 
 - `disposition = FAILED_RUN_UNKNOWN`
 - `execution_state = UNKNOWN`
 - `r1_burned = true`
-- `sealed_null_attempt = true` (conservative consume)
-- `n_null_executed = null` (JSON null; never substitute planned)
+- `sealed_null_attempt = true`
+- `n_null_executed = null` (JSON null)
 
-**Triggers:**
+**Triggers:** assignment failure (incl. 1000 redraws); any trial \(T ≠ M\); post-entry completion failure; pack/assignment bugs discovered after arming; crash; malformed report.
 
-- Donor pool empty or \(|\mathcal{D}| < M+1\) discovered after STARTED.
-- Assignment failure (including MAX_IDENTITY_REDRAWS exceeded).
-- Any counted trial with \(T ≠ M\).
-- Post-entry completion failure on real or null for an admitted event.
-- Missing/malformed report blocks; nonzero harness crash; trade-count mismatch.
+### 8.4 Failure before any STARTED
 
-**Do not** invent a second disposition string for “protocol invalid” after STARTED — use FAILED_RUN_UNKNOWN so fail-closed parsers burn the attempt uniformly.
+Validator / clean-tree / cost / sealed-path errors: no SCREEN_STARTED, no registry burn.
 
-### 8.4 Failure before STARTED
+### 8.5 Failure after SCREEN_STARTED, before NULL_STARTED
 
-Validator errors, clean-tree dirty, cost mismatch, sealed-path failure, or **optional non-dispositional preflight** failure: no STARTED, no registry terminal SCREEN/KILL, r1 not burned.
+Includes: score crash; SCREEN_FAIL path; donor preflight fail after PASS.
+→ visible attempt; **r1_burned=false**; null not armed.
 
-### 8.5 Synthetic
+### 8.6 Synthetic
 
 Non-dispositional; cannot write registry against real charter SHA.
 
@@ -419,7 +497,7 @@ Non-dispositional; cannot write registry against real charter SHA.
 10. Cost identity + finite sim keys; no global point_size on FX.
 11. Package pin.
 12. Prefer n_free_knobs=0, search_cardinality=1.
-13. Synthetic tests: trade count T=M all trials; forced-identity redraw; zero predictors; multi-traded; predictor fill ban; donor preflight refuse.
+13. Synthetic tests: trade count T=M all trials; forced-identity redraw; segment-overlap rejection (adjacent donor ids); concurrent early-exit pair; SCREEN_STARTED before load; NULL_STARTED burn boundary; zero predictors; multi-traded; predictor fill ban; pack_capacity preflight refuse.
 
 ---
 
@@ -440,7 +518,9 @@ Non-dispositional; cannot write registry against real charter SHA.
 - Null unfilled events or T≠M as success.
 - Full identity assignment as a counted null trial.
 - With-replacement, strata, charter-defined alternate pairings in v1.
+- Treating distinct donor_ids as “no overlap” without segment-interval checks.
 - Outcome-dependent donors.
+- Flat-book-only admission or undefined concurrent MTM (v1 allows concurrency under §4).
 - Fail-open multiplicity (K_prior=5) or birth-only α without revalidation.
 - Promoting to paper/live while catalog open / PASS only provisional.
 - Collapsing predictors into an XAU-only indicator to evade this protocol.
@@ -456,4 +536,4 @@ Non-dispositional; cannot write registry against real charter SHA.
 | Phase B | **not authorized** until this amend passes and doc-only PR merges |
 | Next gate | **AWAIT_ADVERSARIAL_PROTOCOL_REVIEW** |
 
-**End of Phase A specification (amend 2).**
+**End of Phase A specification (amend 3).**
