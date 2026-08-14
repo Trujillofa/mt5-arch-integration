@@ -185,52 +185,135 @@ def test_exit_code_two_would_fail_parser(tmp_path: Path):
     assert acct["r1_burned"] is True
 
 
+def _valid_full_costs(**overrides):
+    base = {
+        "account_type": "STANDARD_STP",
+        "login": 27496181,
+        "server": "VantageMarkets-Live 5",
+        "commission_per_lot": 0.0,
+        "slippage_points": 0.0,
+        "spread_col": "spread",
+    }
+    base.update(overrides)
+    return base
+
+
 def test_cost_mismatch_refused():
     ch = load_charter(CHARTER)
-    with pytest.raises(SystemExit, match="cost mismatch|identity"):
+    with pytest.raises(SystemExit, match="cost mismatch"):
         screen.assert_costs_match_charter(
-            ch,
-            loaded={
-                "account_type": "STANDARD_STP",
-                "login": 27496181,
-                "server": "VantageMarkets-Live 5",
-                "commission_per_lot": 7.0,
-                "slippage_points": 3.0,
-                "spread_col": "spread",
-                "point_size": 0.01,
-            },
+            ch, loaded=_valid_full_costs(commission_per_lot=7.0, slippage_points=3.0)
         )
 
 
 def test_cost_identity_missing_refused():
     ch = load_charter(CHARTER)
-    with pytest.raises(SystemExit, match="identity|missing"):
+    with pytest.raises(SystemExit, match="missing identity|missing"):
         screen.assert_costs_match_charter(
             ch,
             loaded={
                 "commission_per_lot": 0.0,
                 "slippage_points": 0.0,
                 "spread_col": "spread",
-                "point_size": 0.01,
             },
         )
 
 
 def test_cost_identity_wrong_login_refused():
     ch = load_charter(CHARTER)
-    with pytest.raises(SystemExit, match="identity mismatch login"):
+    with pytest.raises(SystemExit, match="identity mismatch login|login"):
+        screen.assert_costs_match_charter(ch, loaded=_valid_full_costs(login=999))
+
+
+def test_cost_login_nan_refused():
+    ch = load_charter(CHARTER)
+    with pytest.raises(SystemExit, match="integer|login"):
         screen.assert_costs_match_charter(
-            ch,
-            loaded={
-                "account_type": "STANDARD_STP",
-                "login": 999,
-                "server": "VantageMarkets-Live 5",
-                "commission_per_lot": 0.0,
-                "slippage_points": 0.0,
-                "spread_col": "spread",
-                "point_size": 0.01,
-            },
+            ch, loaded=_valid_full_costs(login=float("nan"))
         )
+
+
+def test_cost_login_string_refused():
+    ch = load_charter(CHARTER)
+    with pytest.raises(SystemExit, match="integer|login"):
+        screen.assert_costs_match_charter(
+            ch, loaded=_valid_full_costs(login="27496181")
+        )
+
+
+def test_cost_nan_sim_keys_refused():
+    ch = load_charter(CHARTER)
+    for key in ("commission_per_lot", "slippage_points"):
+        with pytest.raises(SystemExit, match="finite number|" + key):
+            screen.assert_costs_match_charter(
+                ch, loaded=_valid_full_costs(**{key: float("nan")})
+            )
+
+
+def test_cost_match_omits_point_size():
+    ch = load_charter(CHARTER)
+    sim = screen.assert_costs_match_charter(ch)
+    assert "point_size" not in sim
+    assert set(sim.keys()) == {"spread_col", "commission_per_lot", "slippage_points"}
+
+
+def test_dirty_screen_harness_refused_before_started(tmp_path: Path, monkeypatch):
+    """Dirty multi-instrument harness must fail clean-tree before STARTED/load/score."""
+    import xau_charter_protocol as chp
+
+    calls: list[str] = []
+
+    monkeypatch.setattr(
+        chp,
+        "git_dirty_tracked_paths",
+        lambda repo=None: ["scripts/xau_multi_instrument_joint_screen.py"],
+    )
+    # Re-bind screen's imported name
+    monkeypatch.setattr(
+        screen,
+        "assert_clean_dispositional_tree",
+        chp.assert_clean_dispositional_tree,
+    )
+    monkeypatch.setattr(
+        screen,
+        "assert_charter_path_for_sealed",
+        lambda *_a, **_k: {"ok": True},
+    )
+    monkeypatch.setattr(
+        screen,
+        "is_charter_runnable",
+        lambda *_a, **_k: (True, "ok"),
+    )
+
+    def _started(*_a, **_k):
+        calls.append("started")
+        raise AssertionError("STARTED must not run")
+
+    def _load(*_a, **_k):
+        calls.append("package_load")
+        raise AssertionError("package_load must not run")
+
+    def _score(*_a, **_k):
+        calls.append("score")
+        raise AssertionError("score must not run")
+
+    monkeypatch.setattr(screen, "write_started_marker", _started)
+    monkeypatch.setattr(screen, "load_develop_frames_from_package", _load)
+    monkeypatch.setattr(screen, "run_joint_screen", _score)
+
+    out = tmp_path / "fresh_out"
+    with pytest.raises(SystemExit, match="dirty|dispositional run refused"):
+        screen.main(
+            [
+                "--charter",
+                str(CHARTER),
+                "--execute-develop-screen",
+                "--out-dir",
+                str(out),
+            ]
+        )
+    assert calls == []
+    assert not (out / "STARTED.json").exists()
 
 
 def test_positive_passer_report_parses_ok(tmp_path: Path):

@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -63,11 +64,7 @@ from xau_family_joint_london_open_cosign_fade_flat import (  # noqa: E402
     soft_pass_joint,
     soft_pass_per_symbol,
 )
-from xau_research_costs import (  # noqa: E402
-    RESEARCH_COSTS_PATH,
-    load_research_costs,
-    load_research_costs_full,
-)
+from xau_research_costs import RESEARCH_COSTS_PATH, load_research_costs_full  # noqa: E402
 
 DEFAULT_CHARTER = (
     ROOT / "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json"
@@ -120,9 +117,83 @@ def pin_package_id(charter: dict[str, Any]) -> str:
     return pid
 
 
-# Sim keys + frozen account identity (must match full research costs document).
-_COST_SIM_KEYS = ("spread_col", "point_size", "commission_per_lot", "slippage_points")
+# Sim keys used by this harness (per-symbol point_size lives in family meta — not here).
+_COST_SIM_KEYS = ("spread_col", "commission_per_lot", "slippage_points")
 _COST_IDENTITY_KEYS = ("account_type", "login", "server")
+
+
+def _is_strict_int(v: Any) -> bool:
+    """True JSON integer (bool is a subclass of int — reject it)."""
+    return type(v) is int
+
+
+def _is_strict_str(v: Any) -> bool:
+    return type(v) is str
+
+
+def _is_strict_finite_number(v: Any) -> bool:
+    """Non-boolean int/float that is finite (reject NaN/Inf/bool/str)."""
+    if type(v) is bool:
+        return False
+    if type(v) is int:
+        return True
+    if type(v) is float:
+        return math.isfinite(v)
+    return False
+
+
+def _require_exact_match(key: str, charter_v: Any, loaded_v: Any, *, kind: str) -> None:
+    """Fail closed on type/value mismatch for cost identity or sim keys."""
+    if kind == "int":
+        if not _is_strict_int(charter_v):
+            raise SystemExit(
+                f"charter fixed.costs.{key} must be a non-boolean integer "
+                f"(got {charter_v!r} type={type(charter_v).__name__})"
+            )
+        if not _is_strict_int(loaded_v):
+            raise SystemExit(
+                f"loaded costs.{key} must be a non-boolean integer "
+                f"(got {loaded_v!r} type={type(loaded_v).__name__})"
+            )
+        if charter_v != loaded_v:
+            raise SystemExit(
+                f"cost identity mismatch {key}: charter={charter_v} loaded={loaded_v}"
+            )
+        return
+    if kind == "str":
+        if not _is_strict_str(charter_v):
+            raise SystemExit(
+                f"charter fixed.costs.{key} must be a string "
+                f"(got {charter_v!r} type={type(charter_v).__name__})"
+            )
+        if not _is_strict_str(loaded_v):
+            raise SystemExit(
+                f"loaded costs.{key} must be a string "
+                f"(got {loaded_v!r} type={type(loaded_v).__name__})"
+            )
+        if charter_v != loaded_v:
+            raise SystemExit(
+                f"cost identity mismatch {key}: charter={charter_v!r} loaded={loaded_v!r}"
+            )
+        return
+    if kind == "finite_number":
+        if not _is_strict_finite_number(charter_v):
+            raise SystemExit(
+                f"charter fixed.costs.{key} must be a non-boolean finite number "
+                f"(got {charter_v!r} type={type(charter_v).__name__})"
+            )
+        if not _is_strict_finite_number(loaded_v):
+            raise SystemExit(
+                f"loaded costs.{key} must be a non-boolean finite number "
+                f"(got {loaded_v!r} type={type(loaded_v).__name__})"
+            )
+        if float(charter_v) != float(loaded_v):
+            raise SystemExit(
+                f"cost mismatch {key}: charter={charter_v} loaded={loaded_v}. "
+                "Update results/xau_research_costs.json or freeze a new charter."
+            )
+        return
+    raise SystemExit(f"internal: unknown cost kind {kind!r} for {key}")
 
 
 def assert_costs_match_charter(
@@ -131,15 +202,17 @@ def assert_costs_match_charter(
 ) -> dict[str, Any]:
     """Full costs document must match charter fixed.costs on sim + identity keys.
 
-    Returns sim kwargs suitable for ``simulate_joint`` (subset of full document).
-    Identity fields (account_type / login / server) are required from the full
-    research-costs document and must match the charter freeze.
+    Strict JSON types (no NaN, no bool-as-int, no stringified login).
+    Does **not** compare global ``point_size`` — execution uses per-symbol meta.
+
+    Returns sim kwargs suitable for ``simulate_joint``:
+    ``spread_col``, ``commission_per_lot``, ``slippage_points`` only.
     """
     fixed = (charter.get("fixed") or {}).get("costs") or charter.get("costs") or {}
     full = dict(loaded if loaded is not None else load_research_costs_full())
 
-    # Identity must be present on both sides
-    for k in _COST_IDENTITY_KEYS:
+    # Identity: account_type/server strings; login non-bool int
+    for k in ("account_type", "server"):
         if k not in fixed:
             raise SystemExit(f"charter fixed.costs missing identity key {k!r}")
         if k not in full:
@@ -147,37 +220,37 @@ def assert_costs_match_charter(
                 f"loaded costs missing identity key {k!r} "
                 "(use full research costs document, not sim subset alone)"
             )
-        a, b = fixed[k], full[k]
-        # login may be int in both; compare numerically when both numeric
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-            if abs(float(a) - float(b)) > 1e-12:
-                raise SystemExit(f"cost identity mismatch {k}: charter={a} loaded={b}")
-        elif str(a) != str(b):
-            raise SystemExit(f"cost identity mismatch {k}: charter={a!r} loaded={b!r}")
+        _require_exact_match(k, fixed[k], full[k], kind="str")
 
-    for k in _COST_SIM_KEYS:
+    if "login" not in fixed:
+        raise SystemExit("charter fixed.costs missing identity key 'login'")
+    if "login" not in full:
+        raise SystemExit(
+            "loaded costs missing identity key 'login' "
+            "(use full research costs document, not sim subset alone)"
+        )
+    _require_exact_match("login", fixed["login"], full["login"], kind="int")
+
+    # Simulation keys: exact string spread_col; finite numbers for commission/slippage
+    if "spread_col" not in fixed:
+        raise SystemExit("charter fixed.costs missing spread_col")
+    if "spread_col" not in full:
+        raise SystemExit("loaded costs missing spread_col")
+    _require_exact_match("spread_col", fixed["spread_col"], full["spread_col"], kind="str")
+
+    for k in ("commission_per_lot", "slippage_points"):
         if k not in fixed:
-            continue
+            raise SystemExit(f"charter fixed.costs missing {k}")
         if k not in full:
             raise SystemExit(f"loaded costs missing {k}")
-        a, b = fixed[k], full[k]
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-            if abs(float(a) - float(b)) > 1e-12:
-                raise SystemExit(
-                    f"cost mismatch {k}: charter={a} loaded={b}. "
-                    "Update results/xau_research_costs.json or freeze a new charter."
-                )
-        elif a != b:
-            raise SystemExit(f"cost mismatch {k}: charter={a!r} loaded={b!r}")
+        _require_exact_match(k, fixed[k], full[k], kind="finite_number")
 
-    # Return sim kwargs for callers
-    sim = load_research_costs() if loaded is None else {
-        k: full[k] for k in _COST_SIM_KEYS if k in full
+    # Explicitly ignore global point_size (XAU-only in research costs; FX differs).
+    return {
+        "spread_col": str(full["spread_col"]),
+        "commission_per_lot": float(full["commission_per_lot"]),
+        "slippage_points": float(full["slippage_points"]),
     }
-    for k in _COST_SIM_KEYS:
-        if k in full:
-            sim[k] = full[k]
-    return sim
 
 
 def write_started_marker(

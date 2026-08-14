@@ -129,6 +129,8 @@ DISPOSITIONAL_PATH_GLOBS = (
     "scripts/xau_family_null_maxstat.py",
     "scripts/xau_sealed_family_cycle.py",
     "scripts/xau_family_*.py",
+    # Multi-instrument joint screen harness (must not score with uncommitted logic)
+    "scripts/xau_multi_instrument_*.py",
     "scripts/xau_research_costs.py",
     "results/xau_research_costs.json",
     "results/xau_charters/*.json",
