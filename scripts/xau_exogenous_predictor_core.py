@@ -851,8 +851,9 @@ def validate_events_and_assignment(
     *,
     h: int = H_DEFAULT,
     n_bars: int | None = None,
+    day_id: np.ndarray | None = None,
 ) -> None:
-    """Structural invariants before any counted null trial (fail closed)."""
+    """Structural + causal invariants before any counted null trial (fail closed)."""
     if h < 1:
         raise ProtocolError(f"h must be >= 1, got {h}")
     m = len(events)
@@ -868,24 +869,62 @@ def validate_events_and_assignment(
         i_start = _require_strict_int(f"events[{i}].i_start", ev.i_start)
         i_end = _require_strict_int(f"events[{i}].i_end", ev.i_end)
         t_entry = _require_strict_int(f"events[{i}].t_entry_idx", ev.t_entry_idx)
+        t_star = _require_strict_int(f"events[{i}].t_star_idx", ev.t_star_idx)
         if t_entry != i_start:
             raise ProtocolError(
                 f"event_id={eid}: t_entry_idx={t_entry} must equal i_start={i_start}"
+            )
+        if t_entry != t_star + 1:
+            raise ProtocolError(
+                f"event_id={eid}: t_entry_idx={t_entry} must equal "
+                f"t_star_idx+1={t_star + 1} (next-bar open)"
             )
         if i_end != i_start + h - 1:
             raise ProtocolError(
                 f"event_id={eid}: i_end={i_end} must equal i_start+H-1="
                 f"{i_start + h - 1}"
             )
-        if n_bars is not None and (i_start < 0 or i_end >= n_bars):
+        if n_bars is not None and (i_start < 0 or i_end >= n_bars or t_star < 0):
             raise ProtocolError(
-                f"event_id={eid}: reserved window [{i_start},{i_end}] "
-                f"out of range for n_bars={n_bars}"
+                f"event_id={eid}: reserved window [{i_start},{i_end}] or "
+                f"t_star={t_star} out of range for n_bars={n_bars}"
+            )
+        # bool is a subclass of int; True==1 would otherwise pass as side=+1
+        if isinstance(ev.side, bool) or not isinstance(ev.side, int):
+            raise ProtocolError(
+                f"event_id={eid}: side must be non-bool int ±1 (got {ev.side!r})"
             )
         if ev.side not in (-1, 1):
             raise ProtocolError(f"event_id={eid}: side must be ±1 (got {ev.side!r})")
-    if len(event_ids) != len(set(event_ids)):
-        raise ProtocolError("event_id values must be unique")
+        atr = float(ev.atr_tstar)
+        if not (np.isfinite(atr) and atr > 0):
+            raise ProtocolError(
+                f"event_id={eid}: atr_tstar must be finite > 0 (got {ev.atr_tstar!r})"
+            )
+        lots = float(ev.lots)
+        if not (np.isfinite(lots) and lots > 0):
+            raise ProtocolError(
+                f"event_id={eid}: lots must be finite > 0 (got {ev.lots!r})"
+            )
+        if day_id is not None:
+            if n_bars is not None and len(day_id) != n_bars:
+                raise ProtocolError("day_id length must equal n_bars")
+            d0 = int(day_id[t_star])
+            if int(day_id[t_entry]) != d0:
+                raise ProtocolError(
+                    f"event_id={eid}: entry day_id must match signal day_id"
+                )
+            for k in range(h):
+                if int(day_id[i_start + k]) != d0:
+                    raise ProtocolError(
+                        f"event_id={eid}: hold bar {i_start + k} day_id mismatch "
+                        "(same-day hold required)"
+                    )
+    # Contiguous ordered IDs 0..M-1 (protocol event_id definition)
+    if event_ids != list(range(m)):
+        raise ProtocolError(
+            f"event_id values must be exactly 0..M-1 in order (got {event_ids})"
+        )
 
     # Pairwise H-disjoint reserved event intervals
     starts = [int(ev.i_start) for ev in events]
@@ -931,6 +970,7 @@ def transplant_donor_ohlc_into_event_windows(
     close: np.ndarray,
     spread: np.ndarray,
     h: int = H_DEFAULT,
+    day_id: np.ndarray | None = None,
 ) -> tuple[list[Event], np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict[int, int]]:
     """§5.6: copy each donor's H-bar OHLC into the event's **reserved** interval.
 
@@ -939,7 +979,9 @@ def transplant_donor_ohlc_into_event_windows(
     equity realization relative to event order and distort DD.
     """
     n = len(open_)
-    validate_events_and_assignment(events, assignment, h=h, n_bars=n)
+    validate_events_and_assignment(
+        events, assignment, h=h, n_bars=n, day_id=day_id
+    )
     open_t = np.array(open_, dtype=float, copy=True)
     high_t = np.array(high, dtype=float, copy=True)
     low_t = np.array(low, dtype=float, copy=True)
@@ -982,6 +1024,7 @@ def run_null_trial(
     start_balance: float = 10_000.0,
     h: int = H_DEFAULT,
     trial_id: int = 0,
+    day_id: np.ndarray | None = None,
 ) -> NullTrialResult:
     """§5.6 path transplant; event-order MTM equity; require T=M.
 
@@ -997,6 +1040,7 @@ def run_null_trial(
         close=close,
         spread=spread,
         h=h,
+        day_id=day_id,
     )
     trades, equity, final_bal = execute_fixed_events_mtm(
         mapped,

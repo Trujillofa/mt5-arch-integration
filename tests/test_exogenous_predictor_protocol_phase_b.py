@@ -929,21 +929,25 @@ def test_null_started_authoritative_over_contradictory_terminal(tmp_path: Path):
 
 def test_cross_terminal_exclusivity_success_then_fail(tmp_path: Path):
     acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
-    acct.write_null_success(tmp_path, family_id="f1", n_null_executed=999)
+    acct.write_null_success(
+        tmp_path, family_id="f1", trial_ids=list(range(999))
+    )
     with pytest.raises(FileExistsError, match="one terminal"):
         acct.null_phase_failure_report(tmp_path, reason="late", family_id="f1")
     assert (tmp_path / "null_success.json").is_file()
     assert not (tmp_path / "FAILED_RUN_UNKNOWN.json").exists()
 
 
-def test_null_success_requires_started_family_and_count(tmp_path: Path):
+def test_null_success_requires_started_family_and_trial_ids(tmp_path: Path):
     with pytest.raises(acct.AccountingError, match="NULL_STARTED"):
-        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=10)
+        acct.write_null_success(tmp_path, family_id="f1", trial_ids=list(range(999)))
     acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
     with pytest.raises(acct.AccountingError, match="family_id"):
-        acct.write_null_success(tmp_path, family_id="other", n_null_executed=999)
-    with pytest.raises(acct.AccountingError, match="n_null_executed"):
-        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=10)
+        acct.write_null_success(
+            tmp_path, family_id="other", trial_ids=list(range(999))
+        )
+    with pytest.raises(acct.AccountingError, match="trial_ids"):
+        acct.write_null_success(tmp_path, family_id="f1", trial_ids=list(range(10)))
 
 
 def test_geometry_rejects_mismatched_entry_vs_reserved():
@@ -1010,4 +1014,110 @@ def test_validator_requires_cost_identity():
     errs = validate_exogenous_predictor_charter(bad)
     assert any("account_type" in e for e in errs)
     assert any("login" in e for e in errs)
+    assert any("costs_document_sha256" in e for e in errs)
+
+
+def test_exogenous_n_trials_floor_999_both_validators():
+    from xau_charter_protocol import MIN_NULL_TRIALS_EXOGENOUS, validate_charter
+
+    assert MIN_NULL_TRIALS_EXOGENOUS == 999
+    bad = _minimal_exogenous_charter()
+    bad["null"]["n_trials"] = 199
+    errs_exo = validate_exogenous_predictor_charter(bad)
+    assert any("999" in e for e in errs_exo)
+    errs_top = validate_charter(bad)
+    assert any("999" in e for e in errs_top)
+
+    bad998 = _minimal_exogenous_charter()
+    bad998["null"]["n_trials"] = 998
+    assert any(
+        "999" in e for e in validate_exogenous_predictor_charter(bad998)
+    )
+    assert any("999" in e for e in validate_charter(bad998))
+
+    ok = _minimal_exogenous_charter()
+    ok["null"]["n_trials"] = 999
+    assert validate_exogenous_predictor_charter(ok) == []
+    # top-level may still have non-exogenous requirements; ensure no N floor hit
+    assert not any("999" in e and "n_trials" in e for e in validate_charter(ok))
+
+
+def test_null_success_refuses_bare_count_without_trial_ids(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+    # Old kwargs-style / zero trials must not certify
+    with pytest.raises(TypeError):
+        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=999)  # type: ignore[call-arg]
+    with pytest.raises(acct.AccountingError, match="trial_ids"):
+        acct.write_null_success(tmp_path, family_id="f1", trial_ids=[])
+    # Under-planned marker cannot success even with matching empty ids
+    tmp2 = tmp_path / "z"
+    tmp2.mkdir()
+    acct.write_null_started(tmp2, family_id="f1", n_null_planned=0)
+    with pytest.raises(acct.AccountingError, match="999"):
+        acct.write_null_success(tmp2, family_id="f1", trial_ids=[])
+
+
+def test_marker_refused_after_terminal(tmp_path: Path):
+    acct.write_screen_started(tmp_path, family_id="f1")
+    acct.screen_phase_failure_report(tmp_path, reason="fail", family_id="f1")
+    with pytest.raises(FileExistsError, match="one terminal|terminal"):
+        acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+
+
+def test_geometry_rejects_bool_side_and_non_contiguous_ids():
+    ev = core.Event(
+        event_id=7,
+        t_star_idx=25,
+        t_entry_idx=5,
+        side=True,  # type: ignore[arg-type]
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=5,
+        i_end=7,
+    )
+    with pytest.raises(core.ProtocolError):
+        core.validate_events_and_assignment([ev], [5], h=3, n_bars=40)
+
+
+def test_geometry_requires_next_bar_entry_and_ordered_ids():
+    e0 = core.Event(
+        event_id=0,
+        t_star_idx=10,
+        t_entry_idx=10,  # should be 11
+        side=1,
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=10,
+        i_end=12,
+    )
+    with pytest.raises(core.ProtocolError, match="t_star_idx\\+1"):
+        core.validate_events_and_assignment([e0], [10], h=3, n_bars=40)
+
+    e1 = core.Event(
+        event_id=1,  # must be 0 for M=1
+        t_star_idx=9,
+        t_entry_idx=10,
+        side=1,
+        atr_tstar=1.0,
+        lots=0.01,
+        spread_entry=0.0,
+        i_start=10,
+        i_end=12,
+    )
+    with pytest.raises(core.ProtocolError, match="0..M-1"):
+        core.validate_events_and_assignment([e1], [10], h=3, n_bars=40)
+
+
+def test_cost_login_positive_and_exact_sha_key():
+    bad = _minimal_exogenous_charter()
+    bad["fixed"]["costs"]["login"] = -1
+    assert any("login" in e for e in validate_exogenous_predictor_charter(bad))
+
+    bad2 = _minimal_exogenous_charter()
+    del bad2["fixed"]["costs"]["costs_document_sha256"]
+    bad2["fixed"]["costs"]["research_costs_sha256"] = "b" * 64
+    errs = validate_exogenous_predictor_charter(bad2)
+    assert any("research_costs_sha256" in e or "forbidden" in e for e in errs)
     assert any("costs_document_sha256" in e for e in errs)

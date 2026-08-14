@@ -133,6 +133,8 @@ def write_screen_started(
     """§8.1 step 3 — write before package load / real score."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    # Monotonic: no markers after a terminal disposition already exists.
+    _refuse_if_terminal_exists(out_dir)
     path = out_dir / SCREEN_STARTED_NAME
     base: dict[str, Any] = {
         "execution_state": "SCREEN_STARTED",
@@ -164,9 +166,12 @@ def write_null_started(
     Writing NULL_STARTED **consumes** the sealed-null r1 attempt:
     ``r1_burned=true`` on the marker itself. Existence of this file is
     authoritative for burn inference (§8.3).
+
+    Refuses if any terminal already exists (no reverse ordering).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+    _refuse_if_terminal_exists(out_dir)
     if n_null_planned is not None and (
         isinstance(n_null_planned, bool) or not isinstance(n_null_planned, int)
     ):
@@ -227,16 +232,19 @@ def write_null_success(
     out_dir: Path,
     *,
     family_id: str,
-    n_null_executed: int,
+    trial_ids: list[int] | tuple[int, ...],
     extra: dict[str, Any] | None = None,
 ) -> Path:
     """Successful sealed null terminal (write-once, exclusive).
 
     Requires:
-    * NULL_STARTED present
+    * NULL_STARTED present (not after a reverse-order terminal)
     * family_id matches NULL_STARTED.family_id
-    * n_null_executed is non-bool int and equals NULL_STARTED.n_null_planned
+    * NULL_STARTED.n_null_planned is int N with N ≥ 999 (exogenous floor)
+    * trial_ids is exactly ``list(range(N))`` — proves N counted trials exist
     * no other terminal already written
+
+    Caller-supplied bare counts without trial evidence are rejected.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -257,13 +265,25 @@ def write_null_success(
         raise AccountingError(
             "NULL_STARTED.n_null_planned must be a non-bool int for success terminal"
         )
-    if isinstance(n_null_executed, bool) or not isinstance(n_null_executed, int):
-        raise AccountingError("n_null_executed must be a non-bool int")
-    if n_null_executed != planned:
+    if planned < 999:
         raise AccountingError(
-            f"n_null_executed={n_null_executed} must equal "
-            f"NULL_STARTED.n_null_planned={planned}"
+            f"NULL_STARTED.n_null_planned={planned} < 999 "
+            "(exogenous N floor; refuse certifying under-planned null)"
         )
+    if not isinstance(trial_ids, (list, tuple)):
+        raise AccountingError("trial_ids must be a list/tuple of trial indices")
+    ids = list(trial_ids)
+    if any(isinstance(x, bool) or not isinstance(x, int) for x in ids):
+        raise AccountingError("trial_ids entries must be non-bool ints")
+    expected = list(range(planned))
+    if ids != expected:
+        raise AccountingError(
+            f"trial_ids must equal range({planned}) exactly "
+            f"(got len={len(ids)}, first/last="
+            f"{(ids[0], ids[-1]) if ids else None}); "
+            "refuses certifying nonexistent null execution"
+        )
+    n_null_executed = planned
     path = out_dir / NULL_SUCCESS_NAME
     base: dict[str, Any] = {
         "disposition": "NULL_COMPLETE",
@@ -272,6 +292,7 @@ def write_null_success(
         "sealed_null_attempt": True,
         "n_null_executed": n_null_executed,
         "n_null_planned": planned,
+        "trial_ids_ok": True,
         "family_id": family_id,
         "finished_at_utc": _utc_now(),
     }

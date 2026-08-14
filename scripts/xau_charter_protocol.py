@@ -50,6 +50,8 @@ DEFAULT_CLASSIC_GATES = {
 # resolution for reporting 0.05 cleanly; require ≥199 (p-step ≈ 0.005).
 MIN_NULL_TRIALS_PROTOCOL = 199
 PREFERRED_NULL_TRIALS_LOW_KNOB = 999
+# Exogenous-predictor protocol v1 pins N ≥ 999 (stricter than global floor).
+MIN_NULL_TRIALS_EXOGENOUS = 999
 
 # Terminal dispositions are monotonic: once seen for a SHA, later non-terminal
 # records cannot reverse them (append-only integrity).
@@ -697,12 +699,18 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
             errs.append(
                 "exogenous costs.login required non-bool JSON integer (cost identity)"
             )
-        # Pinned research-costs document SHA (hex, 64 chars)
-        sha = (
-            costs.get("costs_document_sha256")
-            or costs.get("cost_document_sha256")
-            or costs.get("research_costs_sha256")
-        )
+        elif login <= 0:
+            errs.append(
+                f"exogenous costs.login must be > 0 (got {login})"
+            )
+        # Exact pin key only — aliases forbidden
+        for alias in ("cost_document_sha256", "research_costs_sha256"):
+            if alias in costs:
+                errs.append(
+                    f"exogenous costs.{alias} forbidden; use exact key "
+                    "costs_document_sha256"
+                )
+        sha = costs.get("costs_document_sha256")
         if not isinstance(sha, str) or len(sha) != 64:
             errs.append(
                 "exogenous costs.costs_document_sha256 required "
@@ -796,10 +804,11 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
             errs.append(
                 "exogenous null.n_trials must be a non-negative JSON integer"
             )
-        elif n_ok < MIN_NULL_TRIALS_PROTOCOL:
+        elif n_ok < MIN_NULL_TRIALS_EXOGENOUS:
             errs.append(
-                f"exogenous null n_trials={n_ok} < protocol floor "
-                f"{MIN_NULL_TRIALS_PROTOCOL}"
+                f"exogenous null n_trials={n_ok} < exogenous protocol floor "
+                f"{MIN_NULL_TRIALS_EXOGENOUS} (N≥999 required; global floor "
+                f"{MIN_NULL_TRIALS_PROTOCOL} is not sufficient under this kind)"
             )
     mult = charter.get("multiplicity")
     if not isinstance(mult, dict) or not mult:
