@@ -16,8 +16,9 @@ SAFETY: offline research only.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Sequence
+from collections.abc import Sequence
+from dataclasses import dataclass, field, replace
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -29,8 +30,12 @@ ATR_PERIOD = 14
 MAX_ASSIGNMENT_REDRAWS = 1000
 
 
-class AssignmentFailure(RuntimeError):
+class AssignmentError(RuntimeError):
     """Null donor assignment failed after max redraws (or empty pack)."""
+
+
+# Back-compat alias used in early Phase B drafts
+AssignmentFailure = AssignmentError  # noqa: N818
 
 
 class ProtocolError(ValueError):
@@ -91,7 +96,7 @@ def assign_null_donors(
     if len(ident) != m:
         raise ProtocolError(f"identity length {len(ident)} != m={m}")
     if pack_capacity(d_sorted, h) < m:
-        raise AssignmentFailure(
+        raise AssignmentError(
             f"pack_capacity={pack_capacity(d_sorted, h)} < m={m} (preflight should have refused)"
         )
     redraws = 0
@@ -102,14 +107,14 @@ def assign_null_donors(
         if accepted is None:
             redraws += 1
             if redraws >= max_redraws:
-                raise AssignmentFailure(
+                raise AssignmentError(
                     f"failed to pack m={m} non-overlapping donors after {max_redraws} redraws"
                 )
             continue
         if accepted == ident:
             redraws += 1
             if redraws >= max_redraws:
-                raise AssignmentFailure(
+                raise AssignmentError(
                     f"only identity packing found after {max_redraws} redraws"
                 )
             continue
@@ -117,7 +122,7 @@ def assign_null_donors(
         for a in range(len(accepted)):
             for b in range(a + 1, len(accepted)):
                 if segment_overlap(accepted[a], accepted[b], h):
-                    raise AssignmentFailure("internal: overlapping assignment produced")
+                    raise AssignmentError("internal: overlapping assignment produced")
         return accepted
 
 
@@ -248,9 +253,11 @@ class NullTrialResult:
     assignment: list[int]
     trades: list[TradeResult]
     metrics: dict[str, float | int]
+    equity: list[float] = field(default_factory=list)
+    final_balance: float = 0.0
 
 
-def _spread_cost_cash(
+def round_trip_cost_cash(
     spread_points: float,
     *,
     lots: float,
@@ -259,8 +266,38 @@ def _spread_cost_cash(
     commission_per_lot: float,
     slippage_points: float,
 ) -> float:
-    pts = float(spread_points) + float(slippage_points)
-    return abs(pts) * point_size * contract_size * lots + commission_per_lot * lots
+    """House RT cost (matches joint/single-frame families).
+
+    ``(spread + 2*slippage) * point_size * contract_size * lots
+      + 2 * commission_per_lot * lots``
+
+    Rejects non-finite or negative inputs (no abs() laundering).
+    """
+    vals = {
+        "spread_points": spread_points,
+        "lots": lots,
+        "point_size": point_size,
+        "contract_size": contract_size,
+        "commission_per_lot": commission_per_lot,
+        "slippage_points": slippage_points,
+    }
+    for name, raw in vals.items():
+        try:
+            v = float(raw)
+        except (TypeError, ValueError) as e:
+            raise ProtocolError(f"invalid cost input {name}={raw!r}") from e
+        if not np.isfinite(v):
+            raise ProtocolError(f"non-finite cost input {name}={raw!r}")
+        if v < 0:
+            raise ProtocolError(f"negative cost input {name}={v}")
+        vals[name] = v
+    return (
+        (vals["spread_points"] + 2.0 * vals["slippage_points"])
+        * vals["point_size"]
+        * vals["contract_size"]
+        * vals["lots"]
+        + 2.0 * vals["commission_per_lot"] * vals["lots"]
+    )
 
 
 def simulate_h_trade(
@@ -330,7 +367,7 @@ def simulate_h_trade(
             exit_reason = "time"
 
     gross = (exit_price - entry_price) * side * lots * contract_size
-    cost = _spread_cost_cash(
+    cost = round_trip_cost_cash(
         spread_points,
         lots=lots,
         point_size=point_size,
@@ -480,13 +517,7 @@ def admit_and_simulate_real(
     pending: Event | None = None
 
     def interval_free(i_start: int) -> bool:
-        i_end = i_start + h - 1
-        for a, b in reserved:
-            # segment overlap on start indices with fixed h
-            if segment_overlap(i_start, a, h):
-                return False
-            _ = b  # reserved stores ends for clarity
-        return True
+        return all(not segment_overlap(i_start, a, h) for a, _b in reserved)
 
     for i in range(n):
         # --- entries at open (use carry-in balance already in `balance`) ---
@@ -535,7 +566,7 @@ def admit_and_simulate_real(
                 exit_reason = "time"
             if exit_price is not None:
                 gross = (exit_price - open_trade["entry_price"]) * side * ev.lots * contract_size
-                cost = _spread_cost_cash(
+                cost = round_trip_cost_cash(
                     ev.spread_entry,
                     lots=ev.lots,
                     point_size=point_size,
@@ -561,7 +592,7 @@ def admit_and_simulate_real(
                 )
                 open_trade = None
 
-        # mark equity (after exits; at most one open)
+        # mark equity (after exits; at most one open) — full floating MTM
         floating = 0.0
         if open_trade is not None:
             ev = open_trade["event"]
@@ -672,6 +703,163 @@ def eligible_donors(
     return out
 
 
+def execute_fixed_events_mtm(
+    events: Sequence[Event],
+    *,
+    open_: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    sl_atr: float,
+    tp_atr: float,
+    point_size: float,
+    contract_size: float,
+    commission_per_lot: float = 0.0,
+    slippage_points: float = 0.0,
+    start_balance: float = 10_000.0,
+    h: int = H_DEFAULT,
+) -> tuple[list[TradeResult], list[float], float]:
+    """Execute a fixed event list on a path with full floating-MTM equity.
+
+    Same bar order as the real path (§4.2): open entries → SL/TP → mark.
+    Events must already carry frozen lots/side/atr and path entry indices
+    (``t_entry_idx`` / ``i_start`` / ``i_end`` / ``spread_entry``).
+    """
+    n = len(open_)
+    by_entry: dict[int, Event] = {}
+    for ev in events:
+        if ev.t_entry_idx in by_entry:
+            raise ProtocolError("duplicate entry index in fixed event list")
+        by_entry[int(ev.t_entry_idx)] = ev
+
+    balance = float(start_balance)
+    equity: list[float] = []
+    trades: list[TradeResult] = []
+    open_trade: dict[str, Any] | None = None
+
+    for i in range(n):
+        if open_trade is None and i in by_entry:
+            pending = by_entry[i]
+            open_trade = {
+                "event": pending,
+                "entry_price": float(open_[i]),
+                "sl_price": (
+                    float(open_[i]) - sl_atr * pending.atr_tstar
+                    if pending.side > 0
+                    else float(open_[i]) + sl_atr * pending.atr_tstar
+                ),
+                "tp_price": (
+                    float(open_[i]) + tp_atr * pending.atr_tstar
+                    if pending.side > 0
+                    else float(open_[i]) - tp_atr * pending.atr_tstar
+                ),
+                "donor_id": pending.t_entry_idx,
+            }
+
+        if open_trade is not None:
+            ev = open_trade["event"]
+            side = ev.side
+            hi = float(high[i])
+            lo = float(low[i])
+            exit_price = None
+            exit_reason = None
+            if side > 0:
+                if lo <= open_trade["sl_price"]:
+                    exit_price = open_trade["sl_price"]
+                    exit_reason = "sl"
+                elif hi >= open_trade["tp_price"]:
+                    exit_price = open_trade["tp_price"]
+                    exit_reason = "tp"
+            else:
+                if hi >= open_trade["sl_price"]:
+                    exit_price = open_trade["sl_price"]
+                    exit_reason = "sl"
+                elif lo <= open_trade["tp_price"]:
+                    exit_price = open_trade["tp_price"]
+                    exit_reason = "tp"
+            if exit_price is None and i == ev.i_end:
+                exit_price = float(close[i])
+                exit_reason = "time"
+            if exit_price is not None:
+                gross = (
+                    (exit_price - open_trade["entry_price"])
+                    * side
+                    * ev.lots
+                    * contract_size
+                )
+                cost = round_trip_cost_cash(
+                    ev.spread_entry,
+                    lots=ev.lots,
+                    point_size=point_size,
+                    contract_size=contract_size,
+                    commission_per_lot=commission_per_lot,
+                    slippage_points=slippage_points,
+                )
+                pnl = float(gross - cost)
+                balance += pnl
+                trades.append(
+                    TradeResult(
+                        event_id=ev.event_id,
+                        entry_idx=ev.t_entry_idx,
+                        exit_idx=i,
+                        side=side,
+                        lots=ev.lots,
+                        entry_price=open_trade["entry_price"],
+                        exit_price=float(exit_price),
+                        exit_reason=str(exit_reason),
+                        pnl=pnl,
+                        donor_id=int(open_trade["donor_id"]),
+                    )
+                )
+                open_trade = None
+
+        floating = 0.0
+        if open_trade is not None:
+            ev = open_trade["event"]
+            floating = (
+                (float(close[i]) - open_trade["entry_price"])
+                * ev.side
+                * ev.lots
+                * contract_size
+            )
+        equity.append(balance + floating)
+
+    if len(trades) != len(events):
+        raise ProtocolError(
+            f"T={len(trades)} != M={len(events)}: fixed event failed to complete"
+        )
+    trades_sorted = sorted(trades, key=lambda t: t.event_id)
+    return trades_sorted, equity, float(balance)
+
+
+def map_events_to_assignment(
+    events: Sequence[Event],
+    assignment: Sequence[int],
+    *,
+    spread: np.ndarray,
+    h: int = H_DEFAULT,
+) -> list[Event]:
+    """§5.6 transplant: freeze side/lots/atr; entry + spread from donor."""
+    if len(assignment) != len(events):
+        raise ProtocolError("assignment length != M")
+    out: list[Event] = []
+    for ev, donor in zip(events, assignment, strict=True):
+        d = int(donor)
+        sp = float(spread[d])
+        if not (np.isfinite(sp) and sp >= 0):
+            raise ProtocolError(f"invalid donor spread at {d}")
+        out.append(
+            replace(
+                ev,
+                t_entry_idx=d,
+                i_start=d,
+                i_end=d + h - 1,
+                spread_entry=sp,
+            )
+        )
+    return out
+
+
 def run_null_trial(
     events: Sequence[Event],
     assignment: Sequence[int],
@@ -691,41 +879,66 @@ def run_null_trial(
     h: int = H_DEFAULT,
     trial_id: int = 0,
 ) -> NullTrialResult:
-    """§5.6 path transplant for one assignment; require T=M."""
-    if len(assignment) != len(events):
-        raise ProtocolError("assignment length != M")
-    trades: list[TradeResult] = []
-    for ev, donor in zip(events, assignment, strict=True):
-        tr = simulate_h_trade(
-            open_,
-            high,
-            low,
-            close,
-            entry_idx=int(donor),
-            side=ev.side,
-            lots=ev.lots,
-            atr_tstar=ev.atr_tstar,
-            sl_atr=sl_atr,
-            tp_atr=tp_atr,
-            spread_points=float(spread[int(donor)]),
-            point_size=point_size,
-            contract_size=contract_size,
-            commission_per_lot=commission_per_lot,
-            slippage_points=slippage_points,
-            h=h,
-            event_id=ev.event_id,
-            donor_id=int(donor),
-        )
-        trades.append(tr)
-    if len(trades) != len(events):
-        raise ProtocolError(f"null T={len(trades)} != M={len(events)}")
-    m = metrics_from_pnls([t.pnl for t in trades], start_balance=start_balance)
+    """§5.6 path transplant for one assignment; full MTM equity; require T=M."""
+    mapped = map_events_to_assignment(events, assignment, spread=spread, h=h)
+    trades, equity, final_bal = execute_fixed_events_mtm(
+        mapped,
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        sl_atr=sl_atr,
+        tp_atr=tp_atr,
+        point_size=point_size,
+        contract_size=contract_size,
+        commission_per_lot=commission_per_lot,
+        slippage_points=slippage_points,
+        start_balance=start_balance,
+        h=h,
+    )
+    m = metrics_from_pnls(
+        [t.pnl for t in trades], equity, start_balance=start_balance
+    )
     return NullTrialResult(
         trial_id=trial_id,
-        assignment=list(int(x) for x in assignment),
+        assignment=[int(x) for x in assignment],
         trades=trades,
         metrics=m,
+        equity=equity,
+        final_balance=final_bal,
     )
+
+
+def metrics_close(
+    a: dict[str, float | int],
+    b: dict[str, float | int],
+    *,
+    atol: float = 1e-9,
+    rtol: float = 1e-9,
+) -> bool:
+    """Float-tolerant metric equality for identity diagnostic."""
+    keys = (
+        "n_trades",
+        "wins",
+        "losses",
+        "net_profit",
+        "win_rate",
+        "profit_factor",
+        "max_drawdown_pct",
+        "gross_profit",
+        "gross_loss",
+    )
+    for k in keys:
+        if k not in a or k not in b:
+            return False
+        av, bv = a[k], b[k]
+        if isinstance(av, int) and isinstance(bv, int) and not isinstance(av, bool):
+            if av != bv:
+                return False
+        else:
+            if not np.isclose(float(av), float(bv), atol=atol, rtol=rtol):
+                return False
+    return True
 
 
 def run_null_trials(
@@ -754,7 +967,7 @@ def run_null_trials(
     if m == 0:
         return []
     if not preflight_pack_ok(donors, m, h):
-        raise AssignmentFailure(
+        raise AssignmentError(
             f"preflight pack_capacity={pack_capacity(donors, h)} < M={m}"
         )
     identity = [e.t_entry_idx for e in events]

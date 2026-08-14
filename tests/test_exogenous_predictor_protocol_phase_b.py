@@ -4,7 +4,6 @@ No develop package, no thesis charter scoring, no registry, no paper/live.
 """
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -26,7 +25,6 @@ from xau_charter_protocol import (  # noqa: E402
     validate_charter,
     validate_exogenous_predictor_charter,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures / synthetic market
@@ -115,9 +113,18 @@ def _minimal_exogenous_charter(**overrides: object) -> dict:
                 "commission_per_lot": 0.0,
                 "slippage_points": 0.0,
                 "spread_col": "spread",
-            }
+            },
+            "H": 3,
+            "entry": "next_bar_open",
+            "same_day_hold": True,
         },
-        "rule": {"intraday_flat": True, "exit": "sl_tp_time_h3"},
+        "rule": {
+            "intraday_flat": True,
+            "exit": "sl_tp_time_h3",
+            "hold_bars": 3,
+            "entry": "next_bar_open",
+            "same_day_hold": True,
+        },
     }
     for k, v in overrides.items():
         if isinstance(v, dict) and isinstance(ch.get(k), dict):
@@ -530,3 +537,200 @@ def test_soft_pass_binary_n_passers():
     assert core.soft_pass_traded(m_bad, soft) is False
     n_passers = 1 if core.soft_pass_traded(m_ok, soft) else 0
     assert n_passers in (0, 1)
+
+
+# ---------------------------------------------------------------------------
+# Adversarial regressions (PR #11 re-review blockers)
+# ---------------------------------------------------------------------------
+
+
+def test_identity_metrics_match_real_mtm_dd():
+    """Null identity must use full floating MTM equity (same DD as real)."""
+    bars = _synthetic_bars(48, seed=11, start="2024-01-04 00:00:00")
+    n = len(bars["open"])
+    # Force a temporary adverse float before exit so MTM DD > 0.
+    open_ = bars["open"].copy()
+    high = bars["high"].copy()
+    low = bars["low"].copy()
+    close = bars["close"].copy()
+    signals = np.zeros(n, dtype=int)
+    signals[10] = 1  # entry 11
+    open_[11] = 2000.0
+    high[11] = 2001.0
+    low[11] = 1999.0
+    close[11] = 2000.5
+    # mid-hold adverse mark (not SL if SL is wide)
+    open_[12] = 2000.0
+    high[12] = 2000.5
+    low[12] = 1990.0
+    close[12] = 1990.0
+    open_[13] = 1990.0
+    high[13] = 2005.0
+    low[13] = 1989.0
+    close[13] = 2004.0
+    real = core.admit_and_simulate_real(
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=bars["spread"],
+        day_id=bars["day_id"],
+        signal_sides=signals,
+        h=3,
+        sl_atr=5.0,
+        tp_atr=5.0,
+        start_balance=10_000.0,
+    )
+    assert len(real.events) == 1
+    assert float(real.metrics["max_drawdown_pct"]) > 0.0
+    identity = [e.t_entry_idx for e in real.events]
+    diag = core.identity_diagnostic(
+        real.events,
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=bars["spread"],
+        sl_atr=5.0,
+        tp_atr=5.0,
+        point_size=0.01,
+        contract_size=100.0,
+        h=3,
+        start_balance=10_000.0,
+    )
+    assert diag.assignment == identity
+    assert core.metrics_close(real.metrics, diag.metrics), (
+        real.metrics,
+        diag.metrics,
+    )
+
+
+def test_round_trip_cost_house_formula_and_rejects_invalid():
+    # spread=10, slip=4, comm=4, lots=1, ps=0.01, cs=100 → RT=26 (not old 18)
+    cost = core.round_trip_cost_cash(
+        10.0,
+        lots=1.0,
+        point_size=0.01,
+        contract_size=100.0,
+        commission_per_lot=4.0,
+        slippage_points=4.0,
+    )
+    assert cost == pytest.approx(26.0)
+    with pytest.raises(core.ProtocolError, match="negative"):
+        core.round_trip_cost_cash(
+            -1.0,
+            lots=1.0,
+            point_size=0.01,
+            contract_size=100.0,
+            commission_per_lot=0.0,
+            slippage_points=0.0,
+        )
+    with pytest.raises(core.ProtocolError, match="non-finite"):
+        core.round_trip_cost_cash(
+            float("nan"),
+            lots=1.0,
+            point_size=0.01,
+            contract_size=100.0,
+            commission_per_lot=0.0,
+            slippage_points=0.0,
+        )
+
+
+def test_null_started_extra_cannot_override_reserved(tmp_path: Path):
+    acct.write_null_started(
+        tmp_path,
+        family_id="f1",
+        extra={
+            "execution_state": "OK",
+            "r1_burned": False,
+            "sealed_null_attempt": False,
+            "arms_r1_burn_on_failure": False,
+            "note": "caller diagnostic ok",
+        },
+    )
+    body = acct.load_json(tmp_path / "NULL_STARTED.json")
+    assert body["execution_state"] == "NULL_STARTED"
+    assert body["r1_burn_armed"] is True
+    assert body["arms_r1_burn_on_failure"] is True
+    assert body["sealed_null_attempt"] is True
+    assert body["note"] == "caller diagnostic ok"
+
+
+def test_null_failure_extra_cannot_unburn(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1")
+    acct.null_phase_failure_report(
+        tmp_path,
+        reason="boom",
+        family_id="f1",
+        extra={
+            "execution_state": "OK",
+            "r1_burned": False,
+            "sealed_null_attempt": False,
+            "disposition": "PASS",
+        },
+    )
+    body = acct.load_json(tmp_path / "FAILED_RUN_UNKNOWN.json")
+    assert body["execution_state"] == "UNKNOWN"
+    assert body["r1_burned"] is True
+    assert body["sealed_null_attempt"] is True
+    assert body["disposition"] == "FAILED_RUN_UNKNOWN"
+
+
+def test_null_started_marker_only_crash_is_burned(tmp_path: Path):
+    """Process dies after NULL_STARTED with no terminal → r1 burned."""
+    acct.write_null_started(tmp_path, family_id="f1", m=2, n_null_planned=999)
+    assert (tmp_path / "NULL_STARTED.json").is_file()
+    assert not (tmp_path / "FAILED_RUN_UNKNOWN.json").exists()
+    assert acct.infer_r1_burned_from_outdir(tmp_path) is True
+
+
+def test_screen_started_marker_only_not_burned(tmp_path: Path):
+    acct.write_screen_started(tmp_path, family_id="f1")
+    assert acct.infer_r1_burned_from_outdir(tmp_path) is False
+
+
+def test_validator_mutation_matrix_fail_closed():
+    ch = _minimal_exogenous_charter()
+    assert validate_exogenous_predictor_charter(ch) == []
+
+    # missing multiplicity
+    bad = _minimal_exogenous_charter()
+    del bad["multiplicity"]
+    assert any("multiplicity" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # string gate threshold
+    bad = _minimal_exogenous_charter()
+    bad["gates"]["soft"]["profit_factor_min"] = "1.1"
+    assert any("profit_factor_min" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # NaN gate
+    bad = _minimal_exogenous_charter()
+    bad["gates"]["soft"]["max_drawdown_pct_max"] = float("nan")
+    assert any(
+        "max_drawdown_pct_max" in e for e in validate_exogenous_predictor_charter(bad)
+    )
+
+    # NaN point_size
+    bad = _minimal_exogenous_charter()
+    bad["instrument"]["per_symbol_meta"]["XAUUSD"]["point_size"] = float("nan")
+    assert any("point_size" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # missing package pin
+    bad = _minimal_exogenous_charter()
+    del bad["instrument"]["data_package"]
+    assert any("data_package" in e for e in validate_exogenous_predictor_charter(bad))
+
+    # mismatched method vs implementation_id
+    bad = _minimal_exogenous_charter()
+    bad["null"]["method"] = "within_day_ohlc_increment_rotate_v1"
+    # implementation_id remains canonical
+    errs = validate_exogenous_predictor_charter(bad)
+    assert any("must match" in e or "null.method" in e for e in errs)
+
+    # missing H / entry contract
+    bad = _minimal_exogenous_charter()
+    bad["rule"] = {"intraday_flat": True}
+    bad["fixed"] = {"costs": bad["fixed"]["costs"]}
+    errs = validate_exogenous_predictor_charter(bad)
+    assert any("hold_bars" in e or "H" in e for e in errs)
+    assert any("entry" in e for e in errs)

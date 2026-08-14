@@ -456,7 +456,11 @@ def exogenous_joint_screen_refuse_message(charter: dict[str, Any]) -> str | None
 
 
 def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
-    """Hard errors for multi_instrument_exogenous_predictor_v1 instrument/null/gates."""
+    """Hard errors for multi_instrument_exogenous_predictor_v1 (fail-closed).
+
+    Covers Phase B checklist: roles, package pin, H=3/next-bar contract,
+    binary soft gates with typed thresholds, canonical null ids, multiplicity.
+    """
     errs: list[str] = []
     harness = charter.get("harness") or {}
     kind = str(harness.get("kind") or "")
@@ -507,6 +511,17 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
             )
         if set(traded) == set(symbols):
             errs.append("exogenous traded must be a proper subset of symbols")
+    # package pin
+    pkg = inst.get("data_package")
+    if not isinstance(pkg, dict) or not pkg:
+        errs.append("exogenous instrument.data_package object required (package pin)")
+    else:
+        pid = pkg.get("package_id") or pkg.get("content_package_id")
+        if not isinstance(pid, str) or not str(pid).strip():
+            errs.append(
+                "exogenous instrument.data_package.package_id "
+                "(or content_package_id) required non-empty string"
+            )
     meta = inst.get("per_symbol_meta") or {}
     if not isinstance(meta, dict):
         errs.append("exogenous instrument.per_symbol_meta must be an object")
@@ -519,10 +534,92 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
         for k in ("point_size", "contract_size", "digits"):
             if k not in m:
                 errs.append(f"exogenous per_symbol_meta[{s!r}] missing {k}")
+        ps = _strict_finite_number(m.get("point_size"))
+        if "point_size" in m and (ps is None or ps <= 0):
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].point_size must be finite > 0 "
+                f"(not str/bool/NaN/Inf/≤0)"
+            )
+        cs = _strict_finite_number(m.get("contract_size"))
+        if "contract_size" in m and (cs is None or cs <= 0):
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].contract_size must be finite > 0 "
+                f"(not str/bool/NaN/Inf/≤0)"
+            )
+        dig = m.get("digits")
+        if "digits" in m and _strict_nonneg_int(dig) is None:
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].digits must be a non-negative "
+                "JSON integer (not bool/float/str)"
+            )
     cal = charter.get("analysis_calendar") or {}
     if cal.get("mode") != "intersection_only":
         errs.append(
             "exogenous analysis_calendar.mode must be 'intersection_only'"
+        )
+    # H=3 + next-bar open execution contract (protocol §5.2)
+    rule: dict[str, Any] = (
+        dict(charter["rule"]) if isinstance(charter.get("rule"), dict) else {}
+    )
+    fixed: dict[str, Any] = (
+        dict(charter["fixed"]) if isinstance(charter.get("fixed"), dict) else {}
+    )
+    execution: dict[str, Any] = (
+        dict(charter["execution"])
+        if isinstance(charter.get("execution"), dict)
+        else {}
+    )
+    h_raw: Any = None
+    for src in (execution, rule, fixed):
+        if "hold_bars" in src:
+            h_raw = src["hold_bars"]
+            break
+        if "H" in src:
+            h_raw = src["H"]
+            break
+    if h_raw is None:
+        errs.append(
+            "exogenous execution contract requires hold_bars/H=3 "
+            "(under execution, rule, or fixed)"
+        )
+    else:
+        h_num = _strict_nonneg_int(h_raw)
+        if h_num is None:
+            h_f = _strict_finite_number(h_raw)
+            if h_f is None or h_f != 3.0:
+                errs.append(
+                    f"exogenous hold_bars/H must be integer 3 (got {h_raw!r})"
+                )
+        elif h_num != 3:
+            errs.append(f"exogenous hold_bars/H must be 3 (got {h_num})")
+    entry = (
+        execution.get("entry")
+        or execution.get("entry_timing")
+        or rule.get("entry")
+        or rule.get("entry_timing")
+        or fixed.get("entry")
+    )
+    allowed_entry = {
+        "next_bar_open",
+        "next_joint_bar_open",
+        "open_of_next_joint_bar",
+    }
+    if entry not in allowed_entry:
+        errs.append(
+            "exogenous execution contract requires entry/entry_timing in "
+            f"{sorted(allowed_entry)} (next-bar open; got {entry!r})"
+        )
+    same_day = (
+        execution.get("same_day_hold")
+        if "same_day_hold" in execution
+        else rule.get("same_day_hold")
+        if "same_day_hold" in rule
+        else fixed.get("same_day_hold")
+    )
+    if same_day is not True:
+        errs.append(
+            "exogenous execution contract requires same_day_hold=true "
+            "(exact boolean)"
         )
     gates = charter.get("gates") or {}
     if gates.get("primary_n_passers") != "soft":
@@ -534,22 +631,51 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
     if not isinstance(soft, dict) or not soft:
         errs.append("exogenous gates.soft required (traded-book primary)")
     else:
-        for k in (
-            "n_trades_min",
-            "profit_factor_min",
-            "net_profit_gt",
-            "max_drawdown_pct_max",
-        ):
+        if "n_trades_min" not in soft:
+            errs.append("exogenous gates.soft missing required key 'n_trades_min'")
+        elif _strict_nonneg_int(soft.get("n_trades_min")) is None:
+            errs.append(
+                "exogenous gates.soft.n_trades_min must be a non-negative "
+                "JSON integer (not bool/float/str/NaN)"
+            )
+        for k in ("profit_factor_min", "net_profit_gt", "max_drawdown_pct_max"):
             if k not in soft:
                 errs.append(f"exogenous gates.soft missing required key {k!r}")
+            elif _strict_finite_number(soft.get(k)) is None:
+                errs.append(
+                    f"exogenous gates.soft.{k} must be a finite JSON number "
+                    "(not str/bool/NaN/Inf)"
+                )
     null = charter.get("null") or {}
-    impl = str(
-        null.get("implementation_id") or null.get("method") or ""
-    )
-    if impl != EXOGENOUS_NULL_IMPLEMENTATION_ID:
+    if not isinstance(null, dict) or not null:
+        errs.append("exogenous null object required")
+        null = {}
+    method = null.get("method")
+    impl = null.get("implementation_id")
+    if method is None:
+        errs.append("exogenous null.method required")
+    if impl is None:
+        errs.append("exogenous null.implementation_id required")
+    method_s = str(method) if method is not None else ""
+    impl_s = str(impl) if impl is not None else ""
+    if method is not None and method_s != EXOGENOUS_NULL_IMPLEMENTATION_ID:
         errs.append(
-            "exogenous null.implementation_id (or null.method) must be "
+            "exogenous null.method must be "
+            f"{EXOGENOUS_NULL_IMPLEMENTATION_ID!r}; got {method!r}"
+        )
+    if impl is not None and impl_s != EXOGENOUS_NULL_IMPLEMENTATION_ID:
+        errs.append(
+            "exogenous null.implementation_id must be "
             f"{EXOGENOUS_NULL_IMPLEMENTATION_ID!r}; got {impl!r}"
+        )
+    if (
+        method is not None
+        and impl is not None
+        and method_s != impl_s
+    ):
+        errs.append(
+            "exogenous null.method and null.implementation_id must match "
+            f"(got method={method!r}, implementation_id={impl!r})"
         )
     # reject alternate sampling enums if present
     for bad_key in ("sampling", "pairing", "strata", "with_replacement"):
@@ -558,35 +684,69 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                 f"exogenous null.{bad_key} forbidden (canonical engine only)"
             )
     alt = null.get("forbidden_methods") or []
-    if impl and impl in {str(x) for x in alt}:
-        errs.append(f"exogenous null method {impl!r} listed in forbidden_methods")
+    if method_s and method_s in {str(x) for x in alt}:
+        errs.append(f"exogenous null method {method_s!r} listed in forbidden_methods")
     if null.get("base_seed") is None:
         errs.append("exogenous null.base_seed required")
-    n_trials = int(null.get("n_trials") or null.get("min_null_trials") or 0)
-    if n_trials < MIN_NULL_TRIALS_PROTOCOL:
-        errs.append(
-            f"exogenous null n_trials={n_trials} < protocol floor "
-            f"{MIN_NULL_TRIALS_PROTOCOL}"
-        )
-    mult = charter.get("multiplicity") or {}
-    if mult.get("paper_live_while_open") is True:
-        errs.append(
-            "exogenous multiplicity.paper_live_while_open must not be true "
-            "while catalog open"
-        )
-    if mult.get("pass_status") not in (
-        None,
-        "provisional_while_catalog_open",
-        "provisional",
+    elif isinstance(null.get("base_seed"), bool) or not isinstance(
+        null.get("base_seed"), int
     ):
-        # allow omit at early freeze drafts; if set, must be provisional
+        errs.append(
+            "exogenous null.base_seed must be a JSON integer (not bool/str/float)"
+        )
+    if null.get("n_trials") is None and null.get("min_null_trials") is None:
+        errs.append("exogenous null.n_trials (or min_null_trials) required")
+    else:
+        n_trials = null.get("n_trials")
+        if n_trials is None:
+            n_trials = null.get("min_null_trials")
+        n_ok = _strict_nonneg_int(n_trials)
+        if n_ok is None:
+            errs.append(
+                "exogenous null.n_trials must be a non-negative JSON integer"
+            )
+        elif n_ok < MIN_NULL_TRIALS_PROTOCOL:
+            errs.append(
+                f"exogenous null n_trials={n_ok} < protocol floor "
+                f"{MIN_NULL_TRIALS_PROTOCOL}"
+            )
+    mult = charter.get("multiplicity")
+    if not isinstance(mult, dict) or not mult:
+        errs.append(
+            "exogenous multiplicity block required "
+            "(finite-catalog Bonferroni; catalog open)"
+        )
+    else:
+        if mult.get("method") not in (
+            "finite_catalog_bonferroni_open_catalog",
+            "finite_catalog_bonferroni",
+        ):
+            errs.append(
+                "exogenous multiplicity.method must be "
+                "finite_catalog_bonferroni_open_catalog "
+                f"(got {mult.get('method')!r})"
+            )
+        if _strict_nonneg_int(mult.get("K_prior")) is None:
+            errs.append(
+                "exogenous multiplicity.K_prior must be a non-negative JSON integer"
+            )
+        if _strict_nonneg_int(mult.get("K")) is None:
+            errs.append(
+                "exogenous multiplicity.K must be a non-negative JSON integer"
+            )
         if mult.get("pass_status") not in (
             "provisional_while_catalog_open",
             "provisional",
         ):
             errs.append(
-                "exogenous multiplicity.pass_status must be provisional while "
-                f"catalog open (got {mult.get('pass_status')!r})"
+                "exogenous multiplicity.pass_status must be "
+                "provisional_while_catalog_open "
+                f"(got {mult.get('pass_status')!r})"
+            )
+        if mult.get("paper_live_while_open") is not False:
+            errs.append(
+                "exogenous multiplicity.paper_live_while_open must be false "
+                "(exact boolean) while catalog open"
             )
     return errs
 
