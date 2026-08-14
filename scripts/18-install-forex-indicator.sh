@@ -44,6 +44,7 @@ SRC_EA=(
 SRC_SCRIPTS=(
   "${ROOT}/mql5/Scripts/ExportHtfFibParityFixture.mq5"
   "${ROOT}/mql5/Scripts/ExportSymbolCapabilities.mq5"
+  "${ROOT}/mql5/Scripts/ExportSymbolSyncAudit.mq5"
   "${ROOT}/mql5/Scripts/ExportXauHistory.mq5"
   "${ROOT}/mql5/Scripts/ExportInstrumentHistory.mq5"
 )
@@ -121,6 +122,7 @@ Next steps:
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
        Scripts/ExportHtfFibParityFixture.mq5 ← optional MQL5↔Python dump
        Scripts/ExportSymbolCapabilities.mq5  ← optional broker-symbol dump
+       Scripts/ExportSymbolSyncAudit.mq5     ← optional H1 calendar / spread audit
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)

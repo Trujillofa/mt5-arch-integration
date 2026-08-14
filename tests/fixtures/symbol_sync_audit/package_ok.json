@@ -1,0 +1,37 @@
+{
+  "symbols": {
+    "EURUSD": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "GBPUSD": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "USDJPY": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "USDCHF": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "XAUUSD": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "BTCUSD": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    }
+  },
+  "n_intersection_timestamps": 4,
+  "common_start_server": "2026-01-05 08:00:00",
+  "common_end_server": "2026-01-05 11:00:00"
+}

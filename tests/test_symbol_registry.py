@@ -23,6 +23,7 @@ INDICATOR = ROOT / "mql5" / "Indicators" / "ForexHtfPivotsFib.mq5"
 BRIDGE = ROOT / "mql5" / "Mt5ArchBridge.mq5"
 EXPORTER = ROOT / "mql5" / "Scripts" / "ExportInstrumentHistory.mq5"
 CAP_SCRIPT = ROOT / "mql5" / "Scripts" / "ExportSymbolCapabilities.mq5"
+AUDIT_SCRIPT = ROOT / "mql5" / "Scripts" / "ExportSymbolSyncAudit.mq5"
 OFFLINE = ROOT / "tests" / "fixtures" / "symbol_registry" / "offline_ok"
 
 
@@ -51,7 +52,7 @@ def test_unknown_and_unmapped_refuse():
 
 
 def test_no_suffix_walk_in_mql5_consumers():
-    for path in (BRIDGE, EXPORTER, INDICATOR, CAP_SCRIPT):
+    for path in (BRIDGE, EXPORTER, INDICATOR, CAP_SCRIPT, AUDIT_SCRIPT):
         text = path.read_text()
         assert "OrderSend(" not in text
         assert 'suffixes[] = {"m"' not in text
@@ -63,6 +64,7 @@ def test_no_suffix_walk_in_mql5_consumers():
     assert "InpBroker" in BRIDGE.read_text()
     assert "InpBroker" in EXPORTER.read_text()
     assert "InpBroker" in CAP_SCRIPT.read_text()
+    assert "InpBroker" in AUDIT_SCRIPT.read_text()
 
 
 def test_include_lockstep_with_json():

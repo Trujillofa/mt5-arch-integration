@@ -11,6 +11,7 @@
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
 | `Include/FxSymbolRegistry.mqh` | Generated explicit broker → symbol maps (no suffix walk) |
 | `Scripts/ExportSymbolCapabilities.mq5` | Read-only symbol capability dump (no orders) |
+| `Scripts/ExportSymbolSyncAudit.mq5` | Read-only H1 calendar / spread sync audit (no orders) |
 | `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.23) |
 | `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
 
@@ -39,6 +40,7 @@ MetaEditor **F7** compile order:
 4. `Experts/ForexSignalLogger.mq5` (optional)
 5. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
 6. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
+7. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
 
 ## Chart recipe — FX / gold
 
