@@ -1,0 +1,6 @@
+seq,time,trans_type,request_id,order,deal,position,position_by,symbol,order_type,deal_type,order_state
+1,2026.08.14 12:00:00,10,1,0,0,0,0,XAUUSD,0,0,0
+2,2026.08.14 12:00:00,0,1,1001,0,0,0,XAUUSD,0,0,1
+3,2026.08.14 12:00:01,3,1,1001,2001,3001,0,XAUUSD,0,0,0
+4,2026.08.14 12:00:01,6,1,1001,0,3001,0,XAUUSD,0,0,4
+5,2026.08.14 12:00:01,9,1,0,0,3001,0,XAUUSD,0,0,0

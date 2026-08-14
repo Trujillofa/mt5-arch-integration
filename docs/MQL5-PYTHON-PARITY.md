@@ -173,8 +173,9 @@ causality fixes. Priority 2 (broker symbol registry) is a separate package:
 sync audit) is a separate package: [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
 Priority 4 (tester provenance wrapper) is a separate package:
 [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline schema; no live tester run).
-Priorities 5–6 (`OnTradeTransaction` journal, article-intake gate,
-chronological logger replay) are untouched.
+Priority 5 (`OnTradeTransaction` journal) is a separate package:
+[TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline schema; no live attach claimed).
+Priority 6 (article-intake gate, chronological logger replay) is untouched.
 
 ## Adversarial cases the tests already cover
 
@@ -198,7 +199,8 @@ chronological logger replay) are untouched.
   [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) (offline rules; live dump optional).
 - Strategy Tester reproducibility wrapper — **done separately**:
   [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) (offline rules; live tester optional).
-- Read-only `OnTradeTransaction` journal.
+- Read-only `OnTradeTransaction` journal — **done separately**:
+  [TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline rules; live attach optional).
 - Article-intake gate / new research charters.
 - Chronological bar-by-bar replay that would be required to call the logger live-safe.
 

@@ -88,5 +88,6 @@ exact-name (old behaviour).
   [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md).
 - Priority 4: Strategy Tester provenance wrapper — **separate package**:
   [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md).
-- Priority 5: `OnTradeTransaction` journal.
+- Priority 5: `OnTradeTransaction` journal — **separate package**:
+  [TRADE-JOURNAL.md](TRADE-JOURNAL.md).
 - Fuzzy substring matching from the MQL5.com broker-agnostic article.

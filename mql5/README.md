@@ -7,6 +7,7 @@
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
+| `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
 | `Include/FxSymbolRegistry.mqh` | Generated explicit broker → symbol maps (no suffix walk) |
@@ -38,9 +39,10 @@ MetaEditor **F7** compile order:
 2. `Indicators/BtcTrendPullback.mq5`
 3. `Indicators/ForexIndicatorTemplate.mq5` (optional)
 4. `Experts/ForexSignalLogger.mq5` (optional)
-5. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
-6. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
-7. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
+5. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
+6. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
+7. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
+8. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
 
 ## Chart recipe — FX / gold
 

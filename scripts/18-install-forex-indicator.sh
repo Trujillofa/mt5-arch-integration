@@ -39,6 +39,7 @@ SRC_IND=(
 SRC_EA=(
   "${ROOT}/mql5/Experts/ForexSignalLogger.mq5"
   "${ROOT}/mql5/Experts/ForexHtfFibTester.mq5"
+  "${ROOT}/mql5/Experts/TradeTransactionJournal.mq5"
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
 )
 SRC_SCRIPTS=(
@@ -120,6 +121,7 @@ Next steps:
        Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
        Indicators/ForexIndicatorTemplate.mq5
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
+       Experts/TradeTransactionJournal.mq5  ← optional read-only trade-id journal
        Scripts/ExportHtfFibParityFixture.mq5 ← optional MQL5↔Python dump
        Scripts/ExportSymbolCapabilities.mq5  ← optional broker-symbol dump
        Scripts/ExportSymbolSyncAudit.mq5     ← optional H1 calendar / spread audit
@@ -131,6 +133,8 @@ Next steps:
        BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/
+     Trade-id journal (optional): Experts → TradeTransactionJournal
+       InpBroker required; writes MQL5/Files/mt5_arch/journal/ (ids only, never orders)
   5. S/R levels: MQL5/Files/forex_sr_levels.csv (yellow=HIGH white=MED blue=LOW)
        re-export .tpl zones -> python3 scripts/tpl_to_sr_levels.py -> rerun this
        script -> refresh the chart. No recompile needed.

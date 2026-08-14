@@ -86,7 +86,8 @@ Never commit a live dump. Never put `MT5_PASSWORD` in `provenance.json`.
 
 ## What this does not do
 
-- Priority 5: `OnTradeTransaction` journal.
+- Priority 5: `OnTradeTransaction` journal — **separate package**:
+  [TRADE-JOURNAL.md](TRADE-JOURNAL.md) (offline schema; no live attach claimed).
 - Priority 6: article-intake gate.
 - Live orders, fuzzy symbol matching, or a blended synthetic instrument.
 - Prove that a tester profit factor is an edge.

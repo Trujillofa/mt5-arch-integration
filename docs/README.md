@@ -19,6 +19,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md) | Explicit broker → symbol maps (no suffix first-match) |
 | [SYMBOL-SYNC-AUDIT.md](SYMBOL-SYNC-AUDIT.md) | Multi-symbol H1 calendar vs package (no averaged symbol) |
 | [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md) | Strategy Tester reproducibility record (no live run claimed) |
+| [TRADE-JOURNAL.md](TRADE-JOURNAL.md) | Read-only `OnTradeTransaction` id journal (no live attach claimed) |
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |
