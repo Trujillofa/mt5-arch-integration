@@ -13,8 +13,8 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.42"
-#property description "HTF pivots + Fib v1.42 (no ObjectsDeleteAll on TF switch)"
+#property version     "1.43"
+#property description "HTF pivots + Fib v1.43 (imported .tpl S/R levels)"
 #property description "Non-repaint pivots. Signal buffer 8. RSI=9 RSI-MA=10."
 #property strict
 
@@ -23,7 +23,8 @@
 // to prove -- that the recompile actually took -- was the one thing it got wrong.
 // #property takes a literal and cannot read this, so keep the two in step by hand.
 // 1.42: skip ObjectsDeleteAll on REASON_CHARTCHANGE (Wine win32u freeze trigger).
-#define HTF_FIB_VER "1.42"
+// 1.43: S/R levels imported from .tpl templates (yellow/white/blue by relevance).
+#define HTF_FIB_VER "1.43"
 
 #property indicator_chart_window
 #property indicator_buffers 11
@@ -124,6 +125,21 @@ input group "=== Display ==="
 input bool   InpShowPanel        = true;
 input double InpArrowOffsetPips  = 4.0;
 
+input group "=== S/R levels (imported from .tpl templates) ==="
+// Default OFF under Wine: each HLINE is a GDI object; FP freezes correlated with
+// object churn. Enable per chart only when you need the imported zones.
+input bool            InpShowSrLevels = false;             // Draw imported S/R levels
+input string          InpSrFile       = "forex_sr_levels.csv"; // In MQL5\Files (or Common\Files)
+input bool            InpSrShowHigh   = true;              // Show HIGH tier (yellow)
+input bool            InpSrShowMed    = true;              // Show MED tier (white)
+input bool            InpSrShowLow    = false;             // LOW (M5/M1) — noisy; off by default
+input color           InpSrColHigh    = clrYellow;         // HIGH relevance (MN/W1/D1/H4)
+input color           InpSrColMed     = clrWhite;          // MED relevance (H1/M30/M15)
+input color           InpSrColLow     = clrDodgerBlue;     // LOW relevance (M5/M1)
+input ENUM_LINE_STYLE InpSrStyle      = STYLE_DOT;         // Line style (templates use dotted)
+input bool            InpSrShowLabels = false;             // Attach tier text to each line
+input int             InpSrMaxLevels  = 80;                // Hard cap (Wine GDI guard)
+
 //+------------------------------------------------------------------+
 //| Buffers: 0 fast | 1 slow | 2 bias | 3 Long | 4 Short             |
 //|          5 fib618 | 6 fib786 | 7 swingDir | 8 signal             |
@@ -175,6 +191,21 @@ struct FibSnap
   };
 FibSnap g_snaps[];
 int     g_nsnaps = 0;
+
+//--- imported S/R levels (static snapshot from hand-drawn .tpl zones)
+#define SR_TIER_LOW  0
+#define SR_TIER_MED  1
+#define SR_TIER_HIGH 2
+
+struct SrLevel
+  {
+   double price;
+   int    tier;   // SR_TIER_*
+   string tf;     // template timeframe the line was drawn on
+  };
+SrLevel g_sr[];
+int     g_nsr       = 0;
+bool    g_sr_dirty  = true;   // reload/redraw pending
 
 //+------------------------------------------------------------------+
 void ApplyTradingMode()
@@ -274,6 +305,11 @@ int OnInit()
    g_pfx = "HTFFIB_" + IntegerToString(ChartID()) + "_";
    // Do NOT ObjectsDeleteAll here — param changes call OnInit after OnDeinit(REASON_PARAMETERS).
    // Mass object delete under Wine freezes the UI when tweaking EMAs.
+
+   // OnInit re-runs on both REASON_PARAMETERS and REASON_CHARTCHANGE, so this is
+   // also what re-reads the table after a symbol switch or an input tweak.
+   LoadSrLevels();
+   g_sr_dirty = true;
    return INIT_SUCCEEDED;
   }
 
@@ -1116,6 +1152,13 @@ void DrawAllLevels(const datetime t_now)
    datetime t2 = t_now + PeriodSeconds() * 5;
    bool use4h = (PeriodSeconds(PERIOD_CURRENT) <= PeriodSeconds(PERIOD_H4));
 
+   // Static levels: only touched after a (re)load, never per bar.
+   if(g_sr_dirty)
+     {
+      DrawSrLevels();
+      g_sr_dirty = false;
+     }
+
    if(EffectiveShow4h() && use4h)
      {
       if(g_th4 > 0) HLine("P4H", g_ph4, g_th4, t2, InpCol4hHigh, InpShow4hLabels ? "4H H" : "");
@@ -1235,6 +1278,171 @@ void HLine(const string key, const double price,
       // since REASON_PARAMETERS deliberately keeps objects.
       ObjectDelete(0, g_pfx + key + "_lbl");
      }
+  }
+
+//+------------------------------------------------------------------+
+//| Imported S/R levels                                              |
+//|                                                                  |
+//| Levels come from scripts/tpl_to_sr_levels.py, which turns the     |
+//| hand-drawn OBJ_HLINE zones of the manual .tpl chart templates     |
+//| into MQL5\Files\forex_sr_levels.csv. Reading the table at runtime |
+//| (rather than baking it into this source) means re-drawing zones   |
+//| needs a regenerate + redeploy, not a MetaEditor recompile.        |
+//|                                                                  |
+//| The table is a static snapshot: it does not follow price, and it  |
+//| only covers the symbols that were exported.                      |
+//+------------------------------------------------------------------+
+
+//| Strip a broker suffix so XAUUSDm / XAUUSD.r / XAUUSD all match.
+//| Mirrors the suffix list ResolveSymbol() uses in Mt5ArchBridge.mq5.
+string SrSymbolBase(const string sym)
+  {
+   string t = sym;
+   StringToUpper(t);
+   string suffixes[] = {".RAW", ".ECN", ".PRO", ".R", ".M", "MICRO", "PRO", "ECN", "#", "M"};
+   for(int i = 0; i < ArraySize(suffixes); i++)
+     {
+      int slen = StringLen(suffixes[i]);
+      // Require something substantial to survive the strip, so a short symbol is
+      // never eaten down to a prefix that collides with an unrelated instrument.
+      if(StringLen(t) > slen + 2 && StringSubstr(t, StringLen(t) - slen) == suffixes[i])
+         return StringSubstr(t, 0, StringLen(t) - slen);
+     }
+   return t;
+  }
+
+int SrTierFromText(const string s)
+  {
+   if(s == "HIGH") return SR_TIER_HIGH;
+   if(s == "LOW")  return SR_TIER_LOW;
+   return SR_TIER_MED;
+  }
+
+color SrTierColor(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return InpSrColHigh;
+   if(tier == SR_TIER_LOW)  return InpSrColLow;
+   return InpSrColMed;
+  }
+
+string SrTierName(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return "HIGH";
+   if(tier == SR_TIER_LOW)  return "LOW";
+   return "MED";
+  }
+
+//| Filtering here rather than at draw time keeps the object indices dense,
+//| so the tail sweep in DrawSrLevels() removes whatever a toggle dropped.
+bool SrTierVisible(const int tier)
+  {
+   if(tier == SR_TIER_HIGH) return InpSrShowHigh;
+   if(tier == SR_TIER_LOW)  return InpSrShowLow;
+   return InpSrShowMed;
+  }
+
+//| Read the CSV, keeping only rows whose symbol matches this chart.
+//| Tries MQL5\Files first, then Common\Files (the Strategy Tester agent
+//| sandbox only sees the shared Common folder).
+void LoadSrLevels()
+  {
+   g_nsr = 0;
+   ArrayResize(g_sr, 0);
+   if(!InpShowSrLevels || StringLen(InpSrFile) == 0)
+      return;
+
+   int h = FileOpen(InpSrFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+      h = FileOpen(InpSrFile, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ | FILE_COMMON);
+   if(h == INVALID_HANDLE)
+     {
+      Print("ForexHtfPivotsFib: S/R file '", InpSrFile,
+            "' not found in MQL5\\Files or Common\\Files (err ", GetLastError(),
+            ") — run scripts/tpl_to_sr_levels.py, then scripts/18-install-forex-indicator.sh");
+      return;
+     }
+
+   string want = SrSymbolBase(_Symbol);
+   int skipped = 0;   // rows for other symbols
+   int hidden  = 0;   // rows for this symbol dropped by a tier toggle
+   while(!FileIsEnding(h) && g_nsr < InpSrMaxLevels)
+     {
+      string line = FileReadString(h);
+      StringTrimLeft(line);
+      StringTrimRight(line);
+      if(StringLen(line) == 0 || StringGetCharacter(line, 0) == '#')
+         continue;
+
+      string parts[];
+      if(StringSplit(line, ',', parts) < 3)
+         continue;
+      if(SrSymbolBase(parts[0]) != want)
+        { skipped++; continue; }
+
+      double price = StringToDouble(parts[1]);
+      if(price <= 0.0)
+         continue;
+      int tier = SrTierFromText(parts[2]);
+      if(!SrTierVisible(tier))
+        { hidden++; continue; }
+
+      ArrayResize(g_sr, g_nsr + 1);
+      g_sr[g_nsr].price = price;
+      g_sr[g_nsr].tier  = tier;
+      g_sr[g_nsr].tf    = (ArraySize(parts) > 3) ? parts[3] : "?";
+      g_nsr++;
+     }
+   FileClose(h);
+
+   int n_high = 0, n_med = 0, n_low = 0;
+   for(int i = 0; i < g_nsr; i++)
+     {
+      if(g_sr[i].tier == SR_TIER_HIGH)      n_high++;
+      else if(g_sr[i].tier == SR_TIER_MED)  n_med++;
+      else                                  n_low++;
+     }
+   Print("ForexHtfPivotsFib: S/R levels for ", _Symbol, " (base ", want, "): ",
+         g_nsr, " drawn (high=", n_high, " med=", n_med, " low=", n_low,
+         "), ", hidden, " hidden by tier toggles, ",
+         skipped, " rows for other symbols");
+   if(g_nsr == 0 && hidden == 0 && skipped > 0)
+      Print("ForexHtfPivotsFib: no S/R rows matched ", want,
+            " — re-export a template for this symbol");
+  }
+
+//| Idempotent like every other draw path here: create on miss, then move
+//| by name. Only runs when g_sr_dirty is set, so a chart tick never
+//| touches ~100 objects (mass GDI work is what freezes MT5 under Wine).
+void DrawSrLevels()
+  {
+   for(int i = 0; i < g_nsr; i++)
+     {
+      string name = g_pfx + "SR" + IntegerToString(i);
+      if(ObjectFind(0, name) < 0)
+        {
+         ObjectCreate(0, name, OBJ_HLINE, 0, 0, g_sr[i].price);
+         ObjectSetInteger(0, name, OBJPROP_BACK, true);
+         ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
+         ObjectSetInteger(0, name, OBJPROP_SELECTED, false);
+         ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
+        }
+      ObjectSetDouble(0, name, OBJPROP_PRICE, 0, g_sr[i].price);
+      ObjectSetInteger(0, name, OBJPROP_COLOR, SrTierColor(g_sr[i].tier));
+      ObjectSetInteger(0, name, OBJPROP_STYLE, InpSrStyle);
+      ObjectSetInteger(0, name, OBJPROP_WIDTH, (g_sr[i].tier == SR_TIER_HIGH) ? 2 : 1);
+
+      string tag = SrTierName(g_sr[i].tier) + " " + g_sr[i].tf + " " +
+                   DoubleToString(g_sr[i].price, _Digits);
+      ObjectSetString(0, name, OBJPROP_TOOLTIP, tag);
+      ObjectSetString(0, name, OBJPROP_TEXT, InpSrShowLabels ? tag : "");
+     }
+
+   // Sweep the tail: toggling InpShowSrLevels off, switching to a symbol with
+   // fewer levels, or regenerating a shorter CSV must not leave orphans behind.
+   // ObjectDelete on a missing name is a cheap no-op, so the bounded sweep is
+   // safe to run on every (rare) reload.
+   for(int i = g_nsr; i < InpSrMaxLevels; i++)
+      ObjectDelete(0, g_pfx + "SR" + IntegerToString(i));
   }
 
 //+------------------------------------------------------------------+

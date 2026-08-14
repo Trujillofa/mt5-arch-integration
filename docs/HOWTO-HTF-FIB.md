@@ -136,6 +136,40 @@ Default Fib levels: **50, 61.8, 78.6** on; 23.6 / 38.2 off.
 
 If panel shows `Golden (need swing)`: not enough alternating confirmed pivots yet — wait or lower `left`/`right` (more sensitive, more noise).
 
+### 5.2b Imported S/R levels (from `.tpl` templates)
+
+Horizontal lines drawn by hand in the manual `plantillas/*.tpl` chart templates are
+imported as static support/resistance levels. Relevance comes from the **timeframe the
+line was drawn on** — that is what the template records, so it is what the colour encodes:
+
+| Relevance | Colour | Drawn on |
+|-----------|--------|----------|
+| **HIGH** | Yellow (`InpSrColHigh`) | Monthly / Weekly / Daily / **H4** |
+| **MED** | White (`InpSrColMed`) | H1 / M30 / M15 |
+| **LOW** | Blue (`InpSrColLow`) | M5 / M1 |
+
+HIGH lines are drawn at width 2, the rest at width 1; style defaults to dotted to match
+the templates. Lines at the same price collapse into one, keeping the strongest tier.
+
+Each tier has its own visibility toggle (`InpSrShowHigh` / `InpSrShowMed` /
+`InpSrShowLow`), all on by default. XAUUSD imports 60 M5 lines against 9 H4/Daily ones,
+so turning `InpSrShowLow` off leaves the yellow + white map only.
+
+These are a **static snapshot**, not a live calculation — they do not follow price, and
+they exist only for the symbols that were exported. Regenerate after re-drawing zones:
+
+```bash
+python3 scripts/tpl_to_sr_levels.py        # reads $PLANTILLAS_DIR/*.tpl
+./scripts/18-install-forex-indicator.sh    # deploys the CSV into every prefix
+```
+
+Then remove/re-add the indicator (or change any input) to reload — **no recompile**, the
+table is read at runtime from `MQL5\Files\forex_sr_levels.csv`.
+
+Symbols are matched on their base name, so a `XAUUSDm` template also feeds an `XAUUSD.r`
+or `XAUUSD` chart. If the Experts log says `no S/R rows matched`, that symbol has no
+exported template.
+
 ### 5.3 EMAs
 
 | Line | Color (default) | Role |
@@ -222,6 +256,22 @@ On a **closed** bar, a marker can fire when **all** of the following hold:
 |-------|---------|--------|
 | `InpShowPanel` | true | `Comment()` panel |
 | `InpArrowOffsetPips` | 4 | Arrow distance from high/low |
+
+### S/R levels (imported from `.tpl` templates)
+
+| Input | Default | Notes |
+|-------|---------|--------|
+| `InpShowSrLevels` | true | Off = lines removed on next reload |
+| `InpSrFile` | `forex_sr_levels.csv` | In `MQL5\Files`, falling back to `Common\Files` |
+| `InpSrShowHigh` | true | Show HIGH tier |
+| `InpSrShowMed` | true | Show MED tier |
+| `InpSrShowLow` | true | Show LOW tier — **turn off** to declutter M5-heavy symbols |
+| `InpSrColHigh` | Yellow | HIGH relevance (MN/W1/D1/H4) |
+| `InpSrColMed` | White | MED relevance (H1/M30/M15) |
+| `InpSrColLow` | DodgerBlue | LOW relevance (M5/M1) |
+| `InpSrStyle` | `STYLE_DOT` | Matches the templates |
+| `InpSrShowLabels` | false | Attach `TIER TF price` text to each line |
+| `InpSrMaxLevels` | 300 | Hard cap — guards against a GDI storm under Wine |
 
 ---
 

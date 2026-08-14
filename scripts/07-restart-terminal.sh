@@ -25,36 +25,16 @@ export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
 info "Stopping MetaTrader terminal processes..."
-python3 <<'PY'
-import os, signal, time
-keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
-killed = []
-for pid in list(os.listdir("/proc")):
-    if not pid.isdigit():
-        continue
-    try:
-        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
-    except OSError:
-        continue
-    if "bash" in cmd or "extglob" in cmd:
-        continue
-    if any(k in cmd for k in keys):
-        print(f"  kill {pid}: {cmd[:90]}")
-        try:
-            os.kill(int(pid), signal.SIGTERM)
-            killed.append(int(pid))
-        except ProcessLookupError:
-            pass
-time.sleep(2)
-for pid in killed:
-    try:
-        os.kill(pid, 0)
-        os.kill(pid, signal.SIGKILL)
-        print(f"  SIGKILL {pid}")
-    except ProcessLookupError:
-        pass
-print("  done")
-PY
+# Graceful WM_CLOSE first — signals alone lose all chart/indicator edits. See lib.sh.
+#
+# Scoped to this WINEPREFIX: this script relaunches exactly one terminal, and several
+# brokers run side by side, so stopping all of them would leave the others dead.
+# Set MT5_STOP_ALL=1 for the old behaviour of stopping every MetaTrader process.
+if [[ "${MT5_STOP_ALL:-0}" == "1" ]]; then
+  stop_terminal_gracefully "${MT5_STOP_TIMEOUT:-40}"
+else
+  stop_terminal_gracefully "${MT5_STOP_TIMEOUT:-40}" "$WINEPREFIX"
+fi
 
 term="$(find_terminal64)" || die "terminal64.exe not found. Run ./scripts/02-install-mt5.sh"
 # If path is Windows-style in .env, resolve Linux path
@@ -63,10 +43,34 @@ if [[ "$term" == [Cc]:* ]] || [[ "$term" == *Program\ Files* && ! -f "$term" ]];
 fi
 [[ -n "$term" && -f "$term" ]] || die "could not resolve terminal64.exe under $WINEPREFIX"
 
-info "Starting: $term"
-nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
-echo $! >/tmp/mt5-terminal.pid
-info "PID $(cat /tmp/mt5-terminal.pid)  log=/tmp/mt5-terminal.log"
+# Launch, then confirm it survived — and retry if it did not.
+#
+# A terminal killed hard can take its wineserver down with it, and a launch that lands
+# while that wineserver is still shutting down dies about a second later with
+#   wine client error:0: recvmsg: Connection reset by peer
+# Observed 2026-08-13 restarting Vantage out of a win32u deadlock: this script printed
+# a healthy PID, the process was gone moments later, and the account was left with
+# three open positions and no terminal at all until it was launched by hand.
+#
+# Checking liveness after a short settle catches that, and any other instant-exit,
+# without guessing at the cause. Do NOT check $! — that is the wine loader, which
+# exits normally; ask for a terminal64 in this prefix instead.
+launched=0
+for attempt in 1 2 3; do
+  info "Starting: $term (attempt $attempt)"
+  nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
+  echo $! >/tmp/mt5-terminal.pid
+  sleep 5
+  mapfile -t live_pids < <(mt5_terminal_pids "$WINEPREFIX")
+  if [[ ${#live_pids[@]} -gt 0 ]]; then
+    launched=1
+    info "PID ${live_pids[0]}  log=/tmp/mt5-terminal.log"
+    break
+  fi
+  warn "terminal exited immediately (see /tmp/mt5-terminal.log) — retrying in 5s"
+  sleep 5
+done
+[[ "$launched" -eq 1 ]] || die "terminal failed to stay up after 3 attempts; check /tmp/mt5-terminal.log"
 
 # Wait for main shell (not just Login), then move to active Hyprland workspace
 if command -v hyprctl >/dev/null 2>&1; then

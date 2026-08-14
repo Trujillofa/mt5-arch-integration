@@ -159,7 +159,8 @@ windowrule = float on, match:class ^(MetaEditor64\.exe)$
 | Process running, no window (**ghost**) | `./scripts/10-recover-terminal.sh --fullscreen` |
 | Window vanishes after **chart click** | Same — Wine unmapped the surface; run recover (not “lost forever”) |
 | Window tiny on shared workspace | `./scripts/09-fullscreen-terminal.sh` (uses `fullscreenstate 1`) |
-| **New Order (F9) glitches / slides** | Wine restores stale coords; Hyprland `center` was animating the fight. Rules in `ops/hyprland/mt5-window-rules.conf` use `float` + `center` + `no_anim` for `Order:` (and other non-shell dialogs). `hyprctl reload` after edits. Keep focus on the MT5 monitor when opening — center follows the focused monitor. |
+| **New Order (F9) glitches / slides** | Wine restores a stale position; Hyprland `center` made it worse (multi-monitor slide). Rules in `ops/hyprland/mt5-window-rules.conf` use `float` + `no_anim` only (no `center`) for `Order:` / other non-shell dialogs. Autostart pin helper: `scripts/12-pin-mt5-dialogs.sh`. `hyprctl reload` after rule edits. |
+| **MCP bind error on 22346** | Every brand ships `Config/assistant.ini` with MCP on `127.0.0.1:22346`. Only one terminal can bind it. We use the file bridge, not MCP — disable with `./scripts/disable-mt5-mcp.sh`, then restart each terminal. |
 
 ## Clipboard / paste (Ctrl+V)
 
@@ -222,16 +223,31 @@ Optional Hyprland rules: `ops/hyprland/mt5-window-rules.conf`
 
 | Mode | Signature | Example |
 |------|-----------|---------|
-| spin | ~100% of one core, `wchan=0` | SIGSEGV livelock in win32u |
+| spin | ≥80% of one core **and** system-time > user-time, usually `wchan=0` | SIGSEGV livelock in win32u |
 | deadlock | 0 jiffies, `wchan=futex_do_wait` for 3 ticks | win32u AB–BA lock |
 
-On fire it: logs → **desktop notify** → capture (eu-stack + gdb) → optional webhook (`MT5_WATCH_WEBHOOK_URL`). **Does not restart** unless `MT5_WATCH_RESTART=1` (opt-in; chart state risk).
+Busy healthy paint is user-time dominant and is ignored. On fire: logs → **desktop notify** → capture → optional webhook (`MT5_WATCH_WEBHOOK_URL`). **Does not restart** unless `MT5_WATCH_RESTART=1`.
 
 ```bash
 systemctl --user status mt5-freeze-watch.timer
 journalctl --user -u mt5-freeze-watch.service -f
 ls "${XDG_RUNTIME_DIR}/mt5-freeze-watch/"
 ```
+
+## Multi-broker ops (Vantage / FP / Exness)
+
+Several Wine prefixes run side by side. Always scope stop/restart to one prefix.
+
+```bash
+./scripts/14-fix-terminals.sh              # report OK / FROZEN / DOWN (exit 1 if any bad)
+./scripts/14-fix-terminals.sh --fix         # restart only frozen/down
+./scripts/14-fix-terminals.sh --fix-all     # restart every configured broker
+WINEPREFIX=~/.mt5-fpmarkets ./scripts/13-stop-terminal.sh   # stop unused (saves GDI)
+WINEPREFIX=~/.mt5-fpmarkets ./scripts/07-restart-terminal.sh
+./scripts/disable-mt5-mcp.sh                 # once per prefix; then restart
+```
+
+**FP fails more when “unused”** because a heavy Fib profile (many symbols / M5 tabs) still paints and rebuilds. Prefer H1 Fib on 1–2 charts, or stop FP when idle. S/R import lines default **off** in the indicator (Wine GDI guard).
 
 ## Account shows 0 balance in `mt5-arch account`
 

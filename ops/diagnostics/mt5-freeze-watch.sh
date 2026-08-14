@@ -61,12 +61,12 @@ STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/mt5-freeze-watch"
 HZ="$(getconf CLK_TCK 2>/dev/null || echo 100)"
 mkdir -p "$STATE_DIR"
 
-# utime+stime for the main thread alone. comm is parenthesised and can contain spaces
-# (Wine names this thread "main", but do not rely on that), so strip through the
-# closing paren first; fields 14/15 of the original numbering land at 12/13 once
-# state has become field 1.
-main_jiffies() {
-  awk '{ r=$0; sub(/^[^)]*\) /, "", r); split(r, f, " "); print f[12]+f[13]+0 }' \
+# utime / stime for the main thread alone. comm is parenthesised and can contain
+# spaces (Wine names this thread "main", but do not rely on that), so strip through
+# the closing paren first; fields 14/15 of the original numbering land at 12/13 once
+# state has become field 1. Prints "utime stime".
+main_times() {
+  awk '{ r=$0; sub(/^[^)]*\) /, "", r); split(r, f, " "); print f[12]+0, f[13]+0 }' \
     "/proc/$1/task/$1/stat" 2>/dev/null
 }
 
@@ -108,23 +108,28 @@ print(json.dumps({
 
 # Match the command line: Wine names the main thread "main", so a comm-based scan
 # finds nothing and would report every terminal as absent.
-mapfile -t PIDS < <(pgrep -f 'terminal64\.exe' || true)
+mapfile -t PIDS < <(mt5_terminal_pids || true)
 [[ ${#PIDS[@]} -eq 0 ]] && exit 0
 
-declare -A BEFORE=()
+declare -A BEFORE_U=() BEFORE_S=()
 for pid in "${PIDS[@]}"; do
-  [[ -d "/proc/$pid" ]] && BEFORE[$pid]="$(main_jiffies "$pid")"
+  [[ -d "/proc/$pid" ]] || continue
+  read -r bu bs < <(main_times "$pid") || continue
+  BEFORE_U[$pid]="$bu"
+  BEFORE_S[$pid]="$bs"
 done
 
 sleep "$SAMPLE"
 
 for pid in "${PIDS[@]}"; do
   [[ -d "/proc/$pid" ]] || continue
-  before="${BEFORE[$pid]:-}"
-  [[ -z "$before" ]] && continue
-  after="$(main_jiffies "$pid")"
-  [[ -z "$after" ]] && continue
-  delta=$(( after - before ))
+  [[ -n "${BEFORE_U[$pid]:-}" ]] || continue
+  read -r au as < <(main_times "$pid") || continue
+  bu="${BEFORE_U[$pid]}"
+  bs="${BEFORE_S[$pid]}"
+  udelta=$(( au - bu ))
+  sdelta=$(( as - bs ))
+  delta=$(( udelta + sdelta ))
   pct=$(( delta * 100 / (SAMPLE * HZ) ))
   wchan="$(cat "/proc/$pid/task/$pid/wchan" 2>/dev/null || echo '?')"
 
@@ -134,9 +139,12 @@ for pid in "${PIDS[@]}"; do
   key="$STATE_DIR/${pid}.${starttime}"
 
   mode=""
-  if (( pct >= THRESHOLD )); then
+  # Spin needs sys-time majority: busy healthy paint is user-dominant and used to
+  # false-trip a bare pct>=THRESHOLD gate (and miss sys-skewed freezes that sat
+  # just under an older 2× skew check — FP 2026-08-14).
+  if (( pct >= THRESHOLD && sdelta > udelta )); then
     mode="spin"
-    detail="cpu=${pct}% of one core wchan=${wchan}"
+    detail="cpu=${pct}% sys=${sdelta} user=${udelta} wchan=${wchan}"
   elif (( delta == 0 )) && [[ "$wchan" == futex_do_wait ]]; then
     # Count consecutive observations rather than firing on the first one. A capture
     # costs 8s of strace against a live trading terminal, so make it earn that.

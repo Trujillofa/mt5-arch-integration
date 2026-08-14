@@ -38,6 +38,10 @@ SRC_EA=(
   "${ROOT}/mql5/Experts/ForexHtfFibTester.mq5"
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
 )
+# Runtime data (no recompile needed — regenerate with scripts/tpl_to_sr_levels.py)
+SRC_FILES=(
+  "${ROOT}/mql5/Files/forex_sr_levels.csv"
+)
 
 if [[ ! -f "${SRC_INC}" ]]; then
   echo "ERROR: missing ${SRC_INC}" >&2
@@ -52,8 +56,11 @@ for mql5 in "${CANDIDATES[@]}"; do
   [[ -n "${SEEN[$real]+x}" ]] && continue
   SEEN[$real]=1
 
-  mkdir -p "${mql5}/Indicators" "${mql5}/Include" "${mql5}/Experts"
+  mkdir -p "${mql5}/Indicators" "${mql5}/Include" "${mql5}/Experts" "${mql5}/Files"
   cp -v "${SRC_INC}" "${mql5}/Include/ForexUtils.mqh"
+  for f in "${SRC_FILES[@]}"; do
+    [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Files/"
+  done
   for f in "${SRC_IND[@]}"; do
     [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Indicators/"
   done
@@ -73,6 +80,16 @@ if [[ "${installed}" -eq 0 ]]; then
   exit 1
 fi
 
+# Also stage runtime data in Common\Files: the Strategy Tester agent sandbox does not
+# see the terminal's MQL5\Files, and the indicator falls back to FILE_COMMON.
+for prefix in "${WINEPREFIX}" "${HOME}"/.mt5 "${HOME}"/.mt5-*; do
+  common="${prefix}/drive_c/users/${USER}/AppData/Roaming/MetaQuotes/Terminal/Common/Files"
+  [[ -d "${common}" ]] || continue
+  for f in "${SRC_FILES[@]}"; do
+    [[ -f "${f}" ]] && cp -v "${f}" "${common}/"
+  done
+done
+
 cat <<'EOF'
 
 Next steps:
@@ -90,4 +107,7 @@ Next steps:
        BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/
+  5. S/R levels: MQL5/Files/forex_sr_levels.csv (yellow=HIGH white=MED blue=LOW)
+       re-export .tpl zones -> python3 scripts/tpl_to_sr_levels.py -> rerun this
+       script -> refresh the chart. No recompile needed.
 EOF

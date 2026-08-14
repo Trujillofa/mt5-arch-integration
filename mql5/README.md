@@ -9,6 +9,7 @@
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — buffer 8 + ATR SL/TP |
 | `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.22) |
+| `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
 
 ### Mt5ArchBridge symbols (v1.22)
 
@@ -74,6 +75,26 @@ Signal buffers: **HTF Fib = 8**, **Template = 9**.
 | `InpUseRsiMaFilter` | true | Long needs RSI > RSI-MA; short RSI < RSI-MA |
 
 Panel shows `RSI` and `RSI MA` with above/below tag.
+
+### Imported S/R levels (ForexHtfPivotsFib v1.43+)
+
+`scripts/tpl_to_sr_levels.py` converts the hand-drawn `OBJ_HLINE` zones of the manual
+`plantillas/*.tpl` chart templates into `Files/forex_sr_levels.csv`, which the indicator
+reads **at runtime** (no recompile). Relevance = the timeframe the line was drawn on:
+
+| Tier | Colour | Drawn on |
+|------|--------|----------|
+| HIGH | Yellow | MN / W1 / D1 / H4 |
+| MED | White | H1 / M30 / M15 |
+| LOW | Blue | M5 / M1 |
+
+```bash
+python3 scripts/tpl_to_sr_levels.py       # PLANTILLAS_DIR=... to point elsewhere
+./scripts/18-install-forex-indicator.sh   # copies CSV to MQL5\Files + Common\Files
+```
+
+Static snapshot — regenerate after re-drawing zones. Full notes:
+[docs/HOWTO-HTF-FIB.md §5.2b](../docs/HOWTO-HTF-FIB.md).
 
 ### ForexHtfPivotsFib buffers (`iCustom`)
 
