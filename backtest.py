@@ -14,9 +14,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import cast
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -450,7 +451,25 @@ def build_search_candidates(max_n: int = 1200, seed: int = 42) -> list[dict]:
     return seeds + candidates
 
 
-def search(d: pd.DataFrame) -> tuple[dict, Metrics]:
+def assert_charter_may_score(charter: dict[str, Any]) -> None:
+    """Refuse catalog-derived charters that lack a verified article-intake record.
+
+    ``search()`` / ``--charter`` call this before any scoring. Existing XAU
+    families without catalog markers are unchanged.
+    """
+    scripts = Path(__file__).resolve().parent / "scripts"
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    from xau_charter_protocol import validate_charter
+
+    errs = validate_charter(charter)
+    if errs:
+        raise RuntimeError("charter refused before scoring:\n- " + "\n- ".join(errs))
+
+
+def search(d: pd.DataFrame, *, charter: dict[str, Any] | None = None) -> tuple[dict, Metrics]:
+    if charter is not None:
+        assert_charter_may_score(charter)
     candidates = build_search_candidates()
 
     best_p = candidates[0]
@@ -544,6 +563,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--commission-per-lot", type=float, default=0.0, help="per lot per side")
     ap.add_argument("--slippage-points", type=float, default=0.0, help="per fill, in points")
     ap.add_argument("--point-size", type=float, default=0.01, help="price per point (XAU: 0.01)")
+    ap.add_argument(
+        "--charter",
+        type=Path,
+        default=None,
+        help="optional charter JSON; catalog-derived records must have verified intake",
+    )
     args = ap.parse_args(argv)
 
     global COSTS
@@ -578,8 +603,15 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"WARNING: no '{args.spread_col}' column — spread charge is 0 (frictionless)")
 
+    charter = None
+    if args.charter is not None:
+        charter = json.loads(Path(args.charter).read_text(encoding="utf-8"))
+        if not isinstance(charter, dict):
+            raise SystemExit("--charter must be a JSON object")
+        assert_charter_may_score(charter)
+
     print("--- search ---")
-    best_p, best_m = search(d)
+    best_p, best_m = search(d, charter=charter)
     print("--- search best ---")
     print_metrics(best_m)
     print(f"params={best_p}")

@@ -1,0 +1,10 @@
+{
+  "schema": "mt5-article-intake/v1",
+  "article_url": "https://www.mql5.com/en/code/example-not-imported",
+  "claim_type": "pf",
+  "independent_python": false,
+  "parity_package": "none",
+  "holdout_used_for_selection": false,
+  "decision": "reject",
+  "reason": "Community profit-factor is not validation. No independent Python implementation; catalog Expert Advisor source was not imported."
+}
