@@ -4,7 +4,7 @@
 **Status:** **SPECIFICATION ONLY** — not implemented · not enforced · not freeze-ready for thesis
 **Branch:** `research/exogenous-predictor-protocol-v1` from `main@a492f2c`
 **Parent:** extends family protocol 2.2 (`docs/research/XAU-FAMILY-PROTOCOL-V2.md`) without replacing it for single-frame / joint-cosign families
-**Revision:** Phase A amend (review CHANGES REQUIRED) — same document, no v2 bump
+**Revision:** Phase A amend 2 (executable null algorithm, pre-entry events, identity, accounting boundary)
 
 ## Standing loop disposition (unchanged)
 
@@ -23,8 +23,8 @@ Define a **protocol extension** so a multi-instrument thesis may use some symbol
 
 - validator vocabulary the current protocol lacks;
 - a dedicated harness kind and accounting path;
-- a **conditional null** estimand that freezes real signal events **and** executes exactly the real trade count on every trial;
-- a **finite-catalog Bonferroni** multiplicity rule with a corrected historical baseline.
+- a **canonical, executable** conditional null (`conditional_fixed_signal_events_fixed_trades_v1`) that Phase B can implement without open-ended “charter algorithm text”;
+- finite-catalog Bonferroni multiplicity with corrected historical baseline and **provisional PASS** while the catalog remains open.
 
 ### 0.2 Non-goals (explicit)
 
@@ -33,21 +33,20 @@ Define a **protocol extension** so a multi-instrument thesis may use some symbol
 | Thesis charter / memo / family module | Phase C after Phase B merges |
 | Implementation of validators or null engine | Phase B |
 | Develop package load, screen, null, holdout | Forbidden until freeze+fixtures authorized |
-| Reshaping EUR/GBP into a derived XAU indicator | Evades exogenous structure; **forbidden as a protocol workaround** |
+| Reshaping EUR/GBP into a derived XAU indicator | Evades exogenous structure; **forbidden** |
 | Changing single-frame or `multi_instrument_joint_v1` contracts | Leave 2.2 joint-cosign path intact |
 | Multiple traded books | **Deferred to protocol v2** |
+| Alternate null algorithms (with-replacement, strata, recompute signals, etc.) | **Not in v1** — charter may only pin parameters listed in §5.8 |
 
 ### 0.3 Relationship to existing kinds
 
 | `harness.kind` | Role |
 |----------------|------|
 | (single-frame default) | One symbol, `xau_family_null_maxstat` / sealed cycle |
-| `multi_instrument_joint_v1` | All listed symbols co-traded; joint soft primary; shared-k OHLC null on intersection |
-| **`multi_instrument_exogenous_predictor_v1`** (this extension) | Non-empty predictors form signals; **exactly one traded book** is gated; conditional fixed-event **and fixed-trade** null |
+| `multi_instrument_joint_v1` | All listed symbols co-traded; joint soft primary; shared-k OHLC null |
+| **`multi_instrument_exogenous_predictor_v1`** | Non-empty predictors; **exactly one traded book**; canonical fixed-event fixed-trade null |
 
-A charter that claims predictors but uses `multi_instrument_joint_v1` **must fail validation**.
-A charter that requires this kind **must not** be runnable on the joint-cosign harness.
-An all-traded family **must not** select this kind (use joint v1 or single-frame).
+All-traded families **must not** select this kind. Predictor theses **must not** use joint_v1.
 
 ---
 
@@ -56,424 +55,384 @@ An all-traded family **must not** select this kind (use joint v1 or single-frame
 ### 1.1 Required charter blocks
 
 ```text
-instrument.symbols                  # ordered list; all package members used in the thesis
+instrument.symbols                  # ordered list; all package members used
 instrument.traded_symbols           # EXACTLY one symbol
-instrument.predictor_symbols        # non-empty list; no overlap with traded
+instrument.predictor_symbols        # non-empty; no overlap with traded
 instrument.multi_symbol_in_scope    # true
 ```
 
-**Removed from v1:** `instrument.require_all_symbols_for_signal` as an optional undefined boolean.
-Signal formation **always** uses the full `symbols` list on the intersection calendar (all predictors + the traded symbol contribute to the feature world as frozen). There is no “drop a predictor and still fire” mode in v1.
+Signal formation always uses the full `symbols` list on the intersection calendar.
+Field `require_all_symbols_for_signal` is **not** part of v1.
 
 ### 1.2 Invariants (validator — fail closed)
 
 1. `len(traded_symbols) == 1`.
 2. `len(predictor_symbols) ≥ 1`.
 3. `traded_symbols[0] ∈ symbols`.
-4. Every `p ∈ predictor_symbols` satisfies `p ∈ symbols`.
-5. `set(traded_symbols) ∩ set(predictor_symbols) = ∅`.
-6. `set(traded_symbols) ∪ set(predictor_symbols) = set(symbols)`.
-7. `traded_symbols` is a **proper subset** of `symbols` (equivalently: at least one predictor).
-8. Every symbol in `symbols` has `per_symbol_meta` (point_size, contract_size, digits).
-9. Package pin (package_id, per-file sha256, holdout, develop derivation) as under Phase-0 multi-instrument data protocol.
+4. Every predictor ∈ `symbols`.
+5. Disjoint roles; union equals `symbols`; traded is a **proper subset**.
+6. Every symbol has `per_symbol_meta` (point_size, contract_size, digits).
+7. Package pin complete (Phase-0 multi-instrument data).
 
-**Required regression cases (Phase B tests):**
-
-| Case | Expected |
-|------|----------|
-| `predictor_symbols = []` | validation error |
-| `len(traded_symbols) ≠ 1` | validation error |
-| Overlap traded ∩ predictor | validation error |
-| Missing traded or predictor block | validation error |
-| Union ≠ symbols / proper-subset fail | validation error |
-| Simulated fill on a predictor | fixture hard-fail / protocol violation |
+**Phase B regression cases:** zero predictors; multiple traded; overlap; missing roles; predictor fills.
 
 ### 1.3 Semantic rules
 
-| Role | May enter orders | Soft/classic gates | MTM gate equity | Null path |
-|------|------------------|--------------------|-----------------|-----------|
-| **traded** (exactly one) | Yes | Yes — **sole** primary book | Yes | Outcome paths only (§5) |
-| **predictor** (≥1) | **No** | **No** | **No** | Signal formation on **real path only**; frozen events on null |
-
-**Fail closed:** any simulated fill on a predictor is a protocol violation.
+| Role | Orders | Soft/classic gates | MTM equity | Null path |
+|------|--------|--------------------|------------|-----------|
+| **traded** (exactly one) | Yes | Sole primary book | Yes | Outcome paths only |
+| **predictor** (≥1) | **No** | **No** | **No** | Real-path signal formation only; events frozen on null |
 
 ### 1.4 Gates scope (v1)
 
-- **Primary n_passers** is **binary** on the single traded book’s soft gate: `0` or `1`.
-- `gates.primary_n_passers` must be `"soft"`.
-- Soft keys apply to the **traded** book only (n_trades, PF, NP, max_drawdown_pct with MTM contract §4).
-- **No** summed multi-traded passers; **no** joint three-book primary (that is joint_v1).
-- Classic remains report-only unless a future protocol freezes otherwise.
-- Predictor books must not appear under required soft passers.
-
-This matches fail-closed accounting that accepts positive screens when `real.n_passers == 1` (cardinality-1 binary family).
+- Primary `n_passers` ∈ {0,1} on the single traded book’s soft gate only.
+- `gates.primary_n_passers = "soft"`.
+- No summed multi-traded passers (matches fail-closed parser `real.n_passers == 1` for positive screen).
+- Classic report-only unless a later protocol freezes otherwise.
 
 ---
 
 ## 2. Harness kind and dispatch
 
-### 2.1 Kind string
+### 2.1 Kind
 
 ```text
 harness.kind = "multi_instrument_exogenous_predictor_v1"
 ```
 
-### 2.2 Dispatch rules (implementation obligation in Phase B)
+### 2.2 Dispatch (Phase B)
 
-| Caller | Required behavior |
-|--------|-------------------|
+| Caller | Behavior |
+|--------|----------|
 | `xau_family_null_maxstat.py` | **Refuse** |
-| `xau_sealed_family_cycle.py` | **Refuse** (until/unless a dedicated multi-frame sealed path is added under this kind) |
+| `xau_sealed_family_cycle.py` | **Refuse** (unless later extended under this kind) |
 | `xau_multi_instrument_joint_screen.py` | **Refuse** |
-| Dedicated exogenous harness (Phase B name TBD) | Only path for develop screen + later null |
+| Dedicated exogenous harness | Only screen/null path |
 
 ### 2.3 Freeze-time vs run-time
 
-| Stage | Harness module file | Required |
-|-------|---------------------|----------|
-| **Charter freeze (Phase C)** | May be absent on disk | Must name `harness.kind`, `harness.module_expected`, `prohibited_runners` |
-| **Fixtures PR** | Synthetic only | Module implements signal/entry/exit + fixtures; no develop peek |
-| **Screen / null** | Present and sealed | Dispositional clean-tree includes module + protocol |
-
-Freezing a charter that names an unimplemented module is allowed **only after** Phase B lands validator vocabulary that **recognizes** this kind (freeze validation must not fail open as “unknown multi-instrument”).
-
-### 2.4 Clean-tree protection (Phase B)
-
-Keep/extend `DISPOSITIONAL_PATH_GLOBS` for `scripts/xau_multi_instrument_*.py` and any new conditional-null core module.
+Phase C may freeze `module_expected` before the file exists **only after** Phase B recognizes this kind in validators/accounting.
+Dispositional clean-tree must include `scripts/xau_multi_instrument_*.py` and conditional-null core.
 
 ---
 
 ## 3. Analysis calendar
 
-### 3.1 Mode
-
 ```text
 analysis_calendar.mode = "intersection_only"
 ```
 
-**Mandatory** for: signal formation, ATR (if used), entries, exits, MTM equity, real path, null path.
-
-### 3.2 Construction
-
-1. Restrict each symbol’s develop series to `server_time < holdout_start`.
-2. Build ordered set **I** of timestamps present in **every** symbol in `instrument.symbols`.
-3. Drop any bar not in **I** before any rule logic.
-4. **Forbidden:** unequal calendars between real and null, or full-path ATR/exits off **I**.
-
-### 3.3 Clock fields
-
-- timezone-naive `server_clock_as_stored`;
-- `hour == time.dt.hour`, `day_id == time.dt.strftime("%Y-%m-%d")`;
-- timestamps unique and strictly increasing on **I**.
-
-Empty joint intersection → hard error (`EMPTY_JOINT_INTERSECTION`), never a zero-trade valid screen.
+Mandatory for signals, ATR, entries, exits, MTM, real, and null on set **I** (timestamps in every `symbols` member).
+Clock: naive server clock; hour/day_id derived from time; unique strictly increasing timestamps.
+Empty **I** → `EMPTY_JOINT_INTERSECTION` (hard error).
 
 ---
 
 ## 4. MTM equity and drawdown (traded book only)
 
-### 4.1 Contract (mandatory for soft DD)
-
-For the single traded symbol **S** and each bar \(t \in I\):
+For traded symbol **S** and each \(t \in I\):
 
 \[
 \text{equity}_S(t) = B_S(t) + \text{open\_pnl}_S(t)
 \]
 
-- \(B_S(t)\): realized balance after all closed trades with exit bar \(\le t\) (costs deducted at exit booking).
-- \(\text{open\_pnl}_S(t) = 0\) if flat; else mark-to-close (default mark = close on **I**) × contract × lots × side.
-
-**Peak / max_drawdown_pct** use the full `equity_S` series on **I**, including open floating loss.
-
-### 4.2 Explicit ban
-
-Do **not** use realized-only step equity that ignores open floating DD.
-
-### 4.3 Multiple traded books
-
-**Not in v1.** Protocol v2 only.
+with mark = close on **I** by default; DD uses full equity series including floating open P&L.
+**Ban:** realized-only step equity for gate DD.
+Multiple traded books: **not in v1**.
 
 ---
 
-## 5. Conditional null estimand (fixed events **and** fixed trades)
+## 5. Conditional null — canonical algorithm (Phase B must implement exactly this)
 
-### 5.1 Why attrition is forbidden
-
-Allowing re-paired events to produce “no trade” reintroduces null trade-count attrition and breaks the estimand “same signals, different subsequent traded paths under legal completion.”
-
-### 5.2 Frozen estimand
-
-**Name:** `conditional_fixed_signal_events_fixed_trades_v1`
-
-**Real path:**
-
-1. On **I**, run frozen signal predicate → ordered events \(E = (e_1,\ldots,e_M)\) with \(e_m = (t_m^\*, \text{side}_m, \ldots)\).
-2. Apply frozen entry/exit on the **single traded** symbol → **exactly** \(T\) executed trades (each event that is allowed to enter under the freeze must produce one completed trade under real data; freeze design must make illegal incomplete holds impossible on real by construction, or document that only events that complete are in \(E\) — **v1 requires: \(T = M\)** after applying the same legal-entry filter that defines \(E\)).
-3. **v1 event set definition:** \(E\) is the list of signals that **successfully complete** a full legal trade under the freeze on the real path (so \(M = T_{\text{real}}\)). Signals rejected for missing H-bars / day_id / lots are **not** members of \(E\).
-
-**Null path (trial \(j = 0..N-1\)):**
-
-1. Freeze \(E\) completely: same \(M\), times, sides, and event payload used for entry sizing flags that are not path outcomes.
-2. For each \(e_m\), sample a **donor traded path segment** from a pre-built **eligible donor pool** (§5.4) using RNG seed `base_seed + j` and frozen sampling rules.
-3. Execute entry/exit/costs on that donor segment for every event.
-4. **Every null trial must end with exactly \(T = M\) executed trades.** If construction cannot supply a legal donor for every event, the **trial is invalid** (protocol/run failure), not a partial-trade success.
-
-### 5.3 Identity construction
-
-- One **identity** pairing (real event → real subsequent path) is an **invariant fixture**.
-- Identity is **excluded from N, hits, and p-value**.
-- Identity must reproduce real metrics within documented float tolerance.
-- Identity may live as a synthetic/real-path unit fixture; it is not null trial index 0 unless a freeze explicitly marks trial 0 as non-counting diagnostic (discouraged — prefer separate fixture).
-
-### 5.4 Eligible donor pool (must be fully frozen before Phase B)
-
-Before any trial draw, build pool \(\mathcal{D}\) of donor segments on the traded symbol only, each segment already satisfying:
-
-1. Schema/cost eligibility (finite nonnegative spreads on required bars; OHLC finite; clock invariants).
-2. **H-bar same-day existence** from a candidate entry bar (default H=3): bars \(t_{\text{entry}},\ldots,t_{\text{entry}}+H-1\) all on **I**, same `day_id`.
-3. ATR/lot sizing inputs at the freeze-defined source bar are finite and produce lots ≥ lot_min after floor (or freeze pins lots from real event payload — see §5.5).
-4. Entry day / weekend rule: next-bar-after-signal style constraints are encoded as eligibility of the segment start.
-
-**Donor construction failure** (empty pool, insufficient donors for sampling policy) → **protocol invalid / run refuse**, not zero trades.
-
-### 5.5 Sampling policy (charter must pin all of these)
-
-| Pin | v1 requirement |
-|-----|----------------|
-| RNG | `numpy.random.Generator(PCG64(base_seed + trial_index))` unless freeze names another Generator |
-| With/without replacement | Freeze must choose **one**; default recommendation: **without replacement within a trial** across the M events when \(\|\mathcal{D}\| ≥ M\); if \(\|\mathcal{D}\| < M\), protocol refuse (do not silent-replace) |
-| Overlap of donors | Freeze: `forbid_overlap_within_trial` (default **true**) or allow with explicit justification |
-| Strata | Optional; if used, define strata key (e.g. entry hour) and sample within strata; underfull stratum → refuse trial/protocol |
-| Normalization | How donor OHLC is applied to the event (e.g. splice continuous path from entry open; absolute price path transplant) — full algorithm text required |
-| ATR source | Freeze: `atr_from_donor_at_entry` **or** `atr_frozen_from_real_event` (no silent mix) |
-| Lot source | Freeze: recompute from ATR/balance rule **or** freeze lots from real event; must still pass lot_min/max |
-| Spread/cost source | Freeze: donor bar spreads at entry **or** real event spread snapshot; commission/slippage from cost pin |
-| Outcome independence | Donor selection uses **only** eligibility geometry and RNG — **never** realized P&L, future closes beyond eligibility window definition, or gate metrics |
-
-### 5.6 Invariants (minimum)
-
-1. Null trial event count \(M\) equals real \(M\).
-2. Null trial **executed trade count** \(T\) equals real \(T\) equals \(M\).
-3. Event timestamps and sides unchanged.
-4. Intersection calendar **I** only.
-5. Causal entry after signal under freeze; H-bar same-day hold rules enforced via donor eligibility.
-6. Predictor series not re-simulated for signal formation on null.
-7. Invalid donor/ assignment → **invalid trial/run**, not a zero-trade null success.
-8. Identity fixture excluded from p-value accounting.
-
-### 5.7 Charter null block (required fields)
+### 5.1 Implementation id
 
 ```text
-null.method / implementation_id = conditional_fixed_signal_events_fixed_trades_v1
-null.estimand = fixed_real_completed_events_fixed_trade_count
-null.n_trials = N  # default ≥ 999; see multiplicity §7
-null.base_seed = <non-negative int>
-null.identity_excluded_from_n = true
-null.donor_pool = { eligibility, strata, ... }
-null.sampling = { with_replacement, overlap, rng, ... }
-null.atr_source / lot_source / spread_source = pinned enums
-null.invariants = [ ... ]
-null.forbidden_methods = [
-  recompute_signals_under_ohlc_rotate,
-  allow_unfilled_events_in_trial,
-  independent_k_per_symbol,
-  day_block_shuffle_predictors,
-  global_return_shuffle_predictors,
-  outcome_dependent_donor_pick
-]
+null.method = conditional_fixed_signal_events_fixed_trades_v1
+null.implementation_id = conditional_fixed_signal_events_fixed_trades_v1
+null.estimand = fixed_real_preentry_events_fixed_trade_count
 ```
 
-### 5.8 Screen vs null
+**Unsupported alternatives are protocol errors** if a charter names them under this kind:
+with-replacement sampling, within-trial donor overlap, strata sampling, OHLC-rotate signal recompute,
+outcome-dependent donors, unfilled events, free-form “algorithm text” overrides of §5.5–§5.7.
 
-Same screen-fail rule as protocol 2.2 for binary primary:
+Phase C freezes only **parameters** listed in §5.8 (H, risk, lot bounds, N, seed, package pins, signal predicate) — not alternate engines.
 
-- real `n_passers == 0` → **SCREEN_FAIL**, null not run, r1 unburned;
-- real `n_passers == 1` → screen-only pending null or sealed null under accounting §8;
-- real `n_passers ∉ {0,1}` → protocol/implementation error for v1 cardinality-1 binary families.
+### 5.2 Holding constants (canonical)
+
+| Constant | v1 value |
+|----------|----------|
+| H | **3** (holding bars including entry bar) |
+| Entry | open of **next** joint bar after signal bar \(t^\*\) on **I** |
+| Same-day | \(t^\*\), entry, and all H hold bars share one `day_id` |
+| Exit priority per bar after entry | SL then TP then time-flat at end of hold window (close of bar \(t_{\text{entry}}+H-1\)) |
+| Mark for MTM | close |
+
+### 5.3 Real path — event set E (pre-entry only)
+
+**Step R1 — raw signal candidates.**
+On each \(t \in I\) (after warmup as frozen by thesis), evaluate the **charter signal predicate** using only data allowed by the freeze (predictors + traded history through \(t\), features from \(t-L..t-1\) when applicable). Produce candidate \(c = (t^\*=t, \text{side} \in \{+1,-1\})\).
+
+**Step R2 — pre-entry eligibility predicate \(P_{\text{entry}}(c)\).**
+Admit \(c\) into \(E\) **iff all** hold (no post-entry information):
+
+1. Next bar \(t_e = \text{index}(t^\*)+1\) exists on **I**.
+2. `day_id(t_e) == day_id(t^\*)`.
+3. Bars \(t_e, t_e+1, \ldots, t_e+H-1\) all exist on **I** and share `day_id(t_e)`.
+4. ATR at freeze source bar (canonical: **atr at \(t^\*\)** on traded series on **I**, Wilder 14 unless thesis freezes another **before Phase C** — default Wilder 14) is finite and \(> 0\).
+5. Lots from canonical sizing (§5.6) using balance at decision time and that ATR satisfy lots ≥ lot_min after floor-to-step and ≤ lot_max.
+6. Spread at \(t_e\) on traded symbol is finite and ≥ 0.
+7. side is ±1.
+
+Candidates failing \(P_{\text{entry}}\) are **rejected** and **never** enter \(E\).
+
+**Step R3 — event list.**
+\(E = (e_1,\ldots,e_M)\) is the ordered list of admitted candidates. Each event stores at least:
+`event_id` (0..M-1), `t_star`, `t_entry`, `side`, `atr_tstar`, `lots` (as computed at real admission), `spread_entry` (real traded spread at \(t_e\)).
+
+**Step R4 — post-entry execution (must complete).**
+For each \(e_m \in E\), enter at open(\(t_{\text{entry}}\)) with stored side/lots; apply SL/TP/time on the H bars using real traded OHLC on **I**.
+**Every** \(e_m\) **must** produce exactly one closed trade (exit by SL, TP, or time-flat at last hold bar).
+
+If any admitted event cannot complete (missing bar that passed eligibility — should be impossible —, non-finite mark mid-hold, engine bug, etc.):
+→ **run invalid**: disposition `FAILED_RUN_UNKNOWN` (if dispositional STARTED already written) with r1 burned; **do not** drop the event from \(M\) or silently skip the trade.
+
+Therefore on every **valid** real run: **\(T_{\text{real}} = M\)**.
+
+### 5.4 Donor segment definition
+
+A **donor** is a contiguous traded-path segment on **I** identified by a stable **`donor_id`**.
+
+**Canonical donor_id:** integer index of the **entry bar** \(t_e\) on the joint calendar **I** (0-based position in the aligned traded frame).
+
+Donor \(d\) at entry index \(i = \text{donor_id}\) is **eligible** iff \(P_{\text{donor}}(i)\):
+
+1. Bars \(i, i+1, \ldots, i+H-1\) exist on **I**, same `day_id`.
+2. OHLC finite on those bars; spread at \(i\) finite and ≥ 0.
+3. (No outcome filter: eligibility **must not** depend on future P&L, win/loss, or gate metrics.)
+
+**Eligible donor pool \(\mathcal{D}\):** sorted list of all eligible `donor_id` values on develop **I**.
+
+**Real identity donor** for event \(e_m\): `donor_id = index(e_m.t_entry)` (must be in \(\mathcal{D}\) on a valid real run).
+
+### 5.5 Canonical pairing algorithm (counted null trials)
+
+**RNG:** for trial index \(j \in \{0,1,\ldots,N-1\}\):
+
+```text
+rng_j = numpy.random.Generator(numpy.random.PCG64(base_seed + j))
+```
+
+**Assignment (without replacement, no overlap within trial):**
+
+1. Require \(|\mathcal{D}| ≥ M\). If not → **donor preflight failure** (§8.3).
+2. Draw a random permutation of \(\mathcal{D}\) via `rng_j.permutation(len(D))` applied to sorted \(\mathcal{D}\).
+3. Take the first \(M\) donor_ids in that permutation as \((d_0,\ldots,d_{M-1})\) assigned to events \(e_0,\ldots,e_{M-1}\) in order.
+4. **Complete-identity rejection:** let \(d_m^{\text{id}} = \text{index}(e_m.t_entry)\). If \((d_0,\ldots,d_{M-1}) = (d_0^{\text{id}},\ldots,d_{M-1}^{\text{id}})\), **discard** and redraw from the **same** `rng_j` (continue consuming RNG state) until the assignment is **not** the full identity vector, or until `MAX_IDENTITY_REDRAWS = 1000` failures → **trial invalid** / run UNKNOWN (should be astronomically rare when \(|\mathcal{D}| > M\); if \(|\mathcal{D}| = M\) the only permutation may be identity — then protocol refuse at preflight: require \(|\mathcal{D}| ≥ M+1\) **or** \(|\mathcal{D}| ≥ M\) and \(M ≥ 1\) with at least one non-identity permutation available; **v1 pin: require \(|\mathcal{D}| ≥ max(M+1, M)\) and if the only possible assignments are identity, preflight fails**).
+
+**v1 pin on pool size:** \(|\mathcal{D}| ≥ M + 1\) when \(M ≥ 1\), guaranteeing at least one non-identity injection-style assignment under without-replacement of M distinct donors (when M=1, need ≥2 donors).
+
+**Per-event self-pairing:** **allowed** (an event may draw its own real donor_id) **provided** the full M-vector is not the complete identity assignment. No ban on partial self-hits.
+
+**Forbidden in v1:** with-replacement; overlapping donors within a trial; strata; free charter overrides of this pairing.
+
+### 5.6 Path transplant, sizing, costs (canonical)
+
+For event \(e_m\) paired with donor_id \(i\):
+
+1. **Entry fill price** = open of traded bar \(i\).
+2. **Side** = \(e_m.\text{side}\) (frozen from real event).
+3. **Lots** = \(e_m.\text{lots}\) frozen from real admission (**lot_source = frozen_from_real_event**).
+4. **SL/TP distances** from \(e_m.\text{atr_tstar}\) and freeze SL/TP ATR multiples (**atr_source = frozen_from_real_event**).
+5. **Spread cost** at entry = donor spread at bar \(i\) × point_size_traded × contract × lots (+ commission/slippage from cost pin) (**spread_source = donor_at_entry**).
+6. Simulate H bars of donor OHLC from \(i\); exit SL→TP→time-flat; deduct costs at exit booking.
+7. Must produce exactly one closed trade; failure → trial/run invalid (§8.3), not drop event.
+
+**Normalization:** absolute donor price path (no residual rebase). Entry is donor open; SL/TP absolute prices = entry ± sl_atr×atr_tstar / tp_atr×atr_tstar.
+
+### 5.7 Identity diagnostic (not a counted trial)
+
+1. Build assignment \(d_m = d_m^{\text{id}}\) for all m (full identity).
+2. Run §5.6; metrics must match real path within float tolerance (fixture).
+3. **Excluded from N, hits, and p.** Not stored as `trials[j]` for j in 0..N-1.
+4. Phase B **forced-identity RNG regression:** construct an RNG stream that first yields the identity assignment; implementation must redraw and **must not** count that draw as a successful null trial outcome; assert final stored trial assignment ≠ identity and `len(trials)==N`.
+
+### 5.8 Charter parameters only (Phase C may set)
+
+Charter under this kind may set: signal predicate, L, SL/TP ATR multiples, risk_pct, lot_min/step/max, start_balance, N (≥999), base_seed, package pins, soft thresholds, multiplicity block.
+Charter **must** set `null.implementation_id = conditional_fixed_signal_events_fixed_trades_v1` and must **not** set alternate sampling enums.
+
+### 5.9 Invariants (summary)
+
+| Invariant | Rule |
+|-----------|------|
+| Event definition | Pre-entry \(P_{\text{entry}}\) only |
+| Real T | \(T = M\) or run invalid |
+| Null T | every counted trial \(T = M\) |
+| Predictors on null | not re-simulated for signals |
+| Identity | diagnostic only; full identity assignment rejected in counted trials |
+| Attrition | forbidden |
+
+### 5.10 Screen vs null
+
+- `n_passers == 0` → SCREEN_FAIL, null not run, r1 unburned.
+- `n_passers == 1` → pending null / sealed null under §8.
+- else → implementation error for v1 binary families.
 
 ---
 
-## 6. Signal / entry / exit predicates (freeze obligations)
+## 6. Signal / entry / exit freeze obligations (thesis text)
 
-### 6.1 Lookback returns (template)
-
-When using lagged returns:
-
-1. Feature window on **I**: bars \(t-L,\ldots,t-1\) (exclude signal return at \(t\) when deciding a signal stamped at \(t\)).
-2. Strict `>` / `<` unless freeze defends `≥`.
-3. Per-symbol statistics (e.g. median log-return) per symbol on **I**.
-4. Zero / non-finite → **reject** (default).
-5. Intersection bars only.
-
-### 6.2 Holding period (v1 default)
-
-**Fixed H-bar hold, default H = 3:**
-
-1. Entry at \(t_{\text{entry}}\) (e.g. open of next joint bar after signal).
-2. Exit evaluation on \(t_{\text{entry}},\ldots,t_{\text{entry}}+H-1\) under SL/TP priority frozen.
-3. Entry allowed **only if** all H bars exist on **I** and share the same `day_id` as \(t_{\text{entry}}\).
-4. Otherwise reject/consume signal (and such a signal is **not** in \(E\) on the real path).
-
-### 6.3 Same calendar day / weekend
-
-Next bar after signal must exist on **I** and share `day_id` with the signal bar (or with \(t_{\text{entry}}\) as frozen); else reject (no Friday→Monday fill under default).
-
-### 6.4 Sign mapping
-
-Freeze must include explicit long/short examples (numeric toy bars), e.g.:
-
-| Condition (illustrative) | Side on traded symbol |
-|--------------------------|----------------------|
-| Frozen feature \(f > 0\) | long (+1) |
-| Frozen feature \(f < 0\) | short (−1) |
-| \(f = 0\) or non-finite | no signal |
-
-### 6.5 Gate provenance
-
-Freeze must state formula, book (= sole traded symbol), cost timing, PF zero-denominator house convention (0 / 99).
+Lookbacks: prior bars \(t-L..t-1\) on **I**; strict inequalities; per-symbol stats; zero/non-finite reject.
+Hold: H=3 same-day as §5.2 (thesis may not relax H without a new protocol version).
+Weekend: next bar same `day_id` or reject (not in E).
+Sign mapping: explicit long/short toy examples required at freeze.
+Gate provenance: formulas on traded book; PF 0/99 house convention.
 
 ---
 
-## 7. Program-level hypothesis counting and multiplicity
+## 7. Multiplicity — finite-catalog Bonferroni + provisional PASS
 
-### 7.1 Chosen rule: finite-catalog Bonferroni (open catalog growth)
+### 7.1 Rule (chosen)
 
-**Choice for this protocol:** **finite-catalog Bonferroni with growing catalog size**, not one-shot α-spending at birth only.
+1. \(K_{\text{prior}}\) = audited unique scored families (§7.2–7.3).
+2. New family freezes with \(K = K_{\text{prior}}+1\).
+3. \(\alpha_0 = 0.05\), \(\alpha_{\text{adj}}(K) = \alpha_0 / K\).
+4. **Catalog remains open:** there is **no** finite \(K_{\max}\) in v1.
+5. **PASS is provisional** while the catalog is open:
+   - A family that beats \(\alpha_{\text{adj}}(K_{\text{at_test}})\) may be labeled `PASS_KEEP_RESEARCHING` / research-keep only.
+   - **Paper and live are forbidden** until either (a) a later protocol freezes a closed catalog \(K_{\max}\) and the family still passes \(\alpha_0/K_{\max}\), or (b) an explicit human program-close decision freezes K and revalidates.
+   - When K increases, every provisional PASS must be re-checked against the new \(\alpha_{\text{adj}}\) before any promotion step; failure demotes research status (no silent grandfather).
+6. Identity diagnostics do not increment K.
 
-Normative consequences:
+### 7.2 Scored-family definition
 
-1. Let \(K_{\text{prior}}\) = number of distinct scored program families already in the catalog (§7.2).
-2. The next new family freezes with \(K = K_{\text{prior}} + 1\).
-3. Uncorrected α₀ = 0.05 (unless a future protocol freezes another α₀).
-4. **Adjusted threshold for any family in the catalog at a given time:**
-   \(\alpha_{\text{adj}}(K) = \alpha_0 / K\).
-5. **When a new family is added, K increases for the whole program.** Any earlier family still under consideration for promotion or “PASS” status **must be re-evaluated** against the **new** \(\alpha_{\text{adj}}(K)\) before promotion. A past p-value that beat 0.05/K_old but fails 0.05/K_new does **not** promote.
-6. Identity diagnostics and synthetic non-dispositional runs **never** increment K and never enter null hit counts.
+Unique family_id with committed develop score or null evaluation (registry SCREEN_FAIL / KILL_* / PASS_* / WEAK_FAIL / PROTOCOL_NULL_INVALID develop-facing, and/or committed null artifacts), excluding pure SUPERSEDED never-scored freezes.
 
-**Rejected alternative (not used unless a later protocol freezes it):** alpha-spending sequences (O’Brien–Fleming, etc.). v1 does **not** implement spending; it uses catalog Bonferroni only.
+### 7.3 Baseline audit (2026-08-14)
 
-### 7.2 What counts as a prior scored family
-
-Count **unique `family_id`** (or equivalent thesis line) that has a committed **scored** attempt:
-
-- registry `SCREEN_FAIL` / `DETERMINISTIC_SCREEN` / sealed `KILL_*` / `PASS_*` / `WEAK_FAIL` / `PROTOCOL_NULL_INVALID` when develop-facing, and/or
-- committed null/screen artifacts that record a completed develop grid or null evaluation for that family,
-
-**excluding** pure `SUPERSEDED` freezes that never scored develop.
-
-### 7.3 Corrected baseline audit (2026-08-14)
-
-**Registry terminal families (5):**
+**Eight prior scored families:**
 
 1. `tod_london_ny_flat`
 2. `server_hour_window_flat`
 3. `early_server_range_break_flat`
 4. `day_open_reclaim_flat`
 5. `joint_london_open_cosign_fade_flat`
-
-**Additional committed scored lines omitted from the provisional K_prior=5 list (3):**
-
 6. `bb_rsi`
 7. `Donchian`
 8. `prior_day_high_break`
 
-(Confirmed by committed research/null artifacts and program history on main; not optional.)
-
-**Therefore:**
-
 | Quantity | Value |
 |----------|-------|
 | \(K_{\text{prior}}\) | **8** |
-| Next new family \(K\) | **9** |
-| \(\alpha_{\text{adj}}\) at K=9 | **0.05/9 ≈ 0.005556** |
-| Null trials N | **≥ 999** (keep 2.2 resolution; adequate for zero-hit threshold at this α_adj) |
+| Next family \(K\) | **9** |
+| \(\alpha_{\text{adj}}\) | **0.05/9 ≈ 0.005556** |
+| N | **≥ 999** |
 
-Phase C freeze must **re-list** `multiplicity.prior_scored_family_ids` explicitly. If audit finds more scored families, K increases before freeze.
-
-### 7.4 Freeze multiplicity block (required)
+### 7.4 Freeze multiplicity block
 
 ```text
-multiplicity.method = finite_catalog_bonferroni
+multiplicity.method = finite_catalog_bonferroni_open_catalog
 multiplicity.alpha_uncorrected = 0.05
-multiplicity.K_prior = <audited int>
-multiplicity.K = K_prior + 1
-multiplicity.alpha_adjusted = alpha_uncorrected / K
-multiplicity.prior_scored_family_ids = [ ... explicit ... ]
-multiplicity.revalidation_rule =
-  "any earlier PASS/promotion candidate must meet alpha_adjusted at current catalog K"
+multiplicity.K_prior = 8   # re-audit at freeze; update if needed
+multiplicity.K = 9
+multiplicity.alpha_adjusted = 0.05 / K
+multiplicity.prior_scored_family_ids = [ ... eight ids ... ]
+multiplicity.pass_status = provisional_while_catalog_open
+multiplicity.paper_live_while_open = false
+multiplicity.revalidation_on_K_increase = true
 multiplicity.identity_excluded_from_null_trials = true
 ```
 
-### 7.5 Ledgers
+---
 
-| Ledger | Role |
-|--------|------|
-| `results/xau_charter_disposition_registry.jsonl` | Terminal charter dispositions |
-| `results/xau_family_attempts.jsonl` | Sealed single-frame STARTED/terminal (when present) |
-| Multi-instrument run dirs | Must feed STARTED/terminal accounting once Phase B wires exogenous screens |
+## 8. STARTED / terminal accounting and failure boundary
+
+### 8.1 Dispositional screen / null launch order
+
+1. Validate charter + kind + clean tree + sealed path + cost match.
+2. **Non-dispositional donor preflight (optional but recommended):** build \(\mathcal{D}\) and check \(|\mathcal{D}| ≥ M+1\) (after real E is known). If this preflight is run **before** STARTED, failure → exit non-zero, **no** registry row, **r1 not burned** (attempt never dispositionally opened).
+3. Create fresh out-dir; write **STARTED** (dispositional attempt open).
+4. Package load / score / null as applicable.
+5. Write terminal report; append terminal ledger row.
+
+### 8.2 Success terminals
+
+| Outcome | exit | r1_burned | notes |
+|---------|------|-----------|-------|
+| SCREEN_FAIL (n_passers=0) | 0 | false | empty trials |
+| SCREEN_PASS_PENDING_NULL_REVIEW (n_passers=1) | 0 | false | skipped_reason=SCREEN_ONLY |
+| Full null success | 0 | true | N trials, each T=M, no full-identity assignment stored |
+
+### 8.3 Failure after STARTED (canonical burned path)
+
+Once STARTED exists for a dispositional run, **any** of the following produces **one** terminal report with:
+
+- `disposition = FAILED_RUN_UNKNOWN`
+- `execution_state = UNKNOWN`
+- `r1_burned = true`
+- `sealed_null_attempt = true` (conservative consume)
+- `n_null_executed = null` (JSON null; never substitute planned)
+
+**Triggers:**
+
+- Donor pool empty or \(|\mathcal{D}| < M+1\) discovered after STARTED.
+- Assignment failure (including MAX_IDENTITY_REDRAWS exceeded).
+- Any counted trial with \(T ≠ M\).
+- Post-entry completion failure on real or null for an admitted event.
+- Missing/malformed report blocks; nonzero harness crash; trade-count mismatch.
+
+**Do not** invent a second disposition string for “protocol invalid” after STARTED — use FAILED_RUN_UNKNOWN so fail-closed parsers burn the attempt uniformly.
+
+### 8.4 Failure before STARTED
+
+Validator errors, clean-tree dirty, cost mismatch, sealed-path failure, or **optional non-dispositional preflight** failure: no STARTED, no registry terminal SCREEN/KILL, r1 not burned.
+
+### 8.5 Synthetic
+
+Non-dispositional; cannot write registry against real charter SHA.
 
 ---
 
-## 8. STARTED / terminal accounting (screens and nulls)
+## 9. Validator checklist (Phase B)
 
-### 8.1 Principles
-
-1. Dispositional exogenous screen: sealed charter path; clean dispositional tree; cost identity + finite sim keys (no global XAU point_size forced onto FX); fresh out-dir; **STARTED before package load/score**; canonical report blocks.
-2. Synthetic = non-dispositional: never registry-close a real charter SHA.
-3. **SCREEN_FAIL** (n_passers=0): exit 0, r1_burned=false, empty trials.
-4. **SCREEN_PASS_PENDING_NULL_REVIEW** (n_passers=1): exit 0, r1_burned=false, skipped_reason=SCREEN_ONLY.
-5. Full null success: exit 0, trials id set `== range(N)`, every trial \(T=M\), r1_burned=true.
-6. Incomplete / trade-count mismatch on any null trial: FAILED_RUN_UNKNOWN, r1_burned=true, n_null_executed=null.
-
-### 8.2 Attempt ledger
-
-Phase B must append STARTED/terminal rows for exogenous screens/nulls into the program attempt ledger (shared or dedicated) and include them in §7 audits.
-
----
-
-## 9. Validator checklist (Phase B acceptance)
-
-Charter with `harness.kind=multi_instrument_exogenous_predictor_v1` fails closed unless:
-
-1. Extension vocabulary recognized (protocol field pinned in Phase B).
-2. Exactly one traded + ≥1 predictor; partition invariants (§1.2).
-3. Intersection-only calendar (§3).
-4. Null block = fixed events **and** fixed trades; full donor/sampling pins (§5).
-5. Binary soft primary on traded book only (§1.4).
-6. MTM DD definition for traded book (§4).
-7. H-bar same-day + next-bar day_id rules if used (§6).
-8. Explicit sign examples (§6.4).
-9. Multiplicity block with K_prior audit and finite-catalog Bonferroni (§7).
-10. Costs: identity + finite sim keys; per-symbol point/contract on traded.
-11. Package pin complete.
-12. Prefer `n_free_knobs=0`, `search_cardinality=1`.
-13. Prohibited runners include single-frame and joint_v1.
+1. Kind recognized; refuse joint/single-frame runners.
+2. Exactly one traded + ≥1 predictors; partition tests.
+3. Intersection-only calendar.
+4. Null implementation_id exactly `conditional_fixed_signal_events_fixed_trades_v1`; reject alternate sampling enums.
+5. Binary soft primary on traded only.
+6. MTM DD on traded equity series.
+7. H=3 same-day + next-bar day_id in entry eligibility.
+8. Sign examples at freeze (Phase C).
+9. Multiplicity block with K_prior audit + provisional PASS + paper/live false while open.
+10. Cost identity + finite sim keys; no global point_size on FX.
+11. Package pin.
+12. Prefer n_free_knobs=0, search_cardinality=1.
+13. Synthetic tests: trade count T=M all trials; forced-identity redraw; zero predictors; multi-traded; predictor fill ban; donor preflight refuse.
 
 ---
 
 ## 10. Phased delivery
 
-| Phase | Deliverable | Stop condition |
-|-------|-------------|----------------|
-| **A (this doc)** | Spec only | Adversarial protocol review |
-| **B** | Generic validator + fixed-trade conditional-null machinery + accounting + synthetic tests (zero predictors, multi-traded reject, trade-count identity across trials, dirty harness, etc.) | PR merge; **no** thesis signals |
-| **C** | Immutable charter + memo | Freeze review; then fixtures; then screen |
+| Phase | Deliverable | Stop |
+|-------|-------------|------|
+| **A (this doc)** | Spec only | Protocol review → merge doc-only PR |
+| **B** | Validator + **canonical** null engine + accounting + synthetic tests | Fresh branch post-merge; no thesis signals |
+| **C** | Immutable charter + memo | Freeze review; fixtures; screen |
 
 ---
 
-## 11. Explicit bans (summary)
+## 11. Explicit bans
 
-- Zero predictors / all-traded under this kind.
-- Multiple traded symbols in v1.
-- Predictor fills or predictor soft as primary.
-- Joint-cosign harness reuse.
-- Empty intersection as zero-trade success.
-- Realized-only DD for open positions.
-- Null trials with unfilled events or \(T ≠ M\).
-- Outcome-dependent donor selection.
-- Counting identity construction inside N/hits/p.
-- Multiplicity fail-open (K_prior=5) or birth-only α without revalidation.
-- Collapsing EUR/GBP into an XAU-only indicator to evade this protocol.
+- Zero predictors / multi-traded under this kind.
+- Event membership decided by post-entry success.
+- Null unfilled events or T≠M as success.
+- Full identity assignment as a counted null trial.
+- With-replacement, strata, charter-defined alternate pairings in v1.
+- Outcome-dependent donors.
+- Fail-open multiplicity (K_prior=5) or birth-only α without revalidation.
+- Promoting to paper/live while catalog open / PASS only provisional.
+- Collapsing predictors into an XAU-only indicator to evade this protocol.
 
 ---
 
@@ -483,8 +442,7 @@ Charter with `harness.kind=multi_instrument_exogenous_predictor_v1` fails closed
 |------|--------|
 | Spec version | multi_instrument_exogenous_predictor_protocol_v1 |
 | Implementation status | **not started** |
-| Thesis freeze | **not authorized** |
-| Phase B | **not authorized** until this amend passes review |
+| Phase B | **not authorized** until this amend passes and doc-only PR merges |
 | Next gate | **AWAIT_ADVERSARIAL_PROTOCOL_REVIEW** |
 
-**End of Phase A specification (amended).**
+**End of Phase A specification (amend 2).**
