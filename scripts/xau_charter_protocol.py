@@ -131,6 +131,8 @@ DISPOSITIONAL_PATH_GLOBS = (
     "scripts/xau_family_*.py",
     # Multi-instrument joint screen harness (must not score with uncommitted logic)
     "scripts/xau_multi_instrument_*.py",
+    # Exogenous-predictor core + accounting (Phase B+)
+    "scripts/xau_exogenous_predictor_*.py",
     "scripts/xau_research_costs.py",
     "results/xau_research_costs.json",
     "results/xau_charters/*.json",
@@ -407,8 +409,13 @@ def write_charter_once(path: Path, charter: dict[str, Any]) -> Path:
     return path
 
 
+EXOGENOUS_PREDICTOR_HARNESS_KIND = "multi_instrument_exogenous_predictor_v1"
+EXOGENOUS_NULL_IMPLEMENTATION_ID = "conditional_fixed_signal_events_fixed_trades_v1"
+JOINT_HARNESS_KIND = "multi_instrument_joint_v1"
+
+
 def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str | None:
-    """If charter is multi-instrument joint, return refuse text for single-frame runners.
+    """If charter is multi-instrument (joint or exogenous), refuse single-frame runners.
 
     Pure check (no I/O, no data, no plugin). Callers must raise/SystemExit with this
     message *before* family plugin import, data load, fixtures, or ledger append.
@@ -416,17 +423,172 @@ def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str
     harness = charter.get("harness") or {}
     inst = charter.get("instrument") or {}
     kind = str(harness.get("kind") or "")
-    multi = kind == "multi_instrument_joint_v1" or bool(
-        inst.get("multi_symbol_in_scope")
-    )
+    multi = kind in (
+        JOINT_HARNESS_KIND,
+        EXOGENOUS_PREDICTOR_HARNESS_KIND,
+    ) or bool(inst.get("multi_symbol_in_scope"))
     if not multi:
         return None
+    if kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        return (
+            "REFUSE_SINGLE_FRAME_RUNNER: charter requires dedicated "
+            f"{EXOGENOUS_PREDICTOR_HARNESS_KIND} harness; single-frame runners "
+            "(xau_family_null_maxstat / xau_sealed_family_cycle) are forbidden"
+        )
     return (
         "REFUSE_SINGLE_FRAME_RUNNER: charter requires dedicated "
         "multi_instrument_joint_v1 harness; single-frame runners "
         "(xau_family_null_maxstat / xau_sealed_family_cycle) are forbidden "
         "(no plugin/data/ledger for multi-instrument joint)"
     )
+
+
+def exogenous_joint_screen_refuse_message(charter: dict[str, Any]) -> str | None:
+    """If charter is exogenous-predictor kind, refuse joint screen harness."""
+    kind = str((charter.get("harness") or {}).get("kind") or "")
+    if kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        return (
+            "REFUSE_JOINT_SCREEN: charter harness.kind="
+            f"{EXOGENOUS_PREDICTOR_HARNESS_KIND!r}; use dedicated exogenous harness "
+            "(xau_multi_instrument_joint_screen is joint-cosign only)"
+        )
+    return None
+
+
+def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
+    """Hard errors for multi_instrument_exogenous_predictor_v1 instrument/null/gates."""
+    errs: list[str] = []
+    harness = charter.get("harness") or {}
+    kind = str(harness.get("kind") or "")
+    if kind != EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        errs.append(
+            f"exogenous charter requires harness.kind={EXOGENOUS_PREDICTOR_HARNESS_KIND!r}"
+        )
+    inst = charter.get("instrument") or {}
+    symbols = inst.get("symbols")
+    traded = inst.get("traded_symbols")
+    predictors = inst.get("predictor_symbols")
+    if not isinstance(symbols, list) or not symbols:
+        errs.append("exogenous instrument.symbols must be a non-empty list")
+        symbols = []
+    if not isinstance(traded, list):
+        errs.append("exogenous instrument.traded_symbols must be a list of length 1")
+        traded = []
+    elif len(traded) != 1:
+        errs.append(
+            f"exogenous instrument.traded_symbols must have exactly one symbol "
+            f"(got {len(traded)})"
+        )
+    if not isinstance(predictors, list) or len(predictors) < 1:
+        errs.append(
+            "exogenous instrument.predictor_symbols must be a non-empty list "
+            "(zero predictors forbidden)"
+        )
+        predictors = []
+    if inst.get("multi_symbol_in_scope") is not True:
+        errs.append(
+            "exogenous instrument.multi_symbol_in_scope must be true (exact boolean)"
+        )
+    # partition
+    if traded and symbols and traded[0] not in symbols:
+        errs.append(
+            f"exogenous traded_symbols[0]={traded[0]!r} not in instrument.symbols"
+        )
+    for p in predictors:
+        if p not in symbols:
+            errs.append(f"exogenous predictor {p!r} not in instrument.symbols")
+    if traded and predictors and set(traded) & set(predictors):
+        errs.append("exogenous traded_symbols and predictor_symbols must be disjoint")
+    if symbols and traded and predictors:
+        union = list(traded) + list(predictors)
+        if set(union) != set(symbols) or len(union) != len(symbols):
+            errs.append(
+                "exogenous traded∪predictors must equal symbols (proper partition)"
+            )
+        if set(traded) == set(symbols):
+            errs.append("exogenous traded must be a proper subset of symbols")
+    meta = inst.get("per_symbol_meta") or {}
+    if not isinstance(meta, dict):
+        errs.append("exogenous instrument.per_symbol_meta must be an object")
+        meta = {}
+    for s in symbols:
+        m = meta.get(s)
+        if not isinstance(m, dict):
+            errs.append(f"exogenous per_symbol_meta missing object for {s!r}")
+            continue
+        for k in ("point_size", "contract_size", "digits"):
+            if k not in m:
+                errs.append(f"exogenous per_symbol_meta[{s!r}] missing {k}")
+    cal = charter.get("analysis_calendar") or {}
+    if cal.get("mode") != "intersection_only":
+        errs.append(
+            "exogenous analysis_calendar.mode must be 'intersection_only'"
+        )
+    gates = charter.get("gates") or {}
+    if gates.get("primary_n_passers") != "soft":
+        errs.append(
+            "exogenous gates.primary_n_passers must be 'soft' "
+            f"(got {gates.get('primary_n_passers')!r})"
+        )
+    soft = gates.get("soft")
+    if not isinstance(soft, dict) or not soft:
+        errs.append("exogenous gates.soft required (traded-book primary)")
+    else:
+        for k in (
+            "n_trades_min",
+            "profit_factor_min",
+            "net_profit_gt",
+            "max_drawdown_pct_max",
+        ):
+            if k not in soft:
+                errs.append(f"exogenous gates.soft missing required key {k!r}")
+    null = charter.get("null") or {}
+    impl = str(
+        null.get("implementation_id") or null.get("method") or ""
+    )
+    if impl != EXOGENOUS_NULL_IMPLEMENTATION_ID:
+        errs.append(
+            "exogenous null.implementation_id (or null.method) must be "
+            f"{EXOGENOUS_NULL_IMPLEMENTATION_ID!r}; got {impl!r}"
+        )
+    # reject alternate sampling enums if present
+    for bad_key in ("sampling", "pairing", "strata", "with_replacement"):
+        if bad_key in null:
+            errs.append(
+                f"exogenous null.{bad_key} forbidden (canonical engine only)"
+            )
+    alt = null.get("forbidden_methods") or []
+    if impl and impl in {str(x) for x in alt}:
+        errs.append(f"exogenous null method {impl!r} listed in forbidden_methods")
+    if null.get("base_seed") is None:
+        errs.append("exogenous null.base_seed required")
+    n_trials = int(null.get("n_trials") or null.get("min_null_trials") or 0)
+    if n_trials < MIN_NULL_TRIALS_PROTOCOL:
+        errs.append(
+            f"exogenous null n_trials={n_trials} < protocol floor "
+            f"{MIN_NULL_TRIALS_PROTOCOL}"
+        )
+    mult = charter.get("multiplicity") or {}
+    if mult.get("paper_live_while_open") is True:
+        errs.append(
+            "exogenous multiplicity.paper_live_while_open must not be true "
+            "while catalog open"
+        )
+    if mult.get("pass_status") not in (
+        None,
+        "provisional_while_catalog_open",
+        "provisional",
+    ):
+        # allow omit at early freeze drafts; if set, must be provisional
+        if mult.get("pass_status") not in (
+            "provisional_while_catalog_open",
+            "provisional",
+        ):
+            errs.append(
+                "exogenous multiplicity.pass_status must be provisional while "
+                f"catalog open (got {mult.get('pass_status')!r})"
+            )
+    return errs
 
 
 def _strict_finite_number(val: Any) -> float | None:
@@ -548,11 +710,12 @@ def validate_charter(
     if not (charter.get("gates") or charter.get("passer_definition_soft")):
         errs.append("gates or passer_definition_soft required")
 
-    # Multi-instrument joint charters: complete contract (not only nested-layout path).
+    # Multi-instrument charters: joint cosign vs exogenous predictor.
     inst = charter.get("instrument") or {}
+    harness_kind = str((charter.get("harness") or {}).get("kind") or "")
     multi = bool(inst.get("multi_symbol_in_scope")) or bool(
         isinstance(inst.get("symbols"), list) and len(inst.get("symbols") or []) > 1
-    )
+    ) or harness_kind in (JOINT_HARNESS_KIND, EXOGENOUS_PREDICTOR_HARNESS_KIND)
     gates = charter.get("gates") or {}
     # Nested-only layout without top-level soft is always invalid
     if (
@@ -563,7 +726,9 @@ def validate_charter(
             "multi-instrument/nested joint charter requires top-level gates.soft "
             "(gates.per_symbol/gates.joint alone are invisible to gates_from_charter)"
         )
-    if multi:
+    if harness_kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        errs.extend(validate_exogenous_predictor_charter(charter))
+    elif multi:
         # Complete joint-soft contract for every multi-instrument charter.
         # Soft joint keys: n, PF, NP, max DD (DD was fail-open if omitted).
         _joint_soft_required = (

@@ -48,6 +48,7 @@ from xau_charter_protocol import (  # noqa: E402
     ensure_fresh_run_dir,
     is_charter_runnable,
     load_charter,
+    exogenous_joint_screen_refuse_message,
     multi_instrument_single_frame_refuse_message,
     sha256_file,
     validate_charter_file,
@@ -89,6 +90,9 @@ def _metrics_blob(m: Any) -> dict[str, float | int]:
 
 def assert_multi_instrument_charter(charter: dict[str, Any]) -> None:
     """Fail closed: only multi_instrument_joint_v1 joint cosign family."""
+    exo = exogenous_joint_screen_refuse_message(charter)
+    if exo is not None:
+        raise SystemExit(exo)
     refuse = multi_instrument_single_frame_refuse_message(charter)
     if refuse is None and not (charter.get("instrument") or {}).get(
         "multi_symbol_in_scope"
