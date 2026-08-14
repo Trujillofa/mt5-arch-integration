@@ -4,16 +4,15 @@
 **Status:** **SPECIFICATION ONLY** — not implemented · not enforced · not freeze-ready for thesis
 **Branch:** `research/exogenous-predictor-protocol-v1` from `main@a492f2c`
 **Parent:** extends family protocol 2.2 (`docs/research/XAU-FAMILY-PROTOCOL-V2.md`) without replacing it for single-frame / joint-cosign families
-**Revision:** Phase A amend 3 (HEAD) — segment non-overlap pairing; dual SCREEN/NULL STARTED; concurrent books
+**Revision:** Phase A amend 4 (HEAD) — H-disjoint real events; causal open-bar balance; dual STARTED retained
 
 ### Reviewer map (re-review this HEAD only)
 
 | Finding | Status | Where |
 |---------|--------|-------|
-| Prior four gaps (executable null, pre-entry E, identity, accounting) | **Closed** (amend 2/2b) | §5, §8 |
-| Distinct donor_ids still allow H-bar segment overlap | **Closed this amend** | §5.4–§5.5 interval packing |
-| Develop score before any STARTED | **Closed this amend** | §8.1 dual-phase SCREEN_STARTED / NULL_STARTED |
-| Concurrent events undefined | **Closed this amend** | §5.3 R4 / §4.1 concurrent MTM |
+| Prior amend-2/2b/3 items (null engine, identity, dual STARTED, segment pack) | **Closed** | §5, §8 |
+| Same-bar exits-before-entries lookahead on open lots | **Closed this amend** | §4.2 open uses carry-in balance only |
+| Real overlap vs null forced-disjoint (dependence mismatch) | **Closed this amend** | §4.1 / §5.3 R2 fixed-H occupancy |
 | Open-catalog promotion | **Closed** | §7.1 provisional PASS; paper/live forbidden while open |
 
 ## Standing loop disposition (unchanged)
@@ -140,37 +139,43 @@ Empty **I** → `EMPTY_JOINT_INTERSECTION` (hard error).
 
 ## 4. MTM equity and drawdown (traded book only)
 
-### 4.1 Concurrent positions (canonical)
+### 4.1 Fixed-H occupancy (no concurrent books in v1)
 
-Concurrent open positions on the single traded symbol **S** are **allowed**.
+v1 **forbids** concurrent open positions and **forbids** overlapping fixed hold intervals on the real path.
 
-- Admission does **not** require a flat book and does **not** apply an H-window occupancy filter (§5.3 R2).
-- Signals fewer than H bars apart may both enter; early exit of one does not cancel the other.
-- Each admitted event is an independent lot-sized trade with its own SL/TP/time-flat clock from its own entry bar.
+- Each admitted event \(e\) reserves a **fixed** entry interval \(I_e = \{i_e, i_e+1, \ldots, i_e+H-1\}\) where \(i_e = \text{index}(t_{\text{entry}})\), independent of early SL/TP exit.
+- A later candidate is admitted only if its prospective \(I_e\) is **pairwise non-segment-overlapping** with every already-admitted \(I_e\) (§5.3 R2 item 8).
+- Early exit of a prior trade **does not** free bars inside its reserved \(I_e\) for a new admission.
+- Consequence: real identity donor segments are pairwise H-disjoint — the **same geometry** every counted null assignment must satisfy (§5.4–§5.5). Observed PF/DD dependence structure matches the null support.
 
-### 4.2 Same-bar order processing and balance
+**Forbidden in v1:** overlapping real events; cluster/offset null sampling; multi-position books on S.
 
-Process each bar \(t \in I\) in this **fixed** order:
+### 4.2 Bar order and balance (no open-bar lookahead)
 
-1. **Exits first:** evaluate SL → TP → time-flat for every open position whose exit rules fire on \(t\), ordered by ascending `event_id`. Book realized P&L into the cash balance after each exit.
-2. **Entries second:** open any events with \(t_{\text{entry}} = t\), ordered by ascending `event_id`. Lot sizing for a new entry uses the **realized cash balance after all exits on this bar and before any new entries on this bar** (same balance for all same-bar entries; no intra-bar compounding across concurrent opens).
-3. **Mark last:** mark all still-open positions at close(\(t\)).
+Process each bar \(t \in I\) in this **fixed** causal order:
+
+1. **Carry-in:** \(B_{\text{in}}(t)\) = realized cash after **all** processing of prior bars. This is the only balance available at `open(t)`.
+2. **Entries at open:** open any events with \(t_{\text{entry}} = t\) (at most one under §4.1). **Lot sizing and \(P_{\text{entry}}\) lot checks use \(B_{\text{in}}(t)\) only** — never cash after SL/TP/time-flat on bar \(t\).
+3. **Intrabar exits:** evaluate SL then TP for the open position (if any) using high/low of \(t\). Book realized P&L into cash **after** the open entry of this bar has already been sized/filled.
+4. **Close:** if the hold window ends on \(t\), time-flat at close(\(t\)); else mark floating at close(\(t\)). Carry \(B_{\text{out}}(t)\) into the next bar as \(B_{\text{in}}(t+1)\).
+
+**v1 has no open-gap exit** that can precede entries. Intrabar information on \(t\) **must not** affect lots or admission for entries at `open(t)`.
+
+**Phase B regression (lookahead ban):** an open position hits SL on bar \(t\) after the open while a new event would enter at `open(t)` under a looser rule; under v1 occupancy the second event is **not** admitted if intervals overlap. Separate case: adjacent H-disjoint entries \(i\) and \(i+H\); assert the second event’s lots use \(B_{\text{in}}(i+H)\) (includes first trade’s fully settled P&L from bars \(< i+H\)) and **do not** recompute lots after any exit on bar \(i+H\).
 
 ### 4.3 Equity series
 
 For traded symbol **S** and each \(t \in I\):
 
 \[
-\text{equity}_S(t) = B_S(t) + \sum_{p \in \text{open}(t)} \text{floating\_pnl}_p(t)
+\text{equity}_S(t) = B_S(t) + \text{open\_pnl}_S(t)
 \]
 
-where \(B_S(t)\) is realized cash after the exit step on \(t\), and floating P&L is the **sum** over all still-open positions marked at close(\(t\)).
+where \(B_S(t)\) is realized cash after exits booked on \(t\), and \(\text{open\_pnl}_S(t)\) is floating MTM of the **at most one** open position marked at close(\(t\)) (0 if flat).
 
-- Soft DD gates use this full equity series (realized + summed floating).
+- Soft DD gates use this full equity series (realized + floating).
 - **Ban:** realized-only step equity for gate DD.
 - Multiple traded books: **not in v1**.
-
-**Phase B regression:** two consecutive admitted signals; first hits SL early before second entry; assert both trades booked, intervening bars have concurrent floating sum when both open, final \(T=2\).
 
 ---
 
@@ -197,41 +202,52 @@ Phase C freezes only **parameters** listed in §5.8 (H, risk, lot bounds, N, see
 | H | **3** (holding bars including entry bar) |
 | Entry | open of **next** joint bar after signal bar \(t^\*\) on **I** |
 | Same-day | \(t^\*\), entry, and all H hold bars share one `day_id` |
-| Exit priority per bar after entry | SL then TP then time-flat at end of hold window (close of bar \(t_{\text{entry}}+H-1\)) |
+| Exit priority per bar after entry | After open entries: SL then TP (intrabar); time-flat at close of bar \(t_{\text{entry}}+H-1\) |
 | Mark for MTM | close |
+| Real occupancy | Fixed \(I_e\) pairwise non-segment-overlapping; matches null donor geometry |
 
 ### 5.3 Real path — event set E (pre-entry only)
 
 **Step R1 — raw signal candidates.**
-On each \(t \in I\) (after warmup as frozen by thesis), evaluate the **charter signal predicate** using only data allowed by the freeze (predictors + traded history through \(t\), features from \(t-L..t-1\) when applicable). Produce candidate \(c = (t^\*=t, \text{side} \in \{+1,-1\})\).
+Scan \(t \in I\) in chronological order (after warmup as frozen by thesis). Evaluate the **charter signal predicate** using only data allowed by the freeze (predictors + traded history through \(t\), features from \(t-L..t-1\) when applicable). Produce candidate \(c = (t^\*=t, \text{side} \in \{+1,-1\})\).
 
 **Step R2 — pre-entry eligibility predicate \(P_{\text{entry}}(c)\).**
-Admit \(c\) into \(E\) **iff all** hold (no post-entry information; **no flat-book / occupancy filter** — concurrency allowed):
+Admit \(c\) into \(E\) **iff all** hold. Membership uses **no post-entry path information about \(c\) itself**. Prior admitted events’ outcomes affect only the causal carry-in balance for lot sizing (standard compounding), never same-bar intrabar exits for this entry.
 
-1. Next bar \(t_e = \text{index}(t^\*)+1\) exists on **I**.
+Let \(i_e = \text{index}(t^\*)+1\) (prospective entry index) and prospective interval \(I_e(c) = \{i_e,\ldots,i_e+H-1\}\).
+
+1. Next bar \(t_e\) at index \(i_e\) exists on **I**.
 2. `day_id(t_e) == day_id(t^\*)`.
-3. Bars \(t_e, t_e+1, \ldots, t_e+H-1\) all exist on **I** and share `day_id(t_e)`.
+3. Bars in \(I_e(c)\) all exist on **I** and share `day_id(t_e)`.
 4. ATR at \(t^\*\) on the traded series on **I** using **Wilder period 14** only (`TR.ewm(alpha=1/14, adjust=False).mean()`); must be finite and \(> 0\).
-5. Lots from §5.6 sizing using **realized balance before any same-bar new entries** (see §4.2) and that ATR: `risk_cash = risk_pct * balance`; `raw = risk_cash / (sl_atr * atr_tstar * contract_size)`; floor to `lot_step`; cap `lot_max`; require ≥ `lot_min` (never force min).
-6. Spread at \(t_e\) on traded symbol is finite and ≥ 0.
-7. side is ±1.
+5. **Fixed-H occupancy (mandatory):** \(I_e(c)\) does **not segment-overlap** any already-admitted event’s reserved interval \(I_e(e_k)\) (§4.1; same segment-overlap definition as §5.4). Early exit of \(e_k\) does **not** shrink \(I_e(e_k)\).
+6. Lots from §5.6 sizing using **\(B_{\text{in}}(t_e)\)** only (§4.2) and that ATR: `risk_cash = risk_pct * balance`; `raw = risk_cash / (sl_atr * atr_tstar * contract_size)`; floor to `lot_step`; cap `lot_max`; require ≥ `lot_min` (never force min). Balance is carry-in at entry open — **not** post-SL/TP on \(t_e\).
+7. Spread at \(t_e\) on traded symbol is finite and ≥ 0.
+8. side is ±1.
 
 Candidates failing \(P_{\text{entry}}\) are **rejected** and **never** enter \(E\).
-Signals fewer than H bars apart **may both be admitted** (concurrent positions).
+Signals whose fixed H intervals would overlap an earlier admission are **rejected** (not deferred).
 
 **Step R3 — event list.**
 \(E = (e_1,\ldots,e_M)\) is the ordered list of admitted candidates. Each event stores at least:
-`event_id` (0..M-1), `t_star`, `t_entry`, `side`, `atr_tstar`, `lots` (as computed at real admission), `spread_entry` (real traded spread at \(t_e\)).
+`event_id` (0..M-1), `t_star`, `t_entry`, `side`, `atr_tstar`, `lots` (as computed at real admission from \(B_{\text{in}}(t_e)\)), `spread_entry` (real traded spread at \(t_e\)), reserved interval endpoints \([i_e, i_e+H-1]\).
 
-**Step R4 — post-entry execution (must complete; concurrency allowed).**
-Process the develop calendar bar-by-bar with §4.2 ordering. Each \(e_m \in E\) enters at open(\(t_{\text{entry}}\)) and **must** produce exactly one closed trade by SL, TP, or time-flat at \(t_{\text{entry}}+H-1\).
+On a valid real run the reserved intervals \(\{I_e(e_m)\}\) are pairwise non-segment-overlapping (by construction of R2 item 5).
+
+**Step R4 — post-entry execution (must complete; single book).**
+Process the develop calendar bar-by-bar with §4.2 ordering. Each \(e_m \in E\) enters at open(\(t_{\text{entry}}\)) and **must** produce exactly one closed trade by SL, TP, or time-flat no later than close of bar \(t_{\text{entry}}+H-1\).
 
 If any admitted event cannot complete:
 → **run invalid**: if **SCREEN_STARTED** or **NULL_STARTED** already written, terminal `FAILED_RUN_UNKNOWN` with burn rules in §8; **do not** drop the event from \(M\).
 
 On every **valid** real run: **\(T_{\text{real}} = M\)**.
 
-**Phase B regression:** two consecutive admitted signals with first exiting early (SL) before second entry; assert both trades exist, concurrent floating sum on intervening bars, and final \(T=2\).
+**Phase B regressions:**
+
+1. **Occupancy:** signal candidates at adjacent bars with \(H=3\) (entries \(i, i+1\)); assert only the first admits; second fails R2 item 5; \(M=1\).
+2. **Early exit does not free interval:** first event enters at \(i\), hits SL on \(i+1\); second candidate with entry \(i+2\) still fails occupancy until entry index \(\ge i+H\).
+3. **Lookahead ban:** lot size for an event at entry \(i\) equals sizing from \(B_{\text{in}}(i)\); mutating high/low of bar \(i\) (SL path) must not change that frozen lot.
+4. **H-disjoint pair:** entries at \(i\) and \(i+H\); both admit; \(T=2\); no bar has two open positions; identity donors are non-overlapping.
 
 ### 5.4 Donor segment definition (interval geometry)
 
@@ -258,6 +274,8 @@ Donor \(i\) is **eligible** iff \(P_{\text{donor}}(i)\):
 **Eligible donor pool \(\mathcal{D}\):** sorted ascending list of all eligible `donor_id` values on develop **I**.
 
 **Real identity donor** for event \(e_m\): `donor_id = index(e_m.t_entry)` (must ∈ \(\mathcal{D}\) on a valid real run).
+
+**Real–null geometry match:** by §5.3 R2 item 5, the identity donor set \(\{d_m^{\text{id}}\}\) is pairwise non-segment-overlapping. Every counted null assignment is drawn from the same non-overlap support (§5.5). v1 does **not** allow real multi-event dependence that the null cannot reproduce.
 
 **Packing capacity** `pack_capacity(D)`: size of a maximum set of pairwise non-segment-overlapping donors from \(\mathcal{D}\). Canonical computation (deterministic):
 
@@ -342,7 +360,9 @@ Charter **must** set `null.implementation_id = conditional_fixed_signal_events_f
 | Identity | diagnostic only; full identity assignment rejected in counted trials |
 | Attrition | forbidden |
 | Donor non-overlap | pairwise non-segment-overlapping intervals \(I(d)\); not distinct-id-only |
-| Concurrency | concurrent traded positions allowed; equity = realized + sum floating |
+| Real occupancy | fixed-H intervals pairwise non-segment-overlapping (same geometry as null) |
+| Concurrency | **forbidden** in v1; at most one open position; no overlapping \(I_e\) |
+| Lot balance | \(B_{\text{in}}(t_{\text{entry}})\) only; no same-bar exit-before-size |
 
 ### 5.10 Screen vs null
 
@@ -497,7 +517,7 @@ Non-dispositional; cannot write registry against real charter SHA.
 10. Cost identity + finite sim keys; no global point_size on FX.
 11. Package pin.
 12. Prefer n_free_knobs=0, search_cardinality=1.
-13. Synthetic tests: trade count T=M all trials; forced-identity redraw; segment-overlap rejection (adjacent donor ids); concurrent early-exit pair; SCREEN_STARTED before load; NULL_STARTED burn boundary; zero predictors; multi-traded; predictor fill ban; pack_capacity preflight refuse.
+13. Synthetic tests: trade count T=M all trials; forced-identity redraw; segment-overlap rejection (adjacent donor ids); real H-occupancy reject adjacent entries; early-exit does not free interval; lot uses \(B_{\text{in}}\) not post-SL on entry bar; H-disjoint pair \(i,i+H\); SCREEN_STARTED before load; NULL_STARTED burn boundary; zero predictors; multi-traded; predictor fill ban; pack_capacity preflight refuse.
 
 ---
 
@@ -520,7 +540,8 @@ Non-dispositional; cannot write registry against real charter SHA.
 - With-replacement, strata, charter-defined alternate pairings in v1.
 - Treating distinct donor_ids as “no overlap” without segment-interval checks.
 - Outcome-dependent donors.
-- Flat-book-only admission or undefined concurrent MTM (v1 allows concurrency under §4).
+- Concurrent / overlapping real events under this kind (v1 is fixed-H occupancy only).
+- Sizing or admitting entries from post-intrabar-exit balance on the entry bar (lookahead).
 - Fail-open multiplicity (K_prior=5) or birth-only α without revalidation.
 - Promoting to paper/live while catalog open / PASS only provisional.
 - Collapsing predictors into an XAU-only indicator to evade this protocol.
@@ -536,4 +557,4 @@ Non-dispositional; cannot write registry against real charter SHA.
 | Phase B | **not authorized** until this amend passes and doc-only PR merges |
 | Next gate | **AWAIT_ADVERSARIAL_PROTOCOL_REVIEW** |
 
-**End of Phase A specification (amend 3).**
+**End of Phase A specification (amend 4).**
