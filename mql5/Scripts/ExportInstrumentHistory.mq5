@@ -7,6 +7,9 @@
 #property version   "1.10"
 #property script_show_inputs
 
+#include <FxSymbolRegistry.mqh>
+
+input string InpBroker  = "";  // required: vantage|fpmarkets|exness|wsf
 input string InpSymbols = "XAUUSD,EURUSD,GBPUSD";
 input int    InpMonths  = 60;
 input string InpTfs     = "H1";
@@ -27,21 +30,9 @@ ENUM_TIMEFRAMES ParseTf(const string tf)
 //+------------------------------------------------------------------+
 string ResolveSymbol(const string requested)
   {
-   string base = requested;
-   StringTrimLeft(base);
-   StringTrimRight(base);
-   if(StringLen(base) == 0)
+   if(StringLen(InpBroker) == 0)
       return "";
-   if(SymbolSelect(base, true))
-      return base;
-   string suffixes[] = {"m", ".r", ".m", "#", "pro", ".i", ".a"};
-   for(int i = 0; i < ArraySize(suffixes); i++)
-     {
-      string cand = base + suffixes[i];
-      if(SymbolSelect(cand, true))
-         return cand;
-     }
-   return "";
+   return FxResolveSymbol(InpBroker, requested);
   }
 
 //+------------------------------------------------------------------+
@@ -197,6 +188,11 @@ void WriteCompletion(const bool ok, const string details_json_array,
 //+------------------------------------------------------------------+
 void OnStart()
   {
+   if(StringLen(InpBroker) == 0)
+     {
+      Print("FATAL: InpBroker is required (vantage|fpmarkets|exness|wsf)");
+      return;
+     }
    string challenge_raw = ReadChallengeRaw();
    string run_id = ExtractRunId(challenge_raw);
    if(StringLen(run_id) == 0)

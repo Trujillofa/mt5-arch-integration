@@ -61,6 +61,7 @@
 #property indicator_width5  2
 
 #include <ForexUtils.mqh>
+#include <FxSymbolRegistry.mqh>
 
 //+------------------------------------------------------------------+
 enum ENUM_FIB_SOURCE
@@ -1335,21 +1336,15 @@ void HLine(const string key, const double price,
 //| only covers the symbols that were exported.                      |
 //+------------------------------------------------------------------+
 
-//| Strip a broker suffix so XAUUSDm / XAUUSD.r / XAUUSD all match.
-//| Mirrors the suffix list ResolveSymbol() uses in Mt5ArchBridge.mq5.
+//| Canonical name from the explicit registry. Unmapped symbols stay
+//| as-is (uppercased) — no suffix strip, no first-match.
 string SrSymbolBase(const string sym)
   {
+   string mapped = FxCanonicalFromBrokerSymbolAny(sym);
+   if(StringLen(mapped) > 0)
+      return mapped;
    string t = sym;
    StringToUpper(t);
-   string suffixes[] = {".RAW", ".ECN", ".PRO", ".R", ".M", "MICRO", "PRO", "ECN", "#", "M"};
-   for(int i = 0; i < ArraySize(suffixes); i++)
-     {
-      int slen = StringLen(suffixes[i]);
-      // Require something substantial to survive the strip, so a short symbol is
-      // never eaten down to a prefix that collides with an unrelated instrument.
-      if(StringLen(t) > slen + 2 && StringSubstr(t, StringLen(t) - slen) == suffixes[i])
-         return StringSubstr(t, 0, StringLen(t) - slen);
-     }
    return t;
   }
 

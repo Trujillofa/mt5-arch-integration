@@ -97,6 +97,7 @@ uv run mt5-arch candles EURUSD --tf H1 --count 10
 | `mt5-arch symbols SYM...` | Lot min/max/step, ticks |
 | `mt5-arch candles SYM [--tf H1] [--count 10]` | OHLCV |
 | `mt5-arch brokers [name]` | List multi-broker profiles (`config/brokers/*.env`) |
+| `mt5-arch resolve BROKER SYM` | Canonical ↔ broker symbol (`config/symbols/registry.json`) |
 | `mt5-arch config` | Redacted settings |
 
 Add `--json` for machine-readable output. `-v` / `-vv` for logs.
@@ -181,9 +182,9 @@ Details: **[docs/INSTALL-LINUX-ARCH.md](docs/INSTALL-LINUX-ARCH.md)**
 
 See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 
-- How to open charts, timeframes, zoom, indicators  
-- Hyprland freezes / black menus / mouse recovery  
-- `./scripts/07-restart-terminal.sh` and `./scripts/08-status.sh`  
+- How to open charts, timeframes, zoom, indicators
+- Hyprland freezes / black menus / mouse recovery
+- `./scripts/07-restart-terminal.sh` and `./scripts/08-status.sh`
 
 ```bash
 ./scripts/04-start-terminal.sh --detach              # start (or warn if already running)
@@ -208,7 +209,7 @@ See **[docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md)** for:
 
 ## Contributing
 
-Issues and PRs welcome for Arch/Wine packaging, bridge robustness, and docs.  
+Issues and PRs welcome for Arch/Wine packaging, bridge robustness, and docs.
 Keep the scope as a **platform layer** (no strategy engines in this repo).
 
 ```bash

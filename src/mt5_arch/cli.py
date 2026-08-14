@@ -54,6 +54,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional profile name (e.g. vantage, wsf)",
     )
+    p_resolve = sub.add_parser(
+        "resolve",
+        parents=[common],
+        help="Map canonical ↔ broker symbol via config/symbols/registry.json",
+    )
+    p_resolve.add_argument("broker", help="vantage|fpmarkets|exness|wsf")
+    p_resolve.add_argument("symbol", help="Canonical or registered broker symbol")
     p_sym = sub.add_parser("symbols", parents=[common], help="Print symbol specs")
     p_sym.add_argument("symbols", nargs="+", help="Symbol names, e.g. EURUSD XAUUSD")
 
@@ -199,6 +206,24 @@ def cmd_brokers(name: str | None, as_json: bool) -> int:
     return 0
 
 
+def cmd_resolve(broker: str, symbol: str, as_json: bool) -> int:
+    from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
+
+    try:
+        mapping = resolve(load_registry(), broker, symbol)
+    except SymbolRegistryError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    payload = {
+        "broker": mapping.broker,
+        "canonical": mapping.canonical,
+        "broker_symbol": mapping.broker_symbol,
+        "expect": mapping.expect,
+    }
+    _print_result(payload, as_json=as_json)
+    return 0
+
+
 def cmd_account(client: Any, as_json: bool) -> int:
     account = client.account_info()
     payload = asdict(account)
@@ -258,6 +283,7 @@ def _open_client(settings: Settings) -> Any:
             bridge_dir=settings.mt5_bridge_dir,
             max_age_seconds=settings.mt5_bridge_max_age,
             wineprefix=settings.wineprefix,
+            broker=settings.broker,
         )
     if backend in {"rpyc", "mt5linux", "ipc"}:
         return MT5ArchClient(settings)
@@ -276,6 +302,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.command == "brokers":
         return cmd_brokers(getattr(args, "name", None), args.json)
+
+    if args.command == "resolve":
+        return cmd_resolve(args.broker, args.symbol, args.json)
 
     try:
         client = _open_client(settings)

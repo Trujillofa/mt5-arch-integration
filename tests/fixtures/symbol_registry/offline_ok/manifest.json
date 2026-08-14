@@ -1,0 +1,30 @@
+{
+  "schema": "mt5-symbol-capabilities/v1",
+  "source": "synthetic",
+  "export_ok": true,
+  "broker": "vantage",
+  "registry_schema": "mt5-symbol-registry/v1",
+  "server_time": "2026.08.14 00:00:00",
+  "symbols": [
+    {
+      "canonical": "XAUUSD",
+      "requested": "XAUUSD",
+      "broker_symbol": "XAUUSD",
+      "resolved": "XAUUSD",
+      "selected": true,
+      "digits": 2,
+      "point": 0.01,
+      "contract_size": 100.0,
+      "min_lot": 0.01,
+      "max_lot": 100.0,
+      "lot_step": 0.01,
+      "trade_mode": 4,
+      "trade_mode_name": "FULL",
+      "bars_h1": 32,
+      "first_time": "2026.08.01 00:00:00",
+      "last_time": "2026.08.14 00:00:00",
+      "ok": true,
+      "error": ""
+    }
+  ]
+}

@@ -9,14 +9,18 @@
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
-| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.22) |
+| `Include/FxSymbolRegistry.mqh` | Generated explicit broker → symbol maps (no suffix walk) |
+| `Scripts/ExportSymbolCapabilities.mq5` | Read-only symbol capability dump (no orders) |
+| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.23) |
 | `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
 
-### Mt5ArchBridge symbols (v1.22)
+### Mt5ArchBridge symbols (v1.23)
 
-`InpSymbols` / `InpHistorySymbol` use **bare** names by default (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
-`ResolveSymbol()` tries `SymbolSelect` on the bare name, then common broker suffixes: `m` (Exness raw), `.r` (FP Markets), `.m`, `#`, `pro`.
-`symbols.json` and candle filenames use the **resolved** broker name (e.g. `EURUSDm`). Override inputs only if your broker uses a non-standard naming scheme.
+`InpBroker` is **required** (`vantage|fpmarkets|exness|wsf`).
+`InpSymbols` / `InpHistorySymbol` use **canonical** names (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
+`FxResolveSymbol` maps them through `config/symbols/registry.json` and `SymbolSelect`s only that name — no suffix walk.
+`symbols.json` and candle filenames still use the **resolved** broker name (e.g. `XAUUSD.r`).
+See [docs/SYMBOL-REGISTRY.md](../docs/SYMBOL-REGISTRY.md).
 
 Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md)
 
@@ -34,6 +38,7 @@ MetaEditor **F7** compile order:
 3. `Indicators/ForexIndicatorTemplate.mq5` (optional)
 4. `Experts/ForexSignalLogger.mq5` (optional)
 5. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
+6. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
 
 ## Chart recipe — FX / gold
 

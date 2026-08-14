@@ -73,6 +73,10 @@ class Settings(BaseSettings):
         default=15.0,
         validation_alias=AliasChoices("MT5_BRIDGE_MAX_AGE", "mt5_bridge_max_age"),
     )
+    broker: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("MT5_BROKER", "BROKER", "mt5_broker", "broker"),
+    )
 
     @field_validator("mt5_terminal_path", "wineprefix", "mt5_bridge_dir", mode="before")
     @classmethod
@@ -100,4 +104,5 @@ class Settings(BaseSettings):
             "mt5_bridge_max_age": self.mt5_bridge_max_age,
             "wineprefix": str(self.wineprefix),
             "mt5_terminal_path": str(self.mt5_terminal_path) if self.mt5_terminal_path else None,
+            "broker": self.broker,
         }
