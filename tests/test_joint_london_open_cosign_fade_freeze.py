@@ -358,7 +358,8 @@ def test_null_maxstat_refuses_multi_instrument_charter_before_plugin():
     )
     blob = (proc.stdout or "") + (proc.stderr or "")
     assert proc.returncode != 0, blob
-    assert "REFUSE_SINGLE_FRAME_RUNNER" in blob, blob
+    assert "SCREEN_FAIL" in blob, blob
+    assert "charter not runnable" in blob, blob
     assert "Unknown family" not in blob
 
 
@@ -382,6 +383,7 @@ def test_sealed_cycle_refuses_multi_instrument_before_fixtures():
     )
     blob = (proc.stdout or "") + (proc.stderr or "")
     assert proc.returncode != 0, blob
-    assert "REFUSE_SINGLE_FRAME_RUNNER" in blob, blob
+    assert "SCREEN_FAIL" in blob, blob
+    assert "charter not runnable" in blob, blob
     assert "Synthetic fixture smoke" not in blob
     assert "ModuleNotFoundError" not in blob
