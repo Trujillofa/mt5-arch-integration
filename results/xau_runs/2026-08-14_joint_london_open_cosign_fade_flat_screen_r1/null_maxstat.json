@@ -1,0 +1,234 @@
+{
+  "method": "multi_instrument_joint_screen_v1",
+  "family": "joint_london_open_cosign_fade_flat",
+  "family_id": "joint_london_open_cosign_fade_flat",
+  "harness": "xau_multi_instrument_joint_screen",
+  "harness_kind": "multi_instrument_joint_v1",
+  "dispositional": true,
+  "non_dispositional_reason": null,
+  "screen_only": true,
+  "timestamp_utc": "2026-08-14T14:46:49.828776+00:00",
+  "recorded_at_utc": "2026-08-14T14:46:49.828796+00:00",
+  "grid": {
+    "coincident_hours": [
+      7,
+      8,
+      9
+    ],
+    "flat_hour": 16,
+    "sl_atr": 1.5,
+    "tp_atr": 2.0,
+    "risk_pct": 0.01,
+    "lot_max": 0.5,
+    "lot_min": 0.01,
+    "lot_step": 0.01
+  },
+  "costs": {
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "spread_col": "spread",
+    "costs_source": "/home/yderf/Projects/trading/mt5-arch-integration-wt-mi-screen-run/results/xau_research_costs.json"
+  },
+  "real": {
+    "n_passers": 0,
+    "primary_passers": 0,
+    "n_passers_soft": 0,
+    "n_passers_classic_status": "not_evaluated",
+    "n_passers_classic": null,
+    "n_trades": 1821,
+    "profit_factor": 0.8647163653959827,
+    "net_profit": -10051.471433572127,
+    "max_drawdown_pct": 42.73763124578436,
+    "win_rate": 42.66886326194399,
+    "wins": 777,
+    "losses": 1044,
+    "joint_start_equity": 30000.0,
+    "n_signals_cosign": 607,
+    "n_signals_entered": 607,
+    "n_signals_skipped_partial": 0,
+    "per_symbol": {
+      "XAUUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8457380701200625,
+        "net_profit": -3632.0355171513183,
+        "max_drawdown_pct": 47.44735901502942,
+        "win_rate": 41.35090609555189,
+        "wins": 251,
+        "losses": 356
+      },
+      "EURUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8562866909747275,
+        "net_profit": -3589.0357275706747,
+        "max_drawdown_pct": 43.02848466090579,
+        "win_rate": 43.163097199341024,
+        "wins": 262,
+        "losses": 345
+      },
+      "GBPUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8902139781488001,
+        "net_profit": -2830.400188850134,
+        "max_drawdown_pct": 43.91103364504322,
+        "win_rate": 43.49258649093905,
+        "wins": 264,
+        "losses": 343
+      }
+    },
+    "per_symbol_soft_pass": {
+      "XAUUSD": false,
+      "EURUSD": false,
+      "GBPUSD": false
+    },
+    "joint_soft_pass": false,
+    "joint_gate_success": false,
+    "n_passers_definition": "binary_joint_gate_success"
+  },
+  "metrics_real_grid_develop": {
+    "n_passers": 0,
+    "primary_passers": 0,
+    "n_passers_soft": 0,
+    "n_passers_classic_status": "not_evaluated",
+    "n_passers_classic": null,
+    "n_trades": 1821,
+    "profit_factor": 0.8647163653959827,
+    "net_profit": -10051.471433572127,
+    "max_drawdown_pct": 42.73763124578436,
+    "win_rate": 42.66886326194399,
+    "wins": 777,
+    "losses": 1044,
+    "joint_start_equity": 30000.0,
+    "n_signals_cosign": 607,
+    "n_signals_entered": 607,
+    "n_signals_skipped_partial": 0,
+    "per_symbol": {
+      "XAUUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8457380701200625,
+        "net_profit": -3632.0355171513183,
+        "max_drawdown_pct": 47.44735901502942,
+        "win_rate": 41.35090609555189,
+        "wins": 251,
+        "losses": 356
+      },
+      "EURUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8562866909747275,
+        "net_profit": -3589.0357275706747,
+        "max_drawdown_pct": 43.02848466090579,
+        "win_rate": 43.163097199341024,
+        "wins": 262,
+        "losses": 345
+      },
+      "GBPUSD": {
+        "n_trades": 607,
+        "profit_factor": 0.8902139781488001,
+        "net_profit": -2830.400188850134,
+        "max_drawdown_pct": 43.91103364504322,
+        "win_rate": 43.49258649093905,
+        "wins": 264,
+        "losses": 343
+      }
+    },
+    "per_symbol_soft_pass": {
+      "XAUUSD": false,
+      "EURUSD": false,
+      "GBPUSD": false
+    },
+    "joint_soft_pass": false,
+    "joint_gate_success": false,
+    "n_passers_definition": "binary_joint_gate_success"
+  },
+  "screen": {
+    "zero_primary_passers": true,
+    "screen_only": true,
+    "rule": "If real primary passers==0, SCREEN_FAIL without null trials. Synthetic/non-dispositional scores must never write the registry."
+  },
+  "attempt_accounting": {
+    "attempt_type": "DETERMINISTIC_SCREEN",
+    "family_screen_attempt": true,
+    "sealed_null_attempt": false,
+    "n_null_planned": 999,
+    "n_null_executed": 0,
+    "null_trials_executed": 0,
+    "r1_style_null_burned": false,
+    "r1_burned": false,
+    "screen_only": true,
+    "dispositional": true
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "base_seed": 20260813,
+    "n_trials": 0,
+    "n_null_planned": 999,
+    "n_null_executed": 0,
+    "skipped_reason": "ZERO_PRIMARY_PASSERS",
+    "trials": [],
+    "p_max_pf": null,
+    "p_n_passers": 1.0,
+    "p_max_pf_status": "not_evaluated",
+    "p_n_passers_status": "implied_1.0_zero_real_passers"
+  },
+  "verdict": {
+    "disposition": "SCREEN_FAIL",
+    "reason": "Develop joint screen: zero soft primary passers (binary joint gate). Null trials not executed; r1 unburned.",
+    "promote": false,
+    "live_go": false,
+    "screen_status": "ZERO_PRIMARY_PASSERS",
+    "fail_max_pf": null,
+    "fail_n_passers": true
+  },
+  "disposition": "SCREEN_FAIL",
+  "screen_status": "ZERO_PRIMARY_PASSERS",
+  "n_passers": 0,
+  "r1_burned": false,
+  "null_trials_executed": 0,
+  "n_null_planned_charter": 999,
+  "sealed_null_attempt": false,
+  "promote": false,
+  "live_go": false,
+  "reason": "Develop joint screen: zero soft primary passers (binary joint gate). Null trials not executed; r1 unburned.",
+  "per_symbol_soft_pass": {
+    "XAUUSD": false,
+    "EURUSD": false,
+    "GBPUSD": false
+  },
+  "joint_soft_pass": false,
+  "joint_gate_success": false,
+  "n_passers_definition": "binary_joint_gate_success",
+  "charter_path": "/home/yderf/Projects/trading/mt5-arch-integration-wt-mi-screen-run/results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json",
+  "charter_sha256": "e29b26931b93443d7c903ddd034dfcabbeffde8761c41ad77b70e8292700b994",
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+  "data": {
+    "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+    "package_dir": "/home/yderf/Projects/trading/mt5-arch-integration-wt-mi-screen-run/results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+    "holdout_start": "2026-01-01 00:00:00",
+    "n_rows": {
+      "XAUUSD": 25557,
+      "EURUSD": 26900,
+      "GBPUSD": 26900
+    },
+    "package_root": "/home/yderf/Projects/trading/mt5-arch-integration-wt-mi-screen-run/results/instrument_data_packages",
+    "data_path": "/home/yderf/Projects/trading/mt5-arch-integration-wt-mi-screen-run/results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json"
+  },
+  "provenance": {
+    "charter_path": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json",
+    "charter_sha256": "e29b26931b93443d7c903ddd034dfcabbeffde8761c41ad77b70e8292700b994",
+    "code_commit": "ca8b721ec41b299afd454b714a70f34cdd508ae6",
+    "tree_clean": true,
+    "dirty_paths": [],
+    "data_path": "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json",
+    "data_sha256": "0497a904c8d75dce121097a93e2afc3172acab1a1ed706fcdd2e21b10b8ef128",
+    "costs_path": "results/xau_research_costs.json",
+    "costs_sha256": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+    "null_seed": 20260813,
+    "n_null": 0,
+    "output_dir": "results/xau_runs/2026-08-14_joint_london_open_cosign_fade_flat_screen_r1",
+    "family": "joint_london_open_cosign_fade_flat",
+    "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+    "attempt_type": "DETERMINISTIC_SCREEN",
+    "screen_only": true,
+    "n_null_planned": 999,
+    "n_null_executed": 0
+  }
+}

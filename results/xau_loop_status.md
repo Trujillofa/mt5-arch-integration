@@ -1,5 +1,26 @@
 # XAU offline loop status
 
+## 2026-08-14 — `joint_london_open_cosign_fade_flat` v4 **SCREEN_FAIL** · RESEARCH_IDLE
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `joint_london_open_cosign_fade_flat` |
+| **charter v4** | SHA `e29b2693…` · **SCREEN_FAIL** / `ZERO_PRIMARY_PASSERS` (registry) |
+| **screen path** | develop screen-only (multi-instrument joint harness) · artifact `results/xau_runs/2026-08-14_joint_london_open_cosign_fade_flat_screen_r1/` |
+| **develop joint** | PF **0.8647** · NP **−10051.47** · n **1821** · DD **42.74%** · WR **42.7%** · primary passers **0** |
+| **per-symbol soft** | all fail (n=607 each; PF < 1.1, NP < 0) |
+| **null** | planned **999** · executed **0** · `sealed_null_attempt=false` · **r1_burned=false** · p_n_passers implied **1.0** |
+| **package** | `4f44b452…-ee2a993fb5b1befd` |
+| **code_commit** | `ca8b721…` (screen run) |
+| **do not** | retune joint cosign knobs · sealed r1 / null · holdout peek · paper/live · revive this family_id |
+
+Closed freezes remain closed. Next research requires a **genuinely new** `family_id` and freeze-before-peek.
+
+---
+
 ## 2026-08-13 — `joint_london_open_cosign_fade_flat` **v4 SCREEN HARNESS** (not executed)
 
 | Field | Value |
