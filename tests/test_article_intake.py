@@ -288,6 +288,24 @@ def test_adopt_missing_decision_memo_refuses(tmp_path: Path):
         verify_intake(_write(tmp_path, raw), repo_root=ROOT)
 
 
+def test_mql5_catalog_origin_trips_intake_gate():
+    from xau_charter_protocol import validate_charter
+
+    charter_path = (
+        ROOT / "results" / "xau_charters" / "2026-08-13_joint_london_open_cosign_fade_flat_v4.json"
+    )
+    ch = json.loads(charter_path.read_text(encoding="utf-8"))
+    ch["origin"] = "mql5_catalog"
+    errs = validate_charter(ch)
+    assert any("article_intake" in e for e in errs)
+
+
+def test_unrecognized_origin_refuses():
+    ch = {"origin": "vendor_blog", "family_id": "not_catalog"}
+    errs = charter_intake_errors(ch, repo_root=ROOT)
+    assert any("unrecognized origin" in e for e in errs)
+
+
 def test_catalog_charter_without_intake_refuses_validate_charter():
     from xau_charter_protocol import validate_charter
 

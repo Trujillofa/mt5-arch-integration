@@ -30,6 +30,7 @@ REQUIRED_FIELDS = (
 CLAIM_TYPES = frozenset({"pf", "pattern", "math"})
 PARITY_PACKAGES = frozenset({"none", "htf_fib", "other"})
 DECISIONS = frozenset({"adopt", "defer", "reject"})
+CATALOG_ORIGIN_TOKENS = ("catalog", "mql5", "article")
 CATALOG_ORIGINS = frozenset({"catalog", "mql5", "mql5.com", "article", "article_intake"})
 DEFAULT_HOLDOUT_LOCK = Path("results") / "xau_holdout_lock.json"
 HTF_FIB_EVIDENCE = frozenset(
@@ -118,10 +119,21 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def _origin_kind(charter: dict[str, Any]) -> str:
+    """Classify origin: empty, catalog (substring token), or unrecognized."""
+    origin = str(charter.get("origin") or charter.get("source_kind") or "").strip().lower()
+    if not origin:
+        return "empty"
+    if any(token in origin for token in CATALOG_ORIGIN_TOKENS):
+        return "catalog"
+    return "unrecognized"
+
+
 def is_catalog_derived(charter: dict[str, Any]) -> bool:
     """True when a charter claims catalog / MQL5.com article origin."""
-    origin = str(charter.get("origin") or charter.get("source_kind") or "").strip().lower()
-    return origin in CATALOG_ORIGINS or bool(
+    if _origin_kind(charter) == "catalog":
+        return True
+    return bool(
         charter.get("article_intake") or charter.get("article_url") or charter.get("catalog_mq5")
     )
 
@@ -130,6 +142,12 @@ def charter_intake_errors(
     charter: dict[str, Any], *, repo_root: Path | None = None
 ) -> list[str]:
     """Return hard errors if a catalog-derived charter lacks a verified intake."""
+    origin = str(charter.get("origin") or charter.get("source_kind") or "").strip()
+    if _origin_kind(charter) == "unrecognized":
+        return [
+            f"unrecognized origin {origin!r} "
+            "(need a catalog/mql5/article token, or leave empty)"
+        ]
     if not is_catalog_derived(charter):
         return []
     root = Path(repo_root) if repo_root is not None else ROOT
