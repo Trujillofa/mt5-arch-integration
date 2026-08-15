@@ -21,7 +21,18 @@ EXPECT_SERVER="${EXPECT_SERVER:-${MT5_SERVER:-VantageMarkets-Live 5}}"
 
 WINEPREFIX="$(readlink -f "${WINEPREFIX:-$HOME/.mt5-vantage}")"
 export WINEPREFIX
-info "WINEPREFIX=$WINEPREFIX (prefix-scoped only)"
+BROKER="${BROKER:-}"
+if [[ -z "$BROKER" ]]; then
+  case "$WINEPREFIX" in
+    *mt5-vantage*) BROKER=vantage ;;
+    *mt5-fpmarkets*) BROKER=fpmarkets ;;
+    *mt5-exness*) BROKER=exness ;;
+    *mt5-wsf*) BROKER=wsf ;;
+  esac
+fi
+[[ -n "$BROKER" ]] || die "set BROKER=vantage|fpmarkets|exness|wsf"
+export BROKER
+info "WINEPREFIX=$WINEPREFIX broker=$BROKER (prefix-scoped only)"
 
 MT5_DIR=""
 for d in \
@@ -32,7 +43,8 @@ do
 done
 [[ -n "$MT5_DIR" ]] || die "terminal64 not found under WINEPREFIX=$WINEPREFIX"
 
-mkdir -p "$MT5_DIR/MQL5/Scripts" "$MT5_DIR/MQL5/Files/mt5_arch"
+mkdir -p "$MT5_DIR/MQL5/Scripts" "$MT5_DIR/MQL5/Include" "$MT5_DIR/MQL5/Files/mt5_arch"
+cp -f "$REPO_ROOT/mql5/Include/FxSymbolRegistry.mqh" "$MT5_DIR/MQL5/Include/"
 cp -f "$REPO_ROOT/mql5/Scripts/ExportInstrumentHistory.mq5" "$MT5_DIR/MQL5/Scripts/"
 ME="$MT5_DIR/MetaEditor64.exe"
 info "Compiling ExportInstrumentHistory.mq5..."
@@ -177,7 +189,8 @@ Period=H1
 ShutdownTerminal=1
 """.replace("\n", "\r\n")
 (mt5 / "export_instruments.ini").write_bytes(text.encode("ascii"))
-set_body = f"""InpSymbols={'$SYMBOLS'}
+set_body = f"""InpBroker={'$BROKER'}
+InpSymbols={'$SYMBOLS'}
 InpMonths={'$MONTHS'}
 InpTfs={'$TFS'}
 InpOutDir=mt5_arch

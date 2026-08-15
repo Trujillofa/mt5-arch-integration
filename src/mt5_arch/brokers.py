@@ -44,6 +44,7 @@ class BrokerProfile:
 
     def as_exports(self) -> dict[str, str]:
         return {
+            "MT5_BROKER": self.name,
             "BROKER": self.name,
             "WINEPREFIX": self.wineprefix,
             "MT5_LOGIN": self.login,

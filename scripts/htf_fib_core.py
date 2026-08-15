@@ -12,6 +12,7 @@ Consumers
 ---------
 - ``scripts/htf_fib_offline_backtest.py``
 - ``scripts/xau_preregistered_holdout.py`` (simulate_htf_fib)
+- ``scripts/verify_mql5_python_parity.py`` (MQL5 buffer / ATR / pivot timing)
 - future develop-only fib optimizers (import from here; do not re-copy)
 
 SAFETY: offline research only.
@@ -37,6 +38,8 @@ def confirmed_pivots(
     low: np.ndarray | Sequence[float],
     left: int,
     right: int,
+    *,
+    exclude_forming: bool = False,
 ) -> list[PivotEvent]:
     """Return confirmed fractal pivots stamped at the confirmation bar.
 
@@ -51,7 +54,9 @@ def confirmed_pivots(
     """
     return [
         (a, p, t)
-        for a, p, t, _c in confirmed_pivots_with_centers(high, low, left, right)
+        for a, p, t, _c in confirmed_pivots_with_centers(
+            high, low, left, right, exclude_forming=exclude_forming
+        )
     ]
 
 
@@ -60,6 +65,8 @@ def confirmed_pivots_with_centers(
     low: np.ndarray | Sequence[float],
     left: int,
     right: int,
+    *,
+    exclude_forming: bool = False,
 ) -> list[PivotEventFull]:
     """Like :func:`confirmed_pivots` but also returns ``center_idx``.
 
@@ -77,8 +84,10 @@ def confirmed_pivots_with_centers(
         raise ValueError("left and right must be >= 0")
 
     events: list[PivotEventFull] = []
-    # c must leave room for left history and right confirmation bars
-    for c in range(left_i, n - right_i):
+    # c must leave room for left history and right confirmation bars.
+    # exclude_forming: last bar is in-progress — it must not be a confirm wing.
+    end = n - 1 - right_i if exclude_forming else n - right_i
+    for c in range(left_i, end):
         h = high_a[c]
         l = low_a[c]
         is_h = all(
@@ -166,10 +175,60 @@ def walk_swing_and_fibs(
     return states
 
 
+def true_range(high: float, low: float, prev_close: float) -> float:
+    """True range matching ``FxTrueRange`` in ``mql5/Include/ForexUtils.mqh``."""
+    hl = float(high) - float(low)
+    hc = abs(float(high) - float(prev_close))
+    lc = abs(float(low) - float(prev_close))
+    return max(hl, hc, lc)
+
+
+def wilder_atr(
+    high: np.ndarray | Sequence[float],
+    low: np.ndarray | Sequence[float],
+    close: np.ndarray | Sequence[float],
+    period: int = 14,
+) -> np.ndarray:
+    """Wilder ATR matching ``FxAtrSeries`` (index 0 = oldest).
+
+    First valid value is at index ``period`` (needs ``period`` true ranges,
+    each of which needs a previous close). Earlier bars are NaN.
+    Recurrence: ``ATR[i] = (ATR[i-1] * (period-1) + TR[i]) / period``.
+    This is **not** an SMA of true range.
+    """
+    high_a = np.asarray(high, dtype=float)
+    low_a = np.asarray(low, dtype=float)
+    close_a = np.asarray(close, dtype=float)
+    if high_a.shape != low_a.shape or high_a.shape != close_a.shape:
+        raise ValueError("high, low, and close must have the same shape")
+    n = int(high_a.shape[0])
+    period_i = int(period)
+    if period_i < 1:
+        raise ValueError("period must be >= 1")
+    out = np.full(n, np.nan, dtype=float)
+    if n < period_i + 1:
+        return out
+
+    tr_sum = 0.0
+    for i in range(1, period_i + 1):
+        tr_sum += true_range(high_a[i], low_a[i], close_a[i - 1])
+    out[period_i] = tr_sum / period_i
+
+    for i in range(period_i + 1, n):
+        tr = true_range(high_a[i], low_a[i], close_a[i - 1])
+        out[i] = (out[i - 1] * (period_i - 1) + tr) / period_i
+    return out
+
+
 def expand_fib_states(
     n: int, states: Sequence[FibState]
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Expand sparse fib states to per-bar arrays (active when state.idx <= i)."""
+    """Expand sparse fib states to per-bar arrays (live when ``i >= active_idx``).
+
+    Same-TF closed-bar consumers may use the confirmation bar at its close
+    (``CopyBuffer(..., shift=1)``). MTF alignment is the caller's job:
+    ``chart_bar_close >= htf_confirm_open + htf_period``.
+    """
     direction = np.zeros(n, dtype=int)
     f_a = np.full(n, np.nan)
     f_b = np.full(n, np.nan)

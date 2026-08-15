@@ -1,0 +1,163 @@
+{
+  "schema": "mt5-symbol-sync-audit/v1",
+  "source": "synthetic",
+  "export_ok": true,
+  "broker": "vantage",
+  "registry_schema": "mt5-symbol-registry/v1",
+  "timeframe": "H1",
+  "server_time": "2026.01.05 12:00:00",
+  "time_current": 1767614400,
+  "symbols": [
+    {
+      "canonical": "EURUSD",
+      "requested": "EURUSD",
+      "broker_symbol": "EURUSD",
+      "resolved": "EURUSD",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 3,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "GBPUSD",
+      "requested": "GBPUSD",
+      "broker_symbol": "GBPUSD",
+      "resolved": "GBPUSD",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 3,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "USDJPY",
+      "requested": "USDJPY",
+      "broker_symbol": "USDJPY",
+      "resolved": "USDJPY",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 4,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "USDCHF",
+      "requested": "USDCHF",
+      "broker_symbol": "USDCHF",
+      "resolved": "USDCHF",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 4,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "XAUUSD",
+      "requested": "XAUUSD",
+      "broker_symbol": "XAUUSD",
+      "resolved": "XAUUSD",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 3,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "BTCUSD",
+      "requested": "BTCUSD",
+      "broker_symbol": "BTCUSD",
+      "resolved": "BTCUSD",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 4,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    }
+  ],
+  "joint": {
+    "window_first": "2026.01.05 08:00:00",
+    "window_last": "2026.01.05 11:00:00",
+    "first_time": "2026.01.05 08:00:00",
+    "last_time": "2026.01.05 11:00:00",
+    "n_intersection_timestamps": 4
+  }
+}

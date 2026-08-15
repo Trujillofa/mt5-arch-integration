@@ -1,8 +1,8 @@
 # How to use: ForexHtfPivotsFib
 
-**Indicator:** `MQL5/Indicators/ForexHtfPivotsFib.mq5`  
-**Version covered:** 1.31+  
-**Role:** Primary **forex** visual / signal tool — confirmed higher-timeframe pivots, directional Fibonacci, EMA regime, RSI + RSI-MA confluence.  
+**Indicator:** `MQL5/Indicators/ForexHtfPivotsFib.mq5`
+**Version covered:** 1.42+
+**Role:** Primary **forex** visual / signal tool — confirmed higher-timeframe pivots, directional Fibonacci, EMA regime, RSI + RSI-MA confluence.
 **Not an EA:** does not place orders. Optional journal via `ForexSignalLogger`.
 
 Port of the TradingView stack in `manual-trading-agent` (`tradingview_pivot_rsi_ema.pine` / HTF Fib strategy ideas).
@@ -35,9 +35,9 @@ cd ~/Projects/trading/mt5-arch-integration
 
 In the MT5 terminal you trade with:
 
-1. **MetaEditor** (F4) → open `Indicators/ForexHtfPivotsFib.mq5`  
-2. **Compile** (F7) — 0 errors  
-3. Confirm short name / panel shows **v1.31** (or later)
+1. **MetaEditor** (F4) → open `Indicators/ForexHtfPivotsFib.mq5`
+2. **Compile** (F7) — 0 errors
+3. Confirm short name / panel shows **v1.42** (or later)
 
 Depends on `Include/ForexUtils.mqh` (copied by the install script).
 
@@ -55,11 +55,13 @@ Depends on `Include/ForexUtils.mqh` (copied by the install script).
 
 **Symbols:** majors / minors / gold (`XAUUSD`, `XAUUSD.r`, etc.). Not for BTC (use `BtcTrendPullback`).
 
+**One chart per timeframe (Wine):** do **not** spam the TF toolbar on a chart that carries this indicator. Each flip still unload/reloads the indicator (journal: loaded/removed). v1.42 no longer mass-deletes GDI objects on that path — that was the measured freeze trigger on 2026-08-13 — but OnInit/OnDeinit churn remains. Prefer one tab per TF (e.g. US30 M1 + US30 M15) and switch tabs instead of flipping one chart.
+
 ### Steps
 
-1. Open symbol → prefer **chart tab** (do not undock under Wine).  
-2. Navigator → **Indicators** → **ForexHtfPivotsFib** → drag onto chart.  
-3. Set **Trading mode** (see §4) → OK.  
+1. Open symbol → prefer **chart tab** (do not undock under Wine).
+2. Navigator → **Indicators** → **ForexHtfPivotsFib** → drag onto chart.
+3. Set **Trading mode** (see §4) → OK.
 4. Toolbar: leave **Algo Trading** green only if you also use EAs (logger / bridge).
 
 ### Confirm it loaded
@@ -67,7 +69,7 @@ Depends on `Include/ForexUtils.mqh` (copied by the install script).
 Top-left panel should look like:
 
 ```text
-HTF Fib v1.31
+HTF Fib v1.42
 Mode   INTRADAY  (M15-H1 ...)
 EMAs   20/50 bias 200
 Fib src 4H
@@ -101,10 +103,10 @@ Input group **`=== Trading mode ===`**
 
 ### How to switch modes
 
-1. Right-click chart → **Indicators List** (or Ctrl+I if it works).  
-2. Select **ForexHtfPivotsFib** → **Properties**.  
-3. **`InpTradingMode`** → `FX_MODE_INTRADAY` or `FX_MODE_SWING`.  
-4. Keep **`InpManualOverride = false`** unless you want full manual control.  
+1. Right-click chart → **Indicators List** (or Ctrl+I if it works).
+2. Select **ForexHtfPivotsFib** → **Properties**.
+3. **`InpTradingMode`** → `FX_MODE_INTRADAY` or `FX_MODE_SWING`.
+4. Keep **`InpManualOverride = false`** unless you want full manual control.
 5. OK → panel should show `Mode INTRADAY` or `Mode SWING` and the matching EMA numbers.
 
 **Tip:** Prefer mode switch over hand-editing EMA every day (faster, fewer Wine reloads).
@@ -115,24 +117,58 @@ Input group **`=== Trading mode ===`**
 
 ### 5.1 Pivots (structure)
 
-- **Confirmed** pivot high/low: needs `left` bars + `right` bars of confirmation (default **5/5**).  
-- Until confirmation, no new pivot line — **non-repainting** by design (can feel “late”).  
-- **4H** lines: short-term HTF structure.  
-- **Daily** lines: larger map (always available).  
+- **Confirmed** pivot high/low: needs `left` bars + `right` bars of confirmation (default **5/5**).
+- Until confirmation, no new pivot line — **non-repainting** by design (can feel “late”).
+- **4H** lines: short-term HTF structure.
+- **Daily** lines: larger map (always available).
 - Labels optional (`InpShow4hLabels` / `InpShowDailyLabels`) — off by default to reduce clutter.
 
 ### 5.2 Swing + Fib
 
-1. Indicator walks confirmed pivots on the **Fib source** TF (4H or Daily).  
-2. Builds a **directional swing** (bullish low→high or bearish high→low).  
-3. Draws Fib **retracements** of that swing:  
-   - Bullish: pullback **down** from swing high  
-   - Bearish: pullback **up** from swing low  
+1. Indicator walks confirmed pivots on the **Fib source** TF (4H or Daily).
+2. Builds a **directional swing** (bullish low→high or bearish high→low).
+3. Draws Fib **retracements** of that swing:
+   - Bullish: pullback **down** from swing high
+   - Bearish: pullback **up** from swing low
 4. **Golden zone** = band between **61.8%** and **78.6%** (primary interest).
 
 Default Fib levels: **50, 61.8, 78.6** on; 23.6 / 38.2 off.
 
 If panel shows `Golden (need swing)`: not enough alternating confirmed pivots yet — wait or lower `left`/`right` (more sensitive, more noise).
+
+### 5.2b Imported S/R levels (from `.tpl` templates)
+
+Horizontal lines drawn by hand in the manual `plantillas/*.tpl` chart templates are
+imported as static support/resistance levels. Relevance comes from the **timeframe the
+line was drawn on** — that is what the template records, so it is what the colour encodes:
+
+| Relevance | Colour | Drawn on |
+|-----------|--------|----------|
+| **HIGH** | Yellow (`InpSrColHigh`) | Monthly / Weekly / Daily / **H4** |
+| **MED** | White (`InpSrColMed`) | H1 / M30 / M15 |
+| **LOW** | Blue (`InpSrColLow`) | M5 / M1 |
+
+HIGH lines are drawn at width 2, the rest at width 1; style defaults to dotted to match
+the templates. Lines at the same price collapse into one, keeping the strongest tier.
+
+Each tier has its own visibility toggle (`InpSrShowHigh` / `InpSrShowMed` /
+`InpSrShowLow`), all on by default. XAUUSD imports 60 M5 lines against 9 H4/Daily ones,
+so turning `InpSrShowLow` off leaves the yellow + white map only.
+
+These are a **static snapshot**, not a live calculation — they do not follow price, and
+they exist only for the symbols that were exported. Regenerate after re-drawing zones:
+
+```bash
+python3 scripts/tpl_to_sr_levels.py        # reads $PLANTILLAS_DIR/*.tpl
+./scripts/18-install-forex-indicator.sh    # deploys the CSV into every prefix
+```
+
+Then remove/re-add the indicator (or change any input) to reload — **no recompile**, the
+table is read at runtime from `MQL5\Files\forex_sr_levels.csv`.
+
+Symbols are matched on their base name, so a `XAUUSDm` template also feeds an `XAUUSD.r`
+or `XAUUSD` chart. If the Experts log says `no S/R rows matched`, that symbol has no
+exported template.
 
 ### 5.3 EMAs
 
@@ -150,11 +186,11 @@ On a **closed** bar, a marker can fire when **all** of the following hold:
 
 **Long**
 
-1. Swing is **bullish** and price is in the **golden zone** (between 61.8 and 78.6).  
-2. Close **> EMA bias (200)**.  
-3. RSI ≤ **`InpRsiLongMax`** (default **35**).  
-4. If **`InpUseRsiMaFilter`**: RSI **above** its MA (turning up while still “soft”).  
-5. Optional: **`InpRequireCandle`** bullish confirmation.  
+1. Swing is **bullish** and price is in the **golden zone** (between 61.8 and 78.6).
+2. Close **> EMA bias (200)**.
+3. RSI ≤ **`InpRsiLongMax`** (default **35**).
+4. If **`InpUseRsiMaFilter`**: RSI **above** its MA (turning up while still “soft”).
+5. Optional: **`InpRequireCandle`** bullish confirmation.
 6. Edge-style: not already true on the previous closed bar (reduces spam).
 
 **Short** — mirror (bearish swing, golden zone, close &lt; bias, RSI ≥ 65, RSI below MA if filter on).
@@ -221,49 +257,68 @@ On a **closed** bar, a marker can fire when **all** of the following hold:
 | `InpShowPanel` | true | `Comment()` panel |
 | `InpArrowOffsetPips` | 4 | Arrow distance from high/low |
 
+### S/R levels (imported from `.tpl` templates)
+
+| Input | Default | Notes |
+|-------|---------|--------|
+| `InpShowSrLevels` | true | Off = lines removed on next reload |
+| `InpSrFile` | `forex_sr_levels.csv` | In `MQL5\Files`, falling back to `Common\Files` |
+| `InpSrShowHigh` | true | Show HIGH tier |
+| `InpSrShowMed` | true | Show MED tier |
+| `InpSrShowLow` | true | Show LOW tier — **turn off** to declutter M5-heavy symbols |
+| `InpSrColHigh` | Yellow | HIGH relevance (MN/W1/D1/H4) |
+| `InpSrColMed` | White | MED relevance (H1/M30/M15) |
+| `InpSrColLow` | DodgerBlue | LOW relevance (M5/M1) |
+| `InpSrStyle` | `STYLE_DOT` | Matches the templates |
+| `InpSrShowLabels` | false | Attach `TIER TF price` text to each line |
+| `InpSrMaxLevels` | 300 | Hard cap — guards against a GDI storm under Wine |
+
 ---
 
 ## 7. Recommended workflows
 
 ### A. Intraday pullback (default)
 
-1. Chart **H1** (or M15).  
-2. Mode **INTRADAY**.  
-3. Wait for **bullish/bearish swing** + **golden zone** drawn.  
-4. Prefer **London / NY** sessions (use broker server clock; session filter is **not** built into this indicator’s mode the same way as the Template — use your own session discipline or Template on a second chart if needed).  
-5. Long: price in GZ, above EMA200, RSI soft but above RSI-MA → marker or discretionary entry.  
+1. Chart **H1** (or M15).
+2. Mode **INTRADAY**.
+3. Wait for **bullish/bearish swing** + **golden zone** drawn.
+4. Prefer **London / NY** sessions (use broker server clock; session filter is **not** built into this indicator’s mode the same way as the Template — use your own session discipline or Template on a second chart if needed).
+5. Long: price in GZ, above EMA200, RSI soft but above RSI-MA → marker or discretionary entry.
 6. Risk: outside structure / beyond 78.6 invalidation or ATR-based stop (manual).
 
 ### B. Swing
 
-1. Chart **H4** or **D1** (or H1 for timing with Daily Fib).  
-2. Mode **SWING**.  
-3. Fib from **Daily** pivots; fewer trades, larger structure.  
+1. Chart **H4** or **D1** (or H1 for timing with Daily Fib).
+2. Mode **SWING**.
+3. Fib from **Daily** pivots; fewer trades, larger structure.
 4. EMA 50/200 alignment as regime.
 
 ### C. Journal only (no visual need)
 
-- Attach **ForexSignalLogger** with  
-  - `InpIndicatorName = ForexHtfPivotsFib`  
-  - `InpSignalBuffer = 8`  
-  - `InpMaxSpreadPips` as you like (e.g. 2.5 FX, 0 for very wide symbols)  
+- Attach **ForexSignalLogger** with
+  - `InpIndicatorName = ForexHtfPivotsFib`
+  - `InpSignalBuffer = 8`
+  - `InpMaxSpreadPips` as you like (e.g. 2.5 FX, 0 for very wide symbols)
 - Logger loads a **hidden** HTF Fib via `iCustom` (defaults). For exact parity with on-chart inputs, keep chart Fib on **mode defaults** or accept possible mismatch until inputs are mirrored in the logger.
 
 ### D. With ForexIndicatorTemplate
 
-**Best:** HTF Fib **alone** on the trade chart.  
+**Best:** HTF Fib **alone** on the trade chart.
 
 **Both on one chart:** Template with **dashboard off + arrows off**; HTF Fib owns panel and markers. See conversation notes / roadmap. Prefer not two arrow systems.
 
 ### E. With Mt5ArchBridge
 
-- Bridge is a **separate EA**.  
-- **One chart only** (any symbol).  
+- Bridge is a **separate EA**.
+- **One chart only** (any symbol).
 - Not the same as HTF Fib.
 
 ---
 
 ## 8. iCustom buffers (EAs / logger)
+
+Authoritative map and the MQL5 ↔ Python check:
+[MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md). Signal is buffer **8**, shift **1**.
 
 | Index | Content |
 |------:|---------|
@@ -300,7 +355,8 @@ if(CopyBuffer(handle, 8, 1, 1, sig) > 0)
 | Charts | Tabs only; undocked chart windows often black |
 | Panel | Uses `Comment()` (Wine-safe); not multi-color labels |
 | Mouse | Prefer **primary** monitor; no Wine virtual desktop |
-| EMA tweaks | Changing inputs reloads indicator; v1.31+ softens freezes — still avoid spam-editing on huge histories |
+| EMA tweaks | Changing inputs reloads indicator; avoid spam-editing on huge histories |
+| TF flipping | Prefer one chart per TF (see §3); v1.42 skips ObjectsDeleteAll on chartchange |
 | Sessions | Fib indicator does **not** hard-block Asian like Template; manage sessions yourself in INTRADAY |
 
 Switch broker:
@@ -322,7 +378,7 @@ cd ~/Projects/trading/mt5-arch-integration
 | EMA numbers don’t change | Set **`InpManualOverride=true`**, or switch **Mode** (mode owns EMAs when override false) |
 | No Fib / “need swing” | Wait for confirmed pivots; or lower left/right; check chart ≤ H4 for 4H source |
 | No arrows | Closed bar only; check bias side, golden zone, RSI + RSI-MA filters |
-| Freezes on param change | Update to v1.31+; fewer charts; one bridge EA only |
+| Freezes on param / TF change | Panel must show **v1.42+**; one chart per TF; fewer charts; one bridge EA only. Watchdog: `mt5-freeze-watch.timer` |
 | Logger ≠ chart signals | Logger `iCustom` uses **default** inputs unless extended; align mode defaults |
 | Gold symbol | Use your broker’s name (`XAUUSD` vs `XAUUSD.r`) |
 
@@ -330,10 +386,10 @@ cd ~/Projects/trading/mt5-arch-integration
 
 ## 11. What this is *not*
 
-- Not a multi-broker account switcher  
-- Not session-momentum / z-score (that lives in cTrader Python)  
-- Not BTC trend pullback (use **BtcTrendPullback**)  
-- Not a substitute for news, spread, sizing, or prop-firm rules  
+- Not a multi-broker account switcher
+- Not session-momentum / z-score (that lives in cTrader Python)
+- Not BTC trend pullback (use **BtcTrendPullback**)
+- Not a substitute for news, spread, sizing, or prop-firm rules
 
 Treat markers as **observe / journal** until you have a written edge and risk plan.
 
@@ -341,15 +397,15 @@ Treat markers as **observe / journal** until you have a written edge and risk pl
 
 ## 12. Quick start checklist
 
-- [ ] Install script run  
-- [ ] F7 compile succeeds  
-- [ ] Chart H1 (or M15), majors/gold  
-- [ ] Mode set (INTRADAY or SWING)  
-- [ ] Panel shows version + EMAs + Fib src  
-- [ ] Golden zone appears after swings form  
-- [ ] Optional: SignalLogger buffer **8**  
-- [ ] Optional: Mt5ArchBridge on **one** chart only  
-- [ ] Save chart **Template** once happy  
+- [ ] Install script run
+- [ ] F7 compile succeeds
+- [ ] Chart H1 (or M15), majors/gold
+- [ ] Mode set (INTRADAY or SWING)
+- [ ] Panel shows version + EMAs + Fib src
+- [ ] Golden zone appears after swings form
+- [ ] Optional: SignalLogger buffer **8**
+- [ ] Optional: Mt5ArchBridge on **one** chart only
+- [ ] Save chart **Template** once happy
 
 ---
 
@@ -369,13 +425,13 @@ Treat markers as **observe / journal** until you have a written edge and risk pl
 
 ### 13.2 GUI Strategy Tester (recommended under Wine)
 
-1. Open MT5 (any broker prefix with data for the symbol).  
-2. **View → Strategy Tester** (Ctrl+R if bound).  
-3. **Expert:** `ForexHtfFibTester`  
-4. **Symbol:** e.g. `EURUSD` · **Period:** H1  
-5. **Dates:** e.g. 2024.06.01 – 2025.01.01  
-6. **Model:** 1 minute OHLC (or every tick based on real ticks if available)  
-7. **Deposit:** 10000 · **Visual mode:** optional  
+1. Open MT5 (any broker prefix with data for the symbol).
+2. **View → Strategy Tester** (Ctrl+R if bound).
+3. **Expert:** `ForexHtfFibTester`
+4. **Symbol:** e.g. `EURUSD` · **Period:** H1
+5. **Dates:** e.g. 2024.06.01 – 2025.01.01
+6. **Model:** 1 minute OHLC (or every tick based on real ticks if available)
+7. **Deposit:** 10000 · **Visual mode:** optional
 8. **Start**
 
 Ensure history is downloaded (open EURUSD H1 chart and scroll left first).
@@ -410,14 +466,14 @@ python3 scripts/htf_fib_offline_backtest.py \
 
 Example offline run (EURUSD H1, 2022–2024, filter off, 0.1 lot, ATR exits):
 
-- Trades: 22 · Win rate ≈ 32% · Net ≈ −$96 · PF ≈ 0.57  
+- Trades: 22 · Win rate ≈ 32% · Net ≈ −$96 · PF ≈ 0.57
 - Treat as **research smoke**, not production readiness.
 
 ### 13.4 Interpreting results
 
-- Sparse signals with RSI-MA filter is expected (strict confluence).  
-- Tune SL/TP, mode, and filters in the **EA inputs**, re-run tester.  
-- Optimize only out-of-sample after a fixed rule set (walk-forward).  
+- Sparse signals with RSI-MA filter is expected (strict confluence).
+- Tune SL/TP, mode, and filters in the **EA inputs**, re-run tester.
+- Optimize only out-of-sample after a fixed rule set (walk-forward).
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "schema": "mt5-trade-journal/v1",
+  "source": "synthetic",
+  "session_id": "run-1755129600-84000001-1",
+  "recorded_at": "2026-08-14T00:00:00Z",
+  "broker": "vantage",
+  "symbol": {
+    "requested": "XAUUSD",
+    "canonical": "XAUUSD",
+    "broker_symbol": "XAUUSD"
+  },
+  "account": {
+    "login": 84000001,
+    "server": "Synthetic-Demo"
+  },
+  "expert": "TradeTransactionJournal",
+  "overflow": {
+    "path": "overflow.json"
+  },
+  "note": "OnTradeTransaction is asynchronous; this record is identifiers only. Slow handlers stall the queue."
+}

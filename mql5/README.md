@@ -7,14 +7,22 @@
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
-| `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — buffer 8 + ATR SL/TP |
-| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.22) |
+| `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
+| `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
+| `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
+| `Include/FxSymbolRegistry.mqh` | Generated explicit broker → symbol maps (no suffix walk) |
+| `Scripts/ExportSymbolCapabilities.mq5` | Read-only symbol capability dump (no orders) |
+| `Scripts/ExportSymbolSyncAudit.mq5` | Read-only H1 calendar / spread sync audit (no orders) |
+| `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.23) |
+| `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
 
-### Mt5ArchBridge symbols (v1.22)
+### Mt5ArchBridge symbols (v1.23)
 
-`InpSymbols` / `InpHistorySymbol` use **bare** names by default (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
-`ResolveSymbol()` tries `SymbolSelect` on the bare name, then common broker suffixes: `m` (Exness raw), `.r` (FP Markets), `.m`, `#`, `pro`.
-`symbols.json` and candle filenames use the **resolved** broker name (e.g. `EURUSDm`). Override inputs only if your broker uses a non-standard naming scheme.
+`InpBroker` is **required** (`vantage|fpmarkets|exness|wsf`).
+`InpSymbols` / `InpHistorySymbol` use **canonical** names (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
+`FxResolveSymbol` maps them through `config/symbols/registry.json` and `SymbolSelect`s only that name — no suffix walk.
+`symbols.json` and candle filenames still use the **resolved** broker name (e.g. `XAUUSD.r`).
+See [docs/SYMBOL-REGISTRY.md](../docs/SYMBOL-REGISTRY.md).
 
 Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md)
 
@@ -31,6 +39,10 @@ MetaEditor **F7** compile order:
 2. `Indicators/BtcTrendPullback.mq5`
 3. `Indicators/ForexIndicatorTemplate.mq5` (optional)
 4. `Experts/ForexSignalLogger.mq5` (optional)
+5. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
+6. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
+7. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
+8. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
 
 ## Chart recipe — FX / gold
 
@@ -58,9 +70,9 @@ MetaEditor **F7** compile order:
 | **INTRADAY** | **20 / 50** + bias **200** | London/NY/overlap | max 2.5 p | 4H pivots | M15–H1 |
 | **SWING** | **50 / 200** (bias = 200) | off | off | Daily pivots | H4–D1 |
 
-- Cloud / timing = fast vs slow  
-- Signals also require **close vs EMA bias (200)** when mode uses bias filter  
-- `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields  
+- Cloud / timing = fast vs slow
+- Signals also require **close vs EMA bias (200)** when mode uses bias filter
+- `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields
 
 Signal buffers: **HTF Fib = 8**, **Template = 9**.
 
@@ -75,25 +87,49 @@ Signal buffers: **HTF Fib = 8**, **Template = 9**.
 
 Panel shows `RSI` and `RSI MA` with above/below tag.
 
+### Imported S/R levels (ForexHtfPivotsFib v1.43+)
+
+`scripts/tpl_to_sr_levels.py` converts the hand-drawn `OBJ_HLINE` zones of the manual
+`plantillas/*.tpl` chart templates into `Files/forex_sr_levels.csv`, which the indicator
+reads **at runtime** (no recompile). Relevance = the timeframe the line was drawn on:
+
+| Tier | Colour | Drawn on |
+|------|--------|----------|
+| HIGH | Yellow | MN / W1 / D1 / H4 |
+| MED | White | H1 / M30 / M15 |
+| LOW | Blue | M5 / M1 |
+
+```bash
+python3 scripts/tpl_to_sr_levels.py       # PLANTILLAS_DIR=... to point elsewhere
+./scripts/18-install-forex-indicator.sh   # copies CSV to MQL5\Files + Common\Files
+```
+
+Static snapshot — regenerate after re-drawing zones. Full notes:
+[docs/HOWTO-HTF-FIB.md §5.2b](../docs/HOWTO-HTF-FIB.md).
+
 ### ForexHtfPivotsFib buffers (`iCustom`)
+
+Authoritative map (v1.42+). Do not use the old signal-at-7 table.
+Parity harness: [docs/MQL5-PYTHON-PARITY.md](../docs/MQL5-PYTHON-PARITY.md).
 
 | Index | Content |
 |------:|---------|
-| 0 | EMA50 |
-| 1 | EMA200 |
-| 2 | Long arrow |
-| 3 | Short arrow |
-| 4 | Fib 61.8 |
-| 5 | Fib 78.6 |
-| 6 | Swing direction (+1/−1) |
-| **7** | **Signal (+1/−1/0)** |
-| 8 | RSI |
-| 9 | RSI-MA |
+| 0 | EMA fast |
+| 1 | EMA slow |
+| 2 | EMA bias |
+| 3 | Long arrow |
+| 4 | Short arrow |
+| 5 | Fib 61.8 |
+| 6 | Fib 78.6 |
+| 7 | Swing direction (+1/−1) |
+| **8** | **Signal (+1/−1/0)** |
+| 9 | RSI |
+| 10 | RSI-MA |
 
 ```mql5
 double sig[];
 ArraySetAsSeries(sig, true);
-CopyBuffer(handle, 7, 1, 1, sig);  // last closed bar
+CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 ```
 
 ### ForexIndicatorTemplate buffers
@@ -123,6 +159,8 @@ CopyBuffer(handle, 7, 1, 1, sig);  // last closed bar
 - BTC: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
 - Writes `MQL5/Files/forex_signals/<SYMBOL>_<TF>.csv`
 - **Never** calls `OrderSend`
+- Parity dump: `Scripts/ExportHtfFibParityFixture.mq5` →
+  [docs/MQL5-PYTHON-PARITY.md](../docs/MQL5-PYTHON-PARITY.md)
 
 ## Design sources
 

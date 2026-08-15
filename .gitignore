@@ -52,6 +52,9 @@ winetricks.log
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
 
+# Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
+tests/fixtures/mql5_parity/live_*/
+
 # Multi-instrument packages: future package dirs ignored (already-tracked snapshot stays tracked).
 # SHA manifests and schema README stay tracked; bulk CSV trees for new packages stay local-only.
 results/instrument_data_packages/*/

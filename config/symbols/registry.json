@@ -1,0 +1,71 @@
+{
+  "schema": "mt5-symbol-registry/v1",
+  "evidence": "docs/research/PHASE0-DISCOVERY.md; results/xau_bridge_deploy_exness.md",
+  "canonical": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "USDCHF",
+    "XAUUSD",
+    "BTCUSD"
+  ],
+  "brokers": {
+    "vantage": {
+      "EURUSD": {
+        "broker_symbol": "EURUSD",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "GBPUSD": {
+        "broker_symbol": "GBPUSD",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "USDJPY": {
+        "broker_symbol": "USDJPY",
+        "expect": {"digits": 3, "contract_size": 100000.0, "point": 0.001}
+      },
+      "USDCHF": {
+        "broker_symbol": "USDCHF",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "XAUUSD": {
+        "broker_symbol": "XAUUSD",
+        "expect": {"digits": 2, "contract_size": 100.0, "point": 0.01}
+      },
+      "BTCUSD": {
+        "broker_symbol": "BTCUSD"
+      }
+    },
+    "fpmarkets": {
+      "EURUSD": {
+        "broker_symbol": "EURUSD",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "GBPUSD": {
+        "broker_symbol": "GBPUSD",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "USDJPY": {
+        "broker_symbol": "USDJPY",
+        "expect": {"digits": 3, "contract_size": 100000.0, "point": 0.001}
+      },
+      "USDCHF": {
+        "broker_symbol": "USDCHF",
+        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+      },
+      "XAUUSD": {
+        "broker_symbol": "XAUUSD.r",
+        "expect": {"digits": 2, "contract_size": 100.0}
+      },
+      "BTCUSD": {
+        "broker_symbol": "BTCUSD"
+      }
+    },
+    "exness": {
+      "XAUUSD": {
+        "broker_symbol": "XAUUSDm",
+        "evidence": "bridge heartbeat symbol=XAUUSDm"
+      }
+    },
+    "wsf": {}
+  }
+}

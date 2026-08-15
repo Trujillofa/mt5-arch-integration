@@ -36,3 +36,21 @@ def test_default_backend_is_file() -> None:
 
     s = Settings(_env_file=None)
     assert (s.mt5_backend or "file").lower() == "file"
+
+
+def test_settings_mt5_broker_alias(monkeypatch) -> None:
+    from mt5_arch.config import Settings
+
+    monkeypatch.delenv("BROKER", raising=False)
+    monkeypatch.setenv("MT5_BROKER", "vantage")
+    s = Settings(_env_file=None)
+    assert s.broker == "vantage"
+
+
+def test_settings_deprecated_broker_alias_still_works(monkeypatch) -> None:
+    from mt5_arch.config import Settings
+
+    monkeypatch.delenv("MT5_BROKER", raising=False)
+    monkeypatch.setenv("BROKER", "fpmarkets")
+    s = Settings(_env_file=None)
+    assert s.broker == "fpmarkets"

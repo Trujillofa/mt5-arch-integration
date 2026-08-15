@@ -7,18 +7,21 @@
 //|  • Timer-only writes (no OnTick storm)                           |
 //|  • File lock so extra instances stay standby                     |
 //|  • Default 5s interval, leaner symbol/TF set                     |
-//| v1.22: ResolveSymbol bare + m/.r/.m/#/pro for raw brokers        |
+//| v1.23: explicit FxSymbolRegistry (no suffix first-match)         |
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.22"
+#property version   "1.23"
 #property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
 #property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
 #property description "v1.21: per-bar spread in candles + one-shot deep history dump"
-#property description "v1.22: ResolveSymbol — bare then m/.r/.m/#/pro (Exness raw etc.)"
+#property description "v1.23: explicit symbol registry — set InpBroker"
+
+#include <FxSymbolRegistry.mqh>
 
 input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
-// Lean defaults — bare names; ResolveSymbol maps to broker suffixes (EURUSDm, XAUUSD.r, …)
+input string InpBroker      = "";      // required: vantage|fpmarkets|exness|wsf
+// Canonical names; FxResolveSymbol maps via config/symbols/registry.json
 input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD";
 input string InpTimeframes  = "H1,H4,D1";
 input int    InpCandleCount = 30;
@@ -36,42 +39,24 @@ bool     g_is_writer = false;
 string   g_lock_rel;
 
 //+------------------------------------------------------------------+
-//| Resolve broker-specific symbol names.                            |
-//| Tries bare name, then common suffixes: m, .r, .m, #, pro.        |
-//| Returns the name that SymbolSelect succeeded on, or "" if none.  |
+//| Explicit registry only. Empty InpBroker or unknown name → "".    |
 //| symbols.json / candle files use the *resolved* broker name.      |
 //+------------------------------------------------------------------+
 string ResolveSymbol(const string requested)
   {
-   string base = requested;
-   StringTrimLeft(base);
-   StringTrimRight(base);
-   if(StringLen(base) == 0)
+   if(StringLen(InpBroker) == 0)
       return "";
-
-   // Already-correct name (standard brokers or explicit EURUSDm / XAUUSD.r)
-   if(SymbolSelect(base, true))
-      return base;
-
-   // Short safe list: Exness raw (m), FP Markets (.r), some ECN (.m / #), pro
-   string suffixes[5];
-   suffixes[0] = "m";
-   suffixes[1] = ".r";
-   suffixes[2] = ".m";
-   suffixes[3] = "#";
-   suffixes[4] = "pro";
-   for(int i = 0; i < 5; i++)
-     {
-      string candidate = base + suffixes[i];
-      if(SymbolSelect(candidate, true))
-         return candidate;
-     }
-   return "";
+   return FxResolveSymbol(InpBroker, requested);
   }
 
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   if(StringLen(InpBroker) == 0)
+     {
+      Print("Mt5ArchBridge: InpBroker is required (vantage|fpmarkets|exness|wsf)");
+      return INIT_PARAMETERS_INCORRECT;
+     }
    FolderCreate(g_dir);
    g_lock_rel = g_dir + "\\writer.lock";
 
@@ -86,7 +71,7 @@ int OnInit()
      }
 
    EventSetTimer((int)MathMax(3, InpTimerSec));
-   Print("Mt5ArchBridge WRITER v1.22 ON ", _Symbol,
+   Print("Mt5ArchBridge WRITER v1.23 broker=", InpBroker, " ON ", _Symbol,
          " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
    DumpHistoryOnce();
