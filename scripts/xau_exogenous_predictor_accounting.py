@@ -26,9 +26,11 @@ SCREEN_STARTED_NAME = "SCREEN_STARTED.json"
 NULL_STARTED_NAME = "NULL_STARTED.json"
 FAILED_UNKNOWN_NAME = "FAILED_RUN_UNKNOWN.json"
 NULL_SUCCESS_NAME = "null_success.json"
+TRIALS_EVIDENCE_NAME = "null_trials_evidence.json"
 
 # One terminal report only (protocol §8.3: single terminal disposition).
 _TERMINAL_NAMES = frozenset({FAILED_UNKNOWN_NAME, NULL_SUCCESS_NAME})
+MIN_NULL_TRIALS_SUCCESS = 999
 
 # Callers may attach diagnostics via ``extra`` but must never override these.
 _RESERVED_SCREEN_STARTED = frozenset(
@@ -228,23 +230,140 @@ def write_failed_run_unknown(
     return _write_once(path, body)
 
 
+def _trial_attr(obj: Any, key: str) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key)
+    return getattr(obj, key, None)
+
+
+def validate_null_trial_evidence(
+    trials: Any,
+    *,
+    planned: int,
+    expected_m: int | None = None,
+) -> list[dict[str, Any]]:
+    """Fail-closed validation of actual trial results (not a bare id list).
+
+    Accepts ``NullTrialResult`` objects or dict rows with keys:
+    trial_id, assignment, trades (or n_trades + trade_pnls), metrics optional.
+    """
+    if not isinstance(trials, (list, tuple)):
+        raise AccountingError("trials must be a list/tuple of trial results")
+    if len(trials) != planned:
+        raise AccountingError(
+            f"len(trials)={len(trials)} must equal n_null_planned={planned}"
+        )
+    evidence: list[dict[str, Any]] = []
+    for j, tr in enumerate(trials):
+        tid = _trial_attr(tr, "trial_id")
+        if isinstance(tid, bool) or not isinstance(tid, int) or tid != j:
+            raise AccountingError(
+                f"trials[{j}].trial_id must equal {j} (got {tid!r})"
+            )
+        assignment = _trial_attr(tr, "assignment")
+        if not isinstance(assignment, (list, tuple)) or not assignment:
+            raise AccountingError(f"trials[{j}].assignment required non-empty list")
+        if any(isinstance(x, bool) or not isinstance(x, int) for x in assignment):
+            raise AccountingError(f"trials[{j}].assignment must be non-bool ints")
+        trades = _trial_attr(tr, "trades")
+        trade_pnls = _trial_attr(tr, "trade_pnls")
+        metrics = _trial_attr(tr, "metrics") or {}
+        pnls: list[float] = []
+        if trades is not None:
+            if not isinstance(trades, (list, tuple)):
+                raise AccountingError(f"trials[{j}].trades must be a list")
+            for t in trades:
+                if isinstance(t, dict):
+                    raw_pnl = t.get("pnl")
+                elif isinstance(t, (int, float)) and not isinstance(t, bool):
+                    raw_pnl = t
+                else:
+                    raw_pnl = getattr(t, "pnl", None)
+                try:
+                    pf = float(raw_pnl)
+                except (TypeError, ValueError) as e:
+                    raise AccountingError(
+                        f"trials[{j}] trade pnl not numeric: {raw_pnl!r}"
+                    ) from e
+                if pf != pf:  # NaN
+                    raise AccountingError(f"trials[{j}] trade pnl is NaN")
+                pnls.append(pf)
+        elif isinstance(trade_pnls, (list, tuple)):
+            for pnl in trade_pnls:
+                try:
+                    pf = float(pnl)
+                except (TypeError, ValueError) as e:
+                    raise AccountingError(
+                        f"trials[{j}] trade pnl not numeric: {pnl!r}"
+                    ) from e
+                if pf != pf:
+                    raise AccountingError(f"trials[{j}] trade pnl is NaN")
+                pnls.append(pf)
+        else:
+            raise AccountingError(
+                f"trials[{j}] must include trades or trade_pnls evidence"
+            )
+        n_trades = len(pnls)
+        m_metric = metrics.get("n_trades") if isinstance(metrics, dict) else None
+        if m_metric is not None and int(m_metric) != n_trades:
+            raise AccountingError(
+                f"trials[{j}]: metrics.n_trades={m_metric} != len(trades)={n_trades}"
+            )
+        if expected_m is not None and n_trades != expected_m:
+            raise AccountingError(
+                f"trials[{j}]: T={n_trades} != M={expected_m}"
+            )
+        if n_trades != len(assignment):
+            # path transplant: one trade per event/donor pair
+            raise AccountingError(
+                f"trials[{j}]: T={n_trades} != len(assignment)={len(assignment)}"
+            )
+        if isinstance(metrics, dict):
+            for mk in ("net_profit", "profit_factor", "max_drawdown_pct"):
+                if mk in metrics:
+                    try:
+                        mv = float(metrics[mk])
+                    except (TypeError, ValueError) as e:
+                        raise AccountingError(
+                            f"trials[{j}].metrics.{mk} not finite"
+                        ) from e
+                    if mv != mv:
+                        raise AccountingError(
+                            f"trials[{j}].metrics.{mk} is NaN"
+                        )
+        evidence.append(
+            {
+                "trial_id": tid,
+                "assignment": [int(x) for x in assignment],
+                "n_trades": n_trades,
+                "trade_pnls": pnls,
+                "net_profit": float(sum(pnls)),
+            }
+        )
+    if [e["trial_id"] for e in evidence] != list(range(planned)):
+        raise AccountingError("trial_id sequence must be exactly range(N)")
+    return evidence
+
+
 def write_null_success(
     out_dir: Path,
     *,
     family_id: str,
-    trial_ids: list[int] | tuple[int, ...],
+    trials: list[Any] | tuple[Any, ...],
+    expected_m: int | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
     """Successful sealed null terminal (write-once, exclusive).
 
     Requires:
-    * NULL_STARTED present (not after a reverse-order terminal)
-    * family_id matches NULL_STARTED.family_id
-    * NULL_STARTED.n_null_planned is int N with N ≥ 999 (exogenous floor)
-    * trial_ids is exactly ``list(range(N))`` — proves N counted trials exist
-    * no other terminal already written
+    * NULL_STARTED present
+    * family_id matches
+    * n_null_planned = N ≥ 999
+    * ``trials`` is the **actual** NullTrialResult collection (or equivalent
+      evidence dicts) with len N, trial_id == range(N), T=M each trial
+    * persists ``null_trials_evidence.json`` audit trail
 
-    Caller-supplied bare counts without trial evidence are rejected.
+    A fabricated ``list(range(N))`` alone is **not** accepted.
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -265,33 +384,35 @@ def write_null_success(
         raise AccountingError(
             "NULL_STARTED.n_null_planned must be a non-bool int for success terminal"
         )
-    if planned < 999:
+    if planned < MIN_NULL_TRIALS_SUCCESS:
         raise AccountingError(
-            f"NULL_STARTED.n_null_planned={planned} < 999 "
+            f"NULL_STARTED.n_null_planned={planned} < {MIN_NULL_TRIALS_SUCCESS} "
             "(exogenous N floor; refuse certifying under-planned null)"
         )
-    if not isinstance(trial_ids, (list, tuple)):
-        raise AccountingError("trial_ids must be a list/tuple of trial indices")
-    ids = list(trial_ids)
-    if any(isinstance(x, bool) or not isinstance(x, int) for x in ids):
-        raise AccountingError("trial_ids entries must be non-bool ints")
-    expected = list(range(planned))
-    if ids != expected:
-        raise AccountingError(
-            f"trial_ids must equal range({planned}) exactly "
-            f"(got len={len(ids)}, first/last="
-            f"{(ids[0], ids[-1]) if ids else None}); "
-            "refuses certifying nonexistent null execution"
-        )
-    n_null_executed = planned
+    m_started = started.get("m")
+    if expected_m is None and isinstance(m_started, int) and not isinstance(
+        m_started, bool
+    ):
+        expected_m = m_started
+    evidence = validate_null_trial_evidence(
+        trials, planned=planned, expected_m=expected_m
+    )
+    # Persist auditable evidence before success terminal (write-once).
+    ev_path = out_dir / TRIALS_EVIDENCE_NAME
+    if ev_path.exists():
+        raise FileExistsError(f"refuse overwrite existing trials evidence: {ev_path}")
+    ev_path.write_text(json.dumps(evidence, indent=2) + "\n")
+
     path = out_dir / NULL_SUCCESS_NAME
     base: dict[str, Any] = {
         "disposition": "NULL_COMPLETE",
         "execution_state": "SUCCESS",
         "r1_burned": True,
         "sealed_null_attempt": True,
-        "n_null_executed": n_null_executed,
+        "n_null_executed": planned,
         "n_null_planned": planned,
+        "expected_m": expected_m,
+        "trials_evidence": TRIALS_EVIDENCE_NAME,
         "trial_ids_ok": True,
         "family_id": family_id,
         "finished_at_utc": _utc_now(),

@@ -668,10 +668,32 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                 f"(got {same_vals!r})"
             )
 
-    # Cost identity + sim keys (Phase C must exact-match loaded research costs doc)
-    costs = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
-    if costs is None and isinstance(charter.get("costs"), dict):
-        costs = dict(charter["costs"])
+    # Cost identity + sim keys (Phase C must exact-match loaded research costs doc).
+    # Single authority: prefer fixed.costs; if both fixed.costs and top-level costs
+    # exist they must agree exactly on every shared key and neither may add
+    # contradictory keys.
+    costs_fixed = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
+    costs_top = charter.get("costs") if isinstance(charter.get("costs"), dict) else None
+    if costs_fixed is not None and costs_top is not None:
+        keys = set(costs_fixed) | set(costs_top)
+        for k in keys:
+            if k not in costs_fixed or k not in costs_top:
+                errs.append(
+                    f"exogenous costs key {k!r} present in only one of "
+                    "fixed.costs / top-level costs (duplicate authority must agree)"
+                )
+            elif costs_fixed[k] != costs_top[k]:
+                errs.append(
+                    f"exogenous fixed.costs.{k}={costs_fixed[k]!r} disagrees with "
+                    f"top-level costs.{k}={costs_top[k]!r}"
+                )
+        costs = dict(costs_fixed)
+    elif costs_fixed is not None:
+        costs = dict(costs_fixed)
+    elif costs_top is not None:
+        costs = dict(costs_top)
+    else:
+        costs = None
     if not isinstance(costs, dict) or not costs:
         errs.append(
             "exogenous fixed.costs (or top-level costs) object required "
@@ -797,9 +819,14 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
         errs.append("exogenous null.n_trials (or min_null_trials) required")
     else:
         n_trials = null.get("n_trials")
-        if n_trials is None:
-            n_trials = null.get("min_null_trials")
-        n_ok = _strict_nonneg_int(n_trials)
+        n_min = null.get("min_null_trials")
+        if n_trials is not None and n_min is not None and n_trials != n_min:
+            errs.append(
+                f"exogenous null.n_trials={n_trials!r} disagrees with "
+                f"null.min_null_trials={n_min!r} (duplicate authority must agree)"
+            )
+        n_use = n_trials if n_trials is not None else n_min
+        n_ok = _strict_nonneg_int(n_use)
         if n_ok is None:
             errs.append(
                 "exogenous null.n_trials must be a non-negative JSON integer"

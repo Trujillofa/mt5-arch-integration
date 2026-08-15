@@ -386,15 +386,16 @@ def test_null_trials_t_equals_m_and_no_identity():
         low=bars["low"],
         close=bars["close"],
         spread=bars["spread"],
+        day_id=bars["day_id"],
         base_seed=42,
-        n_trials=20,
+        n_trials=999,
         sl_atr=1.5,
         tp_atr=2.0,
         point_size=0.01,
         contract_size=100.0,
         h=3,
     )
-    assert len(trials) == 20
+    assert len(trials) == 999
     identity = [e.t_entry_idx for e in real.events]
     for tr in trials:
         assert tr.metrics["n_trades"] == m
@@ -927,27 +928,49 @@ def test_null_started_authoritative_over_contradictory_terminal(tmp_path: Path):
     assert acct.infer_r1_burned_from_outdir(tmp_path) is True
 
 
+def _fake_trial_evidence(n: int, *, m: int = 1) -> list[dict]:
+    """Minimal auditable trial rows (not bare id list)."""
+    rows = []
+    for j in range(n):
+        rows.append(
+            {
+                "trial_id": j,
+                "assignment": list(range(0, m * 3, 3)),
+                "trade_pnls": [1.0] * m,
+                "metrics": {
+                    "n_trades": m,
+                    "net_profit": float(m),
+                    "profit_factor": 99.0,
+                    "max_drawdown_pct": 0.0,
+                },
+            }
+        )
+    return rows
+
+
 def test_cross_terminal_exclusivity_success_then_fail(tmp_path: Path):
-    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999, m=1)
     acct.write_null_success(
-        tmp_path, family_id="f1", trial_ids=list(range(999))
+        tmp_path, family_id="f1", trials=_fake_trial_evidence(999), expected_m=1
     )
     with pytest.raises(FileExistsError, match="one terminal"):
         acct.null_phase_failure_report(tmp_path, reason="late", family_id="f1")
     assert (tmp_path / "null_success.json").is_file()
+    assert (tmp_path / "null_trials_evidence.json").is_file()
     assert not (tmp_path / "FAILED_RUN_UNKNOWN.json").exists()
 
 
-def test_null_success_requires_started_family_and_trial_ids(tmp_path: Path):
+def test_null_success_requires_started_family_and_real_trials(tmp_path: Path):
+    fake = _fake_trial_evidence(999)
     with pytest.raises(acct.AccountingError, match="NULL_STARTED"):
-        acct.write_null_success(tmp_path, family_id="f1", trial_ids=list(range(999)))
-    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+        acct.write_null_success(tmp_path, family_id="f1", trials=fake)
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999, m=1)
     with pytest.raises(acct.AccountingError, match="family_id"):
+        acct.write_null_success(tmp_path, family_id="other", trials=fake)
+    with pytest.raises(acct.AccountingError, match="len\\(trials\\)|trial"):
         acct.write_null_success(
-            tmp_path, family_id="other", trial_ids=list(range(999))
+            tmp_path, family_id="f1", trials=_fake_trial_evidence(10)
         )
-    with pytest.raises(acct.AccountingError, match="trial_ids"):
-        acct.write_null_success(tmp_path, family_id="f1", trial_ids=list(range(10)))
 
 
 def test_geometry_rejects_mismatched_entry_vs_reserved():
@@ -1042,19 +1065,24 @@ def test_exogenous_n_trials_floor_999_both_validators():
     assert not any("999" in e and "n_trials" in e for e in validate_charter(ok))
 
 
-def test_null_success_refuses_bare_count_without_trial_ids(tmp_path: Path):
-    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
-    # Old kwargs-style / zero trials must not certify
+def test_null_success_refuses_fabricated_id_list(tmp_path: Path):
+    acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999, m=1)
+    # Fabricated range alone (or bare counts) must not certify
     with pytest.raises(TypeError):
-        acct.write_null_success(tmp_path, family_id="f1", n_null_executed=999)  # type: ignore[call-arg]
-    with pytest.raises(acct.AccountingError, match="trial_ids"):
-        acct.write_null_success(tmp_path, family_id="f1", trial_ids=[])
-    # Under-planned marker cannot success even with matching empty ids
+        acct.write_null_success(
+            tmp_path, family_id="f1", trial_ids=list(range(999))
+        )  # type: ignore[call-arg]
+    with pytest.raises(acct.AccountingError, match="trades|trade_pnls|trials"):
+        acct.write_null_success(
+            tmp_path,
+            family_id="f1",
+            trials=[{"trial_id": j, "assignment": [0]} for j in range(999)],
+        )
     tmp2 = tmp_path / "z"
     tmp2.mkdir()
     acct.write_null_started(tmp2, family_id="f1", n_null_planned=0)
     with pytest.raises(acct.AccountingError, match="999"):
-        acct.write_null_success(tmp2, family_id="f1", trial_ids=[])
+        acct.write_null_success(tmp2, family_id="f1", trials=[])
 
 
 def test_marker_refused_after_terminal(tmp_path: Path):
@@ -1121,3 +1149,129 @@ def test_cost_login_positive_and_exact_sha_key():
     errs = validate_exogenous_predictor_charter(bad2)
     assert any("research_costs_sha256" in e or "forbidden" in e for e in errs)
     assert any("costs_document_sha256" in e for e in errs)
+
+
+def test_signal_sides_reject_float_and_bool():
+    bars = _synthetic_bars(40, seed=9, start="2024-01-06 00:00:00")
+    n = len(bars["open"])
+    signals = np.zeros(n, dtype=object)
+    signals[10] = 1.5
+    with pytest.raises(core.ProtocolError, match="signal_sides"):
+        core.admit_and_simulate_real(
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            signal_sides=signals,
+            h=3,
+        )
+    signals2 = np.zeros(n, dtype=object)
+    signals2[10] = True
+    with pytest.raises(core.ProtocolError, match="signal_sides"):
+        core.admit_and_simulate_real(
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            signal_sides=signals2,
+            h=3,
+        )
+
+
+def test_run_null_trials_requires_day_id_and_rejects_nan_donor_and_n0():
+    bars = _synthetic_bars(48, seed=12, start="2024-01-07 00:00:00")
+    n = len(bars["open"])
+    signals = np.zeros(n, dtype=int)
+    signals[10] = 1
+    signals[20] = 1
+    real = core.admit_and_simulate_real(
+        open_=bars["open"],
+        high=bars["high"],
+        low=bars["low"],
+        close=bars["close"],
+        spread=bars["spread"],
+        day_id=bars["day_id"],
+        signal_sides=signals,
+        h=3,
+    )
+    donors = core.eligible_donors(
+        bars["open"],
+        bars["high"],
+        bars["low"],
+        bars["close"],
+        bars["spread"],
+        bars["day_id"],
+        h=3,
+    )
+    with pytest.raises(TypeError):
+        core.run_null_trials(
+            real.events,
+            donors,
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            base_seed=1,
+            n_trials=999,
+            sl_atr=1.5,
+            tp_atr=2.0,
+            point_size=0.01,
+            contract_size=100.0,
+        )  # type: ignore[call-arg]
+    with pytest.raises(core.ProtocolError, match="MIN_NULL_TRIALS|n_trials"):
+        core.run_null_trials(
+            real.events,
+            donors,
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            base_seed=1,
+            n_trials=0,
+            sl_atr=1.5,
+            tp_atr=2.0,
+            point_size=0.01,
+            contract_size=100.0,
+        )
+    open_bad = bars["open"].copy()
+    open_bad[donors[0]] = float("nan")
+    with pytest.raises(core.ProtocolError, match="eligible|non-finite"):
+        core.run_null_trials(
+            real.events,
+            donors,
+            open_=open_bad,
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            base_seed=1,
+            n_trials=999,
+            sl_atr=1.5,
+            tp_atr=2.0,
+            point_size=0.01,
+            contract_size=100.0,
+        )
+
+
+def test_duplicate_n_trials_and_costs_must_agree():
+    bad = _minimal_exogenous_charter()
+    bad["null"]["n_trials"] = 999
+    bad["null"]["min_null_trials"] = 1
+    assert any(
+        "disagrees" in e for e in validate_exogenous_predictor_charter(bad)
+    )
+    bad2 = _minimal_exogenous_charter()
+    bad2["costs"] = dict(bad2["fixed"]["costs"])
+    bad2["costs"]["commission_per_lot"] = 9.9
+    assert any(
+        "disagrees" in e or "disagree" in e
+        for e in validate_exogenous_predictor_charter(bad2)
+    )

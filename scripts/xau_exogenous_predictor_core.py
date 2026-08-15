@@ -28,6 +28,7 @@ NULL_IMPLEMENTATION_ID = "conditional_fixed_signal_events_fixed_trades_v1"
 H_DEFAULT = 3
 ATR_PERIOD = 14
 MAX_ASSIGNMENT_REDRAWS = 1000
+MIN_NULL_TRIALS = 999
 
 
 class AssignmentError(RuntimeError):
@@ -605,7 +606,7 @@ def admit_and_simulate_real(
         equity.append(balance + floating)
 
         # --- signal at close of i → candidate entry i+1 ---
-        side_sig = int(signal_sides[i])
+        side_sig = parse_signal_side(signal_sides[i], index=i)
         if side_sig in (-1, 1) and pending is None:
             i_e = i + 1
             if i_e + h - 1 >= n:
@@ -840,9 +841,69 @@ def execute_fixed_events_mtm(
 
 def _require_strict_int(name: str, val: Any) -> int:
     """JSON/python int only — reject bool (bool is a subclass of int)."""
-    if isinstance(val, bool) or not isinstance(val, int):
+    if isinstance(val, bool) or not isinstance(val, (int, np.integer)):
         raise ProtocolError(f"{name} must be a non-bool int (got {val!r})")
     return int(val)
+
+
+def parse_signal_side(raw: Any, *, index: int) -> int:
+    """Require exact non-boolean integral value in {-1, 0, +1}.
+
+    Rejects bool (True/False), floats (1.5, 1.0), and strings. Fail-closed:
+    invalid values raise rather than silently becoming long/short.
+    """
+    if isinstance(raw, bool) or not isinstance(raw, (int, np.integer)):
+        raise ProtocolError(
+            f"signal_sides[{index}] must be non-bool integral in {{-1,0,1}} "
+            f"(got {raw!r} type={type(raw).__name__})"
+        )
+    v = int(raw)
+    if v not in (-1, 0, 1):
+        raise ProtocolError(
+            f"signal_sides[{index}] must be in {{-1,0,1}} (got {v})"
+        )
+    return v
+
+
+def assert_donors_eligible(
+    donors: Sequence[int],
+    *,
+    open_: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    spread: np.ndarray,
+    day_id: np.ndarray,
+    h: int = H_DEFAULT,
+) -> list[int]:
+    """Re-validate donor pool against finite OHLC + same-day eligibility."""
+    pool = eligible_donors(
+        open_, high, low, close, spread, day_id, h=h
+    )
+    pool_set = set(pool)
+    out: list[int] = []
+    for j, raw in enumerate(donors):
+        d = _require_strict_int(f"donors[{j}]", raw)
+        if d not in pool_set:
+            raise ProtocolError(
+                f"donors[{j}]={d} not in eligible donor pool "
+                f"(finite OHLC + same-day H-window required)"
+            )
+        # Belt-and-suspenders finite path recheck
+        for k in range(h):
+            jx = d + k
+            for name, arr in (
+                ("open", open_),
+                ("high", high),
+                ("low", low),
+                ("close", close),
+            ):
+                if not np.isfinite(float(arr[jx])):
+                    raise ProtocolError(
+                        f"donor_id={d} non-finite {name} at bar {jx}"
+                    )
+        out.append(d)
+    return out
 
 
 def validate_events_and_assignment(
@@ -1114,6 +1175,7 @@ def run_null_trials(
     low: np.ndarray,
     close: np.ndarray,
     spread: np.ndarray,
+    day_id: np.ndarray,
     base_seed: int,
     n_trials: int,
     sl_atr: float,
@@ -1126,20 +1188,51 @@ def run_null_trials(
     h: int = H_DEFAULT,
     max_redraws: int = MAX_ASSIGNMENT_REDRAWS,
 ) -> list[NullTrialResult]:
-    """N counted trials with PCG64(base_seed+j); rejects full identity."""
+    """N counted trials with PCG64(base_seed+j); rejects full identity.
+
+    Requires:
+    * n_trials ≥ 999 (exogenous floor)
+    * day_id for same-day event/donor validation
+    * donors revalidated against eligible pool (finite OHLC + same-day)
+    """
+    if isinstance(n_trials, bool) or not isinstance(n_trials, (int, np.integer)):
+        raise ProtocolError(f"n_trials must be non-bool int (got {n_trials!r})")
+    n_trials = int(n_trials)
+    if n_trials < MIN_NULL_TRIALS:
+        raise ProtocolError(
+            f"n_trials={n_trials} < MIN_NULL_TRIALS={MIN_NULL_TRIALS} "
+            "(refuse empty or under-planned null runs)"
+        )
     m = len(events)
     if m == 0:
-        return []
-    if not preflight_pack_ok(donors, m, h):
+        raise ProtocolError("run_null_trials requires M≥1 events")
+    n = len(open_)
+    if len(day_id) != n:
+        raise ProtocolError("day_id length must match OHLC length")
+    donors_ok = assert_donors_eligible(
+        donors,
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=spread,
+        day_id=day_id,
+        h=h,
+    )
+    if not preflight_pack_ok(donors_ok, m, h):
         raise AssignmentError(
-            f"preflight pack_capacity={pack_capacity(donors, h)} < M={m}"
+            f"preflight pack_capacity={pack_capacity(donors_ok, h)} < M={m}"
         )
+    # Structural event validation once up front (identity assignment as probe).
     identity = [e.t_entry_idx for e in events]
+    validate_events_and_assignment(
+        events, identity, h=h, n_bars=n, day_id=day_id
+    )
     out: list[NullTrialResult] = []
     for j in range(n_trials):
         rng = np.random.Generator(np.random.PCG64(int(base_seed) + j))
         assignment = assign_null_donors(
-            donors, m, identity, rng, h=h, max_redraws=max_redraws
+            donors_ok, m, identity, rng, h=h, max_redraws=max_redraws
         )
         trial = run_null_trial(
             events,
@@ -1158,8 +1251,44 @@ def run_null_trials(
             start_balance=start_balance,
             h=h,
             trial_id=j,
+            day_id=day_id,
         )
+        # Finite metrics / T=M
+        if int(trial.metrics["n_trades"]) != m:
+            raise ProtocolError(
+                f"trial {j}: T={trial.metrics['n_trades']} != M={m}"
+            )
+        for tr in trial.trades:
+            if not np.isfinite(tr.pnl):
+                raise ProtocolError(f"trial {j}: non-finite trade pnl")
+        if not np.isfinite(float(trial.metrics["net_profit"])):
+            raise ProtocolError(f"trial {j}: non-finite net_profit")
         out.append(trial)
+    if [t.trial_id for t in out] != list(range(n_trials)):
+        raise ProtocolError("internal: trial_id sequence broken")
+    return out
+
+
+def serialize_null_trials(trials: Sequence[NullTrialResult]) -> list[dict[str, Any]]:
+    """Auditable trial evidence for accounting / on-disk persistence."""
+    out: list[dict[str, Any]] = []
+    for t in trials:
+        out.append(
+            {
+                "trial_id": int(t.trial_id),
+                "assignment": [int(x) for x in t.assignment],
+                "n_trades": int(t.metrics["n_trades"]),
+                "net_profit": float(t.metrics["net_profit"]),
+                "profit_factor": float(t.metrics["profit_factor"]),
+                "max_drawdown_pct": float(t.metrics["max_drawdown_pct"]),
+                "trade_pnls": [float(tr.pnl) for tr in t.trades],
+                "trade_entry_idx": [int(tr.entry_idx) for tr in t.trades],
+                "trade_donor_id": [
+                    None if tr.donor_id is None else int(tr.donor_id)
+                    for tr in t.trades
+                ],
+            }
+        )
     return out
 
 
