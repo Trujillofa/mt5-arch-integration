@@ -51,6 +51,15 @@ def test_mql5_export_missing_mapped_canonical_fails(tmp_path: Path):
         verify_sync_audit_dump(dest)
 
 
+def test_dump_omitting_mapped_canonical_refuses(tmp_path: Path):
+    """Coverage floor applies to verify_sync_audit_dump alone (no package)."""
+    dest, raw = _clone(tmp_path)
+    raw["symbols"] = [row for row in raw["symbols"] if row["canonical"] != "GBPUSD"]
+    dest.write_text(json.dumps(raw), encoding="utf-8")
+    with pytest.raises(SymbolRegistryError, match="GBPUSD"):
+        verify_sync_audit_dump(dest)
+
+
 def test_mismatched_first_last_fails(tmp_path: Path):
     dest, raw = _clone(tmp_path)
     raw["symbols"][0]["first_time"] = "2025.01.01 00:00:00"

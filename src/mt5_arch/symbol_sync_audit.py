@@ -289,13 +289,12 @@ def verify_sync_audit_dump(
         # must not drop the symbol from the intersection (HIGH-1).
         closed_sets[mapping.canonical] = set(closed)
 
-    if str(raw.get("source") or "") == "mql5_export":
-        missing = missing_mapped_canonicals(reg, broker, dump_canons)
-        if missing:
-            errors.append(
-                "mql5_export missing mapped canonical(s) for "
-                f"{broker}: {', '.join(missing)}"
-            )
+    missing = missing_mapped_canonicals(reg, broker, dump_canons)
+    if missing:
+        errors.append(
+            "missing mapped canonical(s) for "
+            f"{broker}: {', '.join(missing)}"
+        )
 
     want_joint = set(dump_canons)
     if str(raw.get("source") or "") == "mql5_export":
