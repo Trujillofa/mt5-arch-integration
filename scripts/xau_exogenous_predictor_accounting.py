@@ -18,6 +18,7 @@ SAFETY: offline research only. No registry write helpers for real charters here
 from __future__ import annotations
 
 import json
+import math
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -157,10 +158,10 @@ def write_null_started(
     out_dir: Path,
     *,
     family_id: str,
+    m: int,
+    n_null_planned: int,
     charter_path: str | None = None,
     package_id: str | None = None,
-    m: int | None = None,
-    n_null_planned: int | None = None,
     extra: dict[str, Any] | None = None,
 ) -> Path:
     """§8.2 step 2 — after positive screen + successful donor preflight.
@@ -169,17 +170,22 @@ def write_null_started(
     ``r1_burned=true`` on the marker itself. Existence of this file is
     authoritative for burn inference (§8.3).
 
+    ``m`` (event count) and ``n_null_planned`` are **mandatory** and become
+    the sole authority for success-terminal T=M / N checks.
+
     Refuses if any terminal already exists (no reverse ordering).
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     _refuse_if_terminal_exists(out_dir)
-    if n_null_planned is not None and (
-        isinstance(n_null_planned, bool) or not isinstance(n_null_planned, int)
-    ):
-        raise AccountingError("n_null_planned must be a non-bool int or None")
-    if n_null_planned is not None and n_null_planned < 0:
-        raise AccountingError("n_null_planned must be >= 0")
+    if isinstance(m, bool) or not isinstance(m, int) or m < 1:
+        raise AccountingError("m must be a non-bool int >= 1 (armed event count)")
+    if isinstance(n_null_planned, bool) or not isinstance(n_null_planned, int):
+        raise AccountingError("n_null_planned must be a non-bool int")
+    if n_null_planned < MIN_NULL_TRIALS_SUCCESS:
+        raise AccountingError(
+            f"n_null_planned={n_null_planned} < {MIN_NULL_TRIALS_SUCCESS}"
+        )
     path = out_dir / NULL_STARTED_NAME
     base: dict[str, Any] = {
         "execution_state": "NULL_STARTED",
@@ -236,17 +242,60 @@ def _trial_attr(obj: Any, key: str) -> Any:
     return getattr(obj, key, None)
 
 
+def _require_finite_number(name: str, raw: Any) -> float:
+    try:
+        v = float(raw)
+    except (TypeError, ValueError) as e:
+        raise AccountingError(f"{name} not numeric: {raw!r}") from e
+    if not math.isfinite(v):
+        raise AccountingError(f"{name} must be finite (got {raw!r})")
+    return v
+
+
+def _validate_assignment_geometry(
+    assignment: list[int],
+    *,
+    m: int,
+    h: int,
+    trial_j: int,
+) -> None:
+    """Unique donors, length M, pairwise non-segment-overlapping H-windows."""
+    if len(assignment) != m:
+        raise AccountingError(
+            f"trials[{trial_j}].assignment length {len(assignment)} != m={m}"
+        )
+    if len(assignment) != len(set(assignment)):
+        raise AccountingError(
+            f"trials[{trial_j}].assignment has duplicate donor ids: {assignment}"
+        )
+    for a in range(m):
+        for b in range(a + 1, m):
+            i, j = assignment[a], assignment[b]
+            # segment overlap: not (i+h-1 < j or j+h-1 < i)
+            if not (i + h - 1 < j or j + h - 1 < i):
+                raise AccountingError(
+                    f"trials[{trial_j}].assignment donors {i} and {j} "
+                    f"segment-overlap under H={h}"
+                )
+
+
 def validate_null_trial_evidence(
     trials: Any,
     *,
     planned: int,
-    expected_m: int | None = None,
+    m: int,
+    h: int = 3,
 ) -> list[dict[str, Any]]:
     """Fail-closed validation of actual trial results (not a bare id list).
 
     Accepts ``NullTrialResult`` objects or dict rows with keys:
     trial_id, assignment, trades (or n_trades + trade_pnls), metrics optional.
+
+    ``m`` is the armed event count from NULL_STARTED — authoritative; callers
+    cannot override it.
     """
+    if isinstance(m, bool) or not isinstance(m, int) or m < 1:
+        raise AccountingError(f"m must be non-bool int >= 1 (got {m!r})")
     if not isinstance(trials, (list, tuple)):
         raise AccountingError("trials must be a list/tuple of trial results")
     if len(trials) != planned:
@@ -260,11 +309,15 @@ def validate_null_trial_evidence(
             raise AccountingError(
                 f"trials[{j}].trial_id must equal {j} (got {tid!r})"
             )
-        assignment = _trial_attr(tr, "assignment")
-        if not isinstance(assignment, (list, tuple)) or not assignment:
+        assignment_raw = _trial_attr(tr, "assignment")
+        if not isinstance(assignment_raw, (list, tuple)) or not assignment_raw:
             raise AccountingError(f"trials[{j}].assignment required non-empty list")
-        if any(isinstance(x, bool) or not isinstance(x, int) for x in assignment):
+        if any(
+            isinstance(x, bool) or not isinstance(x, int) for x in assignment_raw
+        ):
             raise AccountingError(f"trials[{j}].assignment must be non-bool ints")
+        assignment = [int(x) for x in assignment_raw]
+        _validate_assignment_geometry(assignment, m=m, h=h, trial_j=j)
         trades = _trial_attr(tr, "trades")
         trade_pnls = _trial_attr(tr, "trade_pnls")
         metrics = _trial_attr(tr, "metrics") or {}
@@ -279,62 +332,38 @@ def validate_null_trial_evidence(
                     raw_pnl = t
                 else:
                     raw_pnl = getattr(t, "pnl", None)
-                try:
-                    pf = float(raw_pnl)
-                except (TypeError, ValueError) as e:
-                    raise AccountingError(
-                        f"trials[{j}] trade pnl not numeric: {raw_pnl!r}"
-                    ) from e
-                if pf != pf:  # NaN
-                    raise AccountingError(f"trials[{j}] trade pnl is NaN")
-                pnls.append(pf)
+                pnls.append(_require_finite_number(f"trials[{j}].pnl", raw_pnl))
         elif isinstance(trade_pnls, (list, tuple)):
-            for pnl in trade_pnls:
-                try:
-                    pf = float(pnl)
-                except (TypeError, ValueError) as e:
-                    raise AccountingError(
-                        f"trials[{j}] trade pnl not numeric: {pnl!r}"
-                    ) from e
-                if pf != pf:
-                    raise AccountingError(f"trials[{j}] trade pnl is NaN")
-                pnls.append(pf)
+            for k, pnl in enumerate(trade_pnls):
+                pnls.append(
+                    _require_finite_number(f"trials[{j}].trade_pnls[{k}]", pnl)
+                )
         else:
             raise AccountingError(
                 f"trials[{j}] must include trades or trade_pnls evidence"
             )
         n_trades = len(pnls)
+        if n_trades != m:
+            raise AccountingError(f"trials[{j}]: T={n_trades} != m={m} (armed M)")
+        if n_trades != len(assignment):
+            raise AccountingError(
+                f"trials[{j}]: T={n_trades} != len(assignment)={len(assignment)}"
+            )
         m_metric = metrics.get("n_trades") if isinstance(metrics, dict) else None
         if m_metric is not None and int(m_metric) != n_trades:
             raise AccountingError(
                 f"trials[{j}]: metrics.n_trades={m_metric} != len(trades)={n_trades}"
             )
-        if expected_m is not None and n_trades != expected_m:
-            raise AccountingError(
-                f"trials[{j}]: T={n_trades} != M={expected_m}"
-            )
-        if n_trades != len(assignment):
-            # path transplant: one trade per event/donor pair
-            raise AccountingError(
-                f"trials[{j}]: T={n_trades} != len(assignment)={len(assignment)}"
-            )
         if isinstance(metrics, dict):
             for mk in ("net_profit", "profit_factor", "max_drawdown_pct"):
                 if mk in metrics:
-                    try:
-                        mv = float(metrics[mk])
-                    except (TypeError, ValueError) as e:
-                        raise AccountingError(
-                            f"trials[{j}].metrics.{mk} not finite"
-                        ) from e
-                    if mv != mv:
-                        raise AccountingError(
-                            f"trials[{j}].metrics.{mk} is NaN"
-                        )
+                    _require_finite_number(
+                        f"trials[{j}].metrics.{mk}", metrics[mk]
+                    )
         evidence.append(
             {
                 "trial_id": tid,
-                "assignment": [int(x) for x in assignment],
+                "assignment": assignment,
                 "n_trades": n_trades,
                 "trade_pnls": pnls,
                 "net_profit": float(sum(pnls)),
@@ -350,20 +379,18 @@ def write_null_success(
     *,
     family_id: str,
     trials: list[Any] | tuple[Any, ...],
-    expected_m: int | None = None,
+    h: int = 3,
     extra: dict[str, Any] | None = None,
 ) -> Path:
     """Successful sealed null terminal (write-once, exclusive).
 
     Requires:
-    * NULL_STARTED present
+    * NULL_STARTED present with mandatory m and n_null_planned
     * family_id matches
     * n_null_planned = N ≥ 999
-    * ``trials`` is the **actual** NullTrialResult collection (or equivalent
-      evidence dicts) with len N, trial_id == range(N), T=M each trial
-    * persists ``null_trials_evidence.json`` audit trail
-
-    A fabricated ``list(range(N))`` alone is **not** accepted.
+    * ``m`` from NULL_STARTED is authoritative (no caller override)
+    * ``trials`` has real trade evidence, T=m, finite pnls, valid assignments
+    * persists ``null_trials_evidence.json`` with allow_nan=False
     """
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -390,18 +417,25 @@ def write_null_success(
             "(exogenous N floor; refuse certifying under-planned null)"
         )
     m_started = started.get("m")
-    if expected_m is None and isinstance(m_started, int) and not isinstance(
-        m_started, bool
-    ):
-        expected_m = m_started
+    if isinstance(m_started, bool) or not isinstance(m_started, int) or m_started < 1:
+        raise AccountingError(
+            "NULL_STARTED.m must be a non-bool int >= 1 (armed event count)"
+        )
     evidence = validate_null_trial_evidence(
-        trials, planned=planned, expected_m=expected_m
+        trials, planned=planned, m=m_started, h=h
     )
-    # Persist auditable evidence before success terminal (write-once).
+    # Persist auditable evidence before success terminal (write-once, no NaN/Inf).
     ev_path = out_dir / TRIALS_EVIDENCE_NAME
     if ev_path.exists():
         raise FileExistsError(f"refuse overwrite existing trials evidence: {ev_path}")
-    ev_path.write_text(json.dumps(evidence, indent=2) + "\n")
+    try:
+        ev_path.write_text(
+            json.dumps(evidence, indent=2, allow_nan=False) + "\n"
+        )
+    except (ValueError, OverflowError) as e:
+        raise AccountingError(
+            f"trials evidence not JSON-serializable without NaN/Inf: {e}"
+        ) from e
 
     path = out_dir / NULL_SUCCESS_NAME
     base: dict[str, Any] = {
@@ -411,7 +445,7 @@ def write_null_success(
         "sealed_null_attempt": True,
         "n_null_executed": planned,
         "n_null_planned": planned,
-        "expected_m": expected_m,
+        "m": m_started,
         "trials_evidence": TRIALS_EVIDENCE_NAME,
         "trial_ids_ok": True,
         "family_id": family_id,

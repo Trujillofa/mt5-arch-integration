@@ -660,6 +660,8 @@ def test_null_started_extra_cannot_override_reserved(tmp_path: Path):
     acct.write_null_started(
         tmp_path,
         family_id="f1",
+        m=1,
+        n_null_planned=999,
         extra={
             "execution_state": "OK",
             "r1_burned": False,
@@ -678,7 +680,7 @@ def test_null_started_extra_cannot_override_reserved(tmp_path: Path):
 
 
 def test_null_failure_extra_cannot_unburn(tmp_path: Path):
-    acct.write_null_started(tmp_path, family_id="f1")
+    acct.write_null_started(tmp_path, family_id="f1", m=1, n_null_planned=999)
     acct.null_phase_failure_report(
         tmp_path,
         reason="boom",
@@ -699,7 +701,9 @@ def test_null_failure_extra_cannot_unburn(tmp_path: Path):
 
 def test_null_started_marker_only_crash_is_burned(tmp_path: Path):
     """Process dies after NULL_STARTED with no terminal → r1 burned."""
-    acct.write_null_started(tmp_path, family_id="f1", m=2, n_null_planned=999)
+    acct.write_null_started(
+        tmp_path, family_id="f1", m=2, n_null_planned=999
+    )
     assert (tmp_path / "NULL_STARTED.json").is_file()
     assert not (tmp_path / "FAILED_RUN_UNKNOWN.json").exists()
     assert acct.infer_r1_burned_from_outdir(tmp_path) is True
@@ -904,7 +908,7 @@ def test_reversed_donor_assignment_event_order_dd():
 
 
 def test_terminal_write_once_refuses_overwrite(tmp_path: Path):
-    acct.write_null_started(tmp_path, family_id="f1")
+    acct.write_null_started(tmp_path, family_id="f1", m=1, n_null_planned=999)
     acct.null_phase_failure_report(tmp_path, reason="first", family_id="f1")
     with pytest.raises(FileExistsError):
         acct.screen_phase_failure_report(tmp_path, reason="cleanup", family_id="f1")
@@ -914,7 +918,7 @@ def test_terminal_write_once_refuses_overwrite(tmp_path: Path):
 
 
 def test_null_started_authoritative_over_contradictory_terminal(tmp_path: Path):
-    acct.write_null_started(tmp_path, family_id="f1")
+    acct.write_null_started(tmp_path, family_id="f1", m=1, n_null_planned=999)
     # Manually plant a contradictory terminal that claims unburned (legacy/corrupt).
     bad = {
         "disposition": "FAILED_RUN_UNKNOWN",
@@ -951,7 +955,7 @@ def _fake_trial_evidence(n: int, *, m: int = 1) -> list[dict]:
 def test_cross_terminal_exclusivity_success_then_fail(tmp_path: Path):
     acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999, m=1)
     acct.write_null_success(
-        tmp_path, family_id="f1", trials=_fake_trial_evidence(999), expected_m=1
+        tmp_path, family_id="f1", trials=_fake_trial_evidence(999)
     )
     with pytest.raises(FileExistsError, match="one terminal"):
         acct.null_phase_failure_report(tmp_path, reason="late", family_id="f1")
@@ -1080,16 +1084,17 @@ def test_null_success_refuses_fabricated_id_list(tmp_path: Path):
         )
     tmp2 = tmp_path / "z"
     tmp2.mkdir()
-    acct.write_null_started(tmp2, family_id="f1", n_null_planned=0)
     with pytest.raises(acct.AccountingError, match="999"):
-        acct.write_null_success(tmp2, family_id="f1", trials=[])
+        acct.write_null_started(tmp2, family_id="f1", n_null_planned=0, m=1)
 
 
 def test_marker_refused_after_terminal(tmp_path: Path):
     acct.write_screen_started(tmp_path, family_id="f1")
     acct.screen_phase_failure_report(tmp_path, reason="fail", family_id="f1")
     with pytest.raises(FileExistsError, match="one terminal|terminal"):
-        acct.write_null_started(tmp_path, family_id="f1", n_null_planned=999)
+        acct.write_null_started(
+            tmp_path, family_id="f1", n_null_planned=999, m=1
+        )
 
 
 def test_geometry_rejects_bool_side_and_non_contiguous_ids():
@@ -1268,6 +1273,14 @@ def test_duplicate_n_trials_and_costs_must_agree():
     assert any(
         "disagrees" in e for e in validate_exogenous_predictor_charter(bad)
     )
+    # type mismatch: int vs float
+    bad_t = _minimal_exogenous_charter()
+    bad_t["null"]["n_trials"] = 999
+    bad_t["null"]["min_null_trials"] = 999.0
+    assert any(
+        "type=" in e or "disagrees" in e
+        for e in validate_exogenous_predictor_charter(bad_t)
+    )
     bad2 = _minimal_exogenous_charter()
     bad2["costs"] = dict(bad2["fixed"]["costs"])
     bad2["costs"]["commission_per_lot"] = 9.9
@@ -1275,3 +1288,149 @@ def test_duplicate_n_trials_and_costs_must_agree():
         "disagrees" in e or "disagree" in e
         for e in validate_exogenous_predictor_charter(bad2)
     )
+    # False is not 0.0
+    bad3 = _minimal_exogenous_charter()
+    bad3["costs"] = dict(bad3["fixed"]["costs"])
+    bad3["costs"]["commission_per_lot"] = False
+    assert any(
+        "disagrees" in e or "type=" in e
+        for e in validate_exogenous_predictor_charter(bad3)
+    )
+
+
+def test_null_success_rejects_m_override_inf_and_dup_assignment(tmp_path: Path):
+    # Armed m=2 cannot be certified with T=1 evidence
+    acct.write_null_started(tmp_path, family_id="f1", m=2, n_null_planned=999)
+    with pytest.raises(acct.AccountingError, match="T=|m=2"):
+        acct.write_null_success(
+            tmp_path, family_id="f1", trials=_fake_trial_evidence(999, m=1)
+        )
+    # inf pnl
+    tmp_inf = tmp_path / "inf"
+    tmp_inf.mkdir()
+    acct.write_null_started(tmp_inf, family_id="f1", m=1, n_null_planned=999)
+    inf_rows = _fake_trial_evidence(999, m=1)
+    for r in inf_rows:
+        r["trade_pnls"] = [float("inf")]
+    with pytest.raises(acct.AccountingError, match="finite"):
+        acct.write_null_success(tmp_inf, family_id="f1", trials=inf_rows)
+    # overlapping assignment [5,5]
+    tmp_d = tmp_path / "dup"
+    tmp_d.mkdir()
+    acct.write_null_started(tmp_d, family_id="f1", m=2, n_null_planned=999)
+    dup_rows = _fake_trial_evidence(999, m=2)
+    for r in dup_rows:
+        r["assignment"] = [5, 5]
+    with pytest.raises(acct.AccountingError, match="duplicate|overlap"):
+        acct.write_null_success(tmp_d, family_id="f1", trials=dup_rows)
+
+
+def test_require_complete_donor_pool_no_cherry_pick():
+    bars = _synthetic_bars(48, seed=15, start="2024-01-08 00:00:00")
+    full = core.eligible_donors(
+        bars["open"],
+        bars["high"],
+        bars["low"],
+        bars["close"],
+        bars["spread"],
+        bars["day_id"],
+        h=3,
+    )
+    assert len(full) >= 2
+    identity = [full[0]]
+    # subset forbidden
+    with pytest.raises(core.ProtocolError, match="complete sorted"):
+        core.require_complete_donor_pool(
+            full[:1],
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            identity=identity,
+            h=3,
+        )
+    # reordering forbidden
+    with pytest.raises(core.ProtocolError, match="complete sorted"):
+        core.require_complete_donor_pool(
+            list(reversed(full)),
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            identity=identity,
+            h=3,
+        )
+    # missing identity
+    with pytest.raises(core.ProtocolError, match="identity donor"):
+        core.require_complete_donor_pool(
+            full,
+            open_=bars["open"],
+            high=bars["high"],
+            low=bars["low"],
+            close=bars["close"],
+            spread=bars["spread"],
+            day_id=bars["day_id"],
+            identity=[-1],
+            h=3,
+        )
+    # ok
+    out = core.require_complete_donor_pool(
+        full,
+        open_=bars["open"],
+        high=bars["high"],
+        low=bars["low"],
+        close=bars["close"],
+        spread=bars["spread"],
+        day_id=bars["day_id"],
+        identity=identity,
+        h=3,
+    )
+    assert out == full
+
+
+def test_base_seed_must_be_non_bool_nonneg_int():
+    bars = _synthetic_bars(48, seed=16, start="2024-01-09 00:00:00")
+    n = len(bars["open"])
+    signals = np.zeros(n, dtype=int)
+    signals[10] = 1
+    real = core.admit_and_simulate_real(
+        open_=bars["open"],
+        high=bars["high"],
+        low=bars["low"],
+        close=bars["close"],
+        spread=bars["spread"],
+        day_id=bars["day_id"],
+        signal_sides=signals,
+        h=3,
+    )
+    donors = core.eligible_donors(
+        bars["open"],
+        bars["high"],
+        bars["low"],
+        bars["close"],
+        bars["spread"],
+        bars["day_id"],
+        h=3,
+    )
+    kwargs = {
+        "events": real.events,
+        "donors": donors,
+        "open_": bars["open"],
+        "high": bars["high"],
+        "low": bars["low"],
+        "close": bars["close"],
+        "spread": bars["spread"],
+        "day_id": bars["day_id"],
+        "n_trials": 999,
+        "sl_atr": 1.5,
+        "tp_atr": 2.0,
+        "point_size": 0.01,
+        "contract_size": 100.0,
+    }
+    for bad_seed in (True, 1.5, "1", -1):
+        with pytest.raises(core.ProtocolError, match="base_seed"):
+            core.run_null_trials(**kwargs, base_seed=bad_seed)  # type: ignore[arg-type]

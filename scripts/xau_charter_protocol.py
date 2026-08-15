@@ -674,6 +674,12 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
     # contradictory keys.
     costs_fixed = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
     costs_top = charter.get("costs") if isinstance(charter.get("costs"), dict) else None
+    def _typed_equal(a: Any, b: Any) -> bool:
+        """Type-strict equality (bool is not int; 999 is not 999.0)."""
+        if type(a) is not type(b):
+            return False
+        return a == b
+
     if costs_fixed is not None and costs_top is not None:
         keys = set(costs_fixed) | set(costs_top)
         for k in keys:
@@ -682,10 +688,12 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                     f"exogenous costs key {k!r} present in only one of "
                     "fixed.costs / top-level costs (duplicate authority must agree)"
                 )
-            elif costs_fixed[k] != costs_top[k]:
+            elif not _typed_equal(costs_fixed[k], costs_top[k]):
                 errs.append(
-                    f"exogenous fixed.costs.{k}={costs_fixed[k]!r} disagrees with "
-                    f"top-level costs.{k}={costs_top[k]!r}"
+                    f"exogenous fixed.costs.{k}={costs_fixed[k]!r} "
+                    f"(type={type(costs_fixed[k]).__name__}) disagrees with "
+                    f"top-level costs.{k}={costs_top[k]!r} "
+                    f"(type={type(costs_top[k]).__name__})"
                 )
         costs = dict(costs_fixed)
     elif costs_fixed is not None:
@@ -820,10 +828,17 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
     else:
         n_trials = null.get("n_trials")
         n_min = null.get("min_null_trials")
-        if n_trials is not None and n_min is not None and n_trials != n_min:
+        if (
+            n_trials is not None
+            and n_min is not None
+            and (type(n_trials) is not type(n_min) or n_trials != n_min)
+        ):
             errs.append(
-                f"exogenous null.n_trials={n_trials!r} disagrees with "
-                f"null.min_null_trials={n_min!r} (duplicate authority must agree)"
+                f"exogenous null.n_trials={n_trials!r} "
+                f"(type={type(n_trials).__name__}) disagrees with "
+                f"null.min_null_trials={n_min!r} "
+                f"(type={type(n_min).__name__}); "
+                "duplicate authority must agree in type and value"
             )
         n_use = n_trials if n_trials is not None else n_min
         n_ok = _strict_nonneg_int(n_use)
@@ -836,6 +851,17 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                 f"exogenous null n_trials={n_ok} < exogenous protocol floor "
                 f"{MIN_NULL_TRIALS_EXOGENOUS} (N≥999 required; global floor "
                 f"{MIN_NULL_TRIALS_PROTOCOL} is not sufficient under this kind)"
+            )
+        # Independently type-check both keys when both present
+        if n_trials is not None and _strict_nonneg_int(n_trials) is None:
+            errs.append(
+                "exogenous null.n_trials must be a non-negative JSON integer "
+                f"(got {n_trials!r})"
+            )
+        if n_min is not None and _strict_nonneg_int(n_min) is None:
+            errs.append(
+                "exogenous null.min_null_trials must be a non-negative JSON integer "
+                f"(got {n_min!r})"
             )
     mult = charter.get("multiplicity")
     if not isinstance(mult, dict) or not mult:

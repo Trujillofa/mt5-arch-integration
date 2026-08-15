@@ -865,7 +865,7 @@ def parse_signal_side(raw: Any, *, index: int) -> int:
     return v
 
 
-def assert_donors_eligible(
+def require_complete_donor_pool(
     donors: Sequence[int],
     *,
     open_: np.ndarray,
@@ -874,22 +874,28 @@ def assert_donors_eligible(
     close: np.ndarray,
     spread: np.ndarray,
     day_id: np.ndarray,
+    identity: Sequence[int],
     h: int = H_DEFAULT,
 ) -> list[int]:
-    """Re-validate donor pool against finite OHLC + same-day eligibility."""
-    pool = eligible_donors(
+    """Require the **complete** canonical eligible donor pool (no cherry-picking).
+
+    Supplied ``donors`` must equal ``eligible_donors(...)`` as a sorted unique
+    list. Every identity real-path donor must belong to that pool.
+    """
+    canonical = eligible_donors(
         open_, high, low, close, spread, day_id, h=h
     )
-    pool_set = set(pool)
-    out: list[int] = []
+    supplied: list[int] = []
     for j, raw in enumerate(donors):
-        d = _require_strict_int(f"donors[{j}]", raw)
-        if d not in pool_set:
-            raise ProtocolError(
-                f"donors[{j}]={d} not in eligible donor pool "
-                f"(finite OHLC + same-day H-window required)"
-            )
-        # Belt-and-suspenders finite path recheck
+        supplied.append(_require_strict_int(f"donors[{j}]", raw))
+    if supplied != canonical:
+        raise ProtocolError(
+            "donors must equal the complete sorted unique eligible_donors(...) "
+            f"pool (canonical_len={len(canonical)}, supplied_len={len(supplied)}; "
+            "subsets/reordering/duplicates forbidden)"
+        )
+    # Finite path recheck (canonical already requires this; belt-and-suspenders)
+    for d in supplied:
         for k in range(h):
             jx = d + k
             for name, arr in (
@@ -902,8 +908,40 @@ def assert_donors_eligible(
                     raise ProtocolError(
                         f"donor_id={d} non-finite {name} at bar {jx}"
                     )
-        out.append(d)
-    return out
+    for i, raw_id in enumerate(identity):
+        did = _require_strict_int(f"identity[{i}]", raw_id)
+        if did not in set(canonical):
+            raise ProtocolError(
+                f"identity donor {did} (event {i}) not in eligible donor pool"
+            )
+    return supplied
+
+
+# Back-compat name used by earlier Phase B drafts
+def assert_donors_eligible(
+    donors: Sequence[int],
+    *,
+    open_: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    close: np.ndarray,
+    spread: np.ndarray,
+    day_id: np.ndarray,
+    h: int = H_DEFAULT,
+    identity: Sequence[int] | None = None,
+) -> list[int]:
+    """Deprecated wrapper — prefer ``require_complete_donor_pool``."""
+    return require_complete_donor_pool(
+        donors,
+        open_=open_,
+        high=high,
+        low=low,
+        close=close,
+        spread=spread,
+        day_id=day_id,
+        identity=identity if identity is not None else [],
+        h=h,
+    )
 
 
 def validate_events_and_assignment(
@@ -1192,8 +1230,10 @@ def run_null_trials(
 
     Requires:
     * n_trials ≥ 999 (exogenous floor)
+    * base_seed non-bool int ≥ 0
     * day_id for same-day event/donor validation
-    * donors revalidated against eligible pool (finite OHLC + same-day)
+    * donors **equal** the complete sorted eligible pool (no cherry-picking)
+    * every identity real entry donor ∈ pool
     """
     if isinstance(n_trials, bool) or not isinstance(n_trials, (int, np.integer)):
         raise ProtocolError(f"n_trials must be non-bool int (got {n_trials!r})")
@@ -1203,13 +1243,22 @@ def run_null_trials(
             f"n_trials={n_trials} < MIN_NULL_TRIALS={MIN_NULL_TRIALS} "
             "(refuse empty or under-planned null runs)"
         )
+    if isinstance(base_seed, bool) or not isinstance(base_seed, (int, np.integer)):
+        raise ProtocolError(
+            f"base_seed must be non-bool int >= 0 (got {base_seed!r} "
+            f"type={type(base_seed).__name__})"
+        )
+    base_seed_i = int(base_seed)
+    if base_seed_i < 0:
+        raise ProtocolError(f"base_seed must be >= 0 (got {base_seed_i})")
     m = len(events)
     if m == 0:
         raise ProtocolError("run_null_trials requires M≥1 events")
     n = len(open_)
     if len(day_id) != n:
         raise ProtocolError("day_id length must match OHLC length")
-    donors_ok = assert_donors_eligible(
+    identity = [e.t_entry_idx for e in events]
+    donors_ok = require_complete_donor_pool(
         donors,
         open_=open_,
         high=high,
@@ -1217,6 +1266,7 @@ def run_null_trials(
         close=close,
         spread=spread,
         day_id=day_id,
+        identity=identity,
         h=h,
     )
     if not preflight_pack_ok(donors_ok, m, h):
@@ -1224,13 +1274,12 @@ def run_null_trials(
             f"preflight pack_capacity={pack_capacity(donors_ok, h)} < M={m}"
         )
     # Structural event validation once up front (identity assignment as probe).
-    identity = [e.t_entry_idx for e in events]
     validate_events_and_assignment(
         events, identity, h=h, n_bars=n, day_id=day_id
     )
     out: list[NullTrialResult] = []
     for j in range(n_trials):
-        rng = np.random.Generator(np.random.PCG64(int(base_seed) + j))
+        rng = np.random.Generator(np.random.PCG64(base_seed_i + j))
         assignment = assign_null_donors(
             donors_ok, m, identity, rng, h=h, max_redraws=max_redraws
         )
