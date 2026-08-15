@@ -218,10 +218,10 @@ def _merge_warmup_signal(
 # --- charter / refuse ---------------------------------------------------------
 
 
-def test_charter_v4_runnable_and_sha():
+def test_charter_v4_screen_fail_and_sha():
     assert validate_charter_file(CHARTER_V4) == []
     ok, why = is_charter_runnable(CHARTER_V4)
-    assert ok is True, why
+    assert ok is False and "SCREEN_FAIL" in why
     assert hashlib.sha256(CHARTER_V4.read_bytes()).hexdigest() == V4_SHA
 
 
