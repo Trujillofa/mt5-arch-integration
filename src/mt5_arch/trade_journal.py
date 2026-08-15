@@ -35,6 +35,13 @@ DEAL_ADD = 3
 DEAL_DELETE = 5
 OVERFLOW_TRANS = -1
 
+# ENUM_DEAL_ENTRY (MQL5). Snapshot membership is required only while open.
+DEAL_ENTRY_IN = 0
+DEAL_ENTRY_OUT = 1
+DEAL_ENTRY_INOUT = 2
+DEAL_ENTRY_OUT_BY = 3
+ENTRY_NEEDS_SNAPSHOT = frozenset({DEAL_ENTRY_IN, DEAL_ENTRY_INOUT})
+
 
 class TradeJournalError(Exception):
     """Invalid or inconsistent trade-transaction journal."""
@@ -52,19 +59,36 @@ def _walk_secrets(obj: Any, trail: str, errors: list[str]) -> None:
             loc = f"{trail}.{key}" if trail else str(key)
             if _SECRET_KEY_RE.search(str(key)):
                 errors.append(f"secret key {loc} is forbidden")
+            if isinstance(val, str) and _SECRET_KEY_RE.search(val):
+                errors.append(f"secret value {loc} is forbidden")
             _walk_secrets(val, loc, errors)
     elif isinstance(obj, list):
         for i, val in enumerate(obj):
             _walk_secrets(val, f"{trail}[{i}]", errors)
+    elif isinstance(obj, str) and trail and _SECRET_KEY_RE.search(obj):
+        errors.append(f"secret value {trail} is forbidden")
 
 
 def _as_id(value: Any) -> int:
+    """Lenient parse for optional identifier fields. Contract fields use _as_contract_int."""
     if value in (None, ""):
         return 0
     try:
         return int(value)
     except (TypeError, ValueError):
         return 0
+
+
+def _as_contract_int(value: Any, *, field: str, loc: str, errors: list[str]) -> int | None:
+    """Strict parse for required contract fields (trans_type). Absent or unparseable fails."""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        errors.append(f"{loc}: missing {field}")
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        errors.append(f"{loc}: unparseable {field} {value!r}")
+        return None
 
 
 def _as_login(value: Any) -> int:
@@ -339,12 +363,20 @@ def verify_journal(path: Path) -> dict[str, Any]:
     seen_deals: set[int] = set()
     n_deals = 0
     deal_positions: set[int] = set()
+    last_entry: dict[int, int] = {}
 
     for i, ev in enumerate(events):
         loc = f"events[{i}]"
-        if _as_bool(ev.get("overflow")) or _as_id(ev.get("trans_type")) == OVERFLOW_TRANS:
+        if "trans_type" not in ev:
+            errors.append(f"{loc}: missing trans_type")
             continue
-        trans_type = _as_id(ev.get("trans_type"))
+        trans_type = _as_contract_int(
+            ev.get("trans_type"), field="trans_type", loc=loc, errors=errors
+        )
+        if trans_type is None:
+            continue
+        if _as_bool(ev.get("overflow")) or trans_type == OVERFLOW_TRANS:
+            continue
         deal_id = _as_id(ev.get("deal"))
         position = _as_id(ev.get("position"))
         if trans_type not in TRANS_TYPES:
@@ -362,14 +394,26 @@ def verify_journal(path: Path) -> dict[str, Any]:
                 errors.append(f"missing position after deal {deal_id or '?'}")
             else:
                 deal_positions.add(position)
-                if snapshot_tickets is not None and position not in snapshot_tickets:
-                    errors.append(
-                        f"missing position after deal {deal_id}: position {position} not in snapshot"
+                if "deal_entry" not in ev or ev.get("deal_entry") in (None, ""):
+                    last_entry[position] = DEAL_ENTRY_IN
+                else:
+                    parsed_entry = _as_contract_int(
+                        ev.get("deal_entry"), field="deal_entry", loc=loc, errors=errors
+                    )
+                    last_entry[position] = (
+                        DEAL_ENTRY_IN if parsed_entry is None else parsed_entry
                     )
         elif trans_type == DEAL_DELETE:
             if deal_id == 0 or deal_id not in seen_deals:
                 errors.append(
                     f"unexpected state transition: DEAL_DELETE {deal_id or '?'} without DEAL_ADD"
+                )
+
+    if snapshot_tickets is not None:
+        for position, entry in last_entry.items():
+            if entry in ENTRY_NEEDS_SNAPSHOT and position not in snapshot_tickets:
+                errors.append(
+                    f"missing position after deal: position {position} not in snapshot"
                 )
 
     if errors:

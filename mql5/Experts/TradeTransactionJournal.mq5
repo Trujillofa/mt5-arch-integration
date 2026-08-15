@@ -12,7 +12,7 @@
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.10"
+#property version     "1.11"
 #property description "Journals trade-transaction ids only — never places orders"
 #property strict
 
@@ -37,6 +37,7 @@ struct JournalIds
    int      trans_type;
    int      order_type;
    int      deal_type;
+   int      deal_entry;
    int      order_state;
    datetime time;
    string   symbol;
@@ -188,6 +189,7 @@ void RecordOverflow()
    ev.trans_type  = -1;
    ev.order_type  = 0;
    ev.deal_type   = 0;
+   ev.deal_entry  = 0;
    ev.order_state = 0;
    ev.time        = TimeCurrent();
    ev.symbol      = "";
@@ -227,6 +229,7 @@ void OnTradeTransaction(const MqlTradeTransaction &trans,
    ev.trans_type  = (int)trans.type;
    ev.order_type  = (int)trans.order_type;
    ev.deal_type   = (int)trans.deal_type;
+   ev.deal_entry  = 0;
    ev.order_state = (int)trans.order_state;
    ev.time        = TimeCurrent();
    ev.symbol      = trans.symbol;
@@ -313,6 +316,8 @@ void FlushQueue()
    if(g_q_n <= 0 && g_overflow_n <= 0)
       return;
 
+   HistorySelect(0, TimeCurrent());
+
    int hj = FileOpen(g_jsonl, FILE_READ|FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
    if(hj == INVALID_HANDLE)
      {
@@ -331,7 +336,7 @@ void FlushQueue()
    FileSeek(hc, 0, SEEK_END);
    if(!g_csv_header || FileSize(hc) == 0)
      {
-      FileWriteString(hc, "seq,session_id,time,trans_type,request_id,order,deal,position,position_by,symbol,order_type,deal_type,order_state,overflow\n");
+      FileWriteString(hc, "seq,session_id,time,trans_type,request_id,order,deal,position,position_by,symbol,order_type,deal_type,deal_entry,order_state,overflow\n");
       g_csv_header = true;
      }
 
@@ -340,6 +345,8 @@ void FlushQueue()
       JournalIds ev = g_q[g_q_tail];
       g_q_tail = (g_q_tail + 1) % JOURNAL_Q_CAP;
       g_q_n--;
+      if(!ev.overflow && ev.deal != 0 && HistoryDealSelect(ev.deal))
+         ev.deal_entry = (int)HistoryDealGetInteger(ev.deal, DEAL_ENTRY);
       FileWriteString(hj, FormatJsonl(ev) + "\n");
       FileWriteString(hc, FormatCsv(ev) + "\n");
      }
@@ -371,6 +378,7 @@ string FormatJsonl(const JournalIds &ev)
    j += "\"symbol\":\"" + JsonEsc(ev.symbol) + "\",";
    j += "\"order_type\":" + IntegerToString(ev.order_type) + ",";
    j += "\"deal_type\":" + IntegerToString(ev.deal_type) + ",";
+   j += "\"deal_entry\":" + IntegerToString(ev.deal_entry) + ",";
    j += "\"order_state\":" + IntegerToString(ev.order_state) + ",";
    j += "\"overflow\":" + (ev.overflow ? "true" : "false");
    j += "}";
@@ -392,6 +400,7 @@ string FormatCsv(const JournalIds &ev)
    line += "," + ev.symbol;
    line += "," + IntegerToString(ev.order_type);
    line += "," + IntegerToString(ev.deal_type);
+   line += "," + IntegerToString(ev.deal_entry);
    line += "," + IntegerToString(ev.order_state);
    line += ",";
    line += ev.overflow ? "true" : "false";

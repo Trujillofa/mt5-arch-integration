@@ -88,7 +88,12 @@ def test_ea_is_read_only_and_handler_is_small():
     assert "FxSymbolRegistry" in text
     assert "FxRegistryLookup" in text
     assert "mt5_arch\\journal" in text or "mt5_arch/journal" in text
+    assert "HistoryDealGetInteger" in text
+    assert "DEAL_ENTRY" in text
     handler = _handler_body(text)
+    assert "HistoryDealGetInteger" not in handler
+    assert "HistorySelect" not in handler
+    assert "DEAL_ENTRY" not in handler
     for needle in _HANDLER_FORBIDDEN:
         assert needle not in handler, f"{needle} must not appear in OnTradeTransaction"
     body_lines = [
@@ -136,12 +141,88 @@ def test_missing_position_in_snapshot_refuses(tmp_path: Path):
         verify_journal(dest)
 
 
+def test_open_close_round_trip_empty_snapshot_ok(tmp_path: Path):
+    """Close (DEAL_ENTRY_OUT) must not require the position in the snapshot."""
+    dest = _clone(tmp_path)
+    rows = []
+    for line in dest.joinpath("events.jsonl").read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("trans_type") == 3 and row.get("deal") == 2001:
+            row["deal_entry"] = 0  # DEAL_ENTRY_IN
+        rows.append(row)
+    rows.append(
+        {
+            "seq": 6,
+            "session_id": "run-1755129600-84000001-1",
+            "time": "2026.08.14 12:00:02",
+            "trans_type": 3,
+            "request_id": 1,
+            "order": 1002,
+            "deal": 2002,
+            "position": 3001,
+            "position_by": 0,
+            "symbol": "XAUUSD",
+            "order_type": 1,
+            "deal_type": 1,
+            "deal_entry": 1,  # DEAL_ENTRY_OUT
+            "order_state": 0,
+            "overflow": False,
+        }
+    )
+    dest.joinpath("events.jsonl").write_text(
+        "\n".join(json.dumps(r, separators=(",", ":")) for r in rows) + "\n",
+        encoding="utf-8",
+    )
+    dest.joinpath("positions.json").write_text(
+        json.dumps({"positions": []}), encoding="utf-8"
+    )
+    report = verify_journal(dest)
+    assert report["ok"] is True
+    assert report["n_deals"] == 2
+    assert report["n_positions"] == 1
+
+
+def test_unparseable_trans_type_refuses(tmp_path: Path):
+    dest = _clone(tmp_path)
+    rows = []
+    for line in dest.joinpath("events.jsonl").read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("trans_type") == 3:
+            row["trans_type"] = "ORDER_ADD"
+        rows.append(json.dumps(row, separators=(",", ":")))
+    dest.joinpath("events.jsonl").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    with pytest.raises(TradeJournalError, match="unparseable trans_type"):
+        verify_journal(dest)
+
+
+def test_absent_trans_type_refuses(tmp_path: Path):
+    dest = _clone(tmp_path)
+    rows = []
+    for line in dest.joinpath("events.jsonl").read_text(encoding="utf-8").splitlines():
+        row = json.loads(line)
+        if row.get("trans_type") == 3:
+            del row["trans_type"]
+        rows.append(json.dumps(row, separators=(",", ":")))
+    dest.joinpath("events.jsonl").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    with pytest.raises(TradeJournalError, match="missing trans_type"):
+        verify_journal(dest)
+
+
 def test_secret_key_refuses(tmp_path: Path):
     dest = _clone(tmp_path)
     raw = json.loads(dest.joinpath("manifest.json").read_text(encoding="utf-8"))
     raw["account"]["password"] = "nope"
     dest.joinpath("manifest.json").write_text(json.dumps(raw), encoding="utf-8")
     with pytest.raises(TradeJournalError, match="secret key"):
+        verify_journal(dest)
+
+
+def test_secret_value_refuses(tmp_path: Path):
+    dest = _clone(tmp_path)
+    raw = json.loads(dest.joinpath("manifest.json").read_text(encoding="utf-8"))
+    raw["note"] = "password=nope"
+    dest.joinpath("manifest.json").write_text(json.dumps(raw), encoding="utf-8")
+    with pytest.raises(TradeJournalError, match="secret value"):
         verify_journal(dest)
 
 
