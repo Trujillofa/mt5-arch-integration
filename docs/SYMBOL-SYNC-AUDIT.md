@@ -74,5 +74,6 @@ counts as proof the calendars match — timestamps are required.
   [TESTER-PROVENANCE.md](TESTER-PROVENANCE.md).
 - Priority 5: `OnTradeTransaction` journal — **separate package**:
   [TRADE-JOURNAL.md](TRADE-JOURNAL.md).
-- Priority 6: article-intake gate.
+- Priority 6: article-intake gate — **separate package**:
+  [ARTICLE-INTAKE.md](ARTICLE-INTAKE.md).
 - Live orders, fuzzy symbol matching, or a blended synthetic instrument.

@@ -23,6 +23,7 @@ import hashlib
 import json
 import math
 import subprocess
+import sys
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -775,7 +776,18 @@ def validate_charter(
             "protocol_version must be >= 2.2 for non-grandfathered freezes "
             f"(got {proto}; refuse protocol downgrade / backdating bypass)"
         )
+    errs.extend(_catalog_intake_errors(charter))
     return errs
+
+
+def _catalog_intake_errors(charter: dict[str, Any]) -> list[str]:
+    """Catalog-derived charters cannot reach scoring without a verified intake."""
+    scripts = Path(__file__).resolve().parent
+    if str(scripts) not in sys.path:
+        sys.path.insert(0, str(scripts))
+    from verify_article_intake import charter_intake_errors
+
+    return charter_intake_errors(charter, repo_root=ROOT)
 
 
 def _parse_frozen_at_date(value: Any) -> date | None:

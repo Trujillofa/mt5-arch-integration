@@ -88,7 +88,8 @@ Never commit a live dump. Never put `MT5_PASSWORD` in the journal.
 
 ## What this does not do
 
-- Priority 6: article-intake gate.
+- Priority 6: article-intake gate — **separate package**:
+  [ARTICLE-INTAKE.md](ARTICLE-INTAKE.md).
 - Live orders, Strategy Tester scoring, or a blended synthetic instrument.
 - Prove that a deal was a good fill.
 - Claim a live `OnTradeTransaction` run on this machine.
