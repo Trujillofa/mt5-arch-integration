@@ -471,6 +471,153 @@ def exogenous_joint_screen_refuse_message(charter: dict[str, Any]) -> str | None
     return None
 
 
+STRATIFIED_REQUIRED_USED_FOR_ENUM = "freeze_gate_primary"
+
+
+def _validate_stratified_required(
+    charter: dict[str, Any], errs: list[str]
+) -> None:
+    """Enforce gates.stratified_required (v2..v4 freeze chain lesson).
+
+    Optional-but-validated: charters without the block keep pooled-only soft
+    semantics (legacy families stay valid). When present, the block must be
+    structurally complete; when provenance.derived_from_observed_result is
+    declared, the block is mandatory -- an outcome-derived thesis without a
+    fresh-evidence stratum gate is exactly the gap the v2 amendment closed.
+    """
+    gates = charter.get("gates") or {}
+    sr = gates.get("stratified_required")
+
+    prov = charter.get("provenance") or {}
+    derived = prov.get("derived_from_observed_result") if isinstance(prov, dict) else None
+    outcome_derived = isinstance(derived, str) and derived.strip() != ""
+
+    if sr is None:
+        if outcome_derived:
+            errs.append(
+                "exogenous gates.stratified_required required when "
+                "provenance.derived_from_observed_result is declared "
+                "(outcome-derived theses need a fresh-evidence stratum gate)"
+            )
+        return
+    if not isinstance(sr, dict) or not sr:
+        errs.append("exogenous gates.stratified_required must be a non-empty object")
+        return
+
+    strata = sr.get("strata")
+    if (
+        not isinstance(strata, list)
+        or len(strata) != 2
+        or any(not isinstance(s, str) or not s.strip() for s in strata)
+        or len(set(strata)) != 2
+    ):
+        errs.append(
+            "exogenous gates.stratified_required.strata must be exactly 2 "
+            "distinct non-empty strings (fresh-evidence partition)"
+        )
+        strata = strata if isinstance(strata, list) else []
+
+    for k in ("rule", "scope", "rationale"):
+        v = sr.get(k)
+        if not isinstance(v, str) or not v.strip():
+            errs.append(
+                f"exogenous gates.stratified_required.{k} must be a non-empty string"
+            )
+
+    used_for = sr.get("used_for")
+    if used_for != STRATIFIED_REQUIRED_USED_FOR_ENUM:
+        errs.append(
+            "exogenous gates.stratified_required.used_for must be "
+            f"{STRATIFIED_REQUIRED_USED_FOR_ENUM!r} (got {used_for!r})"
+        )
+
+    sd = sr.get("stratum_definition")
+    if not isinstance(sd, dict) or not sd:
+        errs.append(
+            "exogenous gates.stratified_required.stratum_definition "
+            "required (defines how each stratum label is assigned)"
+        )
+    else:
+        for k in ("variable", "predicate_isolation"):
+            v = sd.get(k)
+            if not isinstance(v, str) or not v.strip():
+                errs.append(
+                    "exogenous gates.stratified_required.stratum_definition."
+                    f"{k} must be a non-empty string"
+                )
+        for label in strata:
+            v = sd.get(label)
+            if not isinstance(v, str) or not v.strip():
+                errs.append(
+                    "exogenous gates.stratified_required.stratum_definition "
+                    f"must define stratum label {label!r}"
+                )
+
+    ro = sr.get("resolution_order")
+    if not isinstance(ro, dict) or not ro:
+        errs.append(
+            "exogenous gates.stratified_required.resolution_order required "
+            "(pooled AND stratum both-pass rule; stratum fail => SCREEN_FAIL)"
+        )
+    else:
+        for k in ("rule", "on_stratum_fail", "on_both_pass"):
+            v = ro.get(k)
+            if not isinstance(v, str) or not v.strip():
+                errs.append(
+                    "exogenous gates.stratified_required.resolution_order."
+                    f"{k} must be a non-empty string"
+                )
+
+    eb = sr.get("enforced_by")
+    if not isinstance(eb, dict) or not eb:
+        errs.append(
+            "exogenous gates.stratified_required.enforced_by required "
+            "(names the enforcement locus while primary_n_passers is "
+            "protocol-locked to 'soft')"
+        )
+    else:
+        locus = eb.get("locus")
+        if (
+            not isinstance(locus, str)
+            or not locus.strip()
+            or not locus.endswith(".py")
+        ):
+            errs.append(
+                "exogenous gates.stratified_required.enforced_by.locus must be "
+                "a non-empty .py module path"
+            )
+        for k in ("module_obligation", "report_obligation"):
+            v = eb.get(k)
+            if not isinstance(v, str) or not v.strip():
+                errs.append(
+                    "exogenous gates.stratified_required.enforced_by."
+                    f"{k} must be a non-empty string"
+                )
+
+    mb = sr.get("metric_basis")
+    if mb is not None:
+        if not isinstance(mb, dict) or not mb:
+            errs.append(
+                "exogenous gates.stratified_required.metric_basis must be "
+                "a non-empty object when present"
+            )
+        else:
+            for k in ("stratum_dd_method", "pooled_dd_method"):
+                v = mb.get(k)
+                if not isinstance(v, str) or not v.strip():
+                    errs.append(
+                        "exogenous gates.stratified_required.metric_basis."
+                        f"{k} must be a non-empty string"
+                    )
+            ntm = mb.get("n_trades_min_applies_to_stratum")
+            if ntm is not True:
+                errs.append(
+                    "exogenous gates.stratified_required.metric_basis."
+                    "n_trades_min_applies_to_stratum must be true "
+                    f"(got {ntm!r})"
+                )
+
+
 def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
     """Hard errors for multi_instrument_exogenous_predictor_v1 (fail-closed).
 
@@ -776,6 +923,7 @@ def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
                     f"exogenous gates.soft.{k} must be a finite JSON number "
                     "(not str/bool/NaN/Inf)"
                 )
+    _validate_stratified_required(charter, errs)
     null = charter.get("null") or {}
     if not isinstance(null, dict) or not null:
         errs.append("exogenous null object required")
@@ -1493,7 +1641,7 @@ def gates_from_charter(charter: dict[str, Any]) -> dict[str, Any]:
     soft = dict(soft or {})
 
     primary = g.get("primary_n_passers") or charter.get("primary_n_passers") or "soft"
-    return {
+    resolved: dict[str, Any] = {
         "classic": classic,
         "soft": soft,
         "primary_n_passers": primary,
@@ -1502,6 +1650,10 @@ def gates_from_charter(charter: dict[str, Any]) -> dict[str, Any]:
             "soft": _gate_desc(soft, kind="soft") if soft else None,
         },
     }
+    stratified = g.get("stratified_required")
+    if isinstance(stratified, dict) and stratified:
+        resolved["stratified_required"] = stratified
+    return resolved
 
 
 def _gate_desc(g: dict[str, Any], *, kind: str) -> str:
