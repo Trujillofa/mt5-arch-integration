@@ -27,6 +27,14 @@ htmlcov/
 *~
 .DS_Store
 
+# Local agent / diagnostic noise (not product source)
+.omo/
+ops/diagnostics/
+*-check-logs-*.txt
+
+# Compiled MetaTrader binaries (repo tracks .mq5 sources only)
+mql5/**/*.ex5
+
 # Runtime artifacts
 data/
 logs/
