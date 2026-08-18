@@ -1,5 +1,25 @@
 # XAU offline loop status
 
+## 2026-08-15 — Phase C freeze: `exog_london_fx_cosign_xau_follow_flat` v1 · AWAIT_FREEZE_REVIEW
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_PHASE_C_FREEZE_REVIEW`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `exog_london_fx_cosign_xau_follow_flat` |
+| **charter v1** | `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json` · SHA `db7b015a…` |
+| **memo** | `docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md` |
+| **harness.kind** | `multi_instrument_exogenous_predictor_v1` |
+| **Phase B** | merged PR #11 @ `47ae0e7` |
+| **develop screen / null / fixtures** | **not executed / not authorized** |
+| **paper / live** | **forbidden** (catalog open; provisional PASS only if later AUTHORIZE) |
+| **do not** | retune joint cosign · peek develop metrics · sealed null · holdout selection |
+
+Standing: prior `joint_london_open_cosign_fade_flat` v4 **SCREEN_FAIL** remains closed.
+
+---
+
 ## 2026-08-14 — `joint_london_open_cosign_fade_flat` v4 **SCREEN_FAIL** · RESEARCH_IDLE
 
 | Field | Value |
