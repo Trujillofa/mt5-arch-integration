@@ -14,6 +14,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [CHARTS-AND-STABILITY.md](CHARTS-AND-STABILITY.md) | Black charts, maximize, clipboard paste under Wine |
 | [ARCH-SETUP.md](ARCH-SETUP.md) | Extra Arch environment notes |
 | [FOREX-MT5-ROADMAP.md](FOREX-MT5-ROADMAP.md) | Forex observe → paper → live waves |
+| [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) | **Operator inventory** of the live Wine/MT5 path |
 | [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
 | [MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md) | HTF Fib buffer / ATR / pivot-timing check (no orders) |
 | [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md) | Explicit broker → symbol maps (no suffix first-match) |

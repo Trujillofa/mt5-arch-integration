@@ -3,10 +3,13 @@
 | File | Role |
 |------|------|
 | `Include/ForexUtils.mqh` | Pips, sessions, spread, pure EMA/ATR/RSI, pivot helpers |
+| `Include/IndexSessionUtils.mqh` | US-index DST clock (ET / London / Tokyo) + point spread |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
+| `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** session boxes + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
+| `Presets/ForexSignalLogger-UsIndexSessionScalp.set` | Logger inputs for US100/US30 (buffer 8, max-spread pips 0) |
 | `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
@@ -24,7 +27,7 @@
 `symbols.json` and candle filenames still use the **resolved** broker name (e.g. `XAUUSD.r`).
 See [docs/SYMBOL-REGISTRY.md](../docs/SYMBOL-REGISTRY.md).
 
-Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md)
+Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md) · US index: [docs/research/US-INDEX-SESSION-SCALP-DESIGN.md](../docs/research/US-INDEX-SESSION-SCALP-DESIGN.md) · Live operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md)
 
 ## Install into Wine MT5
 
@@ -37,12 +40,13 @@ MetaEditor **F7** compile order:
 
 1. `Indicators/ForexHtfPivotsFib.mq5`
 2. `Indicators/BtcTrendPullback.mq5`
-3. `Indicators/ForexIndicatorTemplate.mq5` (optional)
-4. `Experts/ForexSignalLogger.mq5` (optional)
-5. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
-6. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
-7. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
-8. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
+3. `Indicators/UsIndexSessionScalp.mq5` (US30 / US100 M5)
+4. `Indicators/ForexIndicatorTemplate.mq5` (optional)
+5. `Experts/ForexSignalLogger.mq5` (optional)
+6. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
+7. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
+8. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
+9. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
 
 ## Chart recipe — FX / gold
 
@@ -63,7 +67,19 @@ MetaEditor **F7** compile order:
 | Logger | `InpIndicatorName=BtcTrendPullback`, buffer **7**, `InpMaxSpreadPips=0` |
 | Look for | EMA50/200 stack, pullback reclaim arrows, ATR bands (price, not pips) |
 
-### Trading mode (both indicators)
+## Chart recipe — US30 / US100 (scalp)
+
+| Setting | Value |
+|---------|--------|
+| Symbol | **US100 / NAS100 / USTEC** or **US30 / DJ30.r** |
+| TF | **M5** (M1 / M15 OK; not H1) |
+| Indicator | **UsIndexSessionScalp** |
+| Logger | `InpIndicatorName=UsIndexSessionScalp`, buffer **8**, `InpMaxSpreadPips=0` |
+| Look for | Session boxes + NY 15m OR + VWAP + EMA 9/21 lime/red markers |
+
+Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Scripts/ExportUsIndexM5.mq5`. Do **not** run `ExportInstrumentHistory.mq5` on an open terminal — it kills that prefix. Operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md). Screen how-to (research): [docs/HOWTO-US-INDEX-SCALP.md](../docs/HOWTO-US-INDEX-SCALP.md).
+
+### Trading mode (FX / BTC indicators)
 
 | Mode | EMAs | Sessions | Spread | Fib | Chart |
 |------|------|----------|--------|-----|-------|
@@ -74,7 +90,7 @@ MetaEditor **F7** compile order:
 - Signals also require **close vs EMA bias (200)** when mode uses bias filter
 - `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields
 
-Signal buffers: **HTF Fib = 8**, **Template = 9**.
+Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **Template = 9**.
 
 ### RSI + RSI-MA (both indicators)
 
@@ -140,6 +156,19 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 | 6–7 | Long/short arrows |
 | **8** | **Signal** |
 
+### UsIndexSessionScalp buffers (`iCustom`)
+
+| Index | Content |
+|------:|---------|
+| 0 | EMA9 |
+| 1 | EMA21 |
+| 2 | NY cash VWAP |
+| 3–4 | OR high / low |
+| 5–6 | Long / short arrows |
+| 7 | Session id |
+| **8** | **Signal (+1/−1/0)** |
+| 9 | ATR |
+
 ### BtcTrendPullback buffers (`iCustom`)
 
 | Index | Content |
@@ -155,8 +184,9 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 
 ### ForexSignalLogger
 
-- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, or `ForexIndicatorTemplate`), buffer (`7` or `8`)
-- BTC: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
+- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, `UsIndexSessionScalp`, or `ForexIndicatorTemplate`), buffer (`7` or `8`)
+- BTC / US index: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
+- US-index preset: `Presets/ForexSignalLogger-UsIndexSessionScalp.set` (name=`UsIndexSessionScalp`, buffer **8**, max-spread pips **0**)
 - Writes `MQL5/Files/forex_signals/<SYMBOL>_<TF>.csv`
 - **Never** calls `OrderSend`
 - Parity dump: `Scripts/ExportHtfFibParityFixture.mq5` →
@@ -168,5 +198,6 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 |-------------|----------|
 | `manual-trading-agent` Pine HTF Fib | Pivot confirm, swing machine, golden zone, RSI confluence |
 | `ForexIndicatorTemplate` | Cloud/colors/panel Wine lessons |
-| `ctrader` session-momentum | Spread gate philosophy (logger filter) |
+| `ctrader` session-momentum / `SessionClock` | Spread gate; DST session windows (`UsIndexSessionScalp`) |
+| `manual-trading-agent` `session_orb` | Causal NY opening range (index scalp, not the closed FX ORB lane) |
 | `crypto-agent` TrendPullback | BTC EMA/RSI/MACD reclaim grammar (`BtcTrendPullback`) |
