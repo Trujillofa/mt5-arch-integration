@@ -1,0 +1,16 @@
+{
+  "charter_file_sha256_map": {
+    "instrument_data/eurusd_h1.csv": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab",
+    "instrument_data/gbpusd_h1.csv": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd",
+    "instrument_data/xauusd_h1.csv": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da"
+  },
+  "content_package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+  "holdout_start_server": "2026-01-01 00:00:00",
+  "n_rows": {
+    "EURUSD": 26900,
+    "GBPUSD": 26900,
+    "XAUUSD": 25557
+  },
+  "package_dir": "/home/yderf/Projects/trading/mt5-arch-integration-wt-exog-phase-e/results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd"
+}
