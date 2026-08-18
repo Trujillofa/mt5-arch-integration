@@ -51,6 +51,7 @@ winetricks.log
 
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
+results/us_index_data/
 
 # Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
 tests/fixtures/mql5_parity/live_*/

@@ -30,11 +30,14 @@ CANDIDATES=(
 SRC_INC=(
   "${ROOT}/mql5/Include/ForexUtils.mqh"
   "${ROOT}/mql5/Include/FxSymbolRegistry.mqh"
+  "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
+  "${ROOT}/mql5/Include/IndexM5Export.mqh"
 )
 SRC_IND=(
   "${ROOT}/mql5/Indicators/ForexIndicatorTemplate.mq5"
   "${ROOT}/mql5/Indicators/ForexHtfPivotsFib.mq5"
   "${ROOT}/mql5/Indicators/BtcTrendPullback.mq5"
+  "${ROOT}/mql5/Indicators/UsIndexSessionScalp.mq5"
 )
 SRC_EA=(
   "${ROOT}/mql5/Experts/ForexSignalLogger.mq5"
@@ -48,6 +51,7 @@ SRC_SCRIPTS=(
   "${ROOT}/mql5/Scripts/ExportSymbolSyncAudit.mq5"
   "${ROOT}/mql5/Scripts/ExportXauHistory.mq5"
   "${ROOT}/mql5/Scripts/ExportInstrumentHistory.mq5"
+  "${ROOT}/mql5/Scripts/ExportUsIndexM5.mq5"
 )
 # Runtime data (no recompile needed — regenerate with scripts/tpl_to_sr_levels.py)
 SRC_FILES=(
@@ -117,8 +121,10 @@ Next steps:
   1. MetaEditor (F4) → compile (F7):
        Include/ForexUtils.mqh          (auto via includes)
        Include/FxSymbolRegistry.mqh    (auto via includes)
+       Include/IndexSessionUtils.mqh   (auto via includes)
        Indicators/ForexHtfPivotsFib.mq5     ← FX/gold primary
        Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
+       Indicators/UsIndexSessionScalp.mq5  ← US30/US100 M5 scalp
        Indicators/ForexIndicatorTemplate.mq5
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
        Experts/TradeTransactionJournal.mq5  ← optional read-only trade-id journal
@@ -127,10 +133,12 @@ Next steps:
        Scripts/ExportSymbolSyncAudit.mq5     ← optional H1 calendar / spread audit
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
+     US30/US100 M5: UsIndexSessionScalp
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)
        FX:  InpIndicatorName=ForexHtfPivotsFib  buffer 8
        Template: buffer 9
        BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
+       US index: InpIndicatorName=UsIndexSessionScalp buffer 8  MaxSpreadPips=0
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/
      Trade-id journal (optional): Experts → TradeTransactionJournal
