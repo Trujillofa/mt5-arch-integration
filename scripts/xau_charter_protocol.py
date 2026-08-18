@@ -51,6 +51,8 @@ DEFAULT_CLASSIC_GATES = {
 # resolution for reporting 0.05 cleanly; require ≥199 (p-step ≈ 0.005).
 MIN_NULL_TRIALS_PROTOCOL = 199
 PREFERRED_NULL_TRIALS_LOW_KNOB = 999
+# Exogenous-predictor protocol v1 pins N ≥ 999 (stricter than global floor).
+MIN_NULL_TRIALS_EXOGENOUS = 999
 
 # Terminal dispositions are monotonic: once seen for a SHA, later non-terminal
 # records cannot reverse them (append-only integrity).
@@ -132,6 +134,8 @@ DISPOSITIONAL_PATH_GLOBS = (
     "scripts/xau_family_*.py",
     # Multi-instrument joint screen harness (must not score with uncommitted logic)
     "scripts/xau_multi_instrument_*.py",
+    # Exogenous-predictor core + accounting (Phase B+)
+    "scripts/xau_exogenous_predictor_*.py",
     "scripts/xau_research_costs.py",
     "results/xau_research_costs.json",
     "results/xau_charters/*.json",
@@ -408,8 +412,26 @@ def write_charter_once(path: Path, charter: dict[str, Any]) -> Path:
     return path
 
 
+EXOGENOUS_PREDICTOR_HARNESS_KIND = "multi_instrument_exogenous_predictor_v1"
+EXOGENOUS_NULL_IMPLEMENTATION_ID = "conditional_fixed_signal_events_fixed_trades_v1"
+JOINT_HARNESS_KIND = "multi_instrument_joint_v1"
+
+# Protocol §7.3 baseline (2026-08-14): cannot undercount; self-attested empty priors banned.
+EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS: tuple[str, ...] = (
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat",
+    "joint_london_open_cosign_fade_flat",
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+)
+EXOGENOUS_BASELINE_K_PRIOR = len(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)  # 8
+
+
 def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str | None:
-    """If charter is multi-instrument joint, return refuse text for single-frame runners.
+    """If charter is multi-instrument (joint or exogenous), refuse single-frame runners.
 
     Pure check (no I/O, no data, no plugin). Callers must raise/SystemExit with this
     message *before* family plugin import, data load, fixtures, or ledger append.
@@ -417,17 +439,563 @@ def multi_instrument_single_frame_refuse_message(charter: dict[str, Any]) -> str
     harness = charter.get("harness") or {}
     inst = charter.get("instrument") or {}
     kind = str(harness.get("kind") or "")
-    multi = kind == "multi_instrument_joint_v1" or bool(
-        inst.get("multi_symbol_in_scope")
-    )
+    multi = kind in (
+        JOINT_HARNESS_KIND,
+        EXOGENOUS_PREDICTOR_HARNESS_KIND,
+    ) or bool(inst.get("multi_symbol_in_scope"))
     if not multi:
         return None
+    if kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        return (
+            "REFUSE_SINGLE_FRAME_RUNNER: charter requires dedicated "
+            f"{EXOGENOUS_PREDICTOR_HARNESS_KIND} harness; single-frame runners "
+            "(xau_family_null_maxstat / xau_sealed_family_cycle) are forbidden"
+        )
     return (
         "REFUSE_SINGLE_FRAME_RUNNER: charter requires dedicated "
         "multi_instrument_joint_v1 harness; single-frame runners "
         "(xau_family_null_maxstat / xau_sealed_family_cycle) are forbidden "
         "(no plugin/data/ledger for multi-instrument joint)"
     )
+
+
+def exogenous_joint_screen_refuse_message(charter: dict[str, Any]) -> str | None:
+    """If charter is exogenous-predictor kind, refuse joint screen harness."""
+    kind = str((charter.get("harness") or {}).get("kind") or "")
+    if kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        return (
+            "REFUSE_JOINT_SCREEN: charter harness.kind="
+            f"{EXOGENOUS_PREDICTOR_HARNESS_KIND!r}; use dedicated exogenous harness "
+            "(xau_multi_instrument_joint_screen is joint-cosign only)"
+        )
+    return None
+
+
+def validate_exogenous_predictor_charter(charter: dict[str, Any]) -> list[str]:
+    """Hard errors for multi_instrument_exogenous_predictor_v1 (fail-closed).
+
+    Covers Phase B checklist: roles, package pin, H=3/next-bar contract,
+    binary soft gates with typed thresholds, canonical null ids, multiplicity.
+    """
+    errs: list[str] = []
+    harness = charter.get("harness") or {}
+    kind = str(harness.get("kind") or "")
+    if kind != EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        errs.append(
+            f"exogenous charter requires harness.kind={EXOGENOUS_PREDICTOR_HARNESS_KIND!r}"
+        )
+    inst = charter.get("instrument") or {}
+    symbols = inst.get("symbols")
+    traded = inst.get("traded_symbols")
+    predictors = inst.get("predictor_symbols")
+
+    def _role_list(name: str, raw: Any, *, min_len: int) -> list[str]:
+        if not isinstance(raw, list) or len(raw) < min_len:
+            errs.append(
+                f"exogenous instrument.{name} must be a list with length >= {min_len}"
+            )
+            return []
+        out: list[str] = []
+        for i, x in enumerate(raw):
+            if not isinstance(x, str) or not x.strip():
+                errs.append(
+                    f"exogenous instrument.{name}[{i}] must be a non-empty string"
+                )
+                continue
+            out.append(x)
+        if out and len(out) != len(set(out)):
+            errs.append(f"exogenous instrument.{name} must have unique entries")
+        return out
+
+    symbols = _role_list("symbols", symbols, min_len=1)
+    traded = _role_list("traded_symbols", traded, min_len=1)
+    predictors = _role_list("predictor_symbols", predictors, min_len=1)
+    if traded and len(traded) != 1:
+        errs.append(
+            f"exogenous instrument.traded_symbols must have exactly one symbol "
+            f"(got {len(traded)})"
+        )
+    if inst.get("multi_symbol_in_scope") is not True:
+        errs.append(
+            "exogenous instrument.multi_symbol_in_scope must be true (exact boolean)"
+        )
+    # partition
+    if traded and symbols and traded[0] not in symbols:
+        errs.append(
+            f"exogenous traded_symbols[0]={traded[0]!r} not in instrument.symbols"
+        )
+    for p in predictors:
+        if p not in symbols:
+            errs.append(f"exogenous predictor {p!r} not in instrument.symbols")
+    if traded and predictors and set(traded) & set(predictors):
+        errs.append("exogenous traded_symbols and predictor_symbols must be disjoint")
+    if symbols and traded and predictors:
+        union = list(traded) + list(predictors)
+        if set(union) != set(symbols) or len(union) != len(symbols):
+            errs.append(
+                "exogenous traded∪predictors must equal symbols (proper partition)"
+            )
+        if set(traded) == set(symbols):
+            errs.append("exogenous traded must be a proper subset of symbols")
+    # package pin
+    pkg = inst.get("data_package")
+    if not isinstance(pkg, dict) or not pkg:
+        errs.append("exogenous instrument.data_package object required (package pin)")
+    else:
+        pid = pkg.get("package_id") or pkg.get("content_package_id")
+        if not isinstance(pid, str) or not str(pid).strip():
+            errs.append(
+                "exogenous instrument.data_package.package_id "
+                "(or content_package_id) required non-empty string"
+            )
+    meta = inst.get("per_symbol_meta") or {}
+    if not isinstance(meta, dict):
+        errs.append("exogenous instrument.per_symbol_meta must be an object")
+        meta = {}
+    for s in symbols:
+        m = meta.get(s)
+        if not isinstance(m, dict):
+            errs.append(f"exogenous per_symbol_meta missing object for {s!r}")
+            continue
+        for k in ("point_size", "contract_size", "digits"):
+            if k not in m:
+                errs.append(f"exogenous per_symbol_meta[{s!r}] missing {k}")
+        ps = _strict_finite_number(m.get("point_size"))
+        if "point_size" in m and (ps is None or ps <= 0):
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].point_size must be finite > 0 "
+                f"(not str/bool/NaN/Inf/≤0)"
+            )
+        cs = _strict_finite_number(m.get("contract_size"))
+        if "contract_size" in m and (cs is None or cs <= 0):
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].contract_size must be finite > 0 "
+                f"(not str/bool/NaN/Inf/≤0)"
+            )
+        dig = m.get("digits")
+        if "digits" in m and _strict_nonneg_int(dig) is None:
+            errs.append(
+                f"exogenous per_symbol_meta[{s!r}].digits must be a non-negative "
+                "JSON integer (not bool/float/str)"
+            )
+    cal = charter.get("analysis_calendar") or {}
+    if cal.get("mode") != "intersection_only":
+        errs.append(
+            "exogenous analysis_calendar.mode must be 'intersection_only'"
+        )
+    # H=3 + next-bar open execution contract (protocol §5.2).
+    # Every supplied duplicate field must agree (no first-wins).
+    rule: dict[str, Any] = (
+        dict(charter["rule"]) if isinstance(charter.get("rule"), dict) else {}
+    )
+    fixed: dict[str, Any] = (
+        dict(charter["fixed"]) if isinstance(charter.get("fixed"), dict) else {}
+    )
+    execution: dict[str, Any] = (
+        dict(charter["execution"])
+        if isinstance(charter.get("execution"), dict)
+        else {}
+    )
+    srcs = (execution, rule, fixed)
+
+    def _collect(keys: tuple[str, ...]) -> list[Any]:
+        found: list[Any] = []
+        for src in srcs:
+            for k in keys:
+                if k in src:
+                    found.append(src[k])
+        return found
+
+    h_vals = _collect(("hold_bars", "H"))
+    if not h_vals:
+        errs.append(
+            "exogenous execution contract requires hold_bars/H=3 "
+            "(under execution, rule, or fixed)"
+        )
+    else:
+        norm_h: list[int] = []
+        for hv in h_vals:
+            hn = _strict_nonneg_int(hv)
+            if hn is None:
+                hf = _strict_finite_number(hv)
+                if hf is None or hf != 3.0:
+                    errs.append(
+                        f"exogenous hold_bars/H must be integer 3 (got {hv!r})"
+                    )
+                    continue
+                hn = 3
+            norm_h.append(hn)
+        if norm_h and any(x != norm_h[0] for x in norm_h):
+            errs.append(
+                "exogenous hold_bars/H disagree across execution/rule/fixed "
+                f"(got {h_vals!r})"
+            )
+        elif norm_h and norm_h[0] != 3:
+            errs.append(f"exogenous hold_bars/H must be 3 (got {norm_h[0]})")
+
+    allowed_entry = {
+        "next_bar_open",
+        "next_joint_bar_open",
+        "open_of_next_joint_bar",
+    }
+    entry_vals = _collect(("entry", "entry_timing"))
+    if not entry_vals:
+        errs.append(
+            "exogenous execution contract requires entry/entry_timing in "
+            f"{sorted(allowed_entry)} (next-bar open)"
+        )
+    else:
+        if any(e not in allowed_entry for e in entry_vals):
+            errs.append(
+                "exogenous execution contract requires entry/entry_timing in "
+                f"{sorted(allowed_entry)} (got {entry_vals!r})"
+            )
+        if len(set(entry_vals)) > 1:
+            errs.append(
+                "exogenous entry/entry_timing disagree across execution/rule/fixed "
+                f"(got {entry_vals!r})"
+            )
+
+    same_vals = _collect(("same_day_hold",))
+    if not same_vals:
+        errs.append(
+            "exogenous execution contract requires same_day_hold=true "
+            "(exact boolean)"
+        )
+    else:
+        if any(v is not True for v in same_vals):
+            errs.append(
+                "exogenous same_day_hold must be true (exact boolean) everywhere set "
+                f"(got {same_vals!r})"
+            )
+
+    # Cost identity + sim keys (Phase C must exact-match loaded research costs doc).
+    # Single authority: prefer fixed.costs; if both fixed.costs and top-level costs
+    # exist they must agree exactly on every shared key and neither may add
+    # contradictory keys.
+    costs_fixed = fixed.get("costs") if isinstance(fixed.get("costs"), dict) else None
+    costs_top = charter.get("costs") if isinstance(charter.get("costs"), dict) else None
+    def _typed_equal(a: Any, b: Any) -> bool:
+        """Type-strict equality (bool is not int; 999 is not 999.0)."""
+        if type(a) is not type(b):
+            return False
+        return a == b
+
+    if costs_fixed is not None and costs_top is not None:
+        keys = set(costs_fixed) | set(costs_top)
+        for k in keys:
+            if k not in costs_fixed or k not in costs_top:
+                errs.append(
+                    f"exogenous costs key {k!r} present in only one of "
+                    "fixed.costs / top-level costs (duplicate authority must agree)"
+                )
+            elif not _typed_equal(costs_fixed[k], costs_top[k]):
+                errs.append(
+                    f"exogenous fixed.costs.{k}={costs_fixed[k]!r} "
+                    f"(type={type(costs_fixed[k]).__name__}) disagrees with "
+                    f"top-level costs.{k}={costs_top[k]!r} "
+                    f"(type={type(costs_top[k]).__name__})"
+                )
+        costs = dict(costs_fixed)
+    elif costs_fixed is not None:
+        costs = dict(costs_fixed)
+    elif costs_top is not None:
+        costs = dict(costs_top)
+    else:
+        costs = None
+    if not isinstance(costs, dict) or not costs:
+        errs.append(
+            "exogenous fixed.costs (or top-level costs) object required "
+            "with identity + sim keys"
+        )
+    else:
+        for ck in ("commission_per_lot", "slippage_points"):
+            if ck not in costs:
+                errs.append(f"exogenous costs.{ck} required")
+            else:
+                cv = _strict_finite_number(costs.get(ck))
+                if cv is None or cv < 0:
+                    errs.append(
+                        f"exogenous costs.{ck} must be a finite non-negative JSON "
+                        f"number (not str/bool/NaN/Inf; got {costs.get(ck)!r})"
+                    )
+        for sk in ("account_type", "server", "cost_label", "spread_col"):
+            sv = costs.get(sk)
+            if not isinstance(sv, str) or not sv.strip():
+                errs.append(
+                    f"exogenous costs.{sk} required non-empty string (cost identity)"
+                )
+        login = costs.get("login")
+        if isinstance(login, bool) or not isinstance(login, int):
+            errs.append(
+                "exogenous costs.login required non-bool JSON integer (cost identity)"
+            )
+        elif login <= 0:
+            errs.append(
+                f"exogenous costs.login must be > 0 (got {login})"
+            )
+        # Exact pin key only — aliases forbidden
+        for alias in ("cost_document_sha256", "research_costs_sha256"):
+            if alias in costs:
+                errs.append(
+                    f"exogenous costs.{alias} forbidden; use exact key "
+                    "costs_document_sha256"
+                )
+        sha = costs.get("costs_document_sha256")
+        if not isinstance(sha, str) or len(sha) != 64:
+            errs.append(
+                "exogenous costs.costs_document_sha256 required "
+                "(64-char hex pin of research costs document)"
+            )
+        elif any(c not in "0123456789abcdef" for c in sha.lower()):
+            errs.append(
+                "exogenous costs.costs_document_sha256 must be hexadecimal"
+            )
+    gates = charter.get("gates") or {}
+    if gates.get("primary_n_passers") != "soft":
+        errs.append(
+            "exogenous gates.primary_n_passers must be 'soft' "
+            f"(got {gates.get('primary_n_passers')!r})"
+        )
+    soft = gates.get("soft")
+    if not isinstance(soft, dict) or not soft:
+        errs.append("exogenous gates.soft required (traded-book primary)")
+    else:
+        if "n_trades_min" not in soft:
+            errs.append("exogenous gates.soft missing required key 'n_trades_min'")
+        elif _strict_nonneg_int(soft.get("n_trades_min")) is None:
+            errs.append(
+                "exogenous gates.soft.n_trades_min must be a non-negative "
+                "JSON integer (not bool/float/str/NaN)"
+            )
+        for k in ("profit_factor_min", "net_profit_gt", "max_drawdown_pct_max"):
+            if k not in soft:
+                errs.append(f"exogenous gates.soft missing required key {k!r}")
+            elif _strict_finite_number(soft.get(k)) is None:
+                errs.append(
+                    f"exogenous gates.soft.{k} must be a finite JSON number "
+                    "(not str/bool/NaN/Inf)"
+                )
+    null = charter.get("null") or {}
+    if not isinstance(null, dict) or not null:
+        errs.append("exogenous null object required")
+        null = {}
+    method = null.get("method")
+    impl = null.get("implementation_id")
+    if method is None:
+        errs.append("exogenous null.method required")
+    if impl is None:
+        errs.append("exogenous null.implementation_id required")
+    method_s = str(method) if method is not None else ""
+    impl_s = str(impl) if impl is not None else ""
+    if method is not None and method_s != EXOGENOUS_NULL_IMPLEMENTATION_ID:
+        errs.append(
+            "exogenous null.method must be "
+            f"{EXOGENOUS_NULL_IMPLEMENTATION_ID!r}; got {method!r}"
+        )
+    if impl is not None and impl_s != EXOGENOUS_NULL_IMPLEMENTATION_ID:
+        errs.append(
+            "exogenous null.implementation_id must be "
+            f"{EXOGENOUS_NULL_IMPLEMENTATION_ID!r}; got {impl!r}"
+        )
+    if (
+        method is not None
+        and impl is not None
+        and method_s != impl_s
+    ):
+        errs.append(
+            "exogenous null.method and null.implementation_id must match "
+            f"(got method={method!r}, implementation_id={impl!r})"
+        )
+    # reject alternate sampling enums if present
+    for bad_key in ("sampling", "pairing", "strata", "with_replacement"):
+        if bad_key in null:
+            errs.append(
+                f"exogenous null.{bad_key} forbidden (canonical engine only)"
+            )
+    alt = null.get("forbidden_methods") or []
+    if method_s and method_s in {str(x) for x in alt}:
+        errs.append(f"exogenous null method {method_s!r} listed in forbidden_methods")
+    if null.get("base_seed") is None:
+        errs.append("exogenous null.base_seed required")
+    elif isinstance(null.get("base_seed"), bool) or not isinstance(
+        null.get("base_seed"), int
+    ):
+        errs.append(
+            "exogenous null.base_seed must be a JSON integer (not bool/str/float)"
+        )
+    if null.get("n_trials") is None and null.get("min_null_trials") is None:
+        errs.append("exogenous null.n_trials (or min_null_trials) required")
+    else:
+        n_trials = null.get("n_trials")
+        n_min = null.get("min_null_trials")
+        if (
+            n_trials is not None
+            and n_min is not None
+            and (type(n_trials) is not type(n_min) or n_trials != n_min)
+        ):
+            errs.append(
+                f"exogenous null.n_trials={n_trials!r} "
+                f"(type={type(n_trials).__name__}) disagrees with "
+                f"null.min_null_trials={n_min!r} "
+                f"(type={type(n_min).__name__}); "
+                "duplicate authority must agree in type and value"
+            )
+        n_use = n_trials if n_trials is not None else n_min
+        n_ok = _strict_nonneg_int(n_use)
+        if n_ok is None:
+            errs.append(
+                "exogenous null.n_trials must be a non-negative JSON integer"
+            )
+        elif n_ok < MIN_NULL_TRIALS_EXOGENOUS:
+            errs.append(
+                f"exogenous null n_trials={n_ok} < exogenous protocol floor "
+                f"{MIN_NULL_TRIALS_EXOGENOUS} (N≥999 required; global floor "
+                f"{MIN_NULL_TRIALS_PROTOCOL} is not sufficient under this kind)"
+            )
+        # Independently type-check both keys when both present
+        if n_trials is not None and _strict_nonneg_int(n_trials) is None:
+            errs.append(
+                "exogenous null.n_trials must be a non-negative JSON integer "
+                f"(got {n_trials!r})"
+            )
+        if n_min is not None and _strict_nonneg_int(n_min) is None:
+            errs.append(
+                "exogenous null.min_null_trials must be a non-negative JSON integer "
+                f"(got {n_min!r})"
+            )
+    mult = charter.get("multiplicity")
+    if not isinstance(mult, dict) or not mult:
+        errs.append(
+            "exogenous multiplicity block required "
+            "(finite-catalog Bonferroni; catalog open)"
+        )
+    else:
+        if mult.get("method") != "finite_catalog_bonferroni_open_catalog":
+            errs.append(
+                "exogenous multiplicity.method must be exactly "
+                "'finite_catalog_bonferroni_open_catalog' "
+                f"(got {mult.get('method')!r}; aliases forbidden)"
+            )
+        k_prior = _strict_nonneg_int(mult.get("K_prior"))
+        k_val = _strict_nonneg_int(mult.get("K"))
+        if k_prior is None:
+            errs.append(
+                "exogenous multiplicity.K_prior must be a non-negative JSON integer"
+            )
+        elif k_prior < EXOGENOUS_BASELINE_K_PRIOR:
+            errs.append(
+                f"exogenous multiplicity.K_prior must be >= "
+                f"{EXOGENOUS_BASELINE_K_PRIOR} (protocol baseline; "
+                f"undercounting banned; got {k_prior})"
+            )
+        if k_val is None:
+            errs.append(
+                "exogenous multiplicity.K must be a non-negative JSON integer"
+            )
+        if k_prior is not None and k_val is not None and k_val != k_prior + 1:
+            errs.append(
+                f"exogenous multiplicity.K must equal K_prior+1 "
+                f"(got K_prior={k_prior}, K={k_val})"
+            )
+        a0 = _strict_finite_number(mult.get("alpha_uncorrected"))
+        if a0 is None:
+            errs.append(
+                "exogenous multiplicity.alpha_uncorrected required finite number "
+                "(protocol 0.05)"
+            )
+        elif abs(a0 - 0.05) > 1e-15:
+            errs.append(
+                f"exogenous multiplicity.alpha_uncorrected must be 0.05 (got {a0})"
+            )
+        a_adj = _strict_finite_number(mult.get("alpha_adjusted"))
+        if a_adj is None:
+            errs.append(
+                "exogenous multiplicity.alpha_adjusted required finite number "
+                "(alpha_uncorrected / K)"
+            )
+        elif a0 is not None and k_val is not None and k_val > 0:
+            expected = a0 / float(k_val)
+            if abs(a_adj - expected) > 1e-12:
+                errs.append(
+                    "exogenous multiplicity.alpha_adjusted must equal "
+                    f"alpha_uncorrected/K ({expected}); got {a_adj}"
+                )
+        priors = mult.get("prior_scored_family_ids")
+        if not isinstance(priors, list):
+            errs.append(
+                "exogenous multiplicity.prior_scored_family_ids must be a list"
+            )
+        else:
+            if any(not isinstance(x, str) or not x.strip() for x in priors):
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids entries "
+                    "must be non-empty strings"
+                )
+            if len(priors) != len(set(priors)):
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids must be unique"
+                )
+            if k_prior is not None and len(priors) != k_prior:
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids length must "
+                    f"equal K_prior={k_prior} (got {len(priors)})"
+                )
+            # Authoritative baseline: all eight protocol-audited IDs required.
+            missing = [
+                fid
+                for fid in EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS
+                if fid not in priors
+            ]
+            if missing:
+                errs.append(
+                    "exogenous multiplicity.prior_scored_family_ids missing "
+                    f"baseline audited families: {missing}"
+                )
+            # Current family must not appear in priors (would undercount K).
+            fam = charter.get("family_id")
+            if isinstance(fam, str) and fam and fam in priors:
+                errs.append(
+                    f"exogenous multiplicity.prior_scored_family_ids must not "
+                    f"include the current family_id={fam!r}"
+                )
+            # Additions beyond baseline only when K_prior > baseline.
+            if (
+                k_prior is not None
+                and k_prior == EXOGENOUS_BASELINE_K_PRIOR
+                and set(priors) != set(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)
+            ):
+                extras = sorted(
+                    set(priors) - set(EXOGENOUS_BASELINE_PRIOR_FAMILY_IDS)
+                )
+                if extras:
+                    errs.append(
+                        "exogenous multiplicity.prior_scored_family_ids at "
+                        f"K_prior={EXOGENOUS_BASELINE_K_PRIOR} must equal the "
+                        f"baseline set exactly (unexpected extras {extras})"
+                    )
+        if mult.get("pass_status") != "provisional_while_catalog_open":
+            errs.append(
+                "exogenous multiplicity.pass_status must be exactly "
+                "'provisional_while_catalog_open' "
+                f"(got {mult.get('pass_status')!r})"
+            )
+        if mult.get("paper_live_while_open") is not False:
+            errs.append(
+                "exogenous multiplicity.paper_live_while_open must be false "
+                "(exact boolean) while catalog open"
+            )
+        if mult.get("revalidation_on_K_increase") is not True:
+            errs.append(
+                "exogenous multiplicity.revalidation_on_K_increase must be true "
+                "(exact boolean)"
+            )
+        if mult.get("identity_excluded_from_null_trials") is not True:
+            errs.append(
+                "exogenous multiplicity.identity_excluded_from_null_trials "
+                "must be true (exact boolean)"
+            )
+    return errs
 
 
 def _strict_finite_number(val: Any) -> float | None:
@@ -549,11 +1117,12 @@ def validate_charter(
     if not (charter.get("gates") or charter.get("passer_definition_soft")):
         errs.append("gates or passer_definition_soft required")
 
-    # Multi-instrument joint charters: complete contract (not only nested-layout path).
+    # Multi-instrument charters: joint cosign vs exogenous predictor.
     inst = charter.get("instrument") or {}
+    harness_kind = str((charter.get("harness") or {}).get("kind") or "")
     multi = bool(inst.get("multi_symbol_in_scope")) or bool(
         isinstance(inst.get("symbols"), list) and len(inst.get("symbols") or []) > 1
-    )
+    ) or harness_kind in (JOINT_HARNESS_KIND, EXOGENOUS_PREDICTOR_HARNESS_KIND)
     gates = charter.get("gates") or {}
     # Nested-only layout without top-level soft is always invalid
     if (
@@ -564,7 +1133,9 @@ def validate_charter(
             "multi-instrument/nested joint charter requires top-level gates.soft "
             "(gates.per_symbol/gates.joint alone are invisible to gates_from_charter)"
         )
-    if multi:
+    if harness_kind == EXOGENOUS_PREDICTOR_HARNESS_KIND:
+        errs.extend(validate_exogenous_predictor_charter(charter))
+    elif multi:
         # Complete joint-soft contract for every multi-instrument charter.
         # Soft joint keys: n, PF, NP, max DD (DD was fail-open if omitted).
         _joint_soft_required = (
