@@ -61,6 +61,13 @@ for inc in "${SRC_INC[@]}"; do
   fi
 done
 
+for f in "${SRC_FILES[@]}"; do
+  if [[ ! -f "${f}" ]]; then
+    echo "ERROR: missing ${f} (regenerate: python3 scripts/tpl_to_sr_levels.py)" >&2
+    exit 1
+  fi
+done
+
 installed=0
 declare -A SEEN=()
 for mql5 in "${CANDIDATES[@]}"; do
