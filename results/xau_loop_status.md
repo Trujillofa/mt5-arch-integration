@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-18 — Phase C re-freeze: `exog_london_fx_cosign_xau_follow_flat` **v4** · metric basis
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_PHASE_D_REPOINT_AND_REVIEW`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `exog_london_fx_cosign_xau_follow_flat` |
+| **charter v4** | `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json` · SHA `3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5` |
+| **v3** | SHA `10ab933b…` · **SUPERSEDED** (design only; never scored; immutable) |
+| **v2** | SHA `a5661ec3…` · **SUPERSEDED** (design only; never scored; immutable) |
+| **v1** | SHA `db7b015a…` · **SUPERSEDED** (design only; never scored; immutable) |
+| **amendment** | declaration-only: `gates.stratified_required.metric_basis` (stratum DD = ordered pnl subsequence rebased to start_balance; pooled DD = full MTM; asymmetry + expected bindingness declared; `n_trades_min` applies to fresh stratum own count → SCREEN_FAIL if short) |
+| **memo** | `docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md` (updated to bind v4) |
+| **Phase D** | implemented **locally** on `research/exog-london-fx-cosign-xau-follow-module` against **v3** — **must repoint to v4** before opening the Phase D PR |
+| **develop screen / null** | **not executed / not authorized** |
+| **paper / live** | **forbidden** |
+| **do not** | peek develop / stratum-split metrics · mutate v1–v3 · lower `n_trades_min` to dodge short fresh stratum · report pooled-only passer |
+
+Standing: none of v1–v4 scored. K stays 9. `primary_n_passers` stays `"soft"`. Soft thresholds unchanged.
+
+---
+
 ## 2026-08-15 — Phase C re-freeze: `exog_london_fx_cosign_xau_follow_flat` **v3** · AWAIT_FREEZE_REVIEW
 
 | Field | Value |
