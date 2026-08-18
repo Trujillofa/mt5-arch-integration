@@ -121,8 +121,10 @@ class StratifiedMetrics:
     dd_convention: str = STRATUM_DD_CONVENTION
     note: str = (
         "Per-stratum DD uses metrics_from_pnls on the stratum's ordered pnl "
-        "subsequence (not pooled MTM equity). Charter-completeness gap — "
-        "may warrant v4 before screen."
+        "subsequence rebased to charter fixed.start_balance (pooled DD stays "
+        "full MTM equity). Settled by charter v4 "
+        "gates.stratified_required.metric_basis; the pooled/stratum asymmetry "
+        "is declared there, not open."
     )
 
 
@@ -530,10 +532,12 @@ def run_family(
         frames_i = align_intersection(frames)
 
     spread_col = params["spread_col"]
+    if spread_col != "spread":
+        raise ProtocolError(
+            f"REFUSE: costs.spread_col must be 'spread' (prepared frames carry "
+            f"that column); charter names {spread_col!r}"
+        )
     for s, d in frames_i.items():
-        if spread_col != "spread" and spread_col in d.columns:
-            # charter names the column; our prepare always requires 'spread'
-            pass
         if "spread" not in d.columns:
             raise ProtocolError(f"{s}: missing cost column {spread_col!r}")
 
