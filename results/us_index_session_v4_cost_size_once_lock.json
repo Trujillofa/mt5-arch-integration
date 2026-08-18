@@ -1,0 +1,47 @@
+{
+  "search_id": "us_index_session_v4_cost_size_once",
+  "kind": "diagnostic_replay",
+  "locked_at": "2026-08-18T16:00:00-05:00",
+  "not_a_search": true,
+  "selection": "none — replays already-frozen / already-selected params only",
+  "books_replayed": [
+    {"id": "locked", "lots": 1.0, "slippage_points": 10.0, "note": "locked v1–v4 book"},
+    {"id": "slip0", "lots": 1.0, "slippage_points": 0.0, "note": "cut slippage only"},
+    {"id": "lots2", "lots": 2.0, "slippage_points": 10.0, "note": "2× size, friction kept"},
+    {"id": "lots5", "lots": 5.0, "slippage_points": 10.0, "note": "5× size, friction kept"},
+    {"id": "slip0_lots5", "lots": 5.0, "slippage_points": 0.0, "note": "both levers"}
+  ],
+  "configs": [
+    {
+      "id": "frozen_orb_flatten",
+      "family": "ny_cash_orb_vwap_ema_flat",
+      "exit": "flatten_15:45",
+      "holdout_start": "2026-06-01"
+    },
+    {
+      "id": "v4_best_develop",
+      "family": "vol_regime_orb",
+      "atr_fast": 7,
+      "atr_slow": 28,
+      "regime_k": 1.0,
+      "entry_end": "10:30",
+      "one_per_day": true,
+      "exit": "atr_sl1.0_tp1.5",
+      "selection_end": "2026-06-01",
+      "holdout_start": "2026-07-01"
+    }
+  ],
+  "skipped": {
+    "timescaledb": "charter excludes; no aggressor-tick store in this repo",
+    "m1": "M1.hc exists on FP US100/US30 but this diagnostic does not export or search it",
+    "us500": "not present in any Wine prefix"
+  },
+  "start_balance_usd": 10000,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "max_spread_points": 200.0,
+  "commission_per_lot": 0.0,
+  "promote": false,
+  "live_go": false,
+  "note": "One shot. A levered or zero-slippage hit does not replace the locked 10 pt / 1-lot book and is not a promote."
+}

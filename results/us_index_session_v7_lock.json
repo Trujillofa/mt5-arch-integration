@@ -1,0 +1,101 @@
+{
+  "search_id": "us_index_session_v7",
+  "locked_at": "2026-08-18T16:55:00-05:00",
+  "selection_end": "2026-06-01",
+  "selection_window": "et_date < 2026-06-01",
+  "holdout_start": "2026-07-01",
+  "holdout_rule": "NEVER used for selection. June 2026 is a burned buffer. July–August was already inside the v4–v6 holdout aggregates — this is a cleaner window, not virgin data.",
+  "burned_buffer": ["2026-06-01", "2026-07-01"],
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "note": "Locked book. Do not cut slippage or raise lots to chase 1%/20%."
+  },
+  "fill": "next-bar open",
+  "signals": "closed bar only (exclude_forming). No lookahead.",
+  "friday": "no new entries at or after 14:00 ET",
+  "flatten": "15:45 ET if still open",
+  "emergency_sl": "ATR 1.0 at the signal bar, applied from fill",
+  "causality": {
+    "z_window": "prior W closed M5 bars excluding bar i (indexes i-W .. i-1). Bar i is NOT inside μ, σ, or Vμ.",
+    "z_window_include_i": false,
+    "z_ddof": 1,
+    "z_bars": "consecutive M5 (all hours), not cash-only resampling. Session gate is the entry window only.",
+    "z_sigma": "require σ > 0 else no signal",
+    "exit_mu": "running target = typical-price μ on the same exclude-i window at bar j (j-W .. j-1). Including j would leak close[j] into μ while tagging high/low[j].",
+    "exit_touch": "simulate_exits kind=vwap: bar high/low tags the target (traded through μ / IB level). Not a close-cross.",
+    "ib_minutes": 60,
+    "ib_complete": "opening_range_at(..., or_minutes=60). Complete iff bar open >= 10:30 ET. Do not stamp IB during 09:30–10:30.",
+    "ib_sweep": "after IB is complete: M5 high > IB high or low < IB low. A bar that takes out both sides is skipped (ambiguous).",
+    "ib_trigger": "the very next M5 (i+1 relative to the sweep) must close back inside [IB low, IB high]. Same-bar close-back does not count.",
+    "ib_signal": "signal on the close of the return bar; fill = open of the following bar. Do not use the return bar's future.",
+    "ib_no_return": "if the next bar does not close inside, that sweep is dead; a later bar may become a new sweep. No trade if there is never a return close."
+  },
+  "not_copied": [
+    "ny_cash_orb_vwap_ema_flat and v1–v6 winners (do not retune)",
+    "daily Hurst/ADX/ATR AND-gate (v6 starvation)",
+    "htf_lock_orb / ny_cash_gap_fade_adr / exog_us30_ny_cash_cosign_us100_follow (v5; 0/43)",
+    "US30 as exogenous predictor (too correlated; same trade)",
+    "exog_london_fx_cosign_xau_follow_flat hours {7,8,9} / EUR+GBP",
+    "joint_london_open_cosign_fade_flat (SCREEN_FAIL)",
+    "v3 wick-fade / FVG / US100–US30 divergence (different predicate: IB false-break is sweep then NEXT M5 close back inside)",
+    "XAU day_open_reclaim / early_server_range_break / prior_day_high_break",
+    "manual-trading-agent FX ORB, news-drift, and vol-regime",
+    "Timescale / M1 / US500 / yields / ES",
+    "H4 / Donchian / XAU / daily-regime AND with these families"
+  ],
+  "reused_from_trading": {
+    "clock_or": "scripts/us_index_session_core.py NY cash 09:30–16:00 ET; opening_range_at(..., or_minutes=60) is knowable at 10:30",
+    "exits": "simulate_exits kind=vwap + emergency sl + flatten 15:45. Target series = IB midline / opposite IB side, or running rolling typical-price μ",
+    "split": "split_v4: develop et_date < 2026-06-01; holdout et_date >= 2026-07-01; June burned"
+  },
+  "families": {
+    "ib_false_breakout_fade": {
+      "note": "Classic 60m Initial Balance. Fade a stop-run that fails to hold outside. Not the v1 15m OR close-break. Not the v3 same-bar wick fade.",
+      "ib": "first 60 minutes of NY cash [09:30, 10:30) ET",
+      "fade": "sweep of IB high → short; sweep of IB low → long",
+      "entry_end": ["11:30", "12:00"],
+      "target": ["ib_mid", "opposite_ib"],
+      "ib_mid": "(IBh + IBl) / 2, fixed once IB is complete (running=false)",
+      "opposite_ib": "long targets IBh; short targets IBl (running=false, taken at signal bar)",
+      "one_per_day": [true, false],
+      "one_per_day_default": true,
+      "exit": "target then flatten 15:45; emergency SL ATR 1.0",
+      "no_and": "Do not AND with H4 / Donchian / XAU / regime"
+    },
+    "m5_zscore_tick_vol_exhaustion": {
+      "note": "Intraday mean-reversion: stretched typical price plus a tick-volume spike. Not a daily regime.",
+      "typical_price": "(H + L + C) / 3 on each closed M5",
+      "z": "(P_i - μ) / σ with μ,σ from i-W .. i-1",
+      "long": "Z <= -z_thr AND vol_i > vol_k * Vμ",
+      "short": "Z >= +z_thr AND vol_i > vol_k * Vμ",
+      "z_thr": [2.0, 2.5],
+      "vol_k": [1.5, 2.0],
+      "window": [12, 24],
+      "session": ["09:45-15:00", "09:45-11:30"],
+      "session_note": "NY cash only. Two windows max. Friday cutoff still applies.",
+      "one_per_day": [true, false],
+      "exit": "flatten when bar range tags the current W-bar μ (exclude j); emergency SL ATR 1.0; flatten 15:45"
+    }
+  },
+  "n_configs_expected": 40,
+  "grid_breakdown": {
+    "ib_false_breakout_fade": 8,
+    "m5_zscore_tick_vol_exhaustion": 32
+  },
+  "grid_note": "Product of the listed family knobs only (8 + 32 = 40). Tighter than v5/v6 on purpose — two new predicates, no padding. The ~80–160 band is a ceiling against thousands, not a quota.",
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "note": "Architectural pivot after v6 starvation: intraday statistical kinetics, not daily macro-gating. New search_id. Do not attach these families to the overlay. 1%/day and 20%/month are goals, not promises."
+}

@@ -1,0 +1,61 @@
+{
+  "search_id": "us_index_session_playbook_v2",
+  "locked_at": "2026-08-18T15:20:00-05:00",
+  "holdout_start": "2026-06-01",
+  "selection_window": "et_date < holdout_start",
+  "holdout_rule": "NEVER used for selection",
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0
+  },
+  "families": {
+    "ny_cash_vwap_bounce_rsi": {
+      "note": "Session-open VWAP mean-reversion. Fade an ATR-sized extension when RSI is exhausted. Target is VWAP frozen at the signal close.",
+      "entry_start_et": "09:35",
+      "entry_end": ["10:00", "10:30"],
+      "rsi_period": [7, 14],
+      "rsi_band": [[75, 25], [70, 30]],
+      "atr_dev": [0.75, 1.0, 1.5],
+      "one_per_day": [true, false],
+      "exits": [
+        "vwap_sl1.0",
+        "vwap_sl1.5",
+        "flatten_10:30",
+        "flatten_11:30",
+        "atr_sl1.0_tp1.5"
+      ]
+    },
+    "ny_cash_ema_macd": {
+      "note": "Closed-bar fast EMA cross with MACD histogram filter. Fill next bar open.",
+      "entry_start_et": "09:35",
+      "ema_pairs": [[5, 20], [8, 21]],
+      "macd": [[12, 26, 9], [5, 13, 5]],
+      "entry_end": ["10:30", "11:30", "12:00"],
+      "one_per_day": [true, false],
+      "cross_only": [true, false],
+      "exits": [
+        "flatten_11:30",
+        "flatten_15:45",
+        "atr_sl1.0_tp1.5",
+        "atr_sl1.5_tp2.0",
+        "bars_6",
+        "bars_12"
+      ]
+    }
+  },
+  "n_configs_expected": 528,
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "us30_transfer": "evaluate after ranking — never used for selection",
+  "promote": false,
+  "live_go": false,
+  "note": "New search from the VWAP-bounce / EMA+MACD playbook. Not a retune of ny_cash_orb_vwap_ema_flat or us_index_session_develop_v1. 1%/day and 20%/month are goals, not promises."
+}
