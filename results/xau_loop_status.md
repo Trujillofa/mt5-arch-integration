@@ -1,5 +1,26 @@
 # XAU offline loop status
 
+## 2026-08-18 — Phase D **merged on main** · module + fixtures green · enforcement live
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_PHASE_E_SCREEN_AUTHORIZATION`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `exog_london_fx_cosign_xau_follow_flat` |
+| **charter v4 (operative)** | SHA `3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5` · v1–v3 superseded, never scored, immutable |
+| **Phase D** | **MERGED @ `0519e50`** (PR #23): `scripts/xau_family_exog_london_fx_cosign_xau_follow_flat.py` + 36 synthetic fixtures; repointed to v4 (`2a8852e`); thermo-nuclear review → 2 Low findings fixed (`66c799e`, stale DD note + fail-closed spread_col) |
+| **Phase B enforcement** | **MERGED @ `615bce5`** (PR #25): validator now structurally enforces `gates.stratified_required`; mandatory when `provenance.derived_from_observed_result` declared; resolver carries the block. 44 tests |
+| **suite on main** | 578 passed, 4 skipped · Phase D 36/36 · Phase B 52/52 |
+| **r1** | **unburned** — no develop screen run |
+| **develop screen / null** | **not executed / not authorized** — Phase E prompt staged, awaiting explicit `AUTHORIZE PHASE E` |
+| **paper / live** | **forbidden** |
+| **do not** | peek develop / stratum-split metrics before the screen · mutate v1–v4 · lower `n_trades_min` to dodge short fresh stratum · report pooled-only passer · run the sealed null under a Phase E authorization |
+
+Standing: nothing scored. The screen requires the dedicated exogenous runner (does not exist yet — Phase E builds it). Soft thresholds unchanged; K stays 9.
+
+---
+
 ## 2026-08-18 — Phase C re-freeze: `exog_london_fx_cosign_xau_follow_flat` **v4** · metric basis
 
 | Field | Value |
