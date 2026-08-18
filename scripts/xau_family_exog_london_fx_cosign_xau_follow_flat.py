@@ -1,16 +1,15 @@
-"""Family module: exog_london_fx_cosign_xau_follow_flat (charter v3).
+"""Family module: exog_london_fx_cosign_xau_follow_flat (charter v4).
 
 Harness: multi_instrument_exogenous_predictor_v1 (Phase B core).
 Phase D scope: synthetic evaluation only — no develop package load, no screen,
 no null, no sealed cycle.
 
-OPEN SPEC / CHARTER-COMPLETENESS (do not treat as settled):
-  Per-stratum max_drawdown_pct is computed as the drawdown of that stratum's own
-  ordered pnl subsequence via metrics_from_pnls (start_balance from charter,
-  equity reconstructed from the subsequence alone). The charter requires
-  per-stratum DD and inherits gates.soft.max_drawdown_pct_max, but does not
-  define path-dependent DD on a subsequence of the pooled MTM equity. A v4
-  declaration may be needed before any develop screen.
+Per-stratum max_drawdown_pct is the drawdown of that stratum's own ordered pnl
+subsequence via metrics_from_pnls (start_balance from charter; equity
+reconstructed from the subsequence alone). As of charter v4 this IS settled in
+gates.stratified_required.metric_basis (stratum_dd_method =
+stratum_ordered_pnl_subsequence_rebased_to_start_balance). Pooled DD remains the
+full mark-to-market equity path; the declared asymmetry is intentional.
 
 Stratified labels are reporting-only (predicate_isolation): computed AFTER the
 real path from event.t_star_idx; they never enter admission, side, sizing,
@@ -86,16 +85,16 @@ DEFAULT_CHARTER_PATH = (
     ROOT
     / "results"
     / "xau_charters"
-    / "2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json"
+    / "2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json"
 )
 
 STRATUM_COSIGN = "xau_cosign_at_tstar"
 STRATUM_NOT_COSIGN = "xau_not_cosign_at_tstar"
 STRATA = (STRATUM_COSIGN, STRATUM_NOT_COSIGN)
 
-# Documented convention — NOT a charter-settled definition (see module docstring).
+# Must match charter gates.stratified_required.metric_basis.stratum_dd_method (v4).
 STRATUM_DD_CONVENTION = (
-    "stratum_ordered_pnl_subsequence_via_metrics_from_pnls"
+    "stratum_ordered_pnl_subsequence_rebased_to_start_balance"
 )
 
 
@@ -388,7 +387,7 @@ def _params_from_charter(ch: dict[str, Any]) -> dict[str, Any]:
 
 
 def label_event_stratum(event: Event, *, open_: np.ndarray, close: np.ndarray) -> str:
-    """Reporting label only — ternary variable → binary strata (v3 definition)."""
+    """Reporting label only — ternary variable → binary strata (charter definition)."""
     i = int(event.t_star_idx)
     if i < 0 or i >= len(open_):
         raise StratifiedEvaluationError(
@@ -410,10 +409,10 @@ def evaluate_stratified(
     soft: dict[str, Any],
     start_balance: float,
 ) -> StratifiedMetrics:
-    """Apply v3 resolution_order; fail closed if labels missing/uncomputable.
+    """Apply charter resolution_order; fail closed if labels missing/uncomputable.
 
-    Per-stratum DD convention: metrics_from_pnls on the stratum's ordered pnl
-    subsequence (see module docstring / STRATUM_DD_CONVENTION).
+    Per-stratum DD: metrics_from_pnls on the stratum's ordered pnl subsequence
+    (STRATUM_DD_CONVENTION == metric_basis.stratum_dd_method).
     """
     if real is None:
         raise StratifiedEvaluationError("stratified evaluation absent: real path is None")
@@ -689,7 +688,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--charter",
         default=str(DEFAULT_CHARTER_PATH),
-        help="path to frozen charter JSON (default: v3)",
+        help="path to frozen charter JSON (default: v4)",
     )
     args = ap.parse_args(argv)
     plan = dry_plan(args.charter)

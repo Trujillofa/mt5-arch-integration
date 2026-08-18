@@ -1,4 +1,4 @@
-"""Synthetic fixtures for exog_london_fx_cosign_xau_follow_flat (charter v3).
+"""Synthetic fixtures for exog_london_fx_cosign_xau_follow_flat (charter v4).
 
 Phase D only — no develop package, no screen, no null, no sealed cycle.
 """
@@ -26,8 +26,8 @@ from xau_charter_protocol import (  # noqa: E402
 )
 from xau_exogenous_predictor_core import admit_and_simulate_real, day_ids_from_times  # noqa: E402
 
-CHARTER_V3 = ROOT / "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json"
-V3_SHA = "10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb"
+CHARTER_V4 = ROOT / "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json"
+V4_SHA = "3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5"
 SYMBOLS = ("XAUUSD", "EURUSD", "GBPUSD")
 
 
@@ -215,19 +215,26 @@ def _many_signal_days(
 
 
 def _charter() -> dict:
-    return json.loads(CHARTER_V3.read_text())
+    return json.loads(CHARTER_V4.read_text())
 
 
 # --- charter binding ----------------------------------------------------------
 
 
-def test_charter_v3_sha_and_validators():
-    assert hashlib.sha256(CHARTER_V3.read_bytes()).hexdigest() == V3_SHA
-    ch = fam.load_charter(CHARTER_V3)
+def test_charter_v4_sha_and_validators():
+    assert hashlib.sha256(CHARTER_V4.read_bytes()).hexdigest() == V4_SHA
+    ch = fam.load_charter(CHARTER_V4)
     assert ch["family_id"] == fam.FAMILY_ID
-    assert ch["charter_version"] == 3
+    assert ch["charter_version"] == 4
     assert validate_charter(ch) == []
     assert validate_exogenous_predictor_charter(ch) == []
+
+
+def test_module_dd_convention_matches_charter_metric_basis():
+    ch = _charter()
+    mb = ch["gates"]["stratified_required"]["metric_basis"]
+    assert mb["stratum_dd_method"] == fam.STRATUM_DD_CONVENTION
+    assert mb["n_trades_min_applies_to_stratum"] is True
 
 
 def test_refuses_wrong_family_not_frozen_wrong_harness():
