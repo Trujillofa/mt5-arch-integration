@@ -1,10 +1,10 @@
 # Thesis memo — `exog_london_fx_cosign_xau_follow_flat` v1
 
-**Date:** 2026-08-15 (v3 re-freeze amendment same day)  
-**Status:** **FREEZE_ONLY** — charter + memo · **no develop package load · no screen · no null · no fixtures run**  
-**Branch:** `research/exogenous-predictor-phase-c-freeze` from `main@47ae0e7` (PR #11 Phase B merged)  
-**Charter:** `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json` · SHA `10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb`  
+**Date:** 2026-08-15 (v4 re-freeze amendment — metric basis)  
+**Status:** **FREEZE_ONLY** — charter + memo · **no develop package load · no screen · no null**  
+**Charter:** `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json` · SHA `3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5`  
 **Supersedes chain (none scored):**  
+- v3 `…_v3.json` · SHA `10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb` (stratum definition + resolution + enforcement locus; immutable)  
 - v2 `…_v2.json` · SHA `a5661ec34e457cbb05d999f92251d443fd86c04cf6d9980dcfc31a8c74762174` (provenance + stratified gate + ATR pin; immutable)  
 - v1 `…_v1.json` · SHA `db7b015aea51ff743ec9d6318de2a1c782824bc6333995591e65a83526b0cb9d` (design only; immutable)  
 **Protocol:** `docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md` · harness `multi_instrument_exogenous_predictor_v1`
@@ -90,6 +90,16 @@ After Standard STP costs (measured spread; commission 0; slip 0 unmeasured):
 3. If both pass → one soft passer; proceed to sealed null; provisional PASS only if p ≤ 0.05/9.  
 4. Pooled-only pass is **not** sufficient and must not be reported as a passer.
 
+### Metric basis (v4)
+
+Declared during Phase D implementation, **before any develop screen**; the stratum split is unknown at declaration time.
+
+- **Stratum DD:** `max_drawdown_pct` on a stratum is the drawdown of that stratum’s own **ordered pnl subsequence**, with equity reconstructed from that subsequence alone starting at `fixed.start_balance`. Trades in the other stratum are **omitted**, not held flat.  
+- **Pooled DD:** full mark-to-market equity path from the exogenous harness real path.  
+- **Asymmetry:** pooled DD and per-stratum DD use **different accounting bases** but are compared to the **same** `gates.soft.max_drawdown_pct_max`. Unavoidable (a stratum has no pooled MTM path of its own); declared rather than “fixed” by changing thresholds.  
+- **Expected bindingness:** the stratum equity path is strictly shorter than pooled, so DD is expected to bind **less** on the fresh stratum than on pooled. The effectively binding fresh-stratum soft components are `n_trades_min`, `profit_factor_min`, and `net_profit_gt`.  
+- **`n_trades_min` on the stratum:** `gates.soft.n_trades_min` applies to `xau_not_cosign_at_tstar` on its **own** trade count. Fewer than `n_trades_min` fresh trades → stratum fail → **SCREEN_FAIL** (null unarmed, r1 unburned). Not a waiver, not a pooled fallback, and not grounds to lower `n_trades_min`.
+
 Under null: if the FX→gold link is only calendar coincidence / segment chance, fixed-event fixed-trade transplants should match or beat real soft pass → **KILL**.
 
 ## Explicit failure modes
@@ -134,8 +144,8 @@ Fixed: coincident hours {7,8,9}, FX cosign predicate, follow mapping, H=3, SL/TP
 |------|--------|
 | Phase A protocol | merged (#10) |
 | Phase B engine/validator | merged (#11 @ 47ae0e7) |
-| Phase C charter + memo | **this PR — AWAIT freeze review (v3 amendment)** |
-| Fixtures / family module / screen | **not authorized** until freeze AUTHORIZE |
-| Null / paper / live | **forbidden** until later AUTHORIZE |
+| Phase C charter + memo | **v4 metric-basis amendment — AWAIT merge then Phase D repoint** |
+| Fixtures / family module | implemented locally against **v3**; must repoint to **v4** before Phase D PR |
+| Develop screen / null / paper / live | **forbidden** until later AUTHORIZE |
 
-**End of Phase C freeze memo (v1 filename; charter binding is v3).**
+**End of Phase C freeze memo (v1 filename; charter binding is v4).**
