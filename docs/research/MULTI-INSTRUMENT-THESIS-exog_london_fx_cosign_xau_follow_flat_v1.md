@@ -1,10 +1,12 @@
 # Thesis memo — `exog_london_fx_cosign_xau_follow_flat` v1
 
-**Date:** 2026-08-15 (v2 re-freeze amendment same day)  
+**Date:** 2026-08-15 (v3 re-freeze amendment same day)  
 **Status:** **FREEZE_ONLY** — charter + memo · **no develop package load · no screen · no null · no fixtures run**  
 **Branch:** `research/exogenous-predictor-phase-c-freeze` from `main@47ae0e7` (PR #11 Phase B merged)  
-**Charter:** `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json` · SHA `a5661ec34e457cbb05d999f92251d443fd86c04cf6d9980dcfc31a8c74762174`  
-**Supersedes:** v1 `…_v1.json` · SHA `db7b015aea51ff743ec9d6318de2a1c782824bc6333995591e65a83526b0cb9d` (design only; never scored; immutable)  
+**Charter:** `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json` · SHA `10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb`  
+**Supersedes chain (none scored):**  
+- v2 `…_v2.json` · SHA `a5661ec34e457cbb05d999f92251d443fd86c04cf6d9980dcfc31a8c74762174` (provenance + stratified gate + ATR pin; immutable)  
+- v1 `…_v1.json` · SHA `db7b015aea51ff743ec9d6318de2a1c782824bc6333995591e65a83526b0cb9d` (design only; immutable)  
 **Protocol:** `docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md` · harness `multi_instrument_exogenous_predictor_v1`
 
 ## Standing constraints
@@ -13,7 +15,8 @@
 - Holdout sealed (`holdout_start=2026-01-01`); selection never uses holdout  
 - Closed freezes stay closed — especially **do not retune** `joint_london_open_cosign_fade_flat`  
 - Catalog open: PASS is provisional; paper/live forbidden while open  
-- This freeze does **not** peek develop PF/NP/DD or authorize scoring
+- This freeze does **not** peek develop PF/NP/DD or authorize scoring  
+- Do **not** report a pooled-only soft passer
 
 ## Provenance
 
@@ -63,10 +66,29 @@ Null: `conditional_fixed_signal_events_fixed_trades_v1` (N≥999), not OHLC-rota
 
 After Standard STP costs (measured spread; commission 0; slip 0 unmeasured):
 
-- Soft primary (binary on **traded** book only): n≥20, PF≥1.1, NP>0, DD≤25%  
-- Soft passers ∈ {0,1}. Zero → **SCREEN_FAIL**, null not armed, r1 unburned  
-- One passer → sealed null under exogenous accounting; provisional PASS only if p ≤ α_adj = 0.05/9  
-- **Stratified soft (freeze gate primary):** soft primary must also pass on the `xau_not_cosign_at_tstar` stratum, not only pooled. Strata are reporting-only (`xau_cosign_at_tstar` vs `xau_not_cosign_at_tstar` by whether XAU’s open→close sign at \(T^\*\) matches \(s\)). The cosign-overlap stratum is the sign-inverse of an already-observed result and carries no fresh evidence; only the non-cosign stratum is new.
+- Soft primary field `gates.primary_n_passers` remains the literal **`"soft"`** (protocol-locked by Phase B). Soft thresholds on **traded** book only: n≥20, PF≥1.1, NP>0, DD≤25%.  
+- Soft passers ∈ {0,1} under the resolution order below. Zero → **SCREEN_FAIL**, null not armed, r1 unburned.  
+- One passer (pooled **and** fresh stratum) → sealed null under exogenous accounting; provisional PASS only if p ≤ α_adj = 0.05/9.
+
+### Stratified requirement — definition, order, enforcement
+
+**Not machine-enforced by Phase B.** `gates.stratified_required` is ignored by the merged validators/resolvers; they only read `primary_n_passers == "soft"`. The enforcement locus is therefore the family module `scripts/xau_family_exog_london_fx_cosign_xau_follow_flat.py` (not yet authorized). That module **must** evaluate both strata and **must fail closed** (raise / refuse) if stratified evaluation is absent, empty, or unreportable. Reporting a pooled-only soft passer is a protocol violation. The screen artifact must emit n, PF, NP, DD **per stratum plus pooled**.
+
+**Stratum definition (ternary variable → binary strata):**
+
+- Variable: \(\mathrm{sign}(\mathrm{close}_{XAU}(T^*) - \mathrm{open}_{XAU}(T^*))\) on the traded series, on calendar I, at \(T^*\) only.  
+- \(s\) = FX predictor cosign of the same event.  
+- `xau_cosign_at_tstar`: XAU \(T^*\) open→close is **nonzero** and its sign equals \(s\).  
+- `xau_not_cosign_at_tstar`: **everything else** — including an **exactly-zero** XAU \(T^*\) open→close, and including sign equal to \(-s\).  
+- The variable is ternary (\(+s\), \(-s\), \(0\)); the strata are binary. Zero-return assignment to `xau_not_cosign_at_tstar` is **fixed here**, not an implementation choice.  
+- Reporting label **only** — must never enter entry predicate, sizing, SL/TP, or exit.
+
+**Resolution order:**
+
+1. Soft pass requires **both** the pooled soft gate **and** the `xau_not_cosign_at_tstar` stratum soft gate.  
+2. If the fresh stratum fails → **SCREEN_FAIL**; null is **not** armed; r1 stays **unburned**; no sealed cycle.  
+3. If both pass → one soft passer; proceed to sealed null; provisional PASS only if p ≤ 0.05/9.  
+4. Pooled-only pass is **not** sufficient and must not be reported as a passer.
 
 Under null: if the FX→gold link is only calendar coincidence / segment chance, fixed-event fixed-trade transplants should match or beat real soft pass → **KILL**.
 
@@ -112,8 +134,8 @@ Fixed: coincident hours {7,8,9}, FX cosign predicate, follow mapping, H=3, SL/TP
 |------|--------|
 | Phase A protocol | merged (#10) |
 | Phase B engine/validator | merged (#11 @ 47ae0e7) |
-| Phase C charter + memo | **this PR — AWAIT freeze review (v2 amendment)** |
+| Phase C charter + memo | **this PR — AWAIT freeze review (v3 amendment)** |
 | Fixtures / family module / screen | **not authorized** until freeze AUTHORIZE |
 | Null / paper / live | **forbidden** until later AUTHORIZE |
 
-**End of Phase C freeze memo (v1 filename; charter binding is v2).**
+**End of Phase C freeze memo (v1 filename; charter binding is v3).**

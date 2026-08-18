@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-15 — Phase C re-freeze: `exog_london_fx_cosign_xau_follow_flat` **v3** · AWAIT_FREEZE_REVIEW
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_ADVERSARIAL_PHASE_C_FREEZE_REVIEW`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `exog_london_fx_cosign_xau_follow_flat` |
+| **charter v3** | `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json` · SHA `10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb` |
+| **v2** | SHA `a5661ec3…` · **SUPERSEDED** (design only; never scored; immutable) |
+| **v1** | SHA `db7b015a…` · **SUPERSEDED** (design only; never scored; immutable) |
+| **amendment** | declaration-only: `stratum_definition` (zero→`xau_not_cosign_at_tstar`) · `resolution_order` (pooled AND stratum; stratum fail → SCREEN_FAIL, r1 unburned) · `enforced_by` (family module fail-closed; Phase B cannot express stratified via `primary_n_passers`) |
+| **memo** | `docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md` (updated to bind v3) |
+| **harness.kind** | `multi_instrument_exogenous_predictor_v1` |
+| **Phase B** | merged PR #11 @ `47ae0e7` (not modified) |
+| **develop screen / null / fixtures** | **not executed / not authorized** |
+| **paper / live** | **forbidden** (catalog open; provisional PASS only if later AUTHORIZE) |
+| **do not** | retune joint cosign · peek develop metrics · sealed null · holdout selection · mutate v1/v2 charter/SHA · **report a pooled-only soft passer** |
+
+Standing: prior `joint_london_open_cosign_fade_flat` v4 **SCREEN_FAIL** remains closed. K stays 9. `primary_n_passers` stays `"soft"`.
+
+---
+
 ## 2026-08-15 — Phase C re-freeze: `exog_london_fx_cosign_xau_follow_flat` **v2** · AWAIT_FREEZE_REVIEW
 
 | Field | Value |
