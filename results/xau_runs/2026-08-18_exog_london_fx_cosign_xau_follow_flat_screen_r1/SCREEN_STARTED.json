@@ -1,0 +1,11 @@
+{
+  "execution_state": "SCREEN_STARTED",
+  "r1_burned": false,
+  "r1_burn_armed": false,
+  "sealed_null_attempt": false,
+  "arms_r1_burn_on_failure": false,
+  "family_id": "exog_london_fx_cosign_xau_follow_flat",
+  "charter_path": "/home/yderf/Projects/trading/mt5-arch-integration-wt-exog-phase-e/results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json",
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+  "started_at_utc": "2026-08-18T22:39:25.971029+00:00"
+}

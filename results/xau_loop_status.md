@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-19 — Phase E develop screen r1 · `exog_london_fx_cosign_xau_follow_flat` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `exog_london_fx_cosign_xau_follow_flat` |
+| **charter v4** | SHA `3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5` |
+| **screen path** | `results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/` · `report.json` SHA `71d762cca55528f2db719baed27ad5853a2d1f375a9e6db1ee8ec8aba5315ad3` |
+| **disposition** | **SCREEN_FAIL** · soft_passers **0** · **null_armed=false** · sealed-null **r1_burned=false** (SCREEN_STARTED only; null never armed) |
+| **pooled** | n **885** · PF **0.9027** · NP **−2295.10** · DD **26.41%** |
+| **xau_cosign_at_tstar** | n **608** · PF **0.8868** · NP **−1842.08** · DD **23.07%** |
+| **xau_not_cosign_at_tstar (fresh)** | n **277** · PF **0.9381** · NP **−453.02** · DD **8.49%** — clears n≥20 and DD≤25; fails PF≥1.1 and NP>0 |
+| **package** | `4f44b452…-ee2a993fb5b1befd` |
+| **runner** | `scripts/xau_exogenous_predictor_screen.py` + synthetic smoke (`tests/test_exogenous_predictor_screen.py`) |
+| **null / paper / live** | **forbidden** — null not armed; do not revive this family_id |
+| **do not** | retune / lower n_trades_min · sealed null · holdout peek · report pooled-only as passer · reopen this screen r1 |
+
+Standing: stratified gate did its job (fresh n=277). Follow thesis does **not** carry edge on events the closed fade family never covered. Closed freezes stay closed. Next research needs a **genuinely new** `family_id` and freeze-before-peek.
+
+---
+
 ## 2026-08-18 — Phase D **merged on main** · module + fixtures green · enforcement live
 
 | Field | Value |
