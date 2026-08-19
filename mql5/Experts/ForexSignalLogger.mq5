@@ -4,7 +4,9 @@
 //|                                                                  |
 //| Attach to the same chart as the indicator you want to monitor.   |
 //| Default: ForexHtfPivotsFib buffer 8.                             |
-//| For ForexIndicatorTemplate use buffer 9 and name that indicator. |
+//| UsIndexSessionScalp: buffer 8, InpMaxSpreadPips=0.               |
+//| BtcTrendPullback: buffer 7, InpMaxSpreadPips=0.                  |
+//| ForexIndicatorTemplate: buffer 9.                                |
 //|                                                                  |
 //| Output:                                                           |
 //|  • Experts tab Print lines                                        |
