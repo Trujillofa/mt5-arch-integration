@@ -1,0 +1,34 @@
+{
+  "H": 3,
+  "atr_period": 14,
+  "atr_reference_bar": "T_star",
+  "charter_version": 4,
+  "coincident_hours_server": [
+    7,
+    8,
+    9
+  ],
+  "dd_convention": "stratum_ordered_pnl_subsequence_rebased_to_start_balance",
+  "family_id": "exog_london_fx_cosign_xau_follow_flat",
+  "harness.kind": "multi_instrument_exogenous_predictor_v1",
+  "n_free_knobs": 0,
+  "null.implementation_id": "conditional_fixed_signal_events_fixed_trades_v1",
+  "phase": "D_fixtures_only_no_screen",
+  "prohibited_runners": [
+    "scripts/xau_family_null_maxstat.py",
+    "scripts/xau_sealed_family_cycle.py",
+    "scripts/xau_multi_instrument_joint_screen.py"
+  ],
+  "search_cardinality": 1,
+  "sl_atr": 1.5,
+  "soft": {
+    "max_drawdown_pct_max": 25.0,
+    "n_trades_min": 20,
+    "net_profit_gt": 0.0,
+    "profit_factor_min": 1.1,
+    "scope": "traded_book_only",
+    "used_for": "null_n_passers_primary"
+  },
+  "stratified_required": true,
+  "tp_atr": 2.0
+}

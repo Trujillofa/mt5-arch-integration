@@ -1,0 +1,66 @@
+{
+  "classic": {
+    "max_drawdown_pct_max": 10.0,
+    "max_drawdown_strict_lt": true,
+    "n_trades_min": 20,
+    "profit_factor_min": 1.5,
+    "profit_factor_strict_gt": true,
+    "scope": "traded_book_only",
+    "used_for": "report_only",
+    "win_rate_min": 55.0,
+    "win_rate_strict_gt": true
+  },
+  "description": {
+    "classic": "n>=20, PF>1.5, WR>55.0, DD<10.0",
+    "soft": "n>=20, PF>=1.1, DD<=25.0, NP>0.0"
+  },
+  "primary_n_passers": "soft",
+  "soft": {
+    "max_drawdown_pct_max": 25.0,
+    "n_trades_min": 20,
+    "net_profit_gt": 0.0,
+    "profit_factor_min": 1.1,
+    "scope": "traded_book_only",
+    "used_for": "null_n_passers_primary"
+  },
+  "stratified_required": {
+    "enforced_by": {
+      "locus": "scripts/xau_family_exog_london_fx_cosign_xau_follow_flat.py",
+      "module_obligation": "The family module MUST evaluate both strata and MUST fail closed (raise / refuse the run) if the stratified evaluation is absent, empty, or unreportable. Reporting a pooled-only soft passer is a protocol violation.",
+      "reason": "gates.primary_n_passers is locked to the literal 'soft' by the merged Phase B validator (scripts/xau_charter_protocol.py:755, :1182) and the primary gate resolver reads only that field (:1495, :1589). The stratified requirement therefore cannot be expressed through primary_n_passers without a Phase B protocol change, which is out of scope for this freeze.",
+      "report_obligation": "The screen artifact must emit n, PF, NP, DD per stratum plus pooled, so the fresh-evidence stratum is auditable independently."
+    },
+    "metric_basis": {
+      "asymmetry_declared": "Pooled DD and per-stratum DD are computed on DIFFERENT accounting bases and compared against the SAME gates.soft.max_drawdown_pct_max. This asymmetry is unavoidable \u2014 a stratum has no pooled MTM path of its own \u2014 and is declared here rather than resolved.",
+      "declared_before_scoring": "This basis was fixed during Phase D implementation, before any develop screen; the stratum split is unknown at declaration time.",
+      "expected_bindingness": "The stratum equity path is strictly shorter than pooled and therefore has weakly less room to accumulate a peak-to-trough excursion. The DD component is expected to bind LESS on the fresh stratum than on pooled. The effectively binding components of the fresh-stratum soft gate are n_trades_min, profit_factor_min, and net_profit_gt.",
+      "n_trades_min_applies_to_stratum": true,
+      "n_trades_min_consequence": "gates.soft.n_trades_min applies to the xau_not_cosign_at_tstar stratum on its OWN trade count. A fresh stratum holding fewer than n_trades_min trades FAILS the stratum gate, and per resolution_order the family is SCREEN_FAIL with the null unarmed and r1 unburned. This is not a waiver, is not grounds for falling back to the pooled gate, and is not grounds for lowering n_trades_min.",
+      "pooled_dd_method": "full_mark_to_market_equity_path_from_exogenous_harness_real_path",
+      "stratum_dd_detail": "Per-stratum max_drawdown_pct is the drawdown of that stratum's own ordered pnl subsequence, with equity path reconstructed from that subsequence alone starting at fixed.start_balance. Trades belonging to the other stratum are omitted, not held flat.",
+      "stratum_dd_method": "stratum_ordered_pnl_subsequence_rebased_to_start_balance"
+    },
+    "rationale": "The xau_cosign_at_tstar stratum is the sign-inverse of an already-observed develop result and carries no fresh evidence. Only the xau_not_cosign stratum contains events never covered by the closed family's predicate.",
+    "resolution_order": {
+      "note": "Pooled-only pass is NOT sufficient and must not be reported as a passer.",
+      "on_both_pass": "One soft passer; proceed to sealed null under exogenous accounting; provisional PASS only if p <= alpha_adjusted = 0.05/9.",
+      "on_stratum_fail": "SCREEN_FAIL \u2014 the null is NOT armed, r1 stays unburned, no sealed cycle.",
+      "rule": "A soft pass requires BOTH the pooled soft gate AND the xau_not_cosign_at_tstar stratum soft gate."
+    },
+    "rule": "soft primary must pass on the xau_not_cosign_at_tstar stratum, not only pooled",
+    "scope": "traded_book_only",
+    "strata": [
+      "xau_cosign_at_tstar",
+      "xau_not_cosign_at_tstar"
+    ],
+    "stratum_definition": {
+      "predicate_isolation": "Reporting label ONLY. This quantity must never enter the entry predicate, sizing, SL/TP, or exit. XAU's T* bar stays outside the signal predicate as required by the hypothesis.",
+      "s_reference": "s is the FX predictor cosign of the same event",
+      "ternary_note": "The variable is ternary (+s, -s, 0); the strata are binary. Zero-return XAU T* bars are assigned to xau_not_cosign_at_tstar. This assignment is fixed here, before implementation, and is not an implementation choice.",
+      "variable": "sign(close_XAU(T*) - open_XAU(T*)) on the traded series, on calendar I, at T* only",
+      "xau_cosign_at_tstar": "XAU T* open->close is NONZERO and its sign equals s",
+      "xau_not_cosign_at_tstar": "everything else \u2014 explicitly INCLUDING an exactly-zero XAU T* open->close, and including sign equal to -s"
+    },
+    "used_for": "freeze_gate_primary"
+  }
+}
