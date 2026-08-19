@@ -72,6 +72,10 @@ results/btc_h1_trend_pullback_*_trades.json
 results/btc_h1_range_vol_breakout_*_full.json
 results/btc_h1_range_vol_breakout_*_trades.json
 
+# Tick tapes (fat). Synthetic fixtures under tests/fixtures/ticks/ stay tracked.
+results/tick_data/
+docs/research/timescale/data/
+
 # Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
 tests/fixtures/mql5_parity/live_*/
 

@@ -4,13 +4,15 @@
 |-------|--------|
 | **Date** | 2026-08-19 |
 | **Trigger** | Eight US100 holdout blocks failed a 20-point RT / $10k / 1-lot / 1% median trade-day book |
-| **Picked** | **Path 1b — BTCUSD H1 structural pullback** |
-| **search_id** | `btc_h1_trend_pullback_v1` |
-| **Lock** | `results/btc_h1_trend_pullback_v1_lock.json` |
+| **Sealed** | US100 v1–v8 · `btc_h1_trend_pullback_v1` · `btc_h1_range_vol_breakout_v1` (Config #5 holdout n=37&lt;40) |
+| **Now** | **Path 2 started — Timescale true CVD (infra only)** |
+| **search_id** | `timescale_true_cvd_v1` |
+| **Lock** | `results/timescale_true_cvd_v1_lock.json` |
+| **Memo** | `docs/research/TIMESCALE-TRUE-CVD-DESIGN.md` |
 | **promote / live_go** | **no / false** |
 | **XAU status** | `RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS` — **not edited** |
 
-US100 facts stay frozen. This is not a US100 continuation and not XAU Phase E.
+US100 and both BTC H1 PA screens stay frozen. This is not a US100 continuation, not a BTC 16+16 retune, and not XAU Phase E.
 
 ---
 
@@ -55,13 +57,14 @@ US100 facts stay frozen. This is not a US100 continuation and not XAU Phase E.
 
 | Probe | Finding |
 |-------|---------|
-| In this repo | **No** Timescale, no compose, no tick schema. US100 v4–v8 locks: “charter excludes; no aggressor-tick store” |
-| Tick folders | Wine prefixes have `ticks/BTCUSD` and `ticks/US100` — raw MT5 tick caches, **not** a research store |
-| First increment | Would be design + lock + sample prototype, not a screen. Infra-heavy vs an unscreened BTC thesis |
+| In this repo (before this increment) | **No** Timescale, no compose, no tick schema. US100 v4–v8 locks: “charter excludes; no aggressor-tick store” |
+| Tick folders | Wine prefixes have `ticks/BTCUSD` and `ticks/US100` — raw MT5 `.tkc` caches, **not** a research store |
+| Parseable MqlTick CSV | **None.** Bridge / `Files/` dumps are OHLC. |
+| First increment | Design + lock + unused SQL/compose sketch + synthetic-fixture parser. Not a screen. |
 
-**Defer.** Right architecture for *true* NY-open CVD later. Not the next executable workflow while BTC H1 pullback has never been frozen.
+**Started (2026-08-19).** BTC 16+16 and US100 v1–v8 are sealed, so the leftover vector is this store. Instruments **TBD** — not a silent US100 restart. Timescale **not** stood up. `.tkc` **not** parsed. promote=no.
 
-**Would have picked it if:** no BTC/XAU-new-thesis path, **and** a real first increment (schema + ingest plan + lock + local sample) was doable without standing up production.
+**Would have kept deferring if:** a last-trade tape already existed and the next job was an OHLCV screen. It does not.
 
 ### Path 3 — cTrader pivot for US100
 
@@ -107,4 +110,24 @@ Screen: `results/btc_h1_range_vol_breakout_v1.md`. Develop eligible **4** · sof
 
 **vs v1:** the EMA-starve falsifier did **not** repeat. The economic / holdout-n falsifier still holds.
 
-**Leftover:** Timescale true CVD (infra). Do not start it from this screen. Do not reopen US100, sealed XAU, or v1’s 16.
+**Leftover (executed as Path 2 infra, not from this screen):** `timescale_true_cvd_v1`. Do not reopen US100, sealed XAU, or either BTC 16. Do not screen OHLCV under the Timescale id.
+
+---
+
+## Path 2 — executed increment (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Picked** | **`timescale_true_cvd_v1`** after both BTC H1 PA screens sealed |
+| **Lock / grill / memo** | `results/timescale_true_cvd_v1_lock.json` · `results/timescale_true_cvd_v1_grill.md` · `docs/research/TIMESCALE-TRUE-CVD-DESIGN.md` |
+| **Thesis** | Store broker MqlTick bid/ask/last/volume/flags; CVD = signed last-trade volume. Not `tick_volume`. |
+| **Not** | BTC retune · US100 v9 · XAU Phase E · compose up · `.tkc` parse · OHLCV grid |
+| **Ticks on disk** | `.tkc` caches yes; research store **no**; parseable dump **no** |
+| **promote / live_go** | **no / false** |
+| **XAU status** | unchanged — **not edited** |
+
+### What was not stood up
+
+TimescaleDB, `docker compose up`, CopyTicks export, any develop screen.
+
+**Leftover:** actual ingest run later (live-safe CopyTicks + populate audit). Then pick an instrument or stop. Do not screen OHLCV.

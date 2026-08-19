@@ -1,0 +1,7 @@
+time_msc,seq,bid,ask,last,volume,volume_real,flags,symbol,broker,source,server_utc_offset_sec
+1710000000000,0,100.00,100.02,0,0,0,6,SYNTH,none,synthetic,10800
+1710000000100,0,100.01,100.03,0,0,0,6,SYNTH,none,synthetic,10800
+1710000000200,0,100.01,100.03,100.03,0,1.5,56,SYNTH,none,synthetic,10800
+1710000000300,0,100.02,100.04,100.02,0,0.5,72,SYNTH,none,synthetic,10800
+1710000000400,0,100.02,100.04,100.04,2,0,8,SYNTH,none,synthetic,10800
+1710000000500,0,100.00,100.04,100.01,0,1.0,8,SYNTH,none,synthetic,10800

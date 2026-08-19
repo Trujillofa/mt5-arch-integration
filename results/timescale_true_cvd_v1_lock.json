@@ -1,0 +1,90 @@
+{
+  "search_id": "timescale_true_cvd_v1",
+  "architecture_id": "timescale_true_cvd_v1",
+  "kind": "infra_architecture",
+  "path": "2",
+  "locked_at": "2026-08-19T15:30:00-05:00",
+  "predecessor": "btc_h1_range_vol_breakout_v1",
+  "predecessor_note": "BTC H1 PA screens sealed (v1 2026 EMA starve; v1 range-vol Config #5 holdout n=37<40, PF 1.17, +$32). US100 v1–v8 sealed. This increment is the leftover Path 2 architecture, not a retune.",
+  "question": "Can this research layer store broker MqlTick rows (bid/ask/last/volume/flags at millisecond grain) and compute signed-volume CVD from the last-trade tape — not from M5/H1 tick_volume — without promoting, screening OHLCV, or standing up a production database?",
+  "instruments": "TBD",
+  "symbol": null,
+  "broker": null,
+  "tf": "tick",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "n_configs_expected": 0,
+  "grid_note": "Not a screen. Zero configs. Do not add a develop grid in this increment.",
+  "selection_end": null,
+  "holdout_start": null,
+  "holdout_rule": "No selection window. A later ingest or screen must freeze its own split. Do not reuse the US100 June-burned split. Do not reuse a BTC H1 holdout as if ticks were already joined.",
+  "not_in_scope": [
+    "Retune btc_h1_trend_pullback_v1 or btc_h1_range_vol_breakout_v1 (frozen 16+16)",
+    "Reopen US100 session-scalp v1–v8 or Timescale-as-US100-M5-proxy",
+    "Claim true CVD from M5/H1 tick_volume or sign(close-open)*tick_volume",
+    "Parse Wine Bases/**/ticks/*.tkc or ticks.dat as a research store",
+    "Stand up / docker compose up Timescale, or use crypto-agent :15432",
+    "Edit results/xau_loop_status.md or treat this as XAU Phase E",
+    "OrderSend, --live, kill ~/.mt5-fpmarkets / terminal64.exe",
+    "Run scripts/19-run-htf-fib-backtest.sh or ExportInstrumentHistory.mq5",
+    "Import research into src/mt5_arch; change the file-bridge default",
+    "cTrader / Dukascopy candle pipeline as this store",
+    "Fat tick dumps in git"
+  ],
+  "falsifiers": [
+    "Candidate symbol's CopyTicks tape never has last>0 and (volume>0 or volume_real>0 or BUY/SELL flags) → true CVD impossible; do not silently degrade to OHLCV proxy",
+    "Any published CVD series is sign(close-open)*tick_volume or bar tick_volume → protocol breach; discard",
+    ".tkc / ticks.dat treated as the store or reverse-engineered into a screen → discard",
+    "Timescale compose started, or crypto-agent DB reused, without an explicit later increment → out of charter for v1",
+    "Instrument silently set to US100 / US30 / US500 to restart the sealed session-scalp → discard",
+    "promote or live_go flipped true → tamper",
+    "OHLCV develop grid added under this search_id → this is infra, not a family screen"
+  ],
+  "tick_inventory_2026_08_19": {
+    "research_store": "none",
+    "parseable_mql_tick_csv": "none",
+    "repo_timescale_compose": "sketch only, unused",
+    "repo_docker_compose_before_this_increment": false,
+    "wine_tkc_exists": true,
+    "wine_tkc_is_research_store": false,
+    "wine_tkc_note": "MetaQuotes compressed monthly caches (UTF-16 copyright header). Not MqlTick CSV. Do not parse this increment.",
+    "prefixes_seen": {
+      "fpmarkets": {
+        "server": "FPMarketsSC-Live",
+        "examples": [
+          "ticks/BTCUSD/{202607,202608}.tkc + ticks.dat",
+          "ticks/US100/202608.tkc + ticks.dat",
+          "ticks/US30/202608.tkc",
+          "ticks/US500/ticks.dat (dir exists; not permission to screen US500)"
+        ]
+      },
+      "vantage": "ticks/BTCUSD/202608.tkc among others",
+      "exness": "ticks/BTCUSDm/202608.tkc among others",
+      "wsf": "ticks/ dirs exist; no .tkc listed at survey depth"
+    },
+    "mql5_files_tick_csv": "none under FP Files/; Vantage Files/ has OHLCV history CSVs only",
+    "bridge": "Mt5ArchBridge writes OHLC snapshots; no CopyTicks",
+    "unrelated_running_timescale": "crypto-agent-timescaledb-1 on 127.0.0.1:15432 — different repo; do not use"
+  },
+  "cvd": {
+    "definition": "Cumulative sum of signed last-trade volume from the tick tape.",
+    "true_signed_volume": "TICK_FLAG_BUY → +qty; TICK_FLAG_SELL → −qty; qty = volume_real if >0 else volume if >0 else unset.",
+    "inferred_last_vs_bbo": "If LAST set but no BUY/SELL: last>=ask buy, last<=bid sell, else last vs mid. Labeled inferred, not true.",
+    "quote_only": "BID/ASK updates with last==0 and qty unset do not add to true CVD. They update BBO only.",
+    "not": "M5/H1 tick_volume, real_volume on bars, VWAP typical*tick_volume, US100 tick_proxy_cvd"
+  },
+  "absorption_later": {
+    "not_this_increment": true,
+    "would_require": "last-trade ticks at a pre-registered session node",
+    "working_test": "Price makes a new session-node extreme while CVD does not confirm, or |ΔCVD| is large while price stalls inside a small range. Must be frozen on a new search_id after ingest exists."
+  },
+  "stood_up": {
+    "timescaledb": false,
+    "docker_compose_up": false,
+    "copyticks_export": false,
+    "ohlcv_screen": false
+  },
+  "leftover": "Actual CopyTicks dump (live-safe, later increment). Last-trade populate audit. Instrument pick. Do not screen OHLCV under this id.",
+  "note": "Path 2 first increment. Research-layer infra only. promote=no. Instruments TBD — not a silent US100 restart. XAU status file not edited."
+}

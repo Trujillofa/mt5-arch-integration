@@ -1,0 +1,25 @@
+# timescale_true_cvd_v1 — UNSTARTED sketch.
+# Do not run `docker compose up` unless the user explicitly asks.
+# Localhost only. Port 15433 avoids crypto-agent Timescale on 127.0.0.1:15432.
+#
+# This file is reviewable infra, not a running service.
+
+services:
+  timescale-true-cvd:
+    image: timescale/timescaledb:2.17.2-pg16
+    container_name: mt5-arch-timescale-true-cvd
+    restart: "no"
+    ports:
+      - "127.0.0.1:15433:5432"
+    environment:
+      POSTGRES_USER: cvd
+      POSTGRES_DB: timescale_true_cvd
+      POSTGRES_PASSWORD: ${CVD_PG_PASSWORD:-changeme_local_only}
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cvd -d timescale_true_cvd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
