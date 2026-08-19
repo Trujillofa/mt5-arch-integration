@@ -1,0 +1,703 @@
+{
+  "search_id": "btc_h1_range_vol_breakout_v1",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "selection_end": "2026-01-01",
+  "holdout_start": "2026-01-01",
+  "start_balance": 10000.0,
+  "lots": 0.01,
+  "slippage_points": 250.0,
+  "n_configs": 16,
+  "n_eligible": 4,
+  "n_develop_soft_pass": 1,
+  "n_top20_holdout_soft_pass": 0,
+  "n_holdout_soft_pass_any": 1,
+  "n_holdout_with_trades": 16,
+  "elapsed_sec": 2.99,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "lots": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 250.0,
+    "max_spread_points": 4000.0
+  },
+  "bars_h1": 29035,
+  "from": "2021-12-20 21:00:00+00:00",
+  "to": "2026-08-18 15:00:00+00:00",
+  "data_source": "FP native H1.hc via read_mt5_hc (H4 not used)",
+  "best_develop": {
+    "params": {
+      "family": "h1_range_vol_breakout",
+      "range_n": 20,
+      "squeeze_max": 0.9,
+      "expand_min": 1.25,
+      "sl_atr": 2.0,
+      "tp_rr": 2.0,
+      "flatten_weekend": true,
+      "allow_shorts": true
+    },
+    "develop": {
+      "trades": 293,
+      "wins": 122,
+      "losses": 171,
+      "win_rate": 0.41638225255972694,
+      "net_pnl": 143.97131560015845,
+      "avg_trade": 0.4913696778162405,
+      "profit_factor": 1.112677098621477,
+      "max_dd": -167.9124700302708,
+      "expectancy": 0.4913696778162405,
+      "longs": 150,
+      "shorts": 143,
+      "median_mae": 323.75,
+      "median_mfe": 495.2700000000041,
+      "trade_days": 291,
+      "median_daily_pct": -0.0002265221541965802,
+      "mean_daily_pct": 4.947467890039808e-05,
+      "trade_months": 48,
+      "median_monthly_pct": 0.0004710640272787343,
+      "mean_monthly_pct": 0.00029994024083366335,
+      "max_dd_pct": 0.01679124700302708,
+      "soft_pass": true,
+      "goal_both": false
+    },
+    "holdout": {
+      "trades": 37,
+      "wins": 16,
+      "losses": 21,
+      "win_rate": 0.43243243243243246,
+      "net_pnl": 32.100339828978,
+      "avg_trade": 0.8675767521345406,
+      "profit_factor": 1.1743684463466726,
+      "max_dd": -60.026213122201554,
+      "expectancy": 0.8675767521345406,
+      "longs": 16,
+      "shorts": 21,
+      "median_mae": 453.5,
+      "median_mfe": 918.5,
+      "trade_days": 37,
+      "median_daily_pct": -0.00048536264916614156,
+      "mean_daily_pct": 8.675767521345405e-05,
+      "trade_months": 8,
+      "median_monthly_pct": -4.886625033382569e-05,
+      "mean_monthly_pct": 0.0004012542478622252,
+      "max_dd_pct": 0.006002621312220156,
+      "soft_pass": false,
+      "goal_both": false
+    },
+    "develop_score": 1113.1684682992932,
+    "holdout_trades": 37,
+    "index": 5
+  },
+  "best_raw_develop": {
+    "params": {
+      "family": "h1_range_vol_breakout",
+      "range_n": 20,
+      "squeeze_max": 0.75,
+      "expand_min": 1.75,
+      "sl_atr": 2.0,
+      "tp_rr": 2.0,
+      "flatten_weekend": true,
+      "allow_shorts": true
+    },
+    "develop": {
+      "trades": 18,
+      "wins": 7,
+      "losses": 11,
+      "win_rate": 0.3888888888888889,
+      "net_pnl": 48.641655359534035,
+      "avg_trade": 2.70231418664078,
+      "profit_factor": 2.406557359748324,
+      "max_dd": -18.597691259809544,
+      "expectancy": 2.70231418664078,
+      "longs": 9,
+      "shorts": 9,
+      "median_mae": 170.97000000000116,
+      "median_mfe": 230.0350000000035,
+      "trade_days": 18,
+      "median_daily_pct": -0.0001983590429198638,
+      "mean_daily_pct": 0.00027023141866407797,
+      "trade_months": 15,
+      "median_monthly_pct": -0.00021430999999999417,
+      "mean_monthly_pct": 0.0003242777023968936,
+      "max_dd_pct": 0.0018597691259809544,
+      "soft_pass": false,
+      "goal_both": false
+    },
+    "holdout": {
+      "trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "win_rate": 0.3333333333333333,
+      "net_pnl": -8.71492962602395,
+      "avg_trade": -2.9049765420079834,
+      "profit_factor": 0.5480074242492154,
+      "max_dd": -19.281134455688736,
+      "expectancy": -2.9049765420079834,
+      "longs": 1,
+      "shorts": 2,
+      "median_mae": 388.40000000000146,
+      "median_mfe": 772.75,
+      "trade_days": 3,
+      "median_daily_pct": -0.0008263563593294456,
+      "mean_daily_pct": -0.00029049765420079837,
+      "trade_months": 2,
+      "median_monthly_pct": -0.00043574648130119767,
+      "mean_monthly_pct": -0.00043574648130119767,
+      "max_dd_pct": 0.0019281134455688736,
+      "soft_pass": false,
+      "goal_both": false
+    },
+    "develop_score": -1000000000.0,
+    "holdout_trades": 3,
+    "index": 3
+  },
+  "grid": [
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 27,
+        "win_rate": 0.37037037037037035,
+        "profit_factor": 1.6873513649766767,
+        "net_pnl": 33.09095312735528,
+        "max_dd_pct": 0.0020808283681267225,
+        "median_daily_pct": -0.0001634387395918893,
+        "longs": 13,
+        "shorts": 14,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 3,
+        "win_rate": 0.3333333333333333,
+        "profit_factor": 0.541009849379563,
+        "net_pnl": -6.678697219517926,
+        "max_dd_pct": 0.0014550850841766514,
+        "median_daily_pct": -0.0006242672694970825,
+        "longs": 1,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 25,
+        "win_rate": 0.44,
+        "profit_factor": 2.391052140788882,
+        "net_pnl": 67.5507091110622,
+        "max_dd_pct": 0.0024600191301097423,
+        "median_daily_pct": -0.0001837997663838776,
+        "longs": 11,
+        "shorts": 14,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 3,
+        "win_rate": 0.3333333333333333,
+        "profit_factor": 0.5480074242492154,
+        "net_pnl": -8.71492962602395,
+        "max_dd_pct": 0.0019281134455688736,
+        "median_daily_pct": -0.0008263563593294456,
+        "longs": 1,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 19,
+        "win_rate": 0.42105263157894735,
+        "profit_factor": 2.3962305905889365,
+        "net_pnl": 37.50631030956895,
+        "max_dd_pct": 0.0014218493444857195,
+        "median_daily_pct": -0.0001419773247879073,
+        "longs": 10,
+        "shorts": 9,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 3,
+        "win_rate": 0.3333333333333333,
+        "profit_factor": 0.541009849379563,
+        "net_pnl": -6.678697219517926,
+        "max_dd_pct": 0.0014550850841766514,
+        "median_daily_pct": -0.0006242672694970825,
+        "longs": 1,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 18,
+        "win_rate": 0.3888888888888889,
+        "profit_factor": 2.406557359748324,
+        "net_pnl": 48.641655359534035,
+        "max_dd_pct": 0.0018597691259809544,
+        "median_daily_pct": -0.0001983590429198638,
+        "longs": 9,
+        "shorts": 9,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 3,
+        "win_rate": 0.3333333333333333,
+        "profit_factor": 0.5480074242492154,
+        "net_pnl": -8.71492962602395,
+        "max_dd_pct": 0.0019281134455688736,
+        "median_daily_pct": -0.0008263563593294456,
+        "longs": 1,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 307,
+        "win_rate": 0.38762214983713356,
+        "profit_factor": 0.990604164659545,
+        "net_pnl": -10.528808330960333,
+        "max_dd_pct": 0.01898964024198199,
+        "median_daily_pct": -0.00021236562567501267,
+        "longs": 157,
+        "shorts": 150,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 46,
+        "win_rate": 0.41304347826086957,
+        "profit_factor": 1.1427772920510375,
+        "net_pnl": 26.739559026187756,
+        "max_dd_pct": 0.005815150081128109,
+        "median_daily_pct": -0.0005278429687030322,
+        "longs": 20,
+        "shorts": 26,
+        "soft_pass": true
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 293,
+        "win_rate": 0.41638225255972694,
+        "profit_factor": 1.112677098621477,
+        "net_pnl": 143.97131560015845,
+        "max_dd_pct": 0.01679124700302708,
+        "median_daily_pct": -0.0002265221541965802,
+        "longs": 150,
+        "shorts": 143,
+        "soft_pass": true
+      },
+      "holdout": {
+        "trades": 37,
+        "win_rate": 0.43243243243243246,
+        "profit_factor": 1.1743684463466726,
+        "net_pnl": 32.100339828978,
+        "max_dd_pct": 0.006002621312220156,
+        "median_daily_pct": -0.00048536264916614156,
+        "longs": 16,
+        "shorts": 21,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 242,
+        "win_rate": 0.4049586776859504,
+        "profit_factor": 1.0839636968815456,
+        "net_pnl": 68.32058032781426,
+        "max_dd_pct": 0.012340240313019462,
+        "median_daily_pct": -0.00019071575025377387,
+        "longs": 129,
+        "shorts": 113,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 38,
+        "win_rate": 0.4473684210526316,
+        "profit_factor": 1.3451726898478298,
+        "net_pnl": 49.77662741005004,
+        "max_dd_pct": 0.004608082763515471,
+        "median_daily_pct": -0.0003967709224774975,
+        "longs": 15,
+        "shorts": 23,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 245,
+        "win_rate": 0.3877551020408163,
+        "profit_factor": 0.9836986619737541,
+        "net_pnl": -17.64952461157374,
+        "max_dd_pct": 0.019630167059766633,
+        "median_daily_pct": -0.00026149432365217253,
+        "longs": 132,
+        "shorts": 113,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 35,
+        "win_rate": 0.4857142857142857,
+        "profit_factor": 1.4358461694639948,
+        "net_pnl": 68.19289245276904,
+        "max_dd_pct": 0.0034083663147927304,
+        "median_daily_pct": -1.6949999999997088e-05,
+        "longs": 13,
+        "shorts": 22,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 13,
+        "win_rate": 0.23076923076923078,
+        "profit_factor": 1.2782625265154992,
+        "net_pnl": 7.510741810270371,
+        "max_dd_pct": 0.0014433107592897014,
+        "median_daily_pct": -0.0001941965205444103,
+        "longs": 6,
+        "shorts": 7,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 2,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -14.550850841766515,
+        "max_dd_pct": 0.0006242672694970825,
+        "median_daily_pct": -0.0007275425420883257,
+        "longs": 0,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 13,
+        "win_rate": 0.23076923076923078,
+        "profit_factor": 1.325657354535569,
+        "net_pnl": 11.336422413693828,
+        "max_dd_pct": 0.0018888876790529273,
+        "median_daily_pct": -0.00023821897876499297,
+        "longs": 6,
+        "shorts": 7,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 2,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -19.281134455688736,
+        "max_dd_pct": 0.0008263563593294459,
+        "median_daily_pct": -0.0009640567227844367,
+        "longs": 0,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 12,
+        "win_rate": 0.25,
+        "profit_factor": 1.5720614340672712,
+        "net_pnl": 12.55513315419294,
+        "max_dd_pct": 0.001279872019697812,
+        "median_daily_pct": -0.00018849412730907798,
+        "longs": 6,
+        "shorts": 6,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 2,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -14.550850841766515,
+        "max_dd_pct": 0.0006242672694970825,
+        "median_daily_pct": -0.0007275425420883257,
+        "longs": 0,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 12,
+        "win_rate": 0.25,
+        "profit_factor": 1.640311105701703,
+        "net_pnl": 18.014044205590597,
+        "max_dd_pct": 0.0016759693595970768,
+        "median_daily_pct": -0.00022626448938249357,
+        "longs": 6,
+        "shorts": 6,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 2,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -19.281134455688736,
+        "max_dd_pct": 0.0008263563593294459,
+        "median_daily_pct": -0.0009640567227844367,
+        "longs": 0,
+        "shorts": 2,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 191,
+        "win_rate": 0.36649214659685864,
+        "profit_factor": 0.8732364936236914,
+        "net_pnl": -91.0938074425306,
+        "max_dd_pct": 0.019864051424853785,
+        "median_daily_pct": -0.00021984164869258115,
+        "longs": 102,
+        "shorts": 89,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 31,
+        "win_rate": 0.3870967741935484,
+        "profit_factor": 0.8413216372021034,
+        "net_pnl": -20.586208096183064,
+        "max_dd_pct": 0.0041026827025698685,
+        "median_daily_pct": -0.0005222245370054443,
+        "longs": 14,
+        "shorts": 17,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 195,
+        "win_rate": 0.37948717948717947,
+        "profit_factor": 0.915175118191542,
+        "net_pnl": -77.95446483002594,
+        "max_dd_pct": 0.023342998153032972,
+        "median_daily_pct": -0.0002873715471744867,
+        "longs": 104,
+        "shorts": 91,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 29,
+        "win_rate": 0.3793103448275862,
+        "profit_factor": 0.7818262594542635,
+        "net_pnl": -34.00748123454641,
+        "max_dd_pct": 0.00565891083864484,
+        "median_daily_pct": -0.0006902993826739257,
+        "longs": 12,
+        "shorts": 17,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 155,
+        "win_rate": 0.4,
+        "profit_factor": 1.0676779399768603,
+        "net_pnl": 34.960691254030955,
+        "max_dd_pct": 0.01121281775404168,
+        "median_daily_pct": -0.0001924561353990921,
+        "longs": 84,
+        "shorts": 71,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 25,
+        "win_rate": 0.44,
+        "profit_factor": 1.0941798946568508,
+        "net_pnl": 8.62086519083164,
+        "max_dd_pct": 0.00398324402384753,
+        "median_daily_pct": -0.0003885918449549936,
+        "longs": 10,
+        "shorts": 15,
+        "soft_pass": false
+      }
+    },
+    {
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 165,
+        "win_rate": 0.4,
+        "profit_factor": 1.0857823235371429,
+        "net_pnl": 60.01352670674049,
+        "max_dd_pct": 0.013952425590289143,
+        "median_daily_pct": -0.00024995762034177283,
+        "longs": 89,
+        "shorts": 76,
+        "soft_pass": false
+      },
+      "holdout": {
+        "trades": 24,
+        "win_rate": 0.4583333333333333,
+        "profit_factor": 1.0498456820304194,
+        "net_pnl": 5.248949814807135,
+        "max_dd_pct": 0.003873485464927508,
+        "median_daily_pct": -0.00024750921628751164,
+        "longs": 9,
+        "shorts": 15,
+        "soft_pass": false
+      }
+    }
+  ],
+  "note": "Path 1b.2. H1 range close-through + ATR squeeze/expand. No EMA/H4. 0.01 lot / 250 pt slip. 1%/20% is not a gate. promote=no."
+}

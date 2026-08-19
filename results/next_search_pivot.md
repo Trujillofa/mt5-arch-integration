@@ -86,3 +86,25 @@ Execute `btc_h1_trend_pullback_v1`: Python port of `BtcTrendPullback` (H4 comple
 ## Executed (2026-08-19)
 
 Screen ran. `results/btc_h1_trend_pullback_v1.md`. Develop: 8 eligible, 5 soft (best PF 1.32, n=56, NP +$115, median day **−0.020%**). Holdout soft **0 / 16**. Long-only winner had **0** 2026 signals (3928 H1 bars exist). promote=no. Do not retune the 16.
+
+---
+
+## Path 1b.2 — new BTC mechanism, no EMA (2026-08-19)
+
+| Field | Value |
+|-------|--------|
+| **Picked** | **`btc_h1_range_vol_breakout_v1`** after v1’s 2026 EMA starve |
+| **Lock / grill** | `results/btc_h1_range_vol_breakout_v1_lock.json` · `results/btc_h1_range_vol_breakout_v1_grill.md` (frozen before grid) |
+| **Thesis** | Closed-bar H1 **close-through** of prior-N high/low only after ATR14/ATR50 squeeze at *i−1* and TR[*i*] expansion. Both sides. **No H4, no EMA/RSI/MACD.** |
+| **Not** | v1-minus-EMA · XAU Donchian turtle · liquidity-sweep labels · Timescale |
+| **Book / split** | Same as v1: $10k / 0.01 lot / 250 pt slip / select `< 2026-01-01` |
+| **promote / live_go** | **no / false** |
+| **XAU status** | unchanged — **not edited** |
+
+### Executed
+
+Screen: `results/btc_h1_range_vol_breakout_v1.md`. Develop eligible **4** · soft **1** (best PF **1.11**, n=293, NP +$144, median day **−0.023%**). That row’s holdout: n=**37** (16 long / 21 short), PF 1.17, NP +$32 — **n<40**, not a holdout soft. Holdout n>0 on **16/16** (2026 fired). Any-row holdout soft = 1 is a develop **fail** (row 4); do not select it. promote=no. Do not retune the 16.
+
+**vs v1:** the EMA-starve falsifier did **not** repeat. The economic / holdout-n falsifier still holds.
+
+**Leftover:** Timescale true CVD (infra). Do not start it from this screen. Do not reopen US100, sealed XAU, or v1’s 16.

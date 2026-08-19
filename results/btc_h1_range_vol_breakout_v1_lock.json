@@ -1,0 +1,116 @@
+{
+  "search_id": "btc_h1_range_vol_breakout_v1",
+  "locked_at": "2026-08-19T11:05:00-05:00",
+  "path": "1b.2",
+  "predecessor": "btc_h1_trend_pullback_v1",
+  "predecessor_note": "v1 sealed. Do not retune its 16 configs. Do not reuse H4 EMA stack / H1 reclaim. This is a new search_id, not v1-minus-EMA.",
+  "selection_end": "2026-01-01",
+  "selection_window": "signal_utc_date < 2026-01-01",
+  "holdout_start": "2026-01-01",
+  "holdout_rule": "NEVER used for selection. Same calendar pin as btc_h1_trend_pullback_v1 and results/xau_holdout_lock.json. Not moved after v1's 2026 long-only starve. 2026 must be allowed to produce trades (no EMA trend permission).",
+  "symbol": "BTCUSD",
+  "broker": "fpmarkets",
+  "broker_symbol": "BTCUSD",
+  "tf": "H1",
+  "start_balance_usd": 10000,
+  "lots": 0.01,
+  "goal_daily_pct": null,
+  "goal_monthly_pct": null,
+  "goals_note": "US100 1%/20% was an index-book goal on $10k / 1 lot / ~$1 per point. Do not use it as a BTC pass gate. A 1% day on this book is $100 ≈ a $10,000 BTC move at 0.01 lot. Soft gate: n>=40, NP>0, PF>=1.1, max_dd_pct<=0.25 on develop. Median day/month % are diagnostics only.",
+  "soft_gate": {
+    "n_trades_min": 40,
+    "net_pnl_gt": 0,
+    "profit_factor_min": 1.1,
+    "max_dd_pct_max": 0.25
+  },
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "lots": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 250.0,
+    "max_spread_points": 4000.0,
+    "note": "Same book as btc_h1_trend_pullback_v1. FP bridge symbols.json 2026-08-19: digits 2, point 0.01, contract_size 1.0, tick_value 0.01, min_lot 0.01. Charge HC spread + 250 pt/side. Commission unmeasured → 0. Swap unmodeled → flatten_weekend frozen true. Do not copy US100 10 pt slip or 1.0 lot."
+  },
+  "symbol_specs_source": "FP ~/.mt5-fpmarkets MQL5/Files/mt5_arch/symbols.json BTCUSD (read-only; terminal not restarted). Book copied from sealed v1 lock, not re-quoted from a live attach.",
+  "data": {
+    "source": "FP Markets native cache H1.hc via read_mt5_hc. Same export as v1 (results/btc_data/history_BTCUSD_H1.csv). Not ExportInstrumentHistory.mq5. Not scripts/19-run-htf-fib-backtest.sh. Live terminal64 not attached, not exported via tester, not killed. H4 is not used.",
+    "server_utc_offset_sec": 10800,
+    "point": 0.01,
+    "contract_size": 1.0,
+    "files": {
+      "H1": {
+        "path": "results/btc_data/history_BTCUSD_H1.csv",
+        "sha256": "c2f87a05eb56d401d292ddcb68a68b6baa6cc22ab0a061c39e573f96e0f062ff",
+        "bars": 29035
+      }
+    },
+    "note": "sha256 copied from the v1 lock after the same offline hc export. H4 omitted on purpose."
+  },
+  "fill": "next H1 open after a signal on a closed H1. Forming last H1 excluded.",
+  "signals": "Closed-bar H1 close-through of donchian_prior(N) only if ATR14/ATR50 at i-1 is squeezed and TR[i]/ATR14[i-1] expands. Both sides. No EMA/RSI/MACD/H4.",
+  "weekend": "flatten_weekend frozen true. No new fill on Friday last H1. Open trades exit at that open. Swap unmodeled.",
+  "causality": {
+    "completed_bars": "Range, squeeze, and setups use completed H1 including i for the close-through and TR[i] only. Last series bar is forming (exclude_forming).",
+    "range": "donchian_prior: max/min of high/low on i-n .. i-1. Bar i is never inside the window. Close-through: close[i] > range_high[i] long, close[i] < range_low[i] short. Wick-beyond + close-inside is not a signal.",
+    "squeeze": "atr14[i-1] / atr50[i-1] <= squeeze_max. Wilder ATR. Baseline is the prior close, not ATR[i].",
+    "expand": "true_range[i] / atr14[i-1] >= expand_min. TR[i] = max(H-L, |H-C[i-1]|, |L-C[i-1]|).",
+    "atr": "Wilder ATR14 and ATR50 on H1. SL/TP use atr14[i] at the signal bar (known at close). Floor atr<=0 skips.",
+    "htf_join": "none. H4 is not loaded. Do not resample. Do not add EMA bias.",
+    "ema": "OFF. This is the sealed v1 failure mode.",
+    "rsi": "OFF.",
+    "macd": "OFF.",
+    "vwap": "OFF (tick_volume is not exchange volume).",
+    "edge_trigger": "setup now AND NOT setup on previous closed H1 (same side).",
+    "entry_close": "decision on close[i]; fill is open[i+1].",
+    "gap": "if the next H1 open gaps through SL or TP, exit at that open (SL before TP if both).",
+    "simulate_exits": "us_index_session_htf.simulate_htf_exits (CostSpec / _round_trip_cost). Not same-ET-day flatten.",
+    "pivots": "not used. Do not import htf_fib_core. Range is prior-N high/low, not fractal confirmation."
+  },
+  "not_copied": [
+    "btc_h1_trend_pullback_v1 H4 EMA stack / H1 reclaim / RSI / MACD / continuation / panic_block",
+    "US100 v1–v8 winners / M5 families / 1%/20% as a pass gate / $10k 1-lot 10pt book",
+    "M1 / Timescale / news-drift / true CVD from tick_volume",
+    "US30 / US500 / XAU sealed families / leaked hours {7,8,9} / EUR+GBP",
+    "XAU Donchian / turtle / KILL_DONCHIAN_LINE retune",
+    "joint_london_open_cosign_fade_flat / v3 US30 divergence / Daily SMA200",
+    "ForexHtfPivotsFib / ForexHtfFibTester / OrderSend / --live",
+    "ExportInstrumentHistory.mq5 / scripts/19-run-htf-fib-backtest.sh / cTrader bot"
+  ],
+  "reused_from_trading": {
+    "atr": "us_index_session_core.wilder_atr",
+    "range": "us_index_session_htf.donchian_prior (i-n..i-1 only)",
+    "costs": "CostSpec + _round_trip_cost (spread + 2*250 pt + commission 0) at 0.01 lot",
+    "exits": "us_index_session_htf.simulate_htf_exits + friday_last_mask",
+    "hc": "us_index_session_backtest.read_mt5_hc / hc_to_export_csv / load_m5_csv",
+    "book_split": "same numeric book and UTC 2026-01-01 split as btc_h1_trend_pullback_v1"
+  },
+  "families": {
+    "h1_range_vol_breakout": {
+      "note": "H1-only close-through of prior-N range after ATR squeeze and TR expansion. Both sides frozen. No EMA stack.",
+      "atr_fast": 14,
+      "atr_slow": 50,
+      "range_n": [20, 40],
+      "squeeze_max": [0.75, 0.90],
+      "expand_min": [1.25, 1.75],
+      "sl_atr": [1.5, 2.0],
+      "tp_rr": 2.0,
+      "flatten_weekend": true,
+      "allow_shorts": true,
+      "close_through": true,
+      "edge_trigger": true,
+      "use_ema": false,
+      "use_h4": false
+    }
+  },
+  "n_configs_expected": 16,
+  "grid_breakdown": {
+    "h1_range_vol_breakout": 16
+  },
+  "grid_note": "2×2×2×2 = 16. Locked now. range_n × squeeze_max × expand_min × sl_atr. Both sides / flatten_weekend / close-through / edge / no EMA / no H4 frozen. Ceiling 16, not hundreds.",
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy. Holdout scored after rank is frozen.",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "note": "Path 1b.2 after v1 SCREEN_FAIL (2026 EMA starve). Not an XAU charter. Not Timescale. Not cTrader. 1%/20% is not a BTC gate on this book."
+}

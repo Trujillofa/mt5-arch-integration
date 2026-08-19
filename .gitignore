@@ -69,6 +69,8 @@ results/us_index_session_*_trades.json
 results/btc_data/
 results/btc_h1_trend_pullback_*_full.json
 results/btc_h1_trend_pullback_*_trades.json
+results/btc_h1_range_vol_breakout_*_full.json
+results/btc_h1_range_vol_breakout_*_trades.json
 
 # Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
 tests/fixtures/mql5_parity/live_*/
