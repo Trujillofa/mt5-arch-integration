@@ -1,0 +1,347 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-08-19",
+  "charter_version": 2,
+  "family_id": "asia_box_london_sweep_fade_flat",
+  "display_name": "Zero-knob Asia box (01-07) sweep-reclaim fade in hunt 08-13, exact-extreme SL + midline TP, intraday flat (v2; entry_gap_policy: skip open-beyond-SL/TP and degenerate box)",
+  "thesis_class": "intraday_asia_box_sweep_fade",
+  "thesis_memo": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+  "hypothesis": "On XAUUSD H1 as stamped by the Vantage terminal clock in xauusd_data.csv (NY-close-aligned server_clock_as_stored; no DST conversion), the completed same-day high-low range of server hours 01:00-07:59 is an Asia liquidity box. During hunt hours 08:00-13:59 only, a same-bar pierce of a box extreme that closes back inside (long: low<box_low and close>box_low; short: high>box_high and close<box_high), filled at the next H1 open when still hour<=13, with SL at the exact swept extreme, TP at box midline, one entry per day, and force-flat at the close of hour 13, has no free parameters. Hours are eligibility scaffolding only: no sweep-reclaim event means no trade (flat-while-unswept). Any edge must come from fading stop-runs of the Asia box under Standard STP spread costs. Thin develop n < soft n_trades_min is SCREEN_FAIL, not a waiver.",
+  "clock_contract": {
+    "source": "MqlRates time via Mt5ArchBridge TimeToString; fetch_data tags as UTC without conversion",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "asia_tokyo_wall_clock_claimed": false,
+    "dst_conversion": false,
+    "server_topology_note": "Develop package shows rollover gap at hour 00 (no bars), London ramp ~10:00, US data/equities ~15:30-16:30 — used only as clock instrumentation for box/hunt edges, not as evidence of edge",
+    "hours_are_eligibility_not_alpha": true
+  },
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "multi_symbol_in_scope": false
+  },
+  "rule": {
+    "direction": "long_and_short",
+    "box_hours_server": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "box_definition": "box_high=max(high), box_low=min(low) over same-calendar-day bars with hour in box_hours_server; undefined until those hours that exist for the day have printed; no trade if box undefined",
+    "box_starts_at_01_reason": "hour 00 has zero bars (rollover gap); box cannot start at midnight",
+    "hunt_hours_server": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "entry_allowed_hours_server": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13
+    ],
+    "flat_hour_server": 13,
+    "intraday_flat": true,
+    "signal_long": "hour[i] in hunt_hours_server and box defined and low[i] < box_low and close[i] > box_low",
+    "signal_short": "hour[i] in hunt_hours_server and box defined and high[i] > box_high and close[i] < box_high",
+    "signal_bar": "closed H1 only; pierce and close-back-inside on the SAME bar",
+    "flat_while_unswept": true,
+    "entry": "if flat and first qualifying signal of the day: fill at open[i+1] only if same calendar day and hour[i+1] <= flat_hour_server; else skip",
+    "entry_timing": "next_bar_open",
+    "one_entry_per_day": true,
+    "sl": "exact swept extreme — long SL=box_low; short SL=box_high; no buffer",
+    "tp": "box midline (box_high + box_low) / 2",
+    "exit": "SL or TP or force flat at close of bar with hour >= flat_hour_server same day; no overnight",
+    "thin_n_policy": "if develop-eligible trade count < gates.soft.n_trades_min then SCREEN_FAIL; not a waiver; do not lower n_trades_min",
+    "overlap_note_early_server_range_break_flat": "Shares early-block geometry neighborhood with early_server_range_break_flat but differs in pool (01-07 high AND low vs 1-8 high-only), trigger (pierce+close-inside fade vs close-above-high breakout), direction (both sides vs long-only), hunt/flat windows (8-13/13 vs 9-15/16), and risk (exact extreme+midline vs ATR). Not a rename.",
+    "execution_contract_ref": "execution_contract",
+    "entry_gap_policy": {
+      "open_beyond_own_sl": "skip_entry",
+      "open_beyond_tp": "skip_entry",
+      "degenerate_box_high_eq_low": "skip_entry",
+      "rationale": "Entry fills at open[i+1] while SL/TP are structural box prices. (a) open beyond own SL ⇒ stop_dist<=0 (ZeroDivisionRisk / nonsense sizing) — skip. (b) open beyond TP ⇒ TP unreachable; trade would degrade to time-flat scratch — skip. (c) box_high==box_low ⇒ SL=TP=extreme, zero-distance — skip. Declared before implementation so n/pnl cannot be chosen post-screen.",
+      "evaluated_at": "fill_bar_open_i_plus_1_before_sizing",
+      "predicates": {
+        "long_open_beyond_sl": "direction==long and open[i+1] < box_low (or open[i+1] <= box_low with stop_dist<=0)",
+        "long_open_beyond_tp": "direction==long and open[i+1] > box_midline",
+        "short_open_beyond_sl": "direction==short and open[i+1] > box_high",
+        "short_open_beyond_tp": "direction==short and open[i+1] < box_midline",
+        "degenerate_box": "box_high == box_low",
+        "strictness_open_beyond_sl": "skip when abs(open[i+1]-sl) produces stop_dist <= 0 under the sizing contract (includes exact equality)"
+      }
+    }
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "account_type": "STANDARD_STP",
+      "login": 27496181,
+      "server": "VantageMarkets-Live 5",
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0,
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "cost_label": "account_matched_spread_commission_only",
+      "costs_document_sha256": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+      "cost_timing": "measured_at_entry_deducted_at_exit_booking"
+    },
+    "costs_sensitivity_alternatives_not_base": {
+      "RAW_ECN_commission_per_lot": 3.0,
+      "role": "declared_sensitivity_only_never_base"
+    }
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "classic": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.5,
+      "profit_factor_strict_gt": true,
+      "win_rate_min": 55.0,
+      "win_rate_strict_gt": true,
+      "max_drawdown_pct_max": 10.0,
+      "max_drawdown_strict_lt": true,
+      "used_for": "report_only"
+    },
+    "soft": {
+      "n_trades_min": 20,
+      "profit_factor_min": 1.1,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 25.0,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft",
+    "thin_n_is_screen_fail": true
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "implementation_id": "within_day_ohlc_increment_rotate_v1",
+    "n_trials": 999,
+    "min_null_trials": 999,
+    "base_seed": 20260819,
+    "k_domain": "per_day Uniform{0,1,...,m-1} including identity k=0",
+    "algorithm": "For each calendar day with m bars: (1) ref_0 = open[0], ref_j = close[j-1] for j>0; (2) inc_j = (open,high,low,close)/ref_j componentwise; (3) circularly rotate the m increments by k in {0..m-1}; (4) rebuild continuous OHLC path from the original day open by chaining rotated increments so each bar unit's open/ref and true-range/ref ratios are preserved as a multiset. Timestamps and spreads remain fixed.",
+    "notes": "Canonical session null for protocol 2.2. base_seed=20260819 is the freeze-date convention (no seed shopping). Required because box extremes, pierce, and reclaim use within-day path geometry.",
+    "invariants": [
+      "time_unchanged",
+      "spread_calendar_aligned",
+      "per_day_bar_count_equal",
+      "within_day_path_continuous",
+      "open_prev_close_gap_multiset",
+      "true_range_prev_multiset",
+      "session_path_association_broken"
+    ],
+    "forbidden_methods": [
+      "day_block_shuffle",
+      "circular_day_shift",
+      "global_return_shuffle",
+      "within_day_return_rotate"
+    ]
+  },
+  "multiplicity": {
+    "method": "finite_catalog_bonferroni_open_catalog",
+    "alpha_uncorrected": 0.05,
+    "K_prior": 9,
+    "K": 10,
+    "alpha_adjusted": 0.005,
+    "prior_scored_family_ids": [
+      "tod_london_ny_flat",
+      "server_hour_window_flat",
+      "early_server_range_break_flat",
+      "day_open_reclaim_flat",
+      "joint_london_open_cosign_fade_flat",
+      "bb_rsi",
+      "Donchian",
+      "prior_day_high_break",
+      "exog_london_fx_cosign_xau_follow_flat"
+    ],
+    "pass_status": "provisional_while_catalog_open",
+    "paper_live_while_open": false,
+    "revalidation_on_K_increase": true,
+    "identity_excluded_from_null_trials": true
+  },
+  "success": {
+    "null_maxstat": {
+      "p_max_pf_max": 0.05,
+      "p_n_passers_max": 0.05,
+      "min_null_trials": 999,
+      "early_exit_search": false,
+      "costs_required": true,
+      "multiplicity_alpha": "use multiplicity.alpha_adjusted while catalog open"
+    },
+    "slippage_sensitivity": {
+      "points": [
+        0,
+        5,
+        10,
+        20
+      ],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    },
+    "walk_forward": {
+      "only_after_null_pass": true,
+      "costed": true
+    }
+  },
+  "kill": {
+    "on_null_fail": "KILL_ASIA_BOX_LONDON_SWEEP_FADE_FLAT",
+    "on_wf_fail": "KILL_ASIA_BOX_LONDON_SWEEP_FADE_FLAT",
+    "on_screen_fail": "SCREEN_FAIL",
+    "refine_loops": false
+  },
+  "explicitly_forbidden": [
+    "inspect develop grid metrics before this charter is git-committed and matches HEAD",
+    "implement family module before adversarial freeze review",
+    "rename or filter closed families (bb_rsi, Donchian, prior_day_high_break, tod_london_ny_flat, server_hour_window_flat, early_server_range_break_flat, day_open_reclaim_flat, joint_london_open_cosign_fade_flat, exog_london_fx_cosign_xau_follow_flat)",
+    "claim Tokyo/Asia or London-NY wall-clock identity without external offset proof",
+    "DST-convert server hours in the charter or simulator",
+    "treat hours as the alpha (must remain event-gated; flat-while-unswept)",
+    "lower n_trades_min or waive thin-n SCREEN_FAIL after seeing develop counts",
+    "add SL buffer or retune box/hunt hours after seeing metrics",
+    "use RAW_ECN commission 3.0 as the base cost (sensitivity only)",
+    "day_block_shuffle or global_return_shuffle null",
+    "CLI null overrides under sealed cycle",
+    "dispositional run with dirty tracked protocol/family/cost/charter/registry files",
+    "overnight holds",
+    "holdout selection or retune after screen",
+    "paper, live, or promote",
+    "CLI --null-seed divergence from null.base_seed under --strict-charter",
+    "--no-soft-primary under --strict-charter",
+    "enter when open[i+1] is beyond own SL or beyond TP, or when box_high==box_low (must skip per entry_gap_policy)",
+    "choose gap-at-fill behavior after seeing develop metrics (v1→v2 closed this; do not reopen)"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat",
+    "joint_london_open_cosign_fade_flat",
+    "exog_london_fx_cosign_xau_follow_flat"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false
+  },
+  "execution_contract": {
+    "bar": "closed H1 for signal; entry at next bar open",
+    "box": {
+      "hours": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "high": "max(high) over box hours same calendar day",
+      "low": "min(low) over box hours same calendar day",
+      "midline": "(box_high + box_low) / 2",
+      "undefined_policy": "no trade that day"
+    },
+    "entry": {
+      "signal": "evaluated at bar close of index i in hunt hours",
+      "fill": "open[i+1] when same calendar day and hour[i+1] <= 13",
+      "skip_if_fill_outside_hunt_flat": true,
+      "sl_long": "box_low",
+      "sl_short": "box_high",
+      "tp": "box midline",
+      "costs_on_entry_bar": "round-trip trade_cost is COMPUTED from entry bar at fill, STORED on the open trade, and DEDUCTED once when exit PnL is booked",
+      "costs": {
+        "formula": "(spread_pts[entry] + 2*slippage_points)*point_size*CONTRACT_SIZE*lots + 2*commission_per_lot*lots",
+        "measured_at": "entry bar (spread_pts, lots sized at entry)",
+        "stored_as": "trade_cost captured at entry fill",
+        "deducted_at": "exit PnL booking only",
+        "round_trip": true
+      }
+    },
+    "exit": {
+      "first_eligible_bar": "entry bar i+1 (open fill; SL/TP may trigger on entry bar)",
+      "priority_same_bar_when_multiple": [
+        "1_stop_loss",
+        "2_take_profit",
+        "3_time_flat_if_hour_ge_flat_hour_at_close"
+      ],
+      "sl_fill": "exit at sl price when low<=sl (long) or high>=sl (short)",
+      "tp_fill": "exit at tp when high>=tp (long) or low<=tp (short), only if stop not hit first",
+      "time_flat_fill": "exit at close[j] when hour[j] >= flat_hour_server",
+      "end_of_series": "if still in position on last bar of entry day, force close at last close with trade_cost already charged; never carry overnight"
+    },
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "min_lot": 0.01,
+      "lot_step": 0.01,
+      "rounding": "floor to 0.01 lots: floor(raw_lots * 100 + 1e-12) / 100",
+      "raw_lots": "risk_cash / (stop_dist * CONTRACT_SIZE) with risk_cash = balance * risk_pct; stop_dist = abs(entry - sl)",
+      "skip_if": "lots < min_lot OR stop_dist * CONTRACT_SIZE * min_lot > risk_cash",
+      "contract_size": 100.0,
+      "balance_source": "realized balance (starts at start_balance=10000; compounds on booked pnls)",
+      "start_balance": 10000.0
+    },
+    "no_overnight": {
+      "entry_gate": "fill only if hour[i+1] <= flat_hour_server same day",
+      "day_boundary": "if position still open when calendar day changes, fail-closed: do not apply next-day SL/TP"
+    },
+    "warmup_bars": "max(20, box span); no entries before warmup",
+    "capital": {
+      "start_balance": 10000.0,
+      "compounding": "realized_balance",
+      "balance_init": "balance = start_balance before first bar",
+      "risk_cash_at_entry": "balance * risk_pct (current realized balance)",
+      "balance_update": "balance += pnl only when a trade is booked at exit",
+      "no_balance_change_at_entry": true,
+      "equity_while_open": "eq = balance + (close - entry) * CONTRACT_SIZE * lots * direction (floating MTM; trade_cost NOT subtracted until exit)",
+      "equity_flat": "eq = balance when flat",
+      "pnl_on_exit": "pnl = (exit_px - entry) * CONTRACT_SIZE * lots * direction - trade_cost; direction = +1 long / -1 short",
+      "net_profit": "sum of booked trade pnls",
+      "max_drawdown_pct": "peak = running maximum of equity series; dd = (peak - eq) / peak; max_drawdown_pct = max(dd) * 100"
+    },
+    "required_fixtures": [
+      "same_bar_pierce_close_inside_long_accepted",
+      "same_bar_pierce_close_inside_short_accepted",
+      "pierce_without_close_inside_rejected",
+      "flat_while_unswept_no_trade_in_hunt",
+      "box_incomplete_no_trade",
+      "hour13_signal_fill_at_14_skipped",
+      "one_entry_per_day_second_event_ignored",
+      "early_server_overlap_contrast",
+      "thin_n_below_min_is_screen_fail_not_waiver",
+      "two_trade_realized_balance_sizing",
+      "entry_exit_equity_cost_timing",
+      "entry_gap_open_beyond_sl_skipped",
+      "entry_gap_open_beyond_tp_skipped",
+      "entry_gap_degenerate_box_skipped"
+    ]
+  },
+  "supersedes": {
+    "path": "results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json",
+    "sha256": "7cf9f46fd5ddd44c171f04260f8d4fac167cb005bf3f6d4d03c1c137c1399b7e",
+    "reason": "v1 left gap-at-fill pathologies undeclared for next-open entry vs structural SL/TP: open beyond own SL (stop_dist<=0 / ZeroDivisionRisk), open beyond TP (unreachable target → time-flat scratch), and degenerate box_high==box_low. v2 adds rule.entry_gap_policy (skip all three) + fixtures before any implementation."
+  }
+}
