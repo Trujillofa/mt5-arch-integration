@@ -1,0 +1,70 @@
+{
+  "search_id": "us_index_session_v5",
+  "locked_at": "2026-08-18T16:12:00-05:00",
+  "selection_end": "2026-06-01",
+  "selection_window": "et_date < 2026-06-01",
+  "holdout_start": "2026-07-01",
+  "holdout_rule": "NEVER used for selection. June 2026 is a burned buffer. July–August was already inside the v4 holdout aggregate — this is a cleaner window, not virgin data.",
+  "burned_buffer": ["2026-06-01", "2026-07-01"],
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "note": "Locked book. 10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread. Do not cut slippage or raise lots to chase 1%/20%."
+  },
+  "not_copied": [
+    "ny_cash_orb_vwap_ema_flat and v1–v4 winners (do not retune)",
+    "us100_us30_divergence HH/LH fade (structure v3)",
+    "exog_london_fx_cosign_xau_follow_flat hours {7,8,9} / EUR+GBP (wrong clock for FP US100)",
+    "joint_london_open_cosign_fade_flat (SCREEN_FAIL)",
+    "XAU day_open_reclaim / early_server_range_break / prior_day_high_break",
+    "manual-trading-agent FX ORB and news-drift DISCARD",
+    "Timescale / M1 / US500 / yields / ES"
+  ],
+  "reused_from_trading": {
+    "clock_or": "scripts/us_index_session_core.py NY cash 09:30–16:00 ET, causal 15m OR",
+    "htf_join": "BtcTrendPullback CompletedHtfShift + xau_lane_deep_opt prepare_frame shift(1): last H4 with open+4h <= bar time. EMA on completed H4 only. Daily Donchian i-1 / exclude last completed day.",
+    "exog_shape": "intersection calendar + predictor-only sign + next-bar follow + traded T* isolation — symbols/hours are NEW (US30→US100 at 09:45 ET), not the XAU leak"
+  },
+  "families": {
+    "ny_cash_gap_fade_adr": {
+      "note": "Gap = first 09:30 ET open / prior NY-cash close − 1. NOT vs last pre-09:30 print (that jump is ~0 on this CFD). Fade −sign(gap). ADR = mean of last n completed cash-session ranges. Compare |gap|*prior_close >= k*ADR.",
+      "gap_min": [0.005, 0.0075],
+      "gap_max": [0.01, 0.02],
+      "adr_n": [10, 14],
+      "adr_k": [0.4, 0.6],
+      "entry": ["next_0930", "after_ib"],
+      "entry_note": "next_0930 stamps the first cash bar (fill = next M5 open). after_ib stamps first bar open >= 10:30 only if the gap is not already filled (close still on the gap side of prior cash close).",
+      "one_per_day": [true],
+      "exits": ["flatten_11:30", "flatten_15:45", "atr_sl1.0_tp1.5"]
+    },
+    "htf_lock_orb": {
+      "note": "15m OR close-break (not v4 ATR-regime, not frozen AND-gate). Hard-gated by completed-H4 EMA50/200 (BTC grammar) and/or completed ET-day Donchian-20 state. Chop (0) = no trade. Do not fade HTF.",
+      "lock": ["h4", "donch", "both"],
+      "h4": "UTC 4h buckets from M5; EMA50/200 on completed H4 closes; +1 iff h4_close>ema200 and ema50>ema200",
+      "donch": "ET-date H/L; channel = last 20 completed days excluding the last completed day; +1 if that day's close > channel high",
+      "entry_end": ["10:30", "11:30"],
+      "one_per_day": [true],
+      "exits": ["flatten_11:30", "flatten_15:45", "atr_sl1.0_tp1.5"]
+    },
+    "exog_us30_ny_cash_cosign_us100_follow": {
+      "note": "Intersection I of FP US100 and US30 M5. T* = first I bar with open >= 09:45 ET. s = sign(US30 close−open) at T* if nonzero. US100 T* bar is not in the predicate. Follow s on US100 at next I bar. Not hours {7,8,9}. Not joint fade. Not v3 divergence.",
+      "min_us30_atr": [0.0, 0.35],
+      "one_per_day": [true],
+      "exits": ["flatten_11:30", "flatten_15:45", "atr_sl1.0_tp1.5"]
+    }
+  },
+  "n_configs_expected": 120,
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "promote": false,
+  "live_go": false,
+  "note": "New search. Not a retune of v1–v4. Not an XAU charter. Do not attach these families to the overlay. 1%/day and 20%/month are goals, not promises."
+}

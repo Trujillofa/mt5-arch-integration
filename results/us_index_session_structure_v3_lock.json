@@ -1,0 +1,59 @@
+{
+  "search_id": "us_index_session_structure_v3",
+  "locked_at": "2026-08-18T15:32:00-05:00",
+  "holdout_start": "2026-06-01",
+  "selection_window": "et_date < holdout_start",
+  "holdout_rule": "NEVER used for selection",
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "us30_pair_max_spread_points": 400.0
+  },
+  "families": {
+    "ny_cash_liquidity_sweep": {
+      "note": "NY-open stop run: breach Asia / London-pre-NY / PDH / 15m OR, then close back inside with wick >= 25% of the M5 range.",
+      "entry_start_et": "09:45",
+      "level_sets": ["asia_london", "pdh_or", "all_four"],
+      "wick_frac": [0.25, 0.40],
+      "entry_end": ["10:30", "11:00"],
+      "one_per_day": [true, false],
+      "exits": ["box_opposite", "range_1.5x", "flatten_11:30", "atr_sl1.0_tp1.5"]
+    },
+    "ny_cash_fvg_mitigation": {
+      "note": "M5 3-bar FVG. Entry on a later closed bar that touches 50% CE and closes away. No M1 micro-confirm in this screen (M1 not in the locked CSV).",
+      "entry_start_et": "09:35",
+      "min_gap_atr": [0.15, 0.25, 0.40],
+      "entry_end": ["11:30", "12:00"],
+      "one_per_day": [true, false],
+      "exits": ["flatten_11:30", "flatten_15:45", "atr_sl1.0_tp1.5", "ce_swing"]
+    },
+    "us100_us30_divergence": {
+      "note": "US100 vs US30 structural HH/LH on the same M5 bar over a lookback. Named honestly: no US500 in the prefix. Pair = short the HH leg and long the LH leg; us100_only fades US100 only.",
+      "entry_start_et": "09:35",
+      "lookback_bars": [3, 6, 12],
+      "entry_end": ["10:30", "11:30"],
+      "one_per_day": [true, false],
+      "legs": ["pair", "us100_only"],
+      "exits": ["flatten_11:30", "flatten_12:00", "atr_sl1.0_tp1.5", "bars_6"]
+    },
+    "macro_news_fix_api": {
+      "status": "skipped",
+      "reason": "manual-trading-agent HF Forex Factory CSV ends 2025-04-07 (this US100 window starts 2025-10). Timestamps are Asia/Tehran, often midnight, not 08:30 ET. Live Faireconomy XML is current-week lockout only. FX surprise-drift in that repo is DISCARD — do not copy. Not a millisecond feed."
+    }
+  },
+  "n_configs_expected": 240,
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "us30_transfer": "sweep and FVG only, after ranking — never used for selection",
+  "promote": false,
+  "live_go": false,
+  "note": "New search. Not a retune of orb / develop_v1 / playbook_v2. 1%/day and 20%/month are goals, not promises."
+}

@@ -1,0 +1,124 @@
+{
+  "search_id": "us_index_session_v6",
+  "locked_at": "2026-08-18T16:25:00-05:00",
+  "selection_end": "2026-06-01",
+  "selection_window": "et_date < 2026-06-01",
+  "holdout_start": "2026-07-01",
+  "holdout_rule": "NEVER used for selection. June 2026 is a burned buffer. July–August was already inside the v4/v5 holdout aggregates — this is a cleaner window, not virgin data.",
+  "burned_buffer": ["2026-06-01", "2026-07-01"],
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "note": "Locked book. 10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread. Do not cut slippage or raise lots to chase 1%/20%."
+  },
+  "not_copied": [
+    "ny_cash_orb_vwap_ema_flat and v1–v5 winners (do not retune)",
+    "htf_lock_orb / ny_cash_gap_fade_adr / exog_us30_ny_cash_cosign_us100_follow (v5; 0/43)",
+    "US30 as exogenous predictor (too correlated; same trade)",
+    "exog_london_fx_cosign_xau_follow_flat hours {7,8,9} / EUR+GBP (Vantage H1; server 07:00 ≈ midnight ET on FP)",
+    "joint_london_open_cosign_fade_flat (SCREEN_FAIL)",
+    "XAU day_open_reclaim / early_server_range_break / prior_day_high_break",
+    "manual-trading-agent FX ORB, news-drift, and vol-regime (DISCARD; calendar ends 2025-04-07 Tehran)",
+    "ctrader SessionClock NY 08:00–17:00 (FX, not cash 09:30)",
+    "crypto-agent multi_timeframe_regime as an edge (failed / stub); join pattern only",
+    "Timescale / M1 / US500 / yields / ES",
+    "Vantage instrument_data/{xau,eur,gbp}usd_h1.csv (server_clock_as_stored; do not naive-join to FP M5)",
+    "xauusd_data.csv +00:00 stamp treated as UTC (protocol forbids)"
+  ],
+  "reused_from_trading": {
+    "clock_or": "scripts/us_index_session_core.py NY cash 09:30–16:00 ET, causal 15m OR, prior_cash_close_series / cash_open_gap_pct",
+    "adx": "Wilder ADX/DI algorithm from manual-trading-agent/src/indicators/adx.py, rewritten as a causal series on completed ET-day bars",
+    "htf_join": "Same completed-bar grammar as completed_h4_ema_bias / completed_daily_donch_state: forming ET day is excluded",
+    "exog_shape": "as-of feature_end <= m5_bar_open; predictor-only sign; traded T* isolation — symbols/hours are NEW (FP XAUUSD.r H1, ET 07:00–09:00), not the XAU leak",
+    "mtf_join_idea": "crypto-agent multi_timeframe_regime: HTF state known first, then LTF entry. Not its thresholds."
+  },
+  "hurst_fallback_preregistered": {
+    "primary": "R/S Hurst on the last L completed daily closes (price levels, mean-adjusted cumulative deviate). L in {32, 64} is a frozen grid, not fit on this CSV.",
+    "when": "Hurst is NaN / non-finite / R<=0 / S<=0",
+    "fallback": "variance_ratio",
+    "variance_ratio": {
+      "k": 2,
+      "on": "log-returns of the same L completed daily closes",
+      "persist_if": "VR > 1.0 (treated as Hurst 0.56 for the >0.55 test)",
+      "revert_if": "VR < 1.0 (treated as Hurst 0.44 for the <0.45 test)",
+      "else": "chop (0.5)"
+    },
+    "note": "Fallback locked before any Hurst/VR was computed on US100 daily closes. Do not fit L or k on this tape."
+  },
+  "families": {
+    "daily_regime_switch": {
+      "note": "AND-gate daily state from completed ET-days only (today's Daily/ET-day is forming — unused). Momentum day → 15m OR close-break only. MR day → gap fade vs prior cash close only. Chop → hard-flat. Mixed conditions → chop. Not a v4 vol_regime_orb retune. Not the failed ORB+VWAP+EMA AND-gate.",
+      "daily_source": "Resample full ET-day OHLC from US100 M5 (not Daily.hc; read_mt5_hc_m5 rejects step>3600).",
+      "adx_period": 14,
+      "adx_momentum_gt": 25.0,
+      "adx_mr_lt": 20.0,
+      "atr_pctile_n": [20, 50],
+      "atr_expanding": "last completed day's ATR > 60th percentile of the N completed days immediately before it (scored day excluded)",
+      "atr_compressed": "last completed day's ATR < 40th percentile of that same prior-N window",
+      "hurst_lookback": [32, 64],
+      "hurst_momentum_gt": 0.55,
+      "hurst_mr_lt": 0.45,
+      "momentum_setup": {
+        "or_minutes": 15,
+        "entry": "close-break after 09:45 ET, entry_end 11:30, one/day, Friday >=14:00 blocked",
+        "exit": "no fixed TP; initial SL ATR 1.0 then trail; flatten 15:45 ET",
+        "trail": ["swing_6", "swing_12", "ema_9", "ema_21"]
+      },
+      "mr_setup": {
+        "trigger": "gap fade vs prior cash close (cash_open_gap_pct). ONE primary. Not VWAP-deviation. Not ORB+VWAP+EMA.",
+        "gap_min": [0.005, 0.0075],
+        "gap_max": 0.02,
+        "entry": "first cash bar (mins>=09:30); fill = next M5 open",
+        "exit_target": ["prior_cash_close", "vwap"],
+        "vwap_target": "session VWAP from completed NY-cash bars strictly before the current bar (running, causal)",
+        "sl_atr": [0.75, 1.0],
+        "flatten": "11:30 ET or on touch of the mean"
+      },
+      "one_per_day": true
+    },
+    "london_xau_fx_risk_gate": {
+      "note": "Gate the same day's US100 15m OR close-break by a London-window XAU risk read. Not US30. Not hours {7,8,9}. Not joint_london_open_cosign_fade_flat.",
+      "predictor": "FP XAUUSD.r H1.hc on ~/.mt5-fpmarkets (same prefix / server_utc_offset_sec=10800 as US100). Convert server epoch − 10800 → UTC → America/New_York.",
+      "window": "ET 07:00–09:00 (H1 bars whose ET open hour is 7 or 8). Last bar closes 09:00 ET. feature_end = 09:00 ET. First usable US100 bar open >= 09:00; NY cash entries still >= 09:45.",
+      "displacement": "close(08:00 ET H1) − open(07:00 ET H1)",
+      "range_vs_atr": "|displacement| >= min_disp_atr * Wilder ATR(14) at the 08:00 ET H1 (completed)",
+      "min_disp_atr": [0.5, 1.0],
+      "gate": "require sign(XAU displacement) == sign(US100 OR close-break)",
+      "tstar_isolation": "XAU H1 bars with ET hour >= 9 (including the 09:30 hour) do not enter the predicate",
+      "exit": "same momentum trail set; flatten 15:45; initial SL ATR 1.0; no TP",
+      "trail": ["swing_6", "swing_12", "ema_9", "ema_21"],
+      "one_per_day": true
+    }
+  },
+  "skipped": {
+    "london_fx_predictors": {
+      "symbols": ["EURUSD", "GBPUSD"],
+      "why": "FP EURUSD/GBPUSD H1.hc exist on the same prefix, but the live cache last stamp is 2026-08-14 12:00 ET (charts not open) while US100 runs through 2026-08-18. A partial intersection would silently drop days. Vantage eurusd_h1.csv / gbpusd_h1.csv are server_clock_as_stored and must not be naive-joined to FP M5. xauusd_data.csv +00:00 is not UTC."
+    },
+    "vantage_xau_h1_join": {
+      "why": "instrument_data/xauusd_h1.csv and xauusd_data.csv are Vantage server clocks. Protocol + v5 already forbid treating +00:00 as UTC or stamping hours {7,8,9} onto FP M5."
+    },
+    "us30_predictor": {
+      "why": "v5 proved US30 is the same trade, not an exogenous read."
+    }
+  },
+  "n_configs_expected": 136,
+  "grid_breakdown": {
+    "daily_regime_switch": 128,
+    "london_xau_fx_risk_gate": 8
+  },
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "note": "Architectural reset after v1–v5 missed median-day ≥1% and median-month ≥20%. New search_id. Do not attach these families to the overlay. 1%/day and 20%/month are goals, not promises."
+}

@@ -1,0 +1,321 @@
+{
+  "search_id": "us_index_session_v4_cost_size_once",
+  "kind": "diagnostic_replay",
+  "not_a_search": true,
+  "promote": false,
+  "live_go": false,
+  "skipped": {
+    "timescaledb": "charter excludes; no aggressor-tick store in this repo",
+    "m1": "M1.hc exists on FP US100/US30 but this diagnostic does not export or search it",
+    "us500": "not present in any Wine prefix"
+  },
+  "bars": 57827,
+  "from": "2025-10-22 22:00:00+00:00",
+  "to": "2026-08-18 15:25:00+00:00",
+  "n_books": 5,
+  "n_windows_hit_goal": 0,
+  "any_goal_both": false,
+  "rows": [
+    {
+      "book": "locked",
+      "costs": {
+        "point_size": 0.01,
+        "contract_size": 1.0,
+        "lots": 1.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 10.0,
+        "max_spread_points": 200.0
+      },
+      "frozen_orb_flatten": {
+        "develop": {
+          "trades": 149,
+          "win_rate": 0.42953020134228187,
+          "profit_factor": 0.7234822721243624,
+          "net_pnl": -3097.900000000017,
+          "median_daily_pct": -0.00158,
+          "median_monthly_pct": -0.04849349999999974,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 57,
+          "win_rate": 0.5614035087719298,
+          "profit_factor": 0.9571166896419115,
+          "net_pnl": -249.8000000000044,
+          "median_daily_pct": 0.004070000000000001,
+          "median_monthly_pct": -0.033246999999999534,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "v4_best_develop": {
+        "develop": {
+          "trades": 107,
+          "win_rate": 0.514018691588785,
+          "profit_factor": 1.5080513260911916,
+          "net_pnl": 1134.7545944341773,
+          "median_daily_pct": 0.0030515025777232223,
+          "median_monthly_pct": 0.015032568412460125,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 24,
+          "win_rate": 0.4166666666666667,
+          "profit_factor": 1.0732078666045437,
+          "net_pnl": 51.14546794752175,
+          "median_daily_pct": -0.004010721126655408,
+          "median_monthly_pct": 0.0025572733973760814,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "goal_both_any_window": false
+    },
+    {
+      "book": "slip0",
+      "costs": {
+        "point_size": 0.01,
+        "contract_size": 1.0,
+        "lots": 1.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 0.0,
+        "max_spread_points": 200.0
+      },
+      "frozen_orb_flatten": {
+        "develop": {
+          "trades": 149,
+          "win_rate": 0.42953020134228187,
+          "profit_factor": 0.725726024605184,
+          "net_pnl": -3068.1000000000167,
+          "median_daily_pct": -0.00156,
+          "median_monthly_pct": -0.04809349999999975,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 57,
+          "win_rate": 0.5614035087719298,
+          "profit_factor": 0.9590385748722955,
+          "net_pnl": -238.40000000000458,
+          "median_daily_pct": 0.00409,
+          "median_monthly_pct": -0.03278699999999966,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "v4_best_develop": {
+        "develop": {
+          "trades": 107,
+          "win_rate": 0.514018691588785,
+          "profit_factor": 1.520054031791844,
+          "net_pnl": 1156.1545944341772,
+          "median_daily_pct": 0.003071502577723222,
+          "median_monthly_pct": 0.015302568412460136,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 24,
+          "win_rate": 0.4166666666666667,
+          "profit_factor": 1.080400653440571,
+          "net_pnl": 55.945467947521706,
+          "median_daily_pct": -0.0039907211266554075,
+          "median_monthly_pct": 0.002797273397376087,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "goal_both_any_window": false
+    },
+    {
+      "book": "lots2",
+      "costs": {
+        "point_size": 0.01,
+        "contract_size": 1.0,
+        "lots": 2.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 10.0,
+        "max_spread_points": 200.0
+      },
+      "frozen_orb_flatten": {
+        "develop": {
+          "trades": 149,
+          "win_rate": 0.42953020134228187,
+          "profit_factor": 0.7234822721243624,
+          "net_pnl": -6195.800000000034,
+          "median_daily_pct": -0.00316,
+          "median_monthly_pct": -0.09698699999999948,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 57,
+          "win_rate": 0.5614035087719298,
+          "profit_factor": 0.9571166896419115,
+          "net_pnl": -499.6000000000088,
+          "median_daily_pct": 0.008140000000000001,
+          "median_monthly_pct": -0.06649399999999907,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "v4_best_develop": {
+        "develop": {
+          "trades": 107,
+          "win_rate": 0.514018691588785,
+          "profit_factor": 1.5080513260911916,
+          "net_pnl": 2269.5091888683546,
+          "median_daily_pct": 0.006103005155446445,
+          "median_monthly_pct": 0.03006513682492025,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 24,
+          "win_rate": 0.4166666666666667,
+          "profit_factor": 1.0732078666045437,
+          "net_pnl": 102.2909358950435,
+          "median_daily_pct": -0.008021442253310815,
+          "median_monthly_pct": 0.005114546794752163,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "goal_both_any_window": false
+    },
+    {
+      "book": "lots5",
+      "costs": {
+        "point_size": 0.01,
+        "contract_size": 1.0,
+        "lots": 5.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 10.0,
+        "max_spread_points": 200.0
+      },
+      "frozen_orb_flatten": {
+        "develop": {
+          "trades": 149,
+          "win_rate": 0.42953020134228187,
+          "profit_factor": 0.7234822721243624,
+          "net_pnl": -15489.500000000084,
+          "median_daily_pct": -0.0079,
+          "median_monthly_pct": -0.24246749999999884,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 57,
+          "win_rate": 0.5614035087719298,
+          "profit_factor": 0.9571166896419115,
+          "net_pnl": -1249.0000000000218,
+          "median_daily_pct": 0.02035,
+          "median_monthly_pct": -0.16623499999999802,
+          "hit_daily_goal": true,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "v4_best_develop": {
+        "develop": {
+          "trades": 107,
+          "win_rate": 0.514018691588785,
+          "profit_factor": 1.5080513260911914,
+          "net_pnl": 5673.772972170886,
+          "median_daily_pct": 0.01525751288861611,
+          "median_monthly_pct": 0.07516284206230067,
+          "hit_daily_goal": true,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 24,
+          "win_rate": 0.4166666666666667,
+          "profit_factor": 1.0732078666045435,
+          "net_pnl": 255.72733973760842,
+          "median_daily_pct": -0.020053605633277037,
+          "median_monthly_pct": 0.012786366986880425,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "goal_both_any_window": false
+    },
+    {
+      "book": "slip0_lots5",
+      "costs": {
+        "point_size": 0.01,
+        "contract_size": 1.0,
+        "lots": 5.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 0.0,
+        "max_spread_points": 200.0
+      },
+      "frozen_orb_flatten": {
+        "develop": {
+          "trades": 149,
+          "win_rate": 0.42953020134228187,
+          "profit_factor": 0.7257260246051839,
+          "net_pnl": -15340.500000000084,
+          "median_daily_pct": -0.0078,
+          "median_monthly_pct": -0.24046749999999883,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 57,
+          "win_rate": 0.5614035087719298,
+          "profit_factor": 0.9590385748722955,
+          "net_pnl": -1192.0000000000218,
+          "median_daily_pct": 0.02045,
+          "median_monthly_pct": -0.16393499999999803,
+          "hit_daily_goal": true,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "v4_best_develop": {
+        "develop": {
+          "trades": 107,
+          "win_rate": 0.514018691588785,
+          "profit_factor": 1.5200540317918443,
+          "net_pnl": 5780.772972170886,
+          "median_daily_pct": 0.015357512888616111,
+          "median_monthly_pct": 0.07651284206230066,
+          "hit_daily_goal": true,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        },
+        "holdout": {
+          "trades": 24,
+          "win_rate": 0.4166666666666667,
+          "profit_factor": 1.080400653440571,
+          "net_pnl": 279.7273397376084,
+          "median_daily_pct": -0.01995360563327704,
+          "median_monthly_pct": 0.013986366986880418,
+          "hit_daily_goal": false,
+          "hit_monthly_goal": false,
+          "goal_both": false
+        }
+      },
+      "goal_both_any_window": false
+    }
+  ],
+  "note": "One shot. A levered or zero-slippage hit does not replace the locked 10 pt / 1-lot book and is not a promote."
+}

@@ -1,0 +1,128 @@
+{
+  "search_id": "us_index_session_v8",
+  "locked_at": "2026-08-18T17:16:00-05:00",
+  "selection_end": "2026-06-01",
+  "selection_window": "et_date < 2026-06-01",
+  "holdout_start": "2026-07-01",
+  "holdout_rule": "NEVER used for selection. June 2026 is a burned buffer. July–August was already inside the v4–v7 holdout aggregates — this is a cleaner window, not virgin data.",
+  "burned_buffer": ["2026-06-01", "2026-07-01"],
+  "symbol": "US100",
+  "tf": "H1/H4/Daily",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "note": "Locked book. 10 pt = MT5 points (0.01), not 10 index points. Charge HC spread + 10 pt/side. Do not cut slippage or raise lots to chase 1%/20%."
+  },
+  "data": {
+    "source": "FP Markets native cache H1.hc / H4.hc / Daily.hc via read_mt5_hc. Not the M5 export_us_index.request dump. Live terminal not attached, not exported, not killed.",
+    "server_utc_offset_sec": 10800,
+    "point": 0.01,
+    "contract_size": 1.0,
+    "files": {
+      "H1": {
+        "path": "results/us_index_data/history_US100_H1.csv",
+        "sha256": "c634d79866fa92cb9b22cd85d142f0f529d61fd98e3e6f60ec7d9f69d27b2291",
+        "bars": 4828
+      },
+      "H4": {
+        "path": "results/us_index_data/history_US100_H4.csv",
+        "sha256": "e75b4c46745659c89fb49808a50418eb4744bc32c9e2343c9f6198898c621692",
+        "bars": 1266
+      },
+      "Daily": {
+        "path": "results/us_index_data/history_US100_Daily.csv",
+        "sha256": "cd641fa413981982c44732856272aa674f193187ec268ab6e378c196e9cbf782",
+        "bars": 212
+      }
+    },
+    "note": "H1 4828 / H4 1266 / Daily 212. sha256 of the gitignored CSVs written from the native .hc caches before any develop metric."
+  },
+  "fill": "next H1 open after a signal on a closed H1. Closed H4 maps to the first H1 whose close time >= h4_confirm_close (H4 open + 14400s).",
+  "signals": "closed bar only (exclude_forming last bar). HTF state from completed bars only.",
+  "friday": "no new weekend gap: no new entries on Friday last H1, and no new entries on Friday H1 with ET hour >= 14:00. Pin is the Friday-last-H1 freeze; 14:00 is extra if an ET clock is present.",
+  "flatten_friday": "optional knob. true = exit at the open of Friday last H1 (do not hold the weekend gap). false = hold through the gap; Monday open may gap through SL/TP.",
+  "causality": {
+    "completed_bars": "BB / KC / squeeze / Donchian / SMA50 / pivots use completed bars only. Last series bar is forming (exclude_forming).",
+    "bb": "SMA(close, 20) ± k * sample_std(close, 20, ddof=1) on i-19..i (bar i is closed).",
+    "kc": "EMA(close, 20) ± kc_atr_mult * Wilder ATR(20) on completed H1 including i.",
+    "squeeze": "BB entirely inside KC: BB_upper < KC_upper AND BB_lower > KC_lower on completed H1.",
+    "squeeze_release": "squeezed[i-1] AND NOT squeezed[i]. Wait while squeezed; trade only on release.",
+    "donchian": "prior 20-bar channel from i-20..i-1. Trigger is close[i] vs that channel. Never use high[i]/low[i] as the break level.",
+    "donchian_include_i": false,
+    "daily_sma50": "SMA of last 50 completed Daily closes. Today's D1 is forming during the session — period end = Daily open + 86400. As-of join: last Daily with period_end <= H1 open.",
+    "daily_sma50_slope": "SMA50[last_completed] vs SMA50[last_completed-1]. Rising → longs only; falling → shorts only; flat/NaN → no trade. Do not use Daily SMA200.",
+    "daily_sma50_uses_forming": false,
+    "pivots": "confirmed_pivots / confirmed_pivots_with_centers imported from scripts/htf_fib_core.py. Do not re-derive. active_idx = center + right.",
+    "fibs": "walk_swing_and_fibs + fib_level from htf_fib_core (61.8–78.6). Pocket = [min(f618,f786), max(...)].",
+    "impulse_unidirectional": "each H4 close from origin_center+1 through extreme_center is in the impulse direction (up: close[j] >= close[j-1]; down: close[j] <= close[j-1]). Confirmation wing after extreme_center may pull back — that is the retrace, not part of the impulse body.",
+    "impulse_size": "swing_hi - swing_lo > k * H4 ATR14 at the confirmation bar (active_idx).",
+    "h4_confirm_close": "H4 bar open UTC + 14400s. No H1 signal until that H1's close time >= this instant.",
+    "entry_close_in_zone": "signal iff H1 close is inside the pocket (causal; no same-bar extreme after the decision).",
+    "entry_wick_touch": "signal iff H1 [low, high] overlaps the pocket. Fill is still next H1 open (do not use the wick bar as the fill).",
+    "one_per_impulse": true,
+    "sl_family2": "0.5 * H4 ATR14 of the impulse confirmation bar beyond the 100% retrace (origin). Long SL = origin - 0.5*ATR; short SL = origin + 0.5*ATR.",
+    "tp_family2": "impulse extreme (0% fib): swing high for longs after an up impulse; swing low for shorts after a down impulse. Parenthetical in the brief, not the swing origin.",
+    "exit_family1": "SL 1.0 * H1 ATR14 and TP 2.0 * H1 ATR14 from fill, ATR at the signal bar.",
+    "gap": "if the next H1 open gaps through SL or TP, exit at that open (SL before TP if both).",
+    "simulate_exits": "not used — same-ET-day flatten. Thin H1 walk with CostSpec / _round_trip_cost."
+  },
+  "not_copied": [
+    "v1–v7 winners and M5 families (do not retune; leave M5 scalping)",
+    "M1 / Timescale / news-drift",
+    "US30 / US500 / XAU / yields / ES",
+    "Daily SMA200 (eats develop)",
+    "ForexHtfPivotsFib / ForexHtfFibTester / ForexSignalLogger attached to the live FP book",
+    "export_us_index.request / ExportInstrumentHistory.mq5 / scripts/19-run-htf-fib-backtest.sh"
+  ],
+  "reused_from_trading": {
+    "pivots": "scripts/htf_fib_core.py confirmed_pivots / walk_swing_and_fibs / fib_level",
+    "costs": "CostSpec + _round_trip_cost (spread + 2*10 pt + commission 0)",
+    "split": "split_v4: develop et_date < 2026-06-01; holdout et_date >= 2026-07-01; June burned",
+    "atr_ema": "us_index_session_core.wilder_atr / ema_series"
+  },
+  "families": {
+    "h1_volatility_squeeze_breakout": {
+      "note": "TTM-style squeeze on completed H1: wait inside BB⊂KC, trade the release only if the H1 close breaks the prior 20-bar Donchian, gated by completed Daily SMA50 slope.",
+      "bb_period": 20,
+      "bb_k": [1.8, 2.0],
+      "kc_period": 20,
+      "kc_atr_mult": [1.25, 1.5],
+      "donch_n": 20,
+      "macro": "completed Daily SMA50 slope",
+      "one_per_day": [true, false],
+      "flatten_friday": [true, false],
+      "exit": "SL 1.0 ATR / TP 2.0 ATR (H1 ATR14) from fill"
+    },
+    "h4_impulse_fib_pullback": {
+      "note": "US100 Python-only H4 impulse → H1 golden-pocket pullback. Pivots from htf_fib_core. Do not attach ForexHtfPivotsFib.",
+      "impulse_k": [2.0, 2.5],
+      "retrace": [0.618, 0.786],
+      "entry": ["close_in_zone", "wick_touch"],
+      "side": "with the impulse",
+      "one_per_impulse": true,
+      "pivot": [[3, 2], [5, 5]],
+      "pivot_note": "3/2 = smaller causal fractal; 5/5 = ForexHtfPivotsFib H4 default. Both imported, not re-derived.",
+      "flatten_friday": [true, false],
+      "sl": "0.5 H4 ATR beyond 100% retrace",
+      "tp": "impulse extreme"
+    }
+  },
+  "n_configs_expected": 32,
+  "grid_breakdown": {
+    "h1_volatility_squeeze_breakout": 16,
+    "h4_impulse_fib_pullback": 16
+  },
+  "grid_note": "Product of the listed family knobs only (16 + 16 = 32). Locked now — do not wait for a larger grid. Ceiling ~48, not hundreds.",
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "promote": false,
+  "live_go": false,
+  "python_only": true,
+  "note": "Leave M5 scalping. Hunt H1/H4 structural swings where a 20-pt round-trip is small vs 100+ pt moves. New search_id. Do not attach these families to the overlay. 1%/day and 20%/month are goals, not promises. A 100pt winning day is ~$100 = 1% on this book only if it actually happens after costs."
+}

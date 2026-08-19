@@ -1,0 +1,43 @@
+{
+  "search_id": "us_index_session_develop_v1",
+  "locked_at": "2026-08-18T15:08:00-05:00",
+  "holdout_start": "2026-06-01",
+  "selection_window": "et_date < holdout_start",
+  "holdout_rule": "NEVER used for selection",
+  "symbol": "US100",
+  "tf": "M5",
+  "start_balance_usd": 10000,
+  "lots": 1.0,
+  "goal_daily_pct": 0.01,
+  "goal_monthly_pct": 0.20,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "note": "10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread."
+  },
+  "score_row": "profit_factor is None (all winners) pins to 3.0, same as finite PF 3",
+  "grid": {
+    "or_minutes": [5, 15, 30],
+    "ema_pairs": [[5, 13], [8, 21], [9, 21]],
+    "filters": ["orb_vwap_ema", "orb_vwap", "orb_ema", "orb_only"],
+    "entry_end": ["10:30", "11:30", "12:00"],
+    "one_per_day": [true, false],
+    "exits": [
+      "flatten_11:30",
+      "flatten_12:00",
+      "flatten_15:45",
+      "atr_sl1.0_tp1.5",
+      "atr_sl1.5_tp2.0",
+      "atr_sl1.0_tp2.0",
+      "bars_6",
+      "bars_12"
+    ]
+  },
+  "rank_develop": "net>0 and trades>=40; rank by profit_factor then expectancy",
+  "promote": false,
+  "live_go": false,
+  "note": "New search. Not a retune of ny_cash_orb_vwap_ema_flat. 1%/day and 20%/month are goals, not promises."
+}
