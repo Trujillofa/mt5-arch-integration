@@ -11,7 +11,7 @@ Design freeze: [US-INDEX-SESSION-SCALP-DESIGN.md](research/US-INDEX-SESSION-SCAL
 
 Every screen **missed** median **trade-day** ≥ 1% and median **trade-month** ≥ 20% on the locked book. There is no promote path. Sequential peek is real: eight families in one day; later ones were designed after earlier holdout writes. July–August is a cleaner window, **not virgin**.
 
-> This work does **not** authorize or substitute for XAU Phase E. `next_step` stays `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. This is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`. Do not edit `results/xau_loop_status.md` from this lane.
+> This US-index research lane is **not** XAU Phase E and does **not** authorize or substitute for it. Do **not** edit `results/xau_loop_status.md` from this lane; see that file for current XAU disposition (`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`). Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. This is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`.
 
 ---
 

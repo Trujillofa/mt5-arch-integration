@@ -12,7 +12,7 @@
 | **promote / live_go** | **no / false** |
 | **Develop screen** | **executed** `us_index_session_develop_v1` — 0 eligible hit goals |
 
-> **Not XAU Phase E.** This US-index work does **not** authorize or substitute for XAU Phase E. `next_step` stays `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. Locks already say this is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`. Do not edit `results/xau_loop_status.md` from this lane.
+> **Not XAU Phase E.** This US-index work does **not** authorize or substitute for XAU Phase E. Do **not** edit `results/xau_loop_status.md` from this lane; see that file for current XAU disposition (`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`). Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. Locks already say this is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`.
 
 ---
 
