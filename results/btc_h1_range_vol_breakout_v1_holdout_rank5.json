@@ -1,0 +1,88 @@
+{
+  "search_id": "btc_h1_range_vol_breakout_v1",
+  "report_scope": "holdout_eval_config_5_only",
+  "window": "signal_utc_date >= 2026-01-01",
+  "holdout_start": "2026-01-01",
+  "promote": false,
+  "live_go": false,
+  "holdout_not_virgin": true,
+  "matches_prior_peek": true,
+  "prior_peek": "n=37, PF~1.17, NP~+$32, 16L/21S",
+  "config_index": 5,
+  "params": {
+    "family": "h1_range_vol_breakout",
+    "index": 5,
+    "range_n": 20,
+    "squeeze_max": 0.9,
+    "expand_min": 1.25,
+    "sl_atr": 2.0,
+    "tp_rr": 2.0,
+    "flatten_weekend": true,
+    "allow_shorts": true
+  },
+  "data": {
+    "path": "results/btc_data/history_BTCUSD_H1.csv",
+    "sha256": "c2f87a05eb56d401d292ddcb68a68b6baa6cc22ab0a061c39e573f96e0f062ff",
+    "bars": 29035,
+    "from": "2021-12-20 21:00:00+00:00",
+    "to": "2026-08-18 15:00:00+00:00"
+  },
+  "book": {
+    "start_balance": 10000.0,
+    "lots": 0.01,
+    "slippage_points": 250.0,
+    "max_spread_points": 4000.0,
+    "commission_per_lot": 0.0
+  },
+  "develop_reminder": {
+    "trades": 293,
+    "profit_factor": 1.112677098621477,
+    "net_pnl": 143.97131560015845,
+    "soft_pass": true
+  },
+  "holdout": {
+    "trades": 37,
+    "longs": 16,
+    "shorts": 21,
+    "wins": 16,
+    "losses": 21,
+    "win_rate": 0.43243243243243246,
+    "profit_factor": 1.1743684463466726,
+    "net_pnl": 32.100339828978,
+    "max_dd_pct": 0.006002621312220156,
+    "expectancy": 0.8675767521345406,
+    "median_daily_pct": -0.00048536264916614156,
+    "trade_days": 37,
+    "trade_months": 8,
+    "first_signal": "2026-01-01T16:00:00+00:00",
+    "last_signal": "2026-08-11T14:00:00+00:00",
+    "date_span": "2026-01-01 \u2192 2026-08-11",
+    "soft_pass": false,
+    "soft_failed_clauses": [
+      "n>=40"
+    ],
+    "soft_checks": [
+      {
+        "clause": "n>=40",
+        "pass": false,
+        "detail": "n=37"
+      },
+      {
+        "clause": "NP>0",
+        "pass": true,
+        "detail": "NP=+32.1003"
+      },
+      {
+        "clause": "PF>=1.1",
+        "pass": true,
+        "detail": "PF=1.174368"
+      },
+      {
+        "clause": "DD<=25%",
+        "pass": true,
+        "detail": "DD=0.6003%"
+      }
+    ]
+  },
+  "note": "Holdout evaluation of frozen Config #5 only. Not a new search. Remaining 15 discarded. Do not retune. promote=no."
+}
