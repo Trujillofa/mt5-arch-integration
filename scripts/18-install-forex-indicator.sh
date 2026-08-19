@@ -32,6 +32,7 @@ SRC_INC=(
   "${ROOT}/mql5/Include/FxSymbolRegistry.mqh"
   "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
   "${ROOT}/mql5/Include/IndexM5Export.mqh"
+  "${ROOT}/mql5/Include/TickCopyRangeExport.mqh"
 )
 SRC_IND=(
   "${ROOT}/mql5/Indicators/ForexIndicatorTemplate.mq5"
@@ -52,6 +53,7 @@ SRC_SCRIPTS=(
   "${ROOT}/mql5/Scripts/ExportXauHistory.mq5"
   "${ROOT}/mql5/Scripts/ExportInstrumentHistory.mq5"
   "${ROOT}/mql5/Scripts/ExportUsIndexM5.mq5"
+  "${ROOT}/mql5/Scripts/ExportTicksCopyRange.mq5"
 )
 # Runtime data (no recompile needed — regenerate with scripts/tpl_to_sr_levels.py)
 SRC_FILES=(
@@ -145,6 +147,7 @@ Next steps:
        Scripts/ExportSymbolCapabilities.mq5  ← optional broker-symbol dump
        Scripts/ExportSymbolSyncAudit.mq5     ← optional H1 calendar / spread audit
        Scripts/ExportUsIndexM5.mq5           ← US100/US30 M5 dump (does not kill terminal)
+       Scripts/ExportTicksCopyRange.mq5      ← CopyTicksRange dump (does not kill terminal)
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
      US30/US100 M5: UsIndexSessionScalp

@@ -11,9 +11,14 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from tick_cvd_core import (  # noqa: E402
     MQL_TICK_CSV_COLUMNS,
+    MqlTickRow,
     cvd_series,
+    feed_populate_audit,
+    flag_direction_ratio,
+    last_trade_ratio,
     parse_mql_tick_csv,
     refuse_bar_ohlcv_cvd,
+    volume_populated_ratio,
 )
 
 LOCK_PATH = ROOT / "results" / "timescale_true_cvd_v1_lock.json"
@@ -145,3 +150,71 @@ def test_refuse_tkc_source(tmp_path: Path):
 def test_csv_columns_match_lock_contract():
     header = FIXTURE.read_text(encoding="utf-8").splitlines()[0].split(",")
     assert tuple(header) == MQL_TICK_CSV_COLUMNS
+
+
+def _row(**kwargs) -> MqlTickRow:
+    base = {
+        "time_msc": 1,
+        "seq": 0,
+        "bid": 1.0,
+        "ask": 1.1,
+        "last": 0.0,
+        "volume": 0,
+        "volume_real": 0.0,
+        "flags": 2,
+        "symbol": "SYNTH",
+        "broker": "none",
+        "source": "synthetic",
+        "server_utc_offset_sec": 0,
+    }
+    base.update(kwargs)
+    return MqlTickRow(**base)
+
+
+def test_populate_ratios_on_synthetic_fixture():
+    rows = parse_mql_tick_csv(FIXTURE)
+    assert last_trade_ratio(rows) == 4 / 6
+    assert volume_populated_ratio(rows) == 4 / 6
+    assert flag_direction_ratio(rows) == 2 / 6
+    audit = feed_populate_audit(rows)
+    assert audit["verdict"] == "QUALIFY"
+    assert audit["n_ticks"] == 6
+
+
+def test_populate_disqualify_when_last_all_zero():
+    rows = [
+        _row(time_msc=1, last=0.0, volume=0, volume_real=0.0, flags=6),
+        _row(time_msc=2, last=0.0, volume=1, volume_real=0.0, flags=38),
+    ]
+    audit = feed_populate_audit(rows)
+    assert last_trade_ratio(rows) == 0.0
+    assert audit["verdict"] == "DISQUALIFY"
+    assert "last==0" in audit["reason"]
+    assert "tick_volume" in audit["reason"]
+
+
+def test_populate_disqualify_last_without_size_or_flags():
+    rows = [_row(time_msc=1, last=100.0, volume=0, volume_real=0.0, flags=8)]
+    audit = feed_populate_audit(rows)
+    assert last_trade_ratio(rows) == 1.0
+    assert volume_populated_ratio(rows) == 0.0
+    assert flag_direction_ratio(rows) == 0.0
+    assert audit["verdict"] == "DISQUALIFY"
+
+
+def test_populate_empty_tape_disqualify():
+    audit = feed_populate_audit([])
+    assert audit["n_ticks"] == 0
+    assert audit["verdict"] == "DISQUALIFY"
+
+
+def test_export_script_is_copyticks_not_orders():
+    script = ROOT / "mql5" / "Scripts" / "ExportTicksCopyRange.mq5"
+    include = ROOT / "mql5" / "Include" / "TickCopyRangeExport.mqh"
+    text = script.read_text() + "\n" + include.read_text()
+    assert "CopyTicksRange" in text
+    assert "COPY_TICKS_ALL" in text
+    assert "OrderSend(" not in text
+    assert "ExpertRemove(" not in text
+    assert "TerminalClose(" not in text
+    assert "copyticks_csv" in text

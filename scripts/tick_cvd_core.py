@@ -175,3 +175,77 @@ def cvd_series(rows: list[MqlTickRow]) -> list[SignedTick]:
             )
         )
     return out
+
+
+def last_trade_ratio(rows: list[MqlTickRow]) -> float:
+    if not rows:
+        return 0.0
+    return sum(1 for r in rows if r.last > 0) / len(rows)
+
+
+def volume_populated_ratio(rows: list[MqlTickRow]) -> float:
+    if not rows:
+        return 0.0
+    return sum(1 for r in rows if r.volume_real > 0 or r.volume > 0) / len(rows)
+
+
+def flag_direction_ratio(rows: list[MqlTickRow]) -> float:
+    if not rows:
+        return 0.0
+    mask = TICK_FLAG_BUY | TICK_FLAG_SELL
+    return sum(1 for r in rows if int(r.flags) & mask) / len(rows)
+
+
+def feed_populate_audit(rows: list[MqlTickRow]) -> dict:
+    """Qualify/disqualify a CopyTicks tape for true CVD. No tick_volume fallback."""
+    n = len(rows)
+    last_n = sum(1 for r in rows if r.last > 0)
+    vol_n = sum(1 for r in rows if r.volume_real > 0 or r.volume > 0)
+    flag_n = sum(1 for r in rows if int(r.flags) & (TICK_FLAG_BUY | TICK_FLAG_SELL))
+    last_ratio = last_trade_ratio(rows)
+    vol_ratio = volume_populated_ratio(rows)
+    flag_ratio = flag_direction_ratio(rows)
+    if n == 0:
+        verdict = "DISQUALIFY"
+        reason = "empty tape; true CVD impossible"
+    elif last_n == 0:
+        verdict = "DISQUALIFY"
+        reason = "last==0 on all rows; true CVD impossible; no tick_volume fallback"
+    elif vol_n == 0 and flag_n == 0:
+        verdict = "DISQUALIFY"
+        reason = (
+            "last>0 but no volume and no BUY/SELL flags; "
+            "true signed-volume CVD impossible"
+        )
+    else:
+        verdict = "QUALIFY"
+        reason = "last-trade fields populate with volume and/or BUY/SELL flags"
+    return {
+        "n_ticks": n,
+        "last_n": last_n,
+        "volume_n": vol_n,
+        "flag_direction_n": flag_n,
+        "last_trade_ratio": last_ratio,
+        "volume_populated_ratio": vol_ratio,
+        "flag_direction_ratio": flag_ratio,
+        "verdict": verdict,
+        "reason": reason,
+    }
+
+
+def _cli(argv: list[str] | None = None) -> int:
+    import argparse
+    import json
+
+    parser = argparse.ArgumentParser(description="True-CVD tick tape helpers")
+    parser.add_argument("--audit", type=Path, help="MqlTick CSV path")
+    args = parser.parse_args(argv)
+    if args.audit is None:
+        parser.error("pass --audit PATH")
+    rows = parse_mql_tick_csv(args.audit)
+    print(json.dumps(feed_populate_audit(rows), indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(_cli())
