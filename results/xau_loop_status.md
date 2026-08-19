@@ -1,5 +1,27 @@
 # XAU offline loop status
 
+## 2026-08-19 — Develop screen · `asia_box_london_sweep_fade_flat` **SCREEN_FAIL** (deterministic)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **family_id** | `asia_box_london_sweep_fade_flat` |
+| **charter v2 (operative)** | `results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json` · SHA `d2f0b7becca0c489aa06275ea37af143e24449d34907c217d6f99877c0d578b4` (v1 `7cf9f46f…` superseded pre-impl by entry_gap_policy amendment; never scored) |
+| **screen** | `--strict-charter --screen-only` · develop 25,582 H1 bars · 2021-09-03 → 2025-12-31 · holdout **untouched** |
+| **result** | n **670** · PF **0.553** · NP **−8,141.58** · DD **82.12%** · primary passers **0** (classic 0 / soft 0) |
+| **disposition** | **SCREEN_FAIL — ZERO_PRIMARY_PASSERS** · terminal · null **skipped** (`p_n_passers=1.0` trivially for any n_null) · `r1_burned=false` (screen-only, nonterminal machinery; deterministic fail) |
+| **artifact** | `results/xau_asia_box_london_sweep_fade_flat_null_maxstat.{json,md}` · provenance `tree_clean=true` · main @ `5a1db7c` |
+| **falsifier confirmed** | memo falsifier #1 (exact-extreme SL scratches; NP≤0 / PF<1.1) — actual PF 0.553 is decisively past it, incl. every slippage sensitivity (0.553 → 0.290 at 20 pt) |
+| **multiplicity** | look consumed · **K_prior=10 for the next family** · dead-lines list gains this family |
+| **null / paper / live** | **forbidden** — family closed |
+| **do not** | retune hours/SL/TP/occupancy · revive or rename · flip direction on the same events (breakout-continuation of Asia-box sweeps is the `prior_day_high_break`/`early_server_range_break` neighborhood — closed) |
+
+Thesis dead as frozen: Europe fading Asia-box stop-runs has **negative** develop edge after Standard STP costs (PF 0.553, n=670 — not thin-n). The sweep-and-reclaim *event* is real and frequent; the *fade* of it loses. Standing: 10 dead families. Next research needs a genuinely new `family_id` + freeze-before-peek.
+
+---
+
 ## 2026-08-19 — Phase E develop screen r1 · `exog_london_fx_cosign_xau_follow_flat` **SCREEN_FAIL**
 
 | Field | Value |
