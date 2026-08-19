@@ -10,6 +10,7 @@
 | Full trading EA | Risk, sizing, prop rules, news | High | **Later** after signals prove useful |
 | Port session-momentum z-score | Edge lives in cTrader Python today | High | Parallel track, not MT5-first |
 | Auto-trade from Fib markers | Same as full EA | High | Only after logger paper stats |
+| **US30/US100 session scalp overlay** | Cash-open ORB+VWAP+EMA observe on M5; logger buffer 8; live-safe M5 export | Medium | Overlay v1.40. Screens stay Python-only. **promote=no** |
 
 Principle: **visual parity with TV first → observe → automate read-only → only then trade.**
 
@@ -18,24 +19,34 @@ Principle: **visual parity with TV first → observe → automate read-only → 
 ```
 mql5/
   Include/ForexUtils.mqh              # pips, sessions, pivots, EMA/ATR/RSI helpers
+  Include/IndexSessionUtils.mqh       # US-index DST clock + point spread
+  Include/IndexM5Export.mqh           # live-safe US100/US30 M5 dump
   Indicators/ForexIndicatorTemplate.mq5   # bias cloud + prior-day levels
   Indicators/ForexHtfPivotsFib.mq5        # ★ TV port: HTF pivots + Fib + confluence
+  Indicators/UsIndexSessionScalp.mq5      # US30/US100 cash-open scalp overlay
+  Indicators/BtcTrendPullback.mq5         # BTCUSD H4/H1 pullback
   Experts/ForexSignalLogger.mq5           # iCustom → Print/CSV (never OrderSend)
+  Scripts/ExportUsIndexM5.mq5             # dump without killing the terminal
   Mt5ArchBridge.mq5                       # existing file bridge
 ```
 
 ### Recommended chart layout
 
-1. **Primary:** `ForexHtfPivotsFib` on **H1** (or M15) for EURUSD/GBPUSD/NZDCHF  
-2. **Optional:** `ForexIndicatorTemplate` only if you want prior-day cloud bias alone  
-3. **Logger:** `ForexSignalLogger` on same chart when you want a signal journal  
+1. **Primary FX/gold:** `ForexHtfPivotsFib` on **H1** (or M15) for EURUSD/GBPUSD/NZDCHF / XAUUSD
+2. **US100 / US30 M5 (or M15):** `UsIndexSessionScalp` — observe only; [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md)
+3. **Optional:** `ForexIndicatorTemplate` only if you want prior-day cloud bias alone
+4. **Logger:** `ForexSignalLogger` on the same chart (`UsIndexSessionScalp` → buffer **8**, `InpMaxSpreadPips=0`)
 
 ### Buffer contract (for agents / future EA)
 
+Authoritative tables live in [mql5/README.md](../mql5/README.md). Do not use older Fib-at-7 notes.
+
 | Indicator | Signal buffer | Extra |
 |-----------|--------------:|-------|
-| `ForexHtfPivotsFib` | **7** | 4=fib618, 5=fib786, 6=swingDir |
+| `ForexHtfPivotsFib` | **8** | 5=fib618, 6=fib786, 7=swingDir |
 | `ForexIndicatorTemplate` | **8** | EMA cloud + PDH objects |
+| `UsIndexSessionScalp` | **8** | 2=VWAP, 3–4=OR, 9=ATR |
+| `BtcTrendPullback` | **7** | 6=HTF bias |
 
 ## Next waves (ordered)
 
