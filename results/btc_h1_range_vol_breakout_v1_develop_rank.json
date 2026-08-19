@@ -1,0 +1,627 @@
+{
+  "search_id": "btc_h1_range_vol_breakout_v1",
+  "window": "signal_utc_date < 2026-01-01",
+  "report_scope": "develop_only",
+  "promote": false,
+  "live_go": false,
+  "data": {
+    "path": "results/btc_data/history_BTCUSD_H1.csv",
+    "sha256": "c2f87a05eb56d401d292ddcb68a68b6baa6cc22ab0a061c39e573f96e0f062ff",
+    "bars": 29035,
+    "from": "2021-12-20 21:00:00+00:00",
+    "to": "2026-08-18 15:00:00+00:00",
+    "source_note": "Locked CSV (same sha/bars as lock). Not a fresh .hc read."
+  },
+  "book": {
+    "start_balance": 10000.0,
+    "lots": 0.01,
+    "slippage_points": 250.0,
+    "max_spread_points": 4000.0,
+    "point_size": 0.01,
+    "contract_size": 1.0
+  },
+  "soft_gate": {
+    "n_trades_min": 40,
+    "net_pnl_gt": 0,
+    "profit_factor_min": 1.1,
+    "max_dd_pct_max": 0.25
+  },
+  "n_configs": 16,
+  "n_eligible": 4,
+  "n_develop_soft_pass": 1,
+  "elapsed_sec": 2.82,
+  "rows": [
+    {
+      "index": 0,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 27,
+        "win_rate": 0.37037037037037035,
+        "profit_factor": 1.6873513649766767,
+        "net_pnl": 33.09095312735528,
+        "max_dd_pct": 0.0020808283681267225,
+        "median_daily_pct": -0.0001634387395918893,
+        "longs": 13,
+        "shorts": 14,
+        "soft_pass": false,
+        "expectancy": 1.225590856568714,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 1,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 25,
+        "win_rate": 0.44,
+        "profit_factor": 2.391052140788882,
+        "net_pnl": 67.5507091110622,
+        "max_dd_pct": 0.0024600191301097423,
+        "median_daily_pct": -0.0001837997663838776,
+        "longs": 11,
+        "shorts": 14,
+        "soft_pass": false,
+        "expectancy": 2.702028364442488,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 2,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 19,
+        "win_rate": 0.42105263157894735,
+        "profit_factor": 2.3962305905889365,
+        "net_pnl": 37.50631030956895,
+        "max_dd_pct": 0.0014218493444857195,
+        "median_daily_pct": -0.0001419773247879073,
+        "longs": 10,
+        "shorts": 9,
+        "soft_pass": false,
+        "expectancy": 1.9740163320825765,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 3,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 18,
+        "win_rate": 0.3888888888888889,
+        "profit_factor": 2.406557359748324,
+        "net_pnl": 48.641655359534035,
+        "max_dd_pct": 0.0018597691259809544,
+        "median_daily_pct": -0.0001983590429198638,
+        "longs": 9,
+        "shorts": 9,
+        "soft_pass": false,
+        "expectancy": 2.7023141866407796,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 4,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 307,
+        "win_rate": 0.38762214983713356,
+        "profit_factor": 0.990604164659545,
+        "net_pnl": -10.528808330960333,
+        "max_dd_pct": 0.01898964024198199,
+        "median_daily_pct": -0.00021236562567501267,
+        "longs": 157,
+        "shorts": 150,
+        "soft_pass": false,
+        "expectancy": -0.034295792608991314,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 5,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 293,
+        "win_rate": 0.41638225255972694,
+        "profit_factor": 1.112677098621477,
+        "net_pnl": 143.97131560015845,
+        "max_dd_pct": 0.01679124700302708,
+        "median_daily_pct": -0.0002265221541965802,
+        "longs": 150,
+        "shorts": 143,
+        "soft_pass": true,
+        "expectancy": 0.4913696778162404,
+        "eligible": true
+      },
+      "screen": "soft_pass"
+    },
+    {
+      "index": 6,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 242,
+        "win_rate": 0.4049586776859504,
+        "profit_factor": 1.0839636968815456,
+        "net_pnl": 68.32058032781426,
+        "max_dd_pct": 0.012340240313019462,
+        "median_daily_pct": -0.00019071575025377387,
+        "longs": 129,
+        "shorts": 113,
+        "soft_pass": false,
+        "expectancy": 0.2823164476355961,
+        "eligible": true
+      },
+      "screen": "eligible"
+    },
+    {
+      "index": 7,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 245,
+        "win_rate": 0.3877551020408163,
+        "profit_factor": 0.9836986619737541,
+        "net_pnl": -17.64952461157374,
+        "max_dd_pct": 0.019630167059766633,
+        "median_daily_pct": -0.00026149432365217253,
+        "longs": 132,
+        "shorts": 113,
+        "soft_pass": false,
+        "expectancy": -0.0720388759656071,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 8,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 13,
+        "win_rate": 0.23076923076923078,
+        "profit_factor": 1.2782625265154992,
+        "net_pnl": 7.510741810270371,
+        "max_dd_pct": 0.0014433107592897014,
+        "median_daily_pct": -0.0001941965205444103,
+        "longs": 6,
+        "shorts": 7,
+        "soft_pass": false,
+        "expectancy": 0.5777493700207977,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 9,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 13,
+        "win_rate": 0.23076923076923078,
+        "profit_factor": 1.325657354535569,
+        "net_pnl": 11.336422413693828,
+        "max_dd_pct": 0.0018888876790529273,
+        "median_daily_pct": -0.00023821897876499297,
+        "longs": 6,
+        "shorts": 7,
+        "soft_pass": false,
+        "expectancy": 0.8720324933610637,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 10,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 12,
+        "win_rate": 0.25,
+        "profit_factor": 1.5720614340672712,
+        "net_pnl": 12.55513315419294,
+        "max_dd_pct": 0.001279872019697812,
+        "median_daily_pct": -0.00018849412730907798,
+        "longs": 6,
+        "shorts": 6,
+        "soft_pass": false,
+        "expectancy": 1.046261096182745,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 11,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.75,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 12,
+        "win_rate": 0.25,
+        "profit_factor": 1.640311105701703,
+        "net_pnl": 18.014044205590597,
+        "max_dd_pct": 0.0016759693595970768,
+        "median_daily_pct": -0.00022626448938249357,
+        "longs": 6,
+        "shorts": 6,
+        "soft_pass": false,
+        "expectancy": 1.501170350465883,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 12,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 191,
+        "win_rate": 0.36649214659685864,
+        "profit_factor": 0.8732364936236914,
+        "net_pnl": -91.0938074425306,
+        "max_dd_pct": 0.019864051424853785,
+        "median_daily_pct": -0.00021984164869258115,
+        "longs": 102,
+        "shorts": 89,
+        "soft_pass": false,
+        "expectancy": -0.47693092901848483,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 13,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 195,
+        "win_rate": 0.37948717948717947,
+        "profit_factor": 0.915175118191542,
+        "net_pnl": -77.95446483002594,
+        "max_dd_pct": 0.023342998153032972,
+        "median_daily_pct": -0.0002873715471744867,
+        "longs": 104,
+        "shorts": 91,
+        "soft_pass": false,
+        "expectancy": -0.39976648630782535,
+        "eligible": false
+      },
+      "screen": "SCREEN_FAIL"
+    },
+    {
+      "index": 14,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 155,
+        "win_rate": 0.4,
+        "profit_factor": 1.0676779399768603,
+        "net_pnl": 34.960691254030955,
+        "max_dd_pct": 0.01121281775404168,
+        "median_daily_pct": -0.0001924561353990921,
+        "longs": 84,
+        "shorts": 71,
+        "soft_pass": false,
+        "expectancy": 0.2255528468001997,
+        "eligible": true
+      },
+      "screen": "eligible"
+    },
+    {
+      "index": 15,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 165,
+        "win_rate": 0.4,
+        "profit_factor": 1.0857823235371429,
+        "net_pnl": 60.01352670674049,
+        "max_dd_pct": 0.013952425590289143,
+        "median_daily_pct": -0.00024995762034177283,
+        "longs": 89,
+        "shorts": 76,
+        "soft_pass": false,
+        "expectancy": 0.3637183436772151,
+        "eligible": true
+      },
+      "screen": "eligible"
+    }
+  ],
+  "ranked_passers": [
+    {
+      "rank": 1,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 293,
+        "win_rate": 0.41638225255972694,
+        "profit_factor": 1.112677098621477,
+        "net_pnl": 143.97131560015845,
+        "max_dd_pct": 0.01679124700302708,
+        "median_daily_pct": -0.0002265221541965802,
+        "longs": 150,
+        "shorts": 143,
+        "soft_pass": true,
+        "expectancy": 0.4913696778162404,
+        "eligible": true
+      }
+    }
+  ],
+  "eligible_ranked": [
+    {
+      "rank": 1,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.25,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 293,
+        "win_rate": 0.41638225255972694,
+        "profit_factor": 1.112677098621477,
+        "net_pnl": 143.97131560015845,
+        "max_dd_pct": 0.01679124700302708,
+        "median_daily_pct": -0.0002265221541965802,
+        "longs": 150,
+        "shorts": 143,
+        "soft_pass": true,
+        "expectancy": 0.4913696778162404,
+        "eligible": true
+      }
+    },
+    {
+      "rank": 2,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 2.0,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 165,
+        "win_rate": 0.4,
+        "profit_factor": 1.0857823235371429,
+        "net_pnl": 60.01352670674049,
+        "max_dd_pct": 0.013952425590289143,
+        "median_daily_pct": -0.00024995762034177283,
+        "longs": 89,
+        "shorts": 76,
+        "soft_pass": false,
+        "expectancy": 0.3637183436772151,
+        "eligible": true
+      }
+    },
+    {
+      "rank": 3,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 20,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 242,
+        "win_rate": 0.4049586776859504,
+        "profit_factor": 1.0839636968815456,
+        "net_pnl": 68.32058032781426,
+        "max_dd_pct": 0.012340240313019462,
+        "median_daily_pct": -0.00019071575025377387,
+        "longs": 129,
+        "shorts": 113,
+        "soft_pass": false,
+        "expectancy": 0.2823164476355961,
+        "eligible": true
+      }
+    },
+    {
+      "rank": 4,
+      "params": {
+        "family": "h1_range_vol_breakout",
+        "range_n": 40,
+        "squeeze_max": 0.9,
+        "expand_min": 1.75,
+        "sl_atr": 1.5,
+        "tp_rr": 2.0,
+        "flatten_weekend": true,
+        "allow_shorts": true
+      },
+      "develop": {
+        "trades": 155,
+        "win_rate": 0.4,
+        "profit_factor": 1.0676779399768603,
+        "net_pnl": 34.960691254030955,
+        "max_dd_pct": 0.01121281775404168,
+        "median_daily_pct": -0.0001924561353990921,
+        "longs": 84,
+        "shorts": 71,
+        "soft_pass": false,
+        "expectancy": 0.2255528468001997,
+        "eligible": true
+      }
+    }
+  ],
+  "develop_winner": {
+    "params": {
+      "family": "h1_range_vol_breakout",
+      "range_n": 20,
+      "squeeze_max": 0.9,
+      "expand_min": 1.25,
+      "sl_atr": 2.0,
+      "tp_rr": 2.0,
+      "flatten_weekend": true,
+      "allow_shorts": true
+    },
+    "develop": {
+      "trades": 293,
+      "win_rate": 0.41638225255972694,
+      "profit_factor": 1.112677098621477,
+      "net_pnl": 143.97131560015845,
+      "max_dd_pct": 0.01679124700302708,
+      "median_daily_pct": -0.0002265221541965802,
+      "longs": 150,
+      "shorts": 143,
+      "soft_pass": true,
+      "expectancy": 0.4913696778162404,
+      "eligible": true
+    }
+  },
+  "note": "Develop-only re-rank of the frozen 16. promote=no. Do not retune."
+}
