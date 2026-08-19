@@ -20,6 +20,7 @@ input string InpChallengeFile = "mt5_arch\\export_challenge.json";
 //+------------------------------------------------------------------+
 ENUM_TIMEFRAMES ParseTf(const string tf)
   {
+   if(tf == "M5")  return PERIOD_M5;
    if(tf == "M15") return PERIOD_M15;
    if(tf == "H1")  return PERIOD_H1;
    if(tf == "H4")  return PERIOD_H4;
