@@ -43,5 +43,5 @@
   "commission_per_lot": 0.0,
   "promote": false,
   "live_go": false,
-  "note": "One shot. A levered or zero-slippage hit does not replace the locked 10 pt / 1-lot book and is not a promote."
+  "note": "One shot. 10 pt = MT5 points (0.01), not 10 index points. A levered or zero-slippage hit does not replace the locked 10 pt / 1-lot book and is not a promote."
 }

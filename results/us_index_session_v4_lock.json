@@ -18,7 +18,7 @@
     "commission_per_lot": 0.0,
     "slippage_points": 10.0,
     "max_spread_points": 200.0,
-    "note": "Friction is kept. Do not cut slippage to chase 1%/20%."
+    "note": "Friction is kept. 10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread. Do not cut slippage to chase 1%/20%."
   },
   "families": {
     "vol_regime_orb": {

@@ -46,6 +46,9 @@ from us_index_session_backtest import (  # noqa: E402
     load_m5_csv,
     parse_meta,
     read_mt5_hc,
+    refuse_mutated_frozen_book,
+    require_frozen_cost_book,
+    write_slim_json,
 )
 from us_index_session_core import ATR_PERIOD, to_utc, wilder_atr  # noqa: E402
 from us_index_session_htf import (  # noqa: E402
@@ -468,6 +471,7 @@ def main() -> None:
         raise SystemExit("donchian_include_i must be frozen false")
     if lock.get("causality", {}).get("daily_sma50_uses_forming") is not False:
         raise SystemExit("daily_sma50_uses_forming must be frozen false")
+    refuse_mutated_frozen_book(lock)
     grid = build_grid()
     if len(grid) != int(lock["n_configs_expected"]):
         raise SystemExit(f"grid {len(grid)} != lock {lock['n_configs_expected']}")
@@ -482,11 +486,13 @@ def main() -> None:
         if want and _sha256(path) != want:
             raise SystemExit(f"sha256 mismatch for {tf}: rewrite the lock, do not peek")
     meta = parse_meta(args.meta) if args.meta.is_file() else {}
-    costs = costs_from_meta(
-        meta, lots=1.0, slippage_points=10.0, commission_per_lot=0.0, max_spread_points=200.0
+    costs = require_frozen_cost_book(
+        costs_from_meta(
+            meta, lots=1.0, slippage_points=10.0, commission_per_lot=0.0, max_spread_points=200.0
+        )
     )
     report = run_search(args.h1, args.h4, args.daily, args.meta, costs)
-    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    write_slim_json(args.out, report)
     write_report_md(report, args.md)
     best = report["best_develop"] or report["best_raw_develop"]
     print(

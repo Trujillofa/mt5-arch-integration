@@ -45,6 +45,9 @@ from us_index_session_backtest import (  # noqa: E402
     costs_from_meta,
     load_m5_csv,
     parse_meta,
+    refuse_mutated_frozen_book,
+    require_frozen_cost_book,
+    write_slim_json,
 )
 from us_index_session_core import (  # noqa: E402
     ATR_PERIOD,
@@ -385,15 +388,18 @@ def main() -> None:
         raise SystemExit("holdout/selection lock mismatch")
     if lock.get("causality", {}).get("z_window_include_i") is not False:
         raise SystemExit("z_window_include_i must be frozen false")
+    refuse_mutated_frozen_book(lock)
     grid = build_grid()
     if len(grid) != int(lock["n_configs_expected"]):
         raise SystemExit(f"grid {len(grid)} != lock {lock['n_configs_expected']}")
     meta = parse_meta(args.meta) if args.meta.is_file() else {}
-    costs = costs_from_meta(
-        meta, lots=1.0, slippage_points=10.0, commission_per_lot=0.0, max_spread_points=200.0
+    costs = require_frozen_cost_book(
+        costs_from_meta(
+            meta, lots=1.0, slippage_points=10.0, commission_per_lot=0.0, max_spread_points=200.0
+        )
     )
     report = run_search(args.csv, args.meta, costs)
-    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    write_slim_json(args.out, report)
     best = report["best_develop"]
     print(
         json.dumps(

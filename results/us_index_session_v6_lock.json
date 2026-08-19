@@ -18,7 +18,7 @@
     "commission_per_lot": 0.0,
     "slippage_points": 10.0,
     "max_spread_points": 200.0,
-    "note": "Locked book. Do not cut slippage or raise lots to chase 1%/20%."
+    "note": "Locked book. 10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread. Do not cut slippage or raise lots to chase 1%/20%."
   },
   "not_copied": [
     "ny_cash_orb_vwap_ema_flat and v1–v5 winners (do not retune)",

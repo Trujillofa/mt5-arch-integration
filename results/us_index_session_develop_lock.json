@@ -15,8 +15,10 @@
     "contract_size": 1.0,
     "commission_per_lot": 0.0,
     "slippage_points": 10.0,
-    "max_spread_points": 200.0
+    "max_spread_points": 200.0,
+    "note": "10 pt = MT5 points (0.01), not 10 index points. RT ≈ $0.20 slip + ~$0.60 spread."
   },
+  "score_row": "profit_factor is None (all winners) pins to 3.0, same as finite PF 3",
   "grid": {
     "or_minutes": [5, 15, 30],
     "ema_pairs": [[5, 13], [8, 21], [9, 21]],

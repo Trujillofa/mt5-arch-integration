@@ -2,7 +2,7 @@
 
 Operator inventory of the **live Wine/MT5 path**: Linux Python reads JSON snapshots written by `Mt5ArchBridge` on a chart, plus the observe overlays you can attach. This is not a research-screen write-up and not a promote path.
 
-**How-tos:** [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) · [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) §12 · [mql5/README.md](../mql5/README.md)
+**How-tos:** [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) · [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) (offline screens, not overlay ops) · [mql5/README.md](../mql5/README.md)
 
 ---
 
@@ -151,7 +151,7 @@ Frozen chart family: **NY cash ORB + VWAP + EMA 9/21** (`UsIndexSessionScalp` v1
 
 ## 8. Not on the chart (Python-only)
 
-US-index v1–v6 screens, flatten replay, `us_index_session_core.py`, and `scripts/htf_fib_offline_backtest.py` read exported CSV / cache. They are **not** `InpFamily` modes and are **not** MT5 capabilities. Standing disposition: **promote=no**. Do not claim 1%/20% or a live-go.
+US-index v1–v8 screens, flatten replay, `us_index_session_core.py`, and `scripts/htf_fib_offline_backtest.py` read exported CSV / cache. They are **not** `InpFamily` modes and are **not** MT5 capabilities. Standing disposition: **promote=no**. Do not claim 1%/20% or a live-go.
 
 `src/mt5_arch` must not import that research layer. `live_trader.py` is dry unless you pass `--live` (never from this observe path).
 

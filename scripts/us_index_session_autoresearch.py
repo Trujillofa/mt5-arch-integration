@@ -37,7 +37,10 @@ from us_index_session_backtest import (  # noqa: E402
     load_m5_csv,
     metrics_from_trades,
     parse_meta,
+    refuse_mutated_frozen_book,
+    require_frozen_cost_book,
     split_by_holdout,
+    write_slim_json,
 )
 from us_index_session_core import (  # noqa: E402
     ATR_PERIOD,
@@ -394,6 +397,7 @@ def simulate_exits(
 
 
 def daily_monthly(trades: list[Trade], balance: float = START_BALANCE) -> dict:
+    """Medians are over trade-days / trade-months, not calendar days."""
     if balance <= 0:
         balance = START_BALANCE
     by_day: dict[str, float] = defaultdict(float)
@@ -431,8 +435,27 @@ def score_row(m: dict) -> float:
     if trades < MIN_TRADES_DEVELOP or float(m["net_pnl"]) <= 0:
         return -1e9
     pf = m["profit_factor"]
+    # All-winners (pf is None / +inf) pin to 3.0 — same as a finite PF 3.
+    # Ranking also uses `pf or 3.0` (that treats 0.0 as 3.0). Do not change.
     pf_v = 3.0 if pf is None else float(pf)
     return pf_v * 1000.0 + float(m["expectancy"])
+
+
+def rank_develop_rows(rows: list[dict]) -> list[dict]:
+    """Rank by develop PF then expectancy. Holdout keys are ignored."""
+    eligible = [
+        r
+        for r in rows
+        if float(r.get("develop_score", score_row(r["develop"]))) > -1e8
+    ]
+    return sorted(
+        eligible,
+        key=lambda r: (
+            r["develop"]["profit_factor"] or 3.0,
+            r["develop"]["expectancy"],
+        ),
+        reverse=True,
+    )
 
 
 def pack_metrics(trades: list[Trade]) -> dict:
@@ -522,15 +545,8 @@ def run_search(csv_path: Path, meta_path: Path | None, costs: CostSpec) -> dict:
             }
         )
     elapsed = pytime.time() - t0
-    eligible = [r for r in rows if r["develop_score"] > -1e8]
-    ranked = sorted(
-        eligible,
-        key=lambda r: (
-            r["develop"]["profit_factor"] or 3.0,
-            r["develop"]["expectancy"],
-        ),
-        reverse=True,
-    )
+    ranked = rank_develop_rows(rows)
+    eligible = ranked
     best = ranked[0] if ranked else None
     # Holdout is read only after ranking is fixed.
     goal_dev = [r for r in rows if r["develop"]["goal_both"]]
@@ -586,17 +602,19 @@ def main() -> None:
         raise SystemExit("holdout lock mismatch")
     if lock.get("search_id") != SEARCH_ID:
         raise SystemExit("search_id mismatch")
+    refuse_mutated_frozen_book(lock)
     meta = parse_meta(args.meta) if args.meta.is_file() else {}
-    costs = costs_from_meta(
-        meta,
-        lots=1.0,
-        slippage_points=10.0,
-        commission_per_lot=0.0,
-        max_spread_points=200.0,
+    costs = require_frozen_cost_book(
+        costs_from_meta(
+            meta,
+            lots=1.0,
+            slippage_points=10.0,
+            commission_per_lot=0.0,
+            max_spread_points=200.0,
+        )
     )
     report = run_search(args.csv, args.meta, costs)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    write_slim_json(args.out, report)
     best = report["best_develop"]
     print(
         json.dumps(

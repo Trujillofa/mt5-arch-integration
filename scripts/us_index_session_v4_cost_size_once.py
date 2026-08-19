@@ -38,8 +38,10 @@ from us_index_session_backtest import (  # noqa: E402
     costs_from_meta,
     load_m5_csv,
     parse_meta,
+    refuse_mutated_frozen_book,
     simulate_flatten,
     split_by_holdout,
+    write_slim_json,
 )
 from us_index_session_core import (  # noqa: E402
     ATR_PERIOD,
@@ -64,6 +66,7 @@ def load_lock() -> dict:
         raise SystemExit("this file is a diagnostic, not a search")
     if lock.get("promote") is not False or lock.get("live_go") is not False:
         raise SystemExit("promote/live_go must stay false")
+    refuse_mutated_frozen_book(lock)
     return lock
 
 
@@ -217,7 +220,7 @@ def main() -> None:
     if len(books_from_lock(lock)) != 5:
         raise SystemExit("lock must list exactly five books")
     report = run_once(args.csv, args.meta, lock)
-    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    write_slim_json(args.out, report)
     print(
         json.dumps(
             {

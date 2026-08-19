@@ -44,7 +44,10 @@ from us_index_session_backtest import (  # noqa: E402
     costs_from_meta,
     load_m5_csv,
     parse_meta,
+    refuse_mutated_frozen_book,
+    require_frozen_cost_book,
     split_by_holdout,
+    write_slim_json,
 )
 from us_index_session_core import (  # noqa: E402
     ATR_PERIOD,
@@ -477,16 +480,19 @@ def main() -> None:
         raise SystemExit("holdout lock mismatch")
     if lock.get("search_id") != SEARCH_ID:
         raise SystemExit("search_id mismatch")
+    refuse_mutated_frozen_book(lock)
     grid = build_grid()
     if len(grid) != int(lock["n_configs_expected"]):
         raise SystemExit(f"grid {len(grid)} != lock {lock['n_configs_expected']}")
     meta = parse_meta(args.meta) if args.meta.is_file() else {}
-    costs = costs_from_meta(
-        meta,
-        lots=1.0,
-        slippage_points=10.0,
-        commission_per_lot=0.0,
-        max_spread_points=200.0,
+    costs = require_frozen_cost_book(
+        costs_from_meta(
+            meta,
+            lots=1.0,
+            slippage_points=10.0,
+            commission_per_lot=0.0,
+            max_spread_points=200.0,
+        )
     )
     report = run_search(args.csv, args.meta, costs)
     best = report["best_develop"]
@@ -494,8 +500,7 @@ def main() -> None:
         report["us30_transfer"] = transfer_us30(best["params"], costs)
     else:
         report["us30_transfer"] = None
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(report, indent=2) + "\n")
+    write_slim_json(args.out, report)
     print(
         json.dumps(
             {

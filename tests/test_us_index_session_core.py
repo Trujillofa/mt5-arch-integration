@@ -1,4 +1,8 @@
-"""Causal US-index session / ORB / VWAP / EMA — no look-ahead."""
+"""Causal US-index session / ORB / VWAP / EMA — no look-ahead.
+
+IndexSessionUtils.mqh claims to mirror this clock/OR/VWAP. There is no
+wired MQL5↔Python parity fixture here (do not attach EAs for it).
+"""
 
 from __future__ import annotations
 

@@ -60,6 +60,11 @@ winetricks.log
 # Research market data (regenerate: python3 fetch_data.py)
 xauusd_data.csv
 
+# US-index research dumps. Slim metrics JSON + locks + *.md stay tracked.
+results/us_index_data/
+results/us_index_session_*_full.json
+results/us_index_session_*_trades.json
+
 # Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
 tests/fixtures/mql5_parity/live_*/
 

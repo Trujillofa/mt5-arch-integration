@@ -58,6 +58,16 @@ LIVE_GO = False
 DEFAULT_MAX_SPREAD = 200.0
 DEFAULT_SLIPPAGE_POINTS = 10.0
 DEFAULT_LOTS = 1.0
+FROZEN_LOTS = 1.0
+FROZEN_SLIPPAGE_POINTS = 10.0
+FAT_REPORT_KEYS = frozenset(
+    {
+        "trades",
+        "top10_develop",
+        "top20",
+        "top5_by_family",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -119,6 +129,51 @@ def costs_from_meta(meta: dict[str, str], **overrides: float) -> CostSpec:
     }
     kw.update(overrides)
     return CostSpec(**kw)
+
+
+def refuse_mutated_frozen_book(lock: dict) -> None:
+    """Refuse a screen lock that flips promote/live_go or the $10k / 1-lot / 10 pt book.
+
+    The v4 cost/size diagnostic may replay other books; it still must keep
+    ``promote`` / ``live_go`` false on the lock document itself.
+    """
+    if lock.get("promote") is True:
+        raise SystemExit("promote must stay false")
+    if lock.get("live_go") is True:
+        raise SystemExit("live_go must stay false")
+    lots = lock.get("lots")
+    if lots is not None and float(lots) != FROZEN_LOTS:
+        raise SystemExit(f"frozen book lots must be {FROZEN_LOTS:g}")
+    costs = lock.get("costs") if isinstance(lock.get("costs"), dict) else {}
+    slip = costs.get("slippage_points")
+    if slip is not None and float(slip) != FROZEN_SLIPPAGE_POINTS:
+        raise SystemExit(
+            f"frozen book slippage_points must be {FROZEN_SLIPPAGE_POINTS:g}"
+        )
+    cost_lots = costs.get("lots")
+    if cost_lots is not None and float(cost_lots) != FROZEN_LOTS:
+        raise SystemExit(f"frozen book lots must be {FROZEN_LOTS:g}")
+
+
+def require_frozen_cost_book(costs: CostSpec) -> CostSpec:
+    if (
+        float(costs.lots) != FROZEN_LOTS
+        or float(costs.slippage_points) != FROZEN_SLIPPAGE_POINTS
+    ):
+        raise SystemExit(
+            f"frozen book is {FROZEN_LOTS:g} lot / {FROZEN_SLIPPAGE_POINTS:g} pt slippage"
+        )
+    return costs
+
+
+def slim_committed_report(report: dict) -> dict:
+    """Metrics + best row. Drop trade dumps and fat rank grids from git."""
+    return {k: v for k, v in report.items() if k not in FAT_REPORT_KEYS}
+
+
+def write_slim_json(path: Path, report: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(slim_committed_report(report), indent=2) + "\n")
 
 
 _KNOWN_HC_STEPS = (60, 300, 900, 1800, 3600, 14400, 86400)
@@ -475,6 +530,12 @@ def main() -> None:
     ap.add_argument("--server-utc-offset", type=int, default=10800)
     ap.add_argument("--meta", type=Path, default=None)
     ap.add_argument("--out", type=Path, default=None)
+    ap.add_argument(
+        "--full-out",
+        type=Path,
+        default=None,
+        help="Local-only full dump including trades (gitignored *_full.json)",
+    )
     ap.add_argument("--lots", type=float, default=DEFAULT_LOTS)
     ap.add_argument("--slippage-points", type=float, default=DEFAULT_SLIPPAGE_POINTS)
     ap.add_argument("--commission-per-lot", type=float, default=0.0)
@@ -487,6 +548,7 @@ def main() -> None:
         hc_to_export_csv(args.hc, args.csv, args.symbol)
         if args.meta is None:
             args.meta = dump_dir / f"symbol_meta_{args.symbol}.csv"
+            # Assumed locked book (point 0.01 / contract 1), not a broker-measured meta sha.
             args.meta.write_text(
                 "key,value\n"
                 f"requested,{args.symbol}\n"
@@ -516,13 +578,16 @@ def main() -> None:
         max_spread_points=args.max_spread_points,
     )
     report = run_file(args.csv, meta_path, costs=costs)
-    slim = {k: v for k, v in report.items() if k != "trades"}
+    slim = slim_committed_report(report)
     text = json.dumps(slim, indent=2)
     print(text)
     if args.out:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(json.dumps(report, indent=2) + "\n")
+        write_slim_json(args.out, report)
         print(f"wrote {args.out}")
+    if args.full_out:
+        args.full_out.parent.mkdir(parents=True, exist_ok=True)
+        args.full_out.write_text(json.dumps(report, indent=2) + "\n")
+        print(f"wrote {args.full_out}")
 
 
 if __name__ == "__main__":

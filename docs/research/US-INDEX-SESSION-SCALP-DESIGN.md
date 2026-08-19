@@ -3,14 +3,16 @@
 | Field | Value |
 |-------|--------|
 | **Date** | 2026-08-18 |
-| **Status** | Overlay shipped; flatten + v1–v5 screens **missed 1%/20%** (promote=no) |
+| **Status** | Overlay shipped; **v1–v8 screens missed 1%/20%; promote=no** |
 | **Indicator** | `UsIndexSessionScalp` v1.40 |
 | **Family** | `ny_cash_orb_vwap_ema_flat` (defaults frozen) |
 | **Repo boundary** | Platform / research overlay: visual + `iCustom` + logger — **no** `OrderSend` |
 | **Primary chart** | US100 / NAS100 / USTEC **M5** (US30 / DJ30.r alternate) |
 | **Logger** | `ForexSignalLogger` · `InpSignalBuffer=8` · `InpMaxSpreadPips=0` |
 | **promote / live_go** | **no / false** |
-| **Develop screen** | **executed** `us_index_session_develop_v1` — 0/615 hit goals |
+| **Develop screen** | **executed** `us_index_session_develop_v1` — 0 eligible hit goals |
+
+> **Not XAU Phase E.** This US-index work does **not** authorize or substitute for XAU Phase E. `next_step` stays `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. Locks already say this is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`. Do not edit `results/xau_loop_status.md` from this lane.
 
 ---
 
@@ -95,7 +97,9 @@ A later screen, if ever authorized, is a **new** `family_id` with freeze-before-
 
 Executed: `scripts/us_index_session_autoresearch.py`. Lock: `results/us_index_session_develop_lock.json`. Write-up: `results/us_index_session_autoresearch.md`.
 
-1,728 configs. Holdout **2026-06-01** unused for selection. Goals: median trade-day ≥ 1%, median month ≥ 20% on $10k / 1 lot. **0** develop-eligible configs hit both. Best develop (OR 5 / 8/21 / 10:30 / ATR 1.0/1.5) is 0.40% / 1.89%; holdout median day −0.28%. Flatten-15:45 never ranks.
+1,728 configs. Holdout **2026-06-01** unused for selection (June is **in** this holdout; do not retcon onto the v4 split). Goals: median **trade-day** ≥ 1%, median **trade-month** ≥ 20% on $10k / 1 lot. Those medians skip calendar days with no trade. **0** develop-eligible configs hit both. Best develop (OR 5 / 8/21 / 10:30 / ATR 1.0/1.5) is 0.40% / 1.89%; holdout median day −0.28%. Flatten-15:45 never ranks.
+
+Locked slippage is **10 MT5 points (0.01) per side**, not 10 index points. Round-trip ≈ $0.20 slip + ~$0.60 typical spread. `score_row` pins `profit_factor is None` (all winners) to 3.0 — same as a finite PF 3.
 
 v1.30 adds optional entry-end + ATR SL/TP *guides*. Frozen defaults are unchanged. Do not promote from this screen.
 

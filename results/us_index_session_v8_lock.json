@@ -18,7 +18,7 @@
     "commission_per_lot": 0.0,
     "slippage_points": 10.0,
     "max_spread_points": 200.0,
-    "note": "Locked book. Charge HC spread + 10 pt/side. Do not cut slippage or raise lots to chase 1%/20%."
+    "note": "Locked book. 10 pt = MT5 points (0.01), not 10 index points. Charge HC spread + 10 pt/side. Do not cut slippage or raise lots to chase 1%/20%."
   },
   "data": {
     "source": "FP Markets native cache H1.hc / H4.hc / Daily.hc via read_mt5_hc. Not the M5 export_us_index.request dump. Live terminal not attached, not exported, not killed.",
