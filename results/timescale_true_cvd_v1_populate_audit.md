@@ -2,52 +2,46 @@
 
 | Field | Value |
 |-------|--------|
-| **When** | 2026-08-19 15:44 −05 |
+| **When** | 2026-08-19 16:04 −05 |
 | **Broker** | FP Markets (`fpmarkets`, `FPMarketsSC-Live`) |
 | **Symbol** | **BTCUSD** (candidate only — **not locked**) |
 | **Window** | last **36h** (clamped 24–48), resolved at click |
 | **Tick count** | — |
-| **last_trade_ratio** | — |
-| **volume_populated_ratio** | — |
-| **flag_direction_ratio** | — |
-| **Verdict** | **PENDING** (dump did not run) |
+| **last_trade_ratio** | — (no tape; not invented) |
+| **volume_populated_ratio** | — (no tape; not invented) |
+| **flag_direction_ratio** | — (no tape; not invented) |
+| **Verdict** | **PENDING** |
 | **promote / live_go** | **no / false** |
 | **Instruments** | **TBD** |
 
-## What ran
+## What was checked
 
-Standalone script `ExportTicksCopyRange.mq5` + `TickCopyRangeExport.mqh` deployed into the FP prefix and compiled (`0` errors). Request file is in place:
+Expected CSV is missing and empty `ticks/` is not a tape:
 
 ```
-symbol=BTCUSD
-hours=36
-broker=fpmarkets
+~/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/MQL5/Files/mt5_arch/ticks/
 ```
 
-`BTCUSD` is already in the live file-bridge `symbols.json` (with `EURUSD`, `GBPUSD`, `USDJPY`, `XAUUSD.r`). `US100` is not. One symbol only.
+No `ticks_BTCUSD_fpmarkets.csv`, no `export_ticks.done`, no `ticks_*.csv` in other prefixes, Common/AppData, `results/tick_data/`, Downloads, or `/tmp`. `.tkc` was not read. `--audit` was not run on a fabricated file. No OHLCV screen. Timescale/Docker were not started.
 
-`CopyTicksRange` itself **did not execute**. No `terminal64.exe` process or Hyprland window was visible from this session. FP `wineserver` was left running. Bridge heartbeat was stale (~34 min). No CSV under `MQL5/Files/mt5_arch/ticks/`. `.tkc` / `ticks.dat` were not read. No OHLCV screen. Timescale/Docker were not started.
+`tick_cvd_core.py --audit` is ready; it has nothing to parse.
 
-UsIndex M5 request polling lives inside `UsIndexSessionScalp` (a signal indicator). It was **not** reused or recompiled for ticks. Prefer the one-shot Script.
+## Leftover (exact)
 
-## Navigator recipe (required for the dump)
+**Re-click Navigator is blocked because `terminal64.exe` is down — not a compile fail, not a wrong Files path.**
 
-1. Do **not** restart Wine or `terminal64`. Do **not** set `KILL_EXISTING=1`.
-2. On the **already-open** FP terminal: **Navigator → Scripts → ExportTicksCopyRange**.
-3. Double-click (or drag onto any chart). The request file pins `BTCUSD` / 36h. A Script does not need Algo Trading.
-4. Journal: `TickExportCopyRangeNow BTCUSD ticks=N … NO ORDERS`.
-5. CSV: `MQL5/Files/mt5_arch/ticks/ticks_BTCUSD_fpmarkets.csv` and `export_ticks.done`.
-6. Copy the CSV to gitignored `results/tick_data/`, then:
+| Check | Result |
+|-------|--------|
+| Request still waiting | **Yes.** `export_ticks.request` still has `symbol=BTCUSD` / `hours=36` / `broker=fpmarkets` (mtime 15:44). A successful run deletes this file. |
+| Script compiled | **Yes.** `ExportTicksCopyRange.ex5` present. MetaEditor: **0 errors**, 1 warning (`#property` 90). Compile 15:44:27. |
+| Journal `TickExportCopyRangeNow` | **Absent.** UTF-16 journal `logs/20260819.log` last write **15:10:43** — `Terminal exit with code 0`. No script start, no CopyTicks error. |
+| Files path | **Correct** (empty `ticks/` under the FP `MQL5/Files/mt5_arch` tree). |
+| `terminal64` / Hyprland MT5 | **Not running.** Heartbeat frozen 15:10 (`symbol=US500`). FP + Vantage `wineserver` left alone. |
+
+Do **not** restart Wine or launch `terminal64` from this session. After the user reopens the FP terminal themselves: Navigator → Scripts → **ExportTicksCopyRange**. Then copy the CSV to gitignored `results/tick_data/` and:
 
 ```bash
 python3 scripts/tick_cvd_core.py --audit results/tick_data/ticks_BTCUSD_fpmarkets.csv
 ```
 
-If `last==0` on every row: **DISQUALIFY** that symbol for true CVD. Do not fall back to `tick_volume`. Even a QUALIFY does not lock the family onto BTCUSD this increment.
-
-## Leftover
-
-- Human click to run the Script, then populate ratios.
-- Timescale still not up.
-- No OHLCV screen under this `search_id`.
-- `promote=no`.
+**Condition 2 (when a tape exists):** `last==0` on 100% of rows **or** BUY/SELL flags absent → **DISQUALIFY**. Do not fall back to `sign(close-open)*tick_volume`. Even **QUALIFY** does not lock BTCUSD. `promote=no`.
