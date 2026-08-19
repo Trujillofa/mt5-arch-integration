@@ -248,6 +248,16 @@ def _builtin_day_open_reclaim_flat() -> FamilyPlugin:
     )
 
 
+def _builtin_asia_box_london_sweep_fade_flat() -> FamilyPlugin:
+    import xau_family_asia_box_london_sweep_fade_flat as mod  # type: ignore
+
+    return _wrap_module(
+        "asia_box_london_sweep_fade_flat",
+        mod,
+        source="xau_family_asia_box_london_sweep_fade_flat",
+    )
+
+
 BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "stub": _builtin_stub,
     "prior_day_high_break": _builtin_prior_day_high_break,
@@ -255,6 +265,7 @@ BUILTINS: dict[str, Callable[[], FamilyPlugin]] = {
     "server_hour_window_flat": _builtin_server_hour_window_flat,
     "early_server_range_break_flat": _builtin_early_server_range_break_flat,
     "day_open_reclaim_flat": _builtin_day_open_reclaim_flat,
+    "asia_box_london_sweep_fade_flat": _builtin_asia_box_london_sweep_fade_flat,
 }
 
 
