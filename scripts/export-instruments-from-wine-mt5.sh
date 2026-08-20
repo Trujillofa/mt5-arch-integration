@@ -187,6 +187,7 @@ Enabled=1
 Script=ExportInstrumentHistory
 Symbol=XAUUSD
 Period=H1
+ScriptParameters=ExportInstrumentHistory.set
 ShutdownTerminal=1
 """.replace("\n", "\r\n")
 (mt5 / "export_instruments.ini").write_bytes(text.encode("ascii"))
