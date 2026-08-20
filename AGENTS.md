@@ -85,16 +85,14 @@ Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`; i
 
 The Cloud Agent VM is headless with **no Wine, no MT5 terminal, and no broker login**. Everything that needs a live terminal is out of scope here and cannot be made to work without a real broker account + GUI session:
 
-- `mt5-arch ping|account|symbols|candles`, `./scripts/healthcheck.sh --ping`, `./scripts/08-status.sh`, and every `scripts/0N-*.sh`/`1N-*.sh` Wine step require a live terminal + bridge. `ping` failing with `No account.json … bridge down` is the **expected** result here, not a bug (see the file-bridge section above).
+- `mt5-arch ping|account|symbols|candles`, `./scripts/healthcheck.sh --ping`, `./scripts/08-status.sh`, and every `scripts/0N-*.sh`/`1N-*.sh` Wine step require a live terminal + bridge. `ping` failing closed (`No account.json` / stale `heartbeat.txt` / bridge down) is the **expected** result here, not a bug (see the file-bridge section above).
 - Live tests (`-m live`, `MT5_LIVE_SMOKE=1`) stay skipped — leave them skipped.
+- Official MT5 AI Assistant / MCP HTTP (`127.0.0.1:22346`, Route A/B) needs Wine + terminal build ≥6060. Do not try to stand that up in the cloud VM.
 
-What runs offline (the working dev loop in the cloud): `uv run ruff check src tests`, `uv run pytest`, `python3 backtest.py`, and the offline CLI subcommands `uv run mt5-arch config|brokers|resolve|--help`.
+What runs offline (the working dev loop in the cloud): `uv run ruff check src tests`, `uv run pytest`, `python3 backtest.py`, and the offline CLI subcommands `uv run mt5-arch config|brokers|resolve|--help`. `uv run mt5-arch mcp` is the read-only stdio server: `initialize` / `tools/list` / `config` / `brokers` / `resolve` work without a terminal; `ping` / `account` / `symbols` / `candles` fail closed the same way as the CLI.
 
 Dependency nuance that bites every fresh env:
 
 - `numpy`/`pandas` are intentionally absent from `pyproject.toml` (see "The one command gotcha"). `uv sync` installs `numpy` transitively (via `mt5linux`) but **not** `pandas`. The pytest suite imports `backtest.py`/`live_trader.py`, so the venv needs `pandas` too — the update script runs `uv pip install pandas` **after** `uv sync` (a plain `uv sync` prunes anything not in the lock, so order matters). Host `python3` also has `numpy`/`pandas` installed (baked into the environment) so `python3 backtest.py` works.
 
-Known pre-existing failures on a clean checkout (not environment problems — do not "fix" as part of setup):
-
-- `uv run pytest` → 1 failure: `tests/test_xau_asia_box_london_sweep_fade_flat.py::test_charter_v2_valid_v1_superseded_when_registered`. Its charter SHA is registered `SCREEN_FAIL` in `results/xau_charter_disposition_registry.jsonl`, so `is_charter_runnable` returns `False`; the test still expects `True`. Purely repo-state driven (see `results/xau_loop_status.md`, 2026-08-19 asia-box entry).
-- `uv run ruff check src tests` → 2 import-order errors: `tests/test_us_index_session_v5.py:131` and `tests/test_us_index_session_v8.py:18`.
+Do not treat research-layer red on a clean checkout as an environment bug. The asia-box charter gate + two ruff nits (`tests/test_us_index_session_v5.py` F841 unused leftover, `tests/test_us_index_session_v8.py` I001 import order) live on `main` and are fixed on `fix/preexisting-charter-ruff` — not in this setup PR.
