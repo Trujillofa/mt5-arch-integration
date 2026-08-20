@@ -190,6 +190,8 @@ def exit_name(e: dict) -> str:
         return f"pct_tp{e['tp'] * 100:.2f}_sl{e['sl'] * 100:.2f}"
     if e["kind"] == "atr":
         return f"atr_sl{e['slm']}_tp{e['tpm']}"
+    if e["kind"] == "usd":
+        return f"usd_tp{e['tp_usd']:.0f}_sl{e['sl_usd']:.0f}"
     if e["kind"] == "structure":
         return f"structure_sl{e['sl'] * 100:.2f}"
     if e["kind"] == "bars":
@@ -247,16 +249,20 @@ def simulate_config(
     Raises RuntimeError('equity_floor') if equity <= 0 at any fill/close."""
     b = lock["book"]
     r = lock["risk"]
-    risk_usd = float(b["risk_per_trade_usd"])
+    policy = str(b.get("sizing_policy", "risk_normalized"))
     pv = float(b["point_value_per_lot"])
     halt = float(r["daily_halt_usd"])  # negative, e.g. -300
     balance = float(b["balance_usd"] if start_balance is None else start_balance)
-    min_lot, cap, min_sl = (
-        float(b["min_lot"]),
-        float(b["lot_cap"]),
-        float(b["min_sl_points"]),
-    )
     point = costs.point_size
+    if policy == "fixed_lots":
+        risk_usd = min_lot = cap = min_sl = 0.0
+    else:
+        risk_usd = float(b["risk_per_trade_usd"])
+        min_lot, cap, min_sl = (
+            float(b["min_lot"]),
+            float(b["lot_cap"]),
+            float(b["min_sl_points"]),
+        )
 
     trades: list[SimTrade] = []
     day_pnl: dict[int, float] = {}
@@ -283,7 +289,13 @@ def simulate_config(
 
         sl = tp = None
         kind = exit_spec["kind"]
-        if kind == "pct":
+        if kind == "usd":
+            lots_fx = float(b["lots"])
+            sl_pts = float(exit_spec["sl_usd"]) / (lots_fx * pv)
+            tp_pts = float(exit_spec["tp_usd"]) / (lots_fx * pv)
+            sl = entry - sig * sl_pts * point
+            tp = entry + sig * tp_pts * point
+        elif kind == "pct":
             sl = entry - sig * exit_spec["sl"] * entry
             tp = entry + sig * exit_spec["tp"] * entry
         elif kind == "atr":
@@ -305,10 +317,13 @@ def simulate_config(
             sl = entry - sig * exit_spec["sl"] * entry
 
         sl_points = abs(entry - sl) / point
-        lots = size_lots(sl_points, risk_usd, pv, 0.01, min_lot, cap, min_sl)
-        if lots is None:
-            continue
-        assert sl_points * lots * pv <= risk_usd + 1e-9, "per-fill invariant"
+        if policy == "fixed_lots":
+            lots = float(b["lots"])
+        else:
+            lots = size_lots(sl_points, risk_usd, pv, 0.01, min_lot, cap, min_sl)
+            if lots is None:
+                continue
+            assert sl_points * lots * pv <= risk_usd + 1e-9, "per-fill invariant"
 
         flat_m = FLAT_MIN
         reason_flat = "flat_1645"

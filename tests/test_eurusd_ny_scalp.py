@@ -221,6 +221,50 @@ def test_per_fill_invariant_holds_in_sim():
     assert t.lots == ar.size_lots(t.sl_points, 100)
 
 
+def test_usd_book_tp20_loses_to_friction():
+    """3 lots, TP $20 / SL $100: a TP fill nets ~-$46 after 22-pt round-trip."""
+    d = build_data([_short_tp_day(date(2026, 3, 2))])
+    tp_px = 1.10000 + (20.0 / (3.0 * 1.0)) * 1e-5  # +6.67 points
+    d.high[14] = tp_px + 0.00005
+    sigs = np.zeros(len(d), dtype=np.int8)
+    sigs[SIGNAL_I] = 1
+    lock = {
+        "book": {
+            "balance_usd": 10000,
+            "sizing_policy": "fixed_lots",
+            "lots": 3.0,
+            "point_value_per_lot": 1.0,
+        },
+        "risk": {"daily_halt_usd": -300},
+    }
+    from us_index_session_backtest import CostSpec
+
+    costs = CostSpec(
+        point_size=1e-5,
+        contract_size=100_000.0,
+        lots=3.0,
+        commission_per_lot=0.0,
+        slippage_points=5.0,
+        max_spread_points=30.0,
+    )
+    trades = ar.simulate_config(
+        d,
+        sigs,
+        {"kind": "usd", "tp_usd": 20.0, "sl_usd": 100.0},
+        None,
+        None,
+        atr_all(d),
+        costs,
+        lock,
+    )
+    assert len(trades) == 1
+    t = trades[0]
+    assert t.lots == 3.0
+    assert t.reason == "tp"
+    # gross +$20 minus (12+10) pt * $3 = $66 -> about -$46
+    assert t.pnl == pytest.approx(20.0 - 66.0, abs=0.05)
+
+
 # ---------------------------------------------------------------------------
 # equity floor
 # ---------------------------------------------------------------------------
