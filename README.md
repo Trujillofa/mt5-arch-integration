@@ -99,8 +99,10 @@ uv run mt5-arch candles EURUSD --tf H1 --count 10
 | `mt5-arch brokers [name]` | List multi-broker profiles (`config/brokers/*.env`) |
 | `mt5-arch resolve BROKER SYM` | Canonical ↔ broker symbol (`config/symbols/registry.json`) |
 | `mt5-arch config` | Redacted settings |
+| `mt5-arch mcp` | Read-only MCP stdio server for AI agents (no orders) |
 
 Add `--json` for machine-readable output. `-v` / `-vv` for logs.
+AI Assistant / official MCP vs this command: [docs/HOWTO-MT5-AI-MCP.md](docs/HOWTO-MT5-AI-MCP.md).
 
 ## Documentation
 
@@ -113,6 +115,7 @@ Full index: **[docs/README.md](docs/README.md)**.
 | [docs/INSTALL-LINUX-ARCH.md](docs/INSTALL-LINUX-ARCH.md) | Arch install |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | File bridge vs RPyC |
 | [docs/CHARTS-AND-STABILITY.md](docs/CHARTS-AND-STABILITY.md) | Charts / clipboard under Wine |
+| [docs/HOWTO-MT5-AI-MCP.md](docs/HOWTO-MT5-AI-MCP.md) | Official MT5 AI Assistant / MCP vs `mt5-arch mcp` |
 
 ## Multi-broker (reference)
 

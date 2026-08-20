@@ -8,7 +8,7 @@ Compact operating rules. `CLAUDE.md` holds the deep detail; where the two overla
 
 **1. Platform layer** (the repo's stated scope): Wine MT5 + file bridge (or RPyC/mt5linux) + thin Python CLI.
 
-- `src/mt5_arch/` — typed client + CLI (`config.py`, `client.py` RPyC backend, `file_bridge.py` EA backend, `models.py`, `cli.py`, `window_ops.py`).
+- `src/mt5_arch/` — typed client + CLI (`config.py`, `client.py` RPyC backend, `file_bridge.py` EA backend, `models.py`, `cli.py`, `mcp_server.py` read-only MCP stdio, `window_ops.py`).
 - `scripts/NN-*.sh` — numbered install/ops steps, all `set -euo pipefail`, sourcing `scripts/lib.sh` (`load_dotenv` — environment always wins over `.env`; `find_terminal64`; `require_cmd`/`die`/`info`/`warn`).
 - `mql5/` — MQL5 sources, chiefly `Mt5ArchBridge.mq5` (the file bridge EA).
 
