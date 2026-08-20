@@ -15,6 +15,7 @@ SYMBOLS="${SYMBOLS:-XAUUSD,EURUSD,GBPUSD}"
 MONTHS="${MONTHS:-60}"
 TFS="${TFS:-H1}"
 TIMEOUT_S="${TIMEOUT_S:-300}"
+MAXBARS="${MAXBARS:-100000}"
 # Expected account identity (must match common.ini after export)
 EXPECT_LOGIN="${EXPECT_LOGIN:-${MT5_LOGIN:-27496181}}"
 EXPECT_SERVER="${EXPECT_SERVER:-${MT5_SERVER:-VantageMarkets-Live 5}}"
@@ -177,7 +178,7 @@ KeepPrivate=1
 NewsEnable=0
 CertInstall=1
 [Charts]
-MaxBars=100000
+MaxBars=${MAXBARS}
 PreloadCharts=1
 [Experts]
 AllowLiveTrading=0
