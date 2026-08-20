@@ -1,0 +1,104 @@
+{
+  "search_id": "eurusd_ny_scalp_develop_v1",
+  "promote": false,
+  "live_go": false,
+  "holdout_start": "2025-03-01",
+  "holdout_boundary_unit": "ET session-date (et_date < 2025-03-01 = develop; >= = holdout). Note: the instrument-data lane's holdout_start_server '2026-01-01 00:00:00' is server-clock = 2025-12-31 17:00 ET; different lane, different unit, do not mix.",
+  "holdout_rule": "NEVER used for selection; scored after ranking froze",
+  "bars": 368302,
+  "et_trade_days": 1541,
+  "n_configs": 192,
+  "n_eligible_develop": 0,
+  "n_develop_hit_goal": 0,
+  "n_top20_holdout_hit_goal": 0,
+  "null": {
+    "seeds": [
+      11,
+      23,
+      37,
+      41,
+      53,
+      67,
+      79,
+      97,
+      113,
+      127
+    ],
+    "per_seed": [
+      {
+        "seed": 11,
+        "n_eligible": 32,
+        "best_develop_median_daily_pct": 0.0007052866909797924
+      },
+      {
+        "seed": 23,
+        "n_eligible": 77,
+        "best_develop_median_daily_pct": 0.00023284928357429976
+      },
+      {
+        "seed": 37,
+        "n_eligible": 36,
+        "best_develop_median_daily_pct": 0.00032136808824264154
+      },
+      {
+        "seed": 41,
+        "n_eligible": 48,
+        "best_develop_median_daily_pct": 0.0007205633647543229
+      },
+      {
+        "seed": 53,
+        "n_eligible": 46,
+        "best_develop_median_daily_pct": 0.0007465524592386204
+      },
+      {
+        "seed": 67,
+        "n_eligible": 46,
+        "best_develop_median_daily_pct": 0.0003021812125676359
+      },
+      {
+        "seed": 79,
+        "n_eligible": 75,
+        "best_develop_median_daily_pct": 0.0007421182163102314
+      },
+      {
+        "seed": 97,
+        "n_eligible": 48,
+        "best_develop_median_daily_pct": 0.000300787797061204
+      },
+      {
+        "seed": 113,
+        "n_eligible": 56,
+        "best_develop_median_daily_pct": 0.00031627722871455067
+      },
+      {
+        "seed": 127,
+        "n_eligible": 37,
+        "best_develop_median_daily_pct": 0.00023013471190429154
+      }
+    ],
+    "max_null_best": 0.0007465524592386204
+  },
+  "gate": null,
+  "elapsed_sec": 194.7,
+  "costs": {
+    "point_size": 1e-05,
+    "contract_size": 100000.0,
+    "lots": "risk-normalized per trade (lock: book)",
+    "commission_per_lot": 0.0,
+    "slippage_points": 5.0,
+    "max_spread_points": 30.0
+  },
+  "data": {
+    "path": "results/eurusd_data/history_EURUSD.csv",
+    "sha256": "ebf0bcd98439cdc21590c61f682ba0bebe4c41819d957158abfec8fc8663fb1b",
+    "bars": 368302,
+    "time_min_server": "2021.09.15 22:25",
+    "time_max_server": "2026.08.20 22:20",
+    "et_trade_days": 1541,
+    "source": "Vantage Standard STP live terminal export (ExportInstrumentHistory, run_id e2604bb028884569ad65ade0c1d3d3f5)",
+    "server": "VantageMarkets-Live 5",
+    "meta_path": "results/eurusd_data/symbol_meta_EURUSD.csv"
+  },
+  "best_develop": null,
+  "goal_note": "median trade-day >= 1% and trade-month >= 20%, equity-normalized (day_pnl / equity_at_day_start) on a $10k book, risk-normalized $100/trade sizing. Selection is develop-only and never sees holdout. The develop winner must also clear max_null_best + 0.5pp."
+}
