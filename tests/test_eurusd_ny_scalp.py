@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -277,24 +277,27 @@ def _crash_day(day: date):
     return (day, make_day(day, closes))
 
 
-def test_equity_floor_raises():
+def test_equity_floor_stops_trading_and_keeps_history():
     d = build_data([_crash_day(date(2026, 3, 2))])
     sigs = np.zeros(len(d), dtype=np.int8)
-    # one signal at 08:00 (idx 12: 7*60 + 12*5 = 08:00) long before the crash
     sigs[12] = 1
     sigs[25] = 1
-    with pytest.raises(RuntimeError, match="equity_floor"):
-        ar.simulate_config(
-            d,
-            sigs,
-            PCT_EXIT,
-            None,
-            None,
-            atr_all(d),
-            synth_costs(synth_lock()),
-            synth_lock(),
-            start_balance=150.0,
-        )
+    trades = ar.simulate_config(
+        d,
+        sigs,
+        PCT_EXIT,
+        None,
+        None,
+        atr_all(d),
+        synth_costs(synth_lock()),
+        synth_lock(),
+        start_balance=150.0,
+    )
+    assert trades
+    assert ar.went_bankrupt(trades)
+    bust_i = next(i for i, t in enumerate(trades) if t.equity_after <= 0.0)
+    assert all(t.equity_after > 0.0 or i == bust_i for i, t in enumerate(trades))
+    assert len(trades) == bust_i + 1  # no trade opened after the bust
 
 
 # ---------------------------------------------------------------------------
@@ -580,3 +583,172 @@ def test_data_sha_verifies_against_lock():
     if not csv.is_file():  # local-only dump; skip on fresh clones
         pytest.skip("results/eurusd_data/history_EURUSD.csv not present")
     ar.verify_data_sha(csv, synth_lock())
+
+
+# ---------------------------------------------------------------------------
+# HIGH-1 / FIX 2 / FIX 3 regressions
+# ---------------------------------------------------------------------------
+
+
+def _win_day(day: date):
+    """Long TP fill at bar 14: high clearly above 0.10% TP."""
+    d0 = build_data([_short_tp_day(day)])
+    tp = 1.10000 + 0.0010 * 1.10000
+    d0.high[14] = tp + 0.00005
+    return d0
+
+
+def test_holdout_bust_cannot_touch_develop_metrics():
+    """A config that is develop-profitable and only busts in the holdout
+    must keep its develop metrics. Holdout must not be able to void them."""
+    holdout = date(2026, 2, 20)
+    days = []
+    for i in range(45):
+        days.append(_short_tp_day(date(2026, 1, 5) + timedelta(days=i)))
+    for i in range(25):
+        days.append(_crash_day(date(2026, 2, 20) + timedelta(days=i)))
+    d = build_data(days)
+    n_dev_bars = sum(1 for t in d.times_et if t.date() < holdout)
+    tp = 1.10000 + 0.0010 * 1.10000
+    i = 0
+    while i < n_dev_bars:
+        d.high[i + 14] = tp + 0.00005
+        key = int(d.et_key[i])
+        j = i
+        while j < n_dev_bars and int(d.et_key[j]) == key:
+            j += 1
+        i = j
+    sigs = np.zeros(len(d), dtype=np.int8)
+    i = 0
+    while i < len(d):
+        sigs[i + 12] = 1
+        key = int(d.et_key[i])
+        j = i
+        while j < len(d) and int(d.et_key[j]) == key:
+            j += 1
+        if j - i > 26:
+            sigs[i + 25] = 1  # second crash-day signal
+        i = j
+
+    lock = synth_lock()
+    costs = synth_costs(lock)
+    start = 800.0  # develop wins cannot bust this; holdout crash days will
+    trades_full = ar.simulate_config(
+        d, sigs, PCT_EXIT, None, None, atr_all(d), costs, lock, start_balance=start
+    )
+    dev = [t for t in trades_full if date.fromisoformat(t.et_date) < holdout]
+    ho = [t for t in trades_full if date.fromisoformat(t.et_date) >= holdout]
+    assert dev, "develop must have trades"
+    dmet = ar.pack_metrics(dev, start, -300.0)
+    assert dmet["trades"] >= 40
+    assert dmet["net_pnl"] > 0
+    assert ar.score_row(dmet) != -1e9
+    # bust only in holdout
+    bust = ar.bankrupt_at(trades_full)
+    assert bust is not None
+    assert date.fromisoformat(bust) >= holdout
+
+    # develop-only simulation must match byte-for-byte
+    d_only = core.M5Data(
+        open=d.open[:n_dev_bars].copy(),
+        high=d.high[:n_dev_bars].copy(),
+        low=d.low[:n_dev_bars].copy(),
+        close=d.close[:n_dev_bars].copy(),
+        vol=d.vol[:n_dev_bars].copy(),
+        spread=d.spread[:n_dev_bars].copy(),
+        et_min=d.et_min[:n_dev_bars].copy(),
+        et_key=d.et_key[:n_dev_bars].copy(),
+        et_dow=d.et_dow[:n_dev_bars].copy(),
+        times_et=d.times_et[:n_dev_bars],
+    )
+    trades_dev = ar.simulate_config(
+        d_only,
+        sigs[:n_dev_bars],
+        PCT_EXIT,
+        None,
+        None,
+        atr_all(d_only),
+        costs,
+        lock,
+        start_balance=start,
+    )
+    dmet_only = ar.pack_metrics(trades_dev, start, -300.0)
+    assert json.dumps(dmet, sort_keys=True, default=float) == json.dumps(
+        dmet_only, sort_keys=True, default=float
+    )
+    assert ho  # holdout actually traded (and busted)
+
+
+def test_holdout_pct_uses_carried_equity():
+    """Holdout day-percentages must use equity leaving develop, not a fresh $10k."""
+    holdout = date(2026, 3, 10)
+    d_win = _win_day(date(2026, 3, 2))
+    d_win2 = _win_day(date(2026, 3, 10))
+    d = core.M5Data(
+        open=np.concatenate([d_win.open, d_win2.open]),
+        high=np.concatenate([d_win.high, d_win2.high]),
+        low=np.concatenate([d_win.low, d_win2.low]),
+        close=np.concatenate([d_win.close, d_win2.close]),
+        vol=np.concatenate([d_win.vol, d_win2.vol]),
+        spread=np.concatenate([d_win.spread, d_win2.spread]),
+        et_min=np.concatenate([d_win.et_min, d_win2.et_min]),
+        et_key=np.concatenate([d_win.et_key, d_win2.et_key]),
+        et_dow=np.concatenate([d_win.et_dow, d_win2.et_dow]),
+        times_et=d_win.times_et + d_win2.times_et,
+    )
+    sigs = np.zeros(len(d), dtype=np.int8)
+    sigs[SIGNAL_I] = 1
+    sigs[len(d_win) + SIGNAL_I] = 1
+    trades = ar.simulate_config(
+        d,
+        sigs,
+        PCT_EXIT,
+        None,
+        None,
+        atr_all(d),
+        synth_costs(synth_lock()),
+        synth_lock(),
+    )
+    dev = [t for t in trades if date.fromisoformat(t.et_date) < holdout]
+    ho = [t for t in trades if date.fromisoformat(t.et_date) >= holdout]
+    assert len(dev) == 1 and len(ho) == 1
+    ho_start = dev[-1].equity_after
+    assert ho_start != 10_000.0
+    hmet = ar.pack_metrics(ho, ho_start, -300.0)
+    expected = ho[0].pnl / ho_start
+    assert hmet["median_daily_pct"] == pytest.approx(expected)
+    wrong = ho[0].pnl / 10_000.0
+    assert hmet["median_daily_pct"] != pytest.approx(wrong)
+
+
+def test_gap_through_stop_fills_at_bar_open():
+    """A bar that opens through the stop fills at the open, not the stop level.
+    Realized loss is measured (may exceed risk_per_trade_usd), not capped."""
+    d = build_data([_short_tp_day(date(2026, 3, 2))])
+    sigs = np.zeros(len(d), dtype=np.int8)
+    sigs[SIGNAL_I] = 1
+    entry = float(d.open[FILL_I])
+    sl = entry - 0.0025 * entry  # 1.09725
+    # bar 14 gaps through the stop
+    d.open[14] = sl - 0.00100  # 1.09625
+    d.high[14] = d.open[14] + 0.00010
+    d.low[14] = d.open[14] - 0.00010
+    d.close[14] = d.open[14]
+    trades = ar.simulate_config(
+        d,
+        sigs,
+        PCT_EXIT,
+        None,
+        None,
+        atr_all(d),
+        synth_costs(synth_lock()),
+        synth_lock(),
+    )
+    assert len(trades) == 1
+    t = trades[0]
+    assert t.reason == "sl"
+    assert t.exit == pytest.approx(d.open[14])  # gapped fill, not sl level
+    assert t.exit < sl
+    intended = t.sl_points * t.lots * 1.0
+    realized = (t.entry - t.exit) * 100_000.0 * t.lots
+    assert realized > intended  # measured, not capped
