@@ -15,6 +15,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
+import us_index_session_htf as htf  # noqa: E402
 from us_index_session_autoresearch_v4 import split_v4  # noqa: E402
 from us_index_session_autoresearch_v8 import (  # noqa: E402
     LOCK_PATH,
@@ -38,7 +39,6 @@ from us_index_session_htf import (  # noqa: E402
     squeeze_breakout_signals,
     squeezed,
 )
-import us_index_session_htf as htf  # noqa: E402
 
 FP_H1 = Path.home() / (
     ".mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/"
