@@ -42,6 +42,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("ping", parents=[common], help="Check file-bridge or RPyC connectivity")
     sub.add_parser("account", parents=[common], help="Print account snapshot")
+    sub.add_parser(
+        "mcp",
+        help="Run read-only MCP stdio server for AI agents (no orders)",
+    )
     sub.add_parser("config", parents=[common], help="Show redacted settings (no secrets)")
     p_brokers = sub.add_parser(
         "brokers",
@@ -92,6 +96,7 @@ def _configure_logging(verbosity: int) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
     )
 
 
@@ -295,6 +300,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(list(argv) if argv is not None else None)
     _configure_logging(args.verbose)
     settings = Settings()
+
+    if args.command == "mcp":
+        from mt5_arch.mcp_server import run_stdio_server
+
+        return run_stdio_server(settings)
 
     if args.command == "config":
         _print_result(settings.redacted_summary(), as_json=args.json)
