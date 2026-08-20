@@ -23,11 +23,7 @@ from mt5_arch.brokers import list_broker_profiles, load_broker_profile
 from mt5_arch.client import MT5ArchClient, MT5ArchError
 from mt5_arch.config import Settings
 from mt5_arch.file_bridge import FileBridgeError
-from mt5_arch.symbol_registry import (
-    SymbolRegistryError,
-    load_registry,
-    resolve as resolve_symbol,
-)
+from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 
 logger = logging.getLogger(__name__)
 
@@ -287,7 +283,7 @@ def call_tool(name: str, arguments: Mapping[str, Any] | None, session: McpSessio
             symbol = str(args.get("symbol") or "").strip()
             if not broker or not symbol:
                 raise ValueError("broker and symbol are required")
-            mapping = resolve_symbol(load_registry(), broker, symbol)
+            mapping = resolve(load_registry(), broker, symbol)
             return _tool_text(
                 {
                     "broker": mapping.broker,
