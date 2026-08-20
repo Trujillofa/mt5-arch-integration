@@ -65,6 +65,11 @@ results/us_index_data/
 results/us_index_session_*_full.json
 results/us_index_session_*_trades.json
 
+# EURUSD NY-scalp research dumps. Slim metrics JSON + lock + *.md stay tracked.
+results/eurusd_data/
+results/eurusd_ny_scalp_*_full.json
+results/eurusd_ny_scalp_*_trades.json
+
 # Live broker parity dumps (regenerate; CI uses htf_fib_h1_synthetic)
 tests/fixtures/mql5_parity/live_*/
 
