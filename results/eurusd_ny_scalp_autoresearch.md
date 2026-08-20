@@ -9,7 +9,7 @@
 | **Book** | $10,000 equity path, risk-normalized $100/trade, lot floor-to-step 0.01, min_sl 80 skip, lot_cap 2.0 defensive |
 | **Costs** | measured spread + 5 pt slippage/side (assumption), commission 0, gate 30 pt |
 | **Data** | Vantage Standard STP M5 export, 368,302 bars (2021-09-15 → 2026-08-20), sha256 `ebf0bcd9…3fb1b` |
-| **Grid** | 192 configs = 3 families × 32 exits × one_per_day (195 s including 10-seed null) |
+| **Grid** | 192 configs = 3 families × 32 exits × one_per_day (177 s null + real) |
 | **Goals** | median trade-day ≥ **1%**, median month ≥ **20%**, equity-normalized |
 | **Null** | 10-seed within-ET-day phase rotation; `max_null_best` = **0.075%/day** |
 | **Gate** | develop winner must clear `max_null_best + 0.5pp` — **no winner to gate** |
@@ -43,22 +43,23 @@ Eligible = develop net > 0 **and** ≥ 40 trades. Rank = profit factor (None pin
 | Bucket | n |
 |--------|--:|
 | Grid | 192 |
-| Bankrupt (equity ≤ 0 mid-run) | 44 |
-| ≥ 40 develop trades | 148 |
+| Bankrupt in **develop** | 31 |
+| Bankrupt in **holdout** (develop history kept) | 13 |
+| ≥ 40 develop trades | **192** |
 | net_pnl > 0 | **0** |
 | hit 1%/day and 20%/month | **0** |
 
-Surviving (non-bankrupt) develop P&L: median **−$2,312**, worst **−$8,642** on a $10k book. Trade counts are not the problem (median 502 develop trades; max 3,238) — the edge is.
+Recomputed over all 192 (the previous median used 148 because 44 rows had been silently emptied when a later bust voided the run): median develop P&L **−$4,625**, worst **−$10,094** on a $10k book. Trade counts are not the problem (median 888 develop trades; max 3,238; every config ≥ 66) — the edge is.
 
 By family (64 configs each):
 
 | Family | Median trades | Median net | Max net |
 |--------|-------------:|-----------:|--------:|
-| trend_continuation | 613 | −$3,097 | $0 (bankrupt empty) |
-| mean_reversion | 896 | −$2,181 | $0 |
-| breakout | 464 | −$2,045 | $0 |
+| trend_continuation | 888 | −$6,227 | −$1,270 |
+| mean_reversion | 896 | −$5,030 | −$940 |
+| breakout | 464 | −$2,719 | −$654 |
 
-The 148 non-bankrupt configs: PF median **0.715**, PF max **0.905** (mean-reversion, one-per-day, flatten 14:00 / SL 0.25%). Not one reaches PF 1.0. Median avg-trade **−$4.09**, which is one 22-pt round-trip of friction at the grid's mid SL (0.50% → 0.18 lots × 22 pt = $3.96). Gross PF is therefore ~1.00: the families are break-even before costs and lose precisely the transaction cost. That is the textbook signature of a real no-edge result, and the best available evidence that the simulator is sound rather than silently broken — a negative screen's biggest risk.
+All 192 configs: PF median **0.714**, PF max **0.905** (mean-reversion, one-per-day, flatten 14:00 / SL 0.25%). Not one reaches PF 1.0. Median avg-trade **−$5.94**. See the correction below on why the pooled ~1.00 gross PF is not the diagnosis.
 
 This is not a sizing problem to paper over. Risk is already $100/trade (1R = the daily goal) against a −3R halt. Larger lots would scale both P&L and drawdown; they would not invent a positive expectancy from a uniformly negative book. The rejected 6-lot seed is **not** replayed — there is no frozen best config to replay it against.
 

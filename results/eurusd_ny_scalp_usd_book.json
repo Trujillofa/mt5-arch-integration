@@ -74,7 +74,7 @@
     "max_null_best": null
   },
   "gate": null,
-  "elapsed_sec": 91.3,
+  "elapsed_sec": 105.0,
   "book": {
     "lots": 3.0,
     "tp_usd": 20.0,

@@ -79,7 +79,7 @@
     "max_null_best": 0.0007465524592386204
   },
   "gate": null,
-  "elapsed_sec": 194.7,
+  "elapsed_sec": 195.5,
   "costs": {
     "point_size": 1e-05,
     "contract_size": 100000.0,
