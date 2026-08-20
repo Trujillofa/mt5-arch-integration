@@ -143,7 +143,7 @@
     "exits_32": [
       "pct: TP {0.10,0.15,0.20,0.25,0.30}% x SL {0.25,0.50,1.00}%  (15)",
       "atr: SL {1.0,1.5} x TP {1.5,2.0,2.5} ATR14-multiples            (6)",
-      "structure TP (family-native target: BB mid / session VWAP / box-height projection) x SL {0.25,0.50,1.00}%  (3)",
+      "structure TP (family-native target: trend = prior-20-bar extreme (recent high/low, per user strategy 1); mean_reversion = BB middle band; breakout = box-height projection from the box extreme) x SL {0.25,0.50,1.00}%  (3)",
       "time-stop: flat at open of bar fill+6 / fill+12, SL 1.00% guard  (2)",
       "flatten 11:30 / 14:00 ET x SL {0.25,0.50,1.00}%                 (6)"
     ]
