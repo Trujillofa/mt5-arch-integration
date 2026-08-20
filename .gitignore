@@ -78,3 +78,9 @@ results/instrument_data
 results/instrument_data_manifests
 results/multi_instrument_data_readiness.md
 results/multi_instrument_data_readiness.FAIL.md
+
+# Local Cursor MCP client configs (may contain LAN binds / inherited tokens)
+.cursor/mcp.json
+.cursor/mcp.local.json
+.mcp.local.json
+.mcp.json
