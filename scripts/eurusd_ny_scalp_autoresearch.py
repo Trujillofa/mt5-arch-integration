@@ -513,16 +513,35 @@ def run_grid(
         for opd in (False, True):
             ctx = contexts[opd][fam]
             for ex in exits:
-                trades = simulate_config(
-                    d,
-                    ctx.signals,
-                    ex,
-                    ctx.tgt_long,
-                    ctx.tgt_short,
-                    ctx.atr,
-                    costs,
-                    lock,
-                )
+                try:
+                    trades = simulate_config(
+                        d,
+                        ctx.signals,
+                        ex,
+                        ctx.tgt_long,
+                        ctx.tgt_short,
+                        ctx.atr,
+                        costs,
+                        lock,
+                    )
+                except RuntimeError as exc:
+                    if str(exc) != "equity_floor":
+                        raise
+                    # Bankrupt book: ineligible (score -1e9). Record empty
+                    # metrics so the grid still has 192 rows.
+                    rows.append(
+                        {
+                            "params": {
+                                "family": fam,
+                                "one_per_day": opd,
+                                "exit": exit_name(ex),
+                            },
+                            "develop": pack_metrics([], balance, halt) | {"bankrupt": True},
+                            "holdout": pack_metrics([], balance, halt) | {"bankrupt": True},
+                            "develop_score": -1e9,
+                        }
+                    )
+                    continue
                 dev = [t for t in trades if date.fromisoformat(t.et_date) < holdout]
                 ho = [t for t in trades if date.fromisoformat(t.et_date) >= holdout]
                 rows.append(
@@ -545,18 +564,24 @@ def run_null(d: M5Data, lock: dict, costs: CostSpec, holdout: date) -> dict:
     nc = lock["null_calibration"]
     seeds = [int(s) for s in nc["seeds"]]
     per_seed = []
-    for seed in seeds:
+    t0 = pytime.time()
+    for i, seed in enumerate(seeds, 1):
         rng = np.random.default_rng(seed)
         dn = rotate_returns_within_days(d, rng)
         rows = run_grid(dn, lock, costs, holdout)
         ranked = rank_develop(rows)
         best = ranked[0]["develop"] if ranked else None
-        per_seed.append(
-            {
-                "seed": seed,
-                "n_eligible": len(ranked),
-                "best_develop_median_daily_pct": None if best is None else best["median_daily_pct"],
-            }
+        rec = {
+            "seed": seed,
+            "n_eligible": len(ranked),
+            "best_develop_median_daily_pct": None if best is None else best["median_daily_pct"],
+        }
+        per_seed.append(rec)
+        print(
+            f"null seed {i}/{len(seeds)}={seed} eligible={rec['n_eligible']} "
+            f"best={rec['best_develop_median_daily_pct']} "
+            f"({pytime.time() - t0:.0f}s)",
+            flush=True,
         )
     vals = [
         s["best_develop_median_daily_pct"]
