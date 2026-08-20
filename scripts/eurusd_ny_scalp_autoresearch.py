@@ -157,10 +157,6 @@ def size_lots(
     return lots
 
 
-def _floor_step(x: float, step: float) -> float:
-    return math.floor(x / step) * step
-
-
 # ---------------------------------------------------------------------------
 # Exit grid (lock: grid.exits_32 — exactly 32)
 # ---------------------------------------------------------------------------
@@ -357,7 +353,8 @@ def simulate_config(
                 lvl = sl - spr * point if sig < 0 else sl
                 hit = d.high[j] >= lvl if sig < 0 else d.low[j] <= lvl
                 if hit:  # SL-first precedence
-                    fill_px = lvl
+                    op_j = float(d.open[j])
+                    fill_px = min(lvl, op_j) if sig > 0 else max(lvl, op_j)
                     exit_i, exit_px, reason = j, fill_px, "sl"
                     break
             if tp is not None:
@@ -449,7 +446,6 @@ def daily_monthly_equity(trades: list[SimTrade], start_balance: float) -> dict:
             "mean_daily_pct": 0.0,
             "median_monthly_pct": 0.0,
             "mean_monthly_pct": 0.0,
-            "halt_days": 0,
             "hit_daily_goal": False,
             "hit_monthly_goal": False,
         }
@@ -477,19 +473,13 @@ def daily_monthly_equity(trades: list[SimTrade], start_balance: float) -> dict:
         "mean_daily_pct": float(np.mean(day_pcts)),
         "median_monthly_pct": float(np.median(month_pcts)) if month_pcts else 0.0,
         "mean_monthly_pct": float(np.mean(month_pcts)) if month_pcts else 0.0,
-        "halt_days": 0,
         "hit_daily_goal": bool(day_pcts) and float(np.median(day_pcts)) >= GOAL_DAILY,
         "hit_monthly_goal": bool(month_pcts) and float(np.median(month_pcts)) >= GOAL_MONTHLY,
     }
 
 
-def _attr_trades(trades: list[SimTrade]):
-    """metrics_from_trades reads attributes; SimTrade carries them all."""
-    return trades
-
-
 def pack_metrics(trades: list[SimTrade], start_balance: float, halt_usd: float) -> dict:
-    m = metrics_from_trades(_attr_trades(trades))
+    m = metrics_from_trades(trades)
     m.update(daily_monthly_equity(trades, start_balance))
     by_day: dict[str, float] = {}
     for t in trades:
@@ -564,7 +554,8 @@ def run_grid(
                 bust = bankrupt_at(trades)
                 bust_d = date.fromisoformat(bust) if bust else None
                 dmet = pack_metrics(dev, balance, halt)
-                hmet = pack_metrics(ho, balance, halt)
+                ho_start = dev[-1].equity_after if dev else balance
+                hmet = pack_metrics(ho, ho_start, halt)
                 dmet["bankrupt"] = bust_d is not None and bust_d < holdout
                 hmet["bankrupt"] = bust_d is not None and bust_d >= holdout
                 rows.append(

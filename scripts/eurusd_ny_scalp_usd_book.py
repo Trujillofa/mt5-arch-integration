@@ -113,7 +113,8 @@ def run_usd_grid(d, lock: dict, costs: CostSpec, holdout: date) -> list[dict]:
             bust = bankrupt_at(trades)
             bust_d = date.fromisoformat(bust) if bust else None
             dmet = pack_metrics(dev, balance, halt)
-            hmet = pack_metrics(ho, balance, halt)
+            ho_start = dev[-1].equity_after if dev else balance
+            hmet = pack_metrics(ho, ho_start, halt)
             dmet["bankrupt"] = bust_d is not None and bust_d < holdout
             hmet["bankrupt"] = bust_d is not None and bust_d >= holdout
             row = {
