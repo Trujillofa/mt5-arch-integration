@@ -213,6 +213,12 @@ class SimTrade:
     exit_time: str
     lots: float
     sl_points: float
+    # RAW levels as placed, NOT the levels the exit loop tests against.
+    # A short covers at ask, so its effective bid-space trigger is
+    # ``tp - spread_pts * point`` / ``sl - spread_pts * point``; a long's is
+    # unshifted. Differencing ``exit`` against these fields for a short
+    # therefore measures the deliberate bid-space shift (~one spread), not
+    # slippage. Use effective_levels() before comparing.
     tp: float | None
     sl: float | None
     spread_pts: float
@@ -221,6 +227,20 @@ class SimTrade:
     mae: float
     mfe: float
     equity_after: float
+
+
+def effective_levels(t: SimTrade, point: float) -> tuple[float | None, float | None]:
+    """The (tp, sl) the exit loop actually tested for this trade.
+
+    Longs sell at the bid and MT5 OHLC is bid, so their levels are unshifted.
+    Shorts cover at the ask (bid + spread), so both levels shift DOWN by one
+    spread. Any analysis comparing ``SimTrade.exit`` to a level must use these,
+    or a short's intentional shift reads as ~12 points of phantom slippage.
+    """
+    if t.side > 0:
+        return t.tp, t.sl
+    off = t.spread_pts * point
+    return (None if t.tp is None else t.tp - off, None if t.sl is None else t.sl - off)
 
 
 def _rt_cost(spread_pts: float, costs: CostSpec, lots: float) -> float:

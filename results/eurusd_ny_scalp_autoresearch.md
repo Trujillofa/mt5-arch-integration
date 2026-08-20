@@ -49,7 +49,7 @@ Eligible = develop net > 0 **and** ≥ 40 trades. Rank = profit factor (None pin
 | net_pnl > 0 | **0** |
 | hit 1%/day and 20%/month | **0** |
 
-Recomputed over all 192 (the previous median used 148 because 44 rows had been silently emptied when a later bust voided the run): median develop P&L **−$4,625**, worst **−$10,094** on a $10k book. Trade counts are not the problem (median 888 develop trades; max 3,238; every config ≥ 66) — the edge is.
+Recomputed over all 192 (the previous median used 148 because 44 rows had been silently emptied when a later bust voided the run): median develop P&L **−$4,652**, worst **−$10,094** on a $10k book. Trade counts are not the problem (median 888 develop trades; max 3,238; every config ≥ 66) — the edge is.
 
 By family (64 configs each):
 

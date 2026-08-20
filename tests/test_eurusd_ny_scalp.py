@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import sys
+from dataclasses import replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -357,6 +358,32 @@ def test_short_tp_fills_at_bid_equivalent_level():
     t = trades[0]
     assert t.reason == "tp"
     assert t.exit == pytest.approx(bid_lvl)  # fill at TP - spread (bid space)
+
+    # effective_levels() is what analysis must diff against. Against the RAW
+    # tp field a short's deliberate bid-space shift reads as a full spread of
+    # phantom slippage — the trap this helper exists to close.
+    eff_tp, _ = ar.effective_levels(t, 1e-5)
+    assert eff_tp == pytest.approx(bid_lvl)
+    # Against the EFFECTIVE level the fill is exact — zero slippage. (The bar
+    # ran 5 pts past it; a TP still books at the level, which is deliberate.)
+    assert t.exit - eff_tp == pytest.approx(0.0, abs=1e-9)
+    # Against the RAW tp field the same fill looks like one whole spread of
+    # slippage that never happened. This is the trap effective_levels closes.
+    assert abs(t.exit - t.tp) / 1e-5 == pytest.approx(12.0, abs=0.5)
+
+
+def test_effective_levels_leaves_longs_unshifted():
+    t = ar.SimTrade(
+        side=1, fill_i=0, exit_i=1, entry=1.1, exit=1.1, reason="tp",
+        et_date="2026-03-02", fill_time="", exit_time="", lots=0.1,
+        sl_points=100.0, tp=1.101, sl=1.099, spread_pts=12.0, cost=0.0,
+        pnl=0.0, mae=0.0, mfe=0.0, equity_after=10_000.0,
+    )
+    assert ar.effective_levels(t, 1e-5) == (1.101, 1.099)
+    short = replace(t, side=-1)
+    eff_tp, eff_sl = ar.effective_levels(short, 1e-5)
+    assert eff_tp == pytest.approx(1.101 - 12e-5)
+    assert eff_sl == pytest.approx(1.099 - 12e-5)
 
 
 def test_long_tp_unadjusted():
