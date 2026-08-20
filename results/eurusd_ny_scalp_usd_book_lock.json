@@ -1,0 +1,78 @@
+{
+  "search_id": "eurusd_ny_scalp_usd_book_v1",
+  "locked_at": "2026-08-20T16:30:00-05:00",
+  "parent_search_id": "eurusd_ny_scalp_develop_v1",
+  "note": "Specified-book replay of the user's clarified geometry: TP/SL are percent of the $10k account, not of EURUSD price. 3 lots fixed, TP $20, SL $100, halt -$300. NOT a retune of the 192-config v1 screen. Frozen before this search's metrics. promote=false live_go=false. Expected SCREEN_FAIL: at 3 lots, $20 TP = 6.7 points vs median spread 12 points; round-trip friction 22 points x $3 = $66 > $20 target.",
+  "promote": false,
+  "live_go": false,
+  "symbol": "EURUSD",
+  "tf": "M5",
+  "data": {
+    "path": "results/eurusd_data/history_EURUSD.csv",
+    "sha256": "ebf0bcd98439cdc21590c61f682ba0bebe4c41819d957158abfec8fc8663fb1b",
+    "bars": 368302,
+    "source": "same dump as eurusd_ny_scalp_develop_v1 — not a new peek"
+  },
+  "clock": {
+    "rule": "same as v1: server = ET+7h, per-bar America/New_York localization"
+  },
+  "session": {
+    "entry_window": "[08:00, 17:00) ET",
+    "force_flat": "16:45 ET",
+    "friday_cutoff": "no new entries at or after 14:00 ET Friday",
+    "same_day_only": true
+  },
+  "book": {
+    "balance_usd": 10000,
+    "equity_path": true,
+    "sizing_policy": "fixed_lots",
+    "lots": 3.0,
+    "point_value_per_lot": 1.0,
+    "tp_usd": 20.0,
+    "sl_usd": 100.0,
+    "tp_points": 6.666666666666667,
+    "sl_points": 33.333333333333336,
+    "tp_points_note": "20 / (3 lots x $1/pt) = 6.67 points = 0.67 pip",
+    "sl_points_note": "100 / (3 lots x $1/pt) = 33.33 points = 3.33 pip",
+    "friction_at_median_spread": "22 pt x $3 = $66 round-trip vs $20 TP — TP sits inside the spread",
+    "rejected_six_lots": "6 lots was the original seed; 3 lots is the user-requested alternative. Arithmetic is the same shape: 6 lots TP = 3.3 pt (worse)."
+  },
+  "costs": {
+    "commission_per_lot": 0.0,
+    "slippage_points": 5.0,
+    "max_spread_points": 30.0,
+    "slippage_note": "STATED ASSUMPTION, same as v1"
+  },
+  "risk": {
+    "daily_halt_usd": -300,
+    "daily_halt_rule": "no NEW entries once realized day PnL <= -300 (three full $100 stops)"
+  },
+  "fills_and_exits": {
+    "signal_to_fill": "close of i, fill open of i+1, same ET day",
+    "intrabar_precedence": "SL-first",
+    "short_fill_convention": "bid-space (same as v1)",
+    "exit": "usd: TP $20 / SL $100 in account dollars, converted to points via lots x $1/pt"
+  },
+  "goals": {
+    "median_trade_day_pct": 0.01,
+    "median_trade_month_pct": 0.20,
+    "normalization": "equity path (same as v1)"
+  },
+  "holdout": {
+    "holdout_start": "2025-03-01",
+    "holdout_boundary_unit": "ET session-date (same split as v1)",
+    "holdout_rule": "NEVER used for selection. This search does not select — it replays one specified book across the three frozen families x one_per_day.",
+    "peek_status": "Same window as v1. See v1 lock peek_status."
+  },
+  "grid": {
+    "n_configs": 6,
+    "structure": "3 frozen families x one_per_day {true,false} x 1 usd exit (TP $20 / SL $100)",
+    "min_trades_develop": 40,
+    "ranking": "develop-only, same score_row as v1; holdout scored after rank freezes"
+  },
+  "null_calibration": {
+    "procedure": "same as v1: within-ET-day circular phase rotation, 10 seeds, full 6-config grid per seed",
+    "seeds": [11, 23, 37, 41, 53, 67, 79, 97, 113, 127],
+    "gate": "develop winner median_trade_day_pct >= max_null_best + 0.5 * 0.01, if any winner exists"
+  }
+}
