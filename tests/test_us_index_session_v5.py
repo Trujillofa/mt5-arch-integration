@@ -128,9 +128,6 @@ def test_adr_excludes_today():
 def test_h4_bias_ignores_forming_bucket():
     # One completed 4h bucket of rising closes, then first bar of the next bucket.
     t0 = datetime(2026, 3, 16, 0, 0, tzinfo=UTC)
-    times = [t0 + timedelta(minutes=5 * i) for i in range(48 + 1)]
-    close = np.linspace(100.0, 120.0, 48)
-    close = np.append(close, 90.0)
     # warmup: tile the rising 4h many times so EMA200 exists
     times_w = []
     close_w = []
