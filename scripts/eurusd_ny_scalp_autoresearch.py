@@ -371,8 +371,6 @@ def simulate_config(
         cost = _rt_cost(spr, costs, lots)
         pnl = (exit_px - entry) * sig * costs.contract_size * lots - cost
         balance += pnl
-        if balance <= 0.0:
-            raise RuntimeError("equity_floor")
         day_pnl[k_fill] = day_pnl.get(k_fill, 0.0) + pnl
         wh = d.high[fill : exit_i + 1]
         wl = d.low[fill : exit_i + 1]
@@ -406,6 +404,10 @@ def simulate_config(
             )
         )
         blocked_until = exit_i
+        if balance <= 0.0:
+            if policy == "fixed_lots":
+                break  # keep the bust trade; stop new entries
+            raise RuntimeError("equity_floor")
     return trades
 
 

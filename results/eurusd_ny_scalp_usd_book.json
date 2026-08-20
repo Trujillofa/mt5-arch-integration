@@ -1,0 +1,234 @@
+{
+  "search_id": "eurusd_ny_scalp_usd_book_v1",
+  "promote": false,
+  "live_go": false,
+  "holdout_start": "2025-03-01",
+  "n_configs": 6,
+  "n_eligible_develop": 0,
+  "n_develop_hit_goal": 0,
+  "null": {
+    "seeds": [
+      11,
+      23,
+      37,
+      41,
+      53,
+      67,
+      79,
+      97,
+      113,
+      127
+    ],
+    "per_seed": [
+      {
+        "seed": 11,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 23,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 37,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 41,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 53,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 67,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 79,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 97,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 113,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      },
+      {
+        "seed": 127,
+        "n_eligible": 0,
+        "best_develop_median_daily_pct": null
+      }
+    ],
+    "max_null_best": null
+  },
+  "gate": null,
+  "elapsed_sec": 91.3,
+  "book": {
+    "lots": 3.0,
+    "tp_usd": 20.0,
+    "sl_usd": 100.0,
+    "daily_halt_usd": -300.0
+  },
+  "costs": {
+    "point_size": 1e-05,
+    "contract_size": 100000.0,
+    "lots": 3.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 5.0,
+    "max_spread_points": 30.0
+  },
+  "data": {
+    "path": "results/eurusd_data/history_EURUSD.csv",
+    "sha256": "ebf0bcd98439cdc21590c61f682ba0bebe4c41819d957158abfec8fc8663fb1b",
+    "bars": 368302,
+    "source": "same dump as eurusd_ny_scalp_develop_v1 \u2014 not a new peek"
+  },
+  "best_develop": null,
+  "all_develop": [
+    {
+      "params": {
+        "family": "trend_continuation",
+        "one_per_day": false,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 122,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10100.999999998545,
+        "avg_trade": -82.7950819672012,
+        "median_daily_pct": -0.06211936662603695,
+        "halt_days": 23
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    },
+    {
+      "params": {
+        "family": "mean_reversion",
+        "one_per_day": false,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 141,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10063.99999999865,
+        "avg_trade": -71.37588652481311,
+        "median_daily_pct": -0.0491182618750977,
+        "halt_days": 23
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    },
+    {
+      "params": {
+        "family": "breakout",
+        "one_per_day": false,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 113,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10001.999999998303,
+        "avg_trade": -88.51327433626817,
+        "median_daily_pct": -0.02488991001339279,
+        "halt_days": 4
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    },
+    {
+      "params": {
+        "family": "trend_continuation",
+        "one_per_day": true,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 118,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10014.999999998296,
+        "avg_trade": -84.87288135591776,
+        "median_daily_pct": -0.017366171949546302,
+        "halt_days": 0
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    },
+    {
+      "params": {
+        "family": "mean_reversion",
+        "one_per_day": true,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 126,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10055.999999998727,
+        "avg_trade": -79.8095238095137,
+        "median_daily_pct": -0.013801197767450705,
+        "halt_days": 0
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    },
+    {
+      "params": {
+        "family": "breakout",
+        "one_per_day": true,
+        "exit": "usd_tp20_sl100"
+      },
+      "develop": {
+        "trades": 103,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": -10047.99999999837,
+        "avg_trade": -97.55339805823661,
+        "median_daily_pct": -0.017529665587913208,
+        "halt_days": 0
+      },
+      "holdout": {
+        "trades": 0,
+        "win_rate": 0.0,
+        "profit_factor": 0.0,
+        "net_pnl": 0.0
+      }
+    }
+  ],
+  "goal_note": "Specified book: 3 lots, TP $20, SL $100, halt -$300. TP is 6.67 points vs 12-pt median spread. Not a v1 retune."
+}
