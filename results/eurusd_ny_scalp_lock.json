@@ -103,6 +103,7 @@
     "holdout_boundary_unit": "ET session-date (et_date < 2025-03-01 = develop; >= = holdout). Note: the instrument-data lane's holdout_start_server '2026-01-01 00:00:00' is server-clock = 2025-12-31 17:00 ET; different lane, different unit, do not mix.",
     "split_basis": "chosen from the measured span after export (1,541 ET days): develop 1,080 days (70.1%), holdout 461 days (29.9%) - the ~70/30 target",
     "holdout_rule": "NEVER used for selection. Selection ranks develop-only. Holdout is scored only after the ranking is frozen.",
+    "peek_status": "Holdout 2025-03-01 → 2026-08-20 overlaps the instrument-data lane's EURUSD H1 develop window (server_time < 2026-01-01) and EURUSD appears in several XAU exogenous charters. Not verified whether those selections actually touched this window — record-and-check, not a contamination finding. Contamination would bias toward false positives; this run found zero, and the holdout was never used for selection. Stated here per CLAUDE.md 'do not relabel already-peeked windows as OOS' and the v8 burned-buffer precedent.",
     "assert_not_default": "effective holdout_start must NOT equal us_index_session_backtest.HOLDOUT_START (2026-06-01)"
   },
 

@@ -58,6 +58,8 @@ By family (64 configs each):
 | mean_reversion | 896 | −$2,181 | $0 |
 | breakout | 464 | −$2,045 | $0 |
 
+The 148 non-bankrupt configs: PF median **0.715**, PF max **0.905** (mean-reversion, one-per-day, flatten 14:00 / SL 0.25%). Not one reaches PF 1.0. Median avg-trade **−$4.09**, which is one 22-pt round-trip of friction at the grid's mid SL (0.50% → 0.18 lots × 22 pt = $3.96). Gross PF is therefore ~1.00: the families are break-even before costs and lose precisely the transaction cost. That is the textbook signature of a real no-edge result, and the best available evidence that the simulator is sound rather than silently broken — a negative screen's biggest risk.
+
 This is not a sizing problem to paper over. Risk is already $100/trade (1R = the daily goal) against a −3R halt. Larger lots would scale both P&L and drawdown; they would not invent a positive expectancy from a uniformly negative book. The rejected 6-lot seed is **not** replayed — there is no frozen best config to replay it against.
 
 ---
@@ -79,7 +81,9 @@ Within-ET-day circular phase rotation of M5 log returns, 10 locked seeds, full 1
 | 113 | 56 | 0.032% |
 | 127 | 37 | 0.023% |
 
-`max_null_best` = **0.075%/day**. Even best-of-192 selection on *phase-randomized* returns never reaches 0.08%/day — 13× short of the 1% goal, and the +0.5pp gate threshold would have been 0.57% anyway. The real book producing 0 eligible configs is therefore **not** an artefact of a too-lenient gate: noise itself cannot print the goal on this book, and the real families print worse than noise (uniformly negative).
+`max_null_best` = **0.075%/day**. Even best-of-192 selection on *phase-randomized* returns never reaches 0.08%/day — 13× short of the 1% goal, and the +0.5pp gate threshold would have been 0.57% anyway. The real book producing 0 eligible configs is therefore **not** an artefact of a too-lenient gate: noise itself cannot print the goal on this book.
+
+Do **not** read the 32–77 net-positive null configs per seed as "the real families print worse than noise." Phase rotation leaves volumes, spreads, and times unchanged while rotating returns, which **decorrelates cost from movement**. Real spreads widen exactly when price moves (news, rollover), so real trades systematically pay more than null trades. `max_null_best` is therefore an inflated, conservative bound because the null is cheaper to trade. The correct reading of the real book is stronger, not weaker: indistinguishable from zero edge (gross PF ~1.00), not worse than noise.
 
 Caveat (from the lock): max-of-10 is an estimate; rotation is circular (not iid shuffle), so it is conservative on signal frequency but is not a full block bootstrap.
 
