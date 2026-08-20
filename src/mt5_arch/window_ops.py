@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--dry-run",
         action="store_true",
-        help="Print plan only; do not call hyprctl dispatch",
+        help="Print plan only; do not call hyprctl eval",
     )
     p.add_argument("--json", action="store_true", help="Machine-readable output")
     return p
@@ -188,7 +188,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.dry_run:
             print("commands:")
             for c in cmds:
-                print(f"  hyprctl dispatch {c}")
+                print(f"  hyprctl eval {c}")
         else:
             print(f"status:  {payload['status']}")
             if "within_tolerance" in payload:

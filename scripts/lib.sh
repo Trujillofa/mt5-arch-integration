@@ -168,3 +168,35 @@ mt5server_dir() {
 mt5server_path() {
   echo "$(mt5server_dir)/mt5server.exe"
 }
+
+# Hyprland 0.56+ evaluates `hyprctl dispatch` as Lua. Use `hyprctl eval`.
+hypr_eval() {
+  hyprctl eval "$1" >/dev/null 2>&1 || true
+}
+
+_hypr_safe_selector() {
+  local sel="${1:-}"
+  [[ -n "$sel" ]] || return 1
+  case "$sel" in
+    *\'*|*\\*)
+      warn "refusing hypr selector with quotes: $sel"
+      return 1
+      ;;
+  esac
+  printf '%s' "$sel"
+}
+
+hypr_focus_window() {
+  local sel
+  sel="$(_hypr_safe_selector "${1:-}")" || return 0
+  hypr_eval "hl.dispatch(hl.dsp.focus({ window = '${sel}' }))"
+}
+
+hypr_move_window_workspace() {
+  local sel ws
+  sel="$(_hypr_safe_selector "${1:-}")" || return 0
+  ws="${2:-}"
+  [[ -n "$ws" ]] || return 0
+  hypr_eval "hl.dispatch(hl.dsp.window.move({ window = '${sel}', workspace = ${ws}, follow = true }))"
+}
+

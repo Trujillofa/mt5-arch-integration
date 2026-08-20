@@ -27,22 +27,45 @@ export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
 # Single instance: avoid zombie second terminals; recover ghosts automatically
-if python3 -c "
+if python3 <<'PY' >/tmp/mt5-existing.pid 2>/dev/null
 import os, sys
-for pid in os.listdir('/proc'):
+from pathlib import Path
+prefix = os.path.realpath(os.path.expanduser(os.environ.get("WINEPREFIX") or ""))
+if not prefix:
+    sys.exit(1)
+for pid in os.listdir("/proc"):
     if not pid.isdigit():
         continue
     try:
-        cmd = open(f'/proc/{pid}/cmdline', 'rb').read().replace(b'\\x00', b' ').decode()
+        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode()
     except OSError:
         continue
-    if 'bash' in cmd:
+    if "bash" in cmd:
         continue
-    if 'terminal64.exe' in cmd:
+    if "terminal64.exe" not in cmd:
+        continue
+    wp = None
+    try:
+        env = Path(f"/proc/{pid}/environ").read_bytes()
+    except OSError:
+        env = None
+    if env:
+        for part in env.split(b"\x00"):
+            if part.startswith(b"WINEPREFIX="):
+                raw = part.split(b"=", 1)[1].decode("utf-8", "replace")
+                wp = os.path.realpath(os.path.expanduser(raw)) if raw else None
+                break
+    if wp is None:
+        try:
+            wp = prefix if prefix in Path(f"/proc/{pid}/maps").read_text(errors="replace") else None
+        except OSError:
+            wp = None
+    if wp == prefix:
         print(pid)
         sys.exit(0)
 sys.exit(1)
-" >/tmp/mt5-existing.pid 2>/dev/null; then
+PY
+then
   EXISTING_PID="$(cat /tmp/mt5-existing.pid)"
   # Count Hyprland terminal64 windows (0 ⇒ ghost process)
   WIN_COUNT=0
@@ -128,9 +151,19 @@ for c in json.load(sys.stdin):
     if c.get('class') != 'terminal64.exe':
         continue
     a = c.get('address')
+    if not a:
+        continue
+    sel = f'address:{a}'
     if cur:
-        subprocess.run(['hyprctl', 'dispatch', 'movetoworkspace', f'{cur},address:{a}'], capture_output=True)
-    subprocess.run(['hyprctl', 'dispatch', 'focuswindow', f'address:{a}'], capture_output=True)
+        lua = (
+            'hl.dispatch(hl.dsp.window.move({ window = \'' + sel + '\', workspace = '
+            + cur + ', follow = true }))'
+        )
+        subprocess.run(['hyprctl', 'eval', lua], capture_output=True)
+    subprocess.run(
+        ['hyprctl', 'eval', 'hl.dispatch(hl.dsp.focus({ window = \'' + sel + '\' }))'],
+        capture_output=True,
+    )
 " 2>/dev/null || true
   fi
   if [[ "$FULLSCREEN" -eq 1 ]]; then
