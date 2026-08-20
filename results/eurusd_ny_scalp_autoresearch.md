@@ -97,3 +97,38 @@ Caveat (from the lock): max-of-10 is an estimate; rotation is circular (not iid 
 - A different family, if ever wanted, is a **new** `search_id` with a new freeze-before-peek — not another pass on this CSV.
 
 `SCREEN_FAIL` is the deliverable. `promote=false`. `live_go=false`.
+
+---
+
+## Correction (2026-08-20): "gross PF ~1.00" is a pooled number and hides the answer
+
+Full diagnostic: `results/eurusd_ny_scalp_signal_diagnostic.md` ·
+tool: `scripts/signal_edge_diagnostic.py`
+
+The statement above that the real book is *"indistinguishable from zero edge
+(gross PF ~1.00)"* is true of the **pool** and misleading about the **families**.
+Pooling averaged a genuinely predictive family against a reliably anti-predictive
+one, and they cancelled. Signed forward return from the fill bar, develop only,
+in points (friction = 22 pts):
+
+```
+                family       n        H5      H10      H20      H50     H100   verdict
+    trend_continuation   5,379      0.06    -1.12    -9.37   -11.85    -7.99   ANTI  (t -3.13)
+        mean_reversion   7,819      4.61     3.21     6.98    11.75    11.60   COST-BOUND (t +4.14)
+              breakout     764      4.29     7.76    -2.18   -19.18   -12.29   DEAD  (t -1.68)
+```
+
+So the lane did **not** fail for lack of information. It failed because the one
+family carrying information — `mean_reversion`, positive in 4 of 5 develop years,
+t = 3.18 and 3.60 in the two largest — tops out near **11.7 pts of edge against
+22 pts of friction**. Roughly half of what it costs to harvest, in every year.
+No exit grid, sizing scheme, or halt rule changes a ratio like that.
+
+`trend_continuation` is reliably *wrong* (−9 to −24 pts, negative in 4 of 5
+years). Inverting it yields +9 to +24 gross — still at or under friction, and
+post-hoc inversion of a losing rule is textbook overfitting. Do not.
+
+This correction does not change the verdict. `SCREEN_FAIL` stands, 0/192 stands,
+and the holdout remains unread for selection. What changes is the *diagnosis*:
+the failure is cost-dominated, not information-free, so the productive lever is
+execution model and timeframe — not another pass at exits on this CSV.
