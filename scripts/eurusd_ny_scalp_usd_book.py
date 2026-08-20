@@ -29,6 +29,7 @@ if str(_SCRIPTS) not in sys.path:
 from eurusd_ny_scalp_autoresearch import (  # noqa: E402
     FORBIDDEN_HOLDOUT_DEFAULT,
     GOAL_DAILY,
+    bankrupt_at,
     pack_metrics,
     rank_develop,
     score_row,
@@ -97,45 +98,34 @@ def run_usd_grid(d, lock: dict, costs: CostSpec, holdout: date) -> list[dict]:
     for opd in (False, True):
         ctxs = build_context(d, one_per_day=opd)
         for fam, ctx in ctxs.items():
-            try:
-                trades = simulate_config(
-                    d,
-                    ctx.signals,
-                    USD_EXIT,
-                    ctx.tgt_long,
-                    ctx.tgt_short,
-                    ctx.atr,
-                    costs,
-                    lock,
-                )
-            except RuntimeError as exc:
-                if str(exc) != "equity_floor":
-                    raise
-                rows.append(
-                    {
-                        "params": {
-                            "family": fam,
-                            "one_per_day": opd,
-                            "exit": "usd_tp20_sl100",
-                        },
-                        "develop": pack_metrics([], balance, halt) | {"bankrupt": True},
-                        "holdout": pack_metrics([], balance, halt) | {"bankrupt": True},
-                        "develop_score": -1e9,
-                    }
-                )
-                continue
+            trades = simulate_config(
+                d,
+                ctx.signals,
+                USD_EXIT,
+                ctx.tgt_long,
+                ctx.tgt_short,
+                ctx.atr,
+                costs,
+                lock,
+            )
             dev = [t for t in trades if date.fromisoformat(t.et_date) < holdout]
             ho = [t for t in trades if date.fromisoformat(t.et_date) >= holdout]
+            bust = bankrupt_at(trades)
+            bust_d = date.fromisoformat(bust) if bust else None
+            dmet = pack_metrics(dev, balance, halt)
+            hmet = pack_metrics(ho, balance, halt)
+            dmet["bankrupt"] = bust_d is not None and bust_d < holdout
+            hmet["bankrupt"] = bust_d is not None and bust_d >= holdout
             row = {
                 "params": {
                     "family": fam,
                     "one_per_day": opd,
                     "exit": "usd_tp20_sl100",
                 },
-                "develop": pack_metrics(dev, balance, halt),
-                "holdout": pack_metrics(ho, balance, halt),
+                "develop": dmet,
+                "holdout": hmet,
             }
-            row["develop_score"] = score_row(row["develop"])
+            row["develop_score"] = score_row(dmet)
             rows.append(row)
     return rows
 

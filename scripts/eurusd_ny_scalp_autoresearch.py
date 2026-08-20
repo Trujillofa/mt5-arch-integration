@@ -246,7 +246,17 @@ def simulate_config(
 ) -> list[SimTrade]:
     """Walk-forward: signal on close of i -> fill at open of i+1 (same ET day).
     One position. SL-first. Shorts bid-space. -3% day halt. 16:45 force-flat.
-    Raises RuntimeError('equity_floor') if equity <= 0 at any fill/close."""
+
+    Equity floor: a dead account stops trading and the run ENDS, keeping every
+    trade taken up to and including the one that busted it. Callers detect it
+    with ``went_bankrupt(trades)``; it is not an exception.
+
+    It used to raise, and the caller discarded the whole trade list. That let a
+    bust occurring in the HOLDOUT erase the config's DEVELOP metrics and force
+    it ineligible - holdout data deciding develop selection, which the lock
+    forbids ("holdout_rule: NEVER used for selection"). Lot size never reads
+    ``balance`` (risk_per_trade_usd and fixed lots are both absolute), so
+    develop trades are identical either way; only the reporting was wrong."""
     b = lock["book"]
     r = lock["risk"]
     policy = str(b.get("sizing_policy", "risk_normalized"))
@@ -283,7 +293,7 @@ def simulate_config(
         if costs.max_spread_points > 0 and spr > costs.max_spread_points:
             continue
         if balance <= 0.0:
-            raise RuntimeError("equity_floor")
+            break  # dead account: no further entries, keep the history
         entry = float(d.open[fill])
         at = float(atr[i]) if np.isfinite(atr[i]) else 0.0
 
@@ -405,10 +415,19 @@ def simulate_config(
         )
         blocked_until = exit_i
         if balance <= 0.0:
-            if policy == "fixed_lots":
-                break  # keep the bust trade; stop new entries
-            raise RuntimeError("equity_floor")
+            break  # dead account: keep the bust trade; stop new entries
     return trades
+
+
+def went_bankrupt(trades: list[SimTrade]) -> bool:
+    """True if the account hit the equity floor. Balance is monotone in
+    trade order, so only the last trade can have taken it to <= 0."""
+    return bool(trades) and trades[-1].equity_after <= 0.0
+
+
+def bankrupt_at(trades: list[SimTrade]) -> str | None:
+    """ET date of the busting trade, or None."""
+    return trades[-1].et_date if went_bankrupt(trades) else None
 
 
 # ---------------------------------------------------------------------------
@@ -530,37 +549,24 @@ def run_grid(
         for opd in (False, True):
             ctx = contexts[opd][fam]
             for ex in exits:
-                try:
-                    trades = simulate_config(
-                        d,
-                        ctx.signals,
-                        ex,
-                        ctx.tgt_long,
-                        ctx.tgt_short,
-                        ctx.atr,
-                        costs,
-                        lock,
-                    )
-                except RuntimeError as exc:
-                    if str(exc) != "equity_floor":
-                        raise
-                    # Bankrupt book: ineligible (score -1e9). Record empty
-                    # metrics so the grid still has 192 rows.
-                    rows.append(
-                        {
-                            "params": {
-                                "family": fam,
-                                "one_per_day": opd,
-                                "exit": exit_name(ex),
-                            },
-                            "develop": pack_metrics([], balance, halt) | {"bankrupt": True},
-                            "holdout": pack_metrics([], balance, halt) | {"bankrupt": True},
-                            "develop_score": -1e9,
-                        }
-                    )
-                    continue
+                trades = simulate_config(
+                    d,
+                    ctx.signals,
+                    ex,
+                    ctx.tgt_long,
+                    ctx.tgt_short,
+                    ctx.atr,
+                    costs,
+                    lock,
+                )
                 dev = [t for t in trades if date.fromisoformat(t.et_date) < holdout]
                 ho = [t for t in trades if date.fromisoformat(t.et_date) >= holdout]
+                bust = bankrupt_at(trades)
+                bust_d = date.fromisoformat(bust) if bust else None
+                dmet = pack_metrics(dev, balance, halt)
+                hmet = pack_metrics(ho, balance, halt)
+                dmet["bankrupt"] = bust_d is not None and bust_d < holdout
+                hmet["bankrupt"] = bust_d is not None and bust_d >= holdout
                 rows.append(
                     {
                         "params": {
@@ -568,12 +574,11 @@ def run_grid(
                             "one_per_day": opd,
                             "exit": exit_name(ex),
                         },
-                        "develop": pack_metrics(dev, balance, halt),
-                        "holdout": pack_metrics(ho, balance, halt),
-                        "develop_score": None,
+                        "develop": dmet,
+                        "holdout": hmet,
+                        "develop_score": score_row(dmet),
                     }
                 )
-                rows[-1]["develop_score"] = score_row(rows[-1]["develop"])
     return rows
 
 
