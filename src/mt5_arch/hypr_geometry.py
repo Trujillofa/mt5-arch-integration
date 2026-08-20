@@ -323,21 +323,18 @@ def pid_belongs_to_wineprefix(
     return False
 
 
-def kill_terminal64_processes(*, wineprefix: str | None = None) -> list[int]:
-    """SIGTERM then SIGKILL MetaTrader processes in one Wine prefix.
+def list_terminal64_pids(*, wineprefix: str | None = None) -> list[int]:
+    """MetaTrader pids bound to ``wineprefix`` via /proc environ (not argv).
 
-    Refuses a host-wide kill when no prefix is given so FP/Exness stay up.
+    Cmdline is usually ``./terminal64.exe /portable``; the prefix lives in
+    ``WINEPREFIX=``. Empty prefix returns [] so callers never scan the host.
     """
-    import signal
-    import time
-
     prefix = wineprefix or os.environ.get("WINEPREFIX")
     if not prefix:
         return []
     target = os.path.realpath(os.path.expanduser(prefix))
-
     keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
-    killed: list[int] = []
+    found: list[int] = []
     for pid_s in list(os.listdir("/proc")):
         if not pid_s.isdigit():
             continue
@@ -365,7 +362,20 @@ def kill_terminal64_processes(*, wineprefix: str | None = None) -> list[int]:
             wineprefix=target, environ_bytes=env, maps_text=maps
         ):
             continue
-        pid = int(pid_s)
+        found.append(int(pid_s))
+    return found
+
+
+def kill_terminal64_processes(*, wineprefix: str | None = None) -> list[int]:
+    """SIGTERM then SIGKILL MetaTrader processes in one Wine prefix.
+
+    Refuses a host-wide kill when no prefix is given so FP/Exness stay up.
+    """
+    import signal
+    import time
+
+    killed: list[int] = []
+    for pid in list_terminal64_pids(wineprefix=wineprefix):
         try:
             os.kill(pid, signal.SIGTERM)
             killed.append(pid)

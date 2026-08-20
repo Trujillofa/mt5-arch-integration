@@ -12,6 +12,7 @@ from mt5_arch.hypr_geometry import (
     compute_maximize_placement,
     environ_wineprefix,
     is_main_terminal_client,
+    list_terminal64_pids,
     lua_focus_window,
     lua_fullscreen_state,
     lua_move_window_workspace,
@@ -375,4 +376,9 @@ def test_kill_terminal64_refuses_without_prefix(monkeypatch) -> None:
 
     monkeypatch.delenv("WINEPREFIX", raising=False)
     assert kill_terminal64_processes() == []
+
+
+def test_list_terminal64_pids_refuses_without_prefix(monkeypatch) -> None:
+    monkeypatch.delenv("WINEPREFIX", raising=False)
+    assert list_terminal64_pids() == []
 
