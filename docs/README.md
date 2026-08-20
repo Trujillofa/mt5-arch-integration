@@ -54,7 +54,7 @@ Details and “one install for all brokers?” answer: [MULTI-BROKER-MT5.md](MUL
 | `scripts/02-install-mt5.sh` | Generic MT5 installer |
 | `scripts/04-start-terminal.sh` | Start terminal |
 | `scripts/06-install-file-bridge.sh` | Deploy `Mt5ArchBridge` EA |
-| `scripts/13-force-login-bridge.sh` | auto_login.ini + EA + restart (no password log) |
+| `scripts/13-force-login-bridge.sh` | auto_login.ini + EA + prefix-scoped restart (no password log; `WINEPREFIX=~/.mt5-vantage` leaves FP up) |
 | `scripts/14-isolate-net-and-login.sh` | Stop docker/ts, force-login, restore |
 | `scripts/15-bridge-down-and-login.sh` | Root bridge-down + force-login + restore |
 | `scripts/16-use-broker.sh` | Activate `config/brokers/<name>.env` |

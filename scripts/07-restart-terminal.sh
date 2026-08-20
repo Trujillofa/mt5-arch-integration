@@ -25,66 +25,7 @@ export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
 info "Stopping MetaTrader terminal processes in $WINEPREFIX only..."
-python3 <<'PY'
-import os, signal, time
-from pathlib import Path
-
-prefix = os.path.realpath(os.path.expanduser(os.environ.get("WINEPREFIX") or ""))
-if not prefix:
-    print("  refuse: WINEPREFIX unset (will not kill every terminal64.exe)")
-    raise SystemExit(0)
-
-keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
-
-def belongs(pid: str) -> bool:
-    try:
-        env = Path(f"/proc/{pid}/environ").read_bytes()
-    except OSError:
-        env = None
-    wp = None
-    if env:
-        for part in env.split(b"\x00"):
-            if part.startswith(b"WINEPREFIX="):
-                raw = part.split(b"=", 1)[1].decode("utf-8", "replace")
-                wp = os.path.realpath(os.path.expanduser(raw)) if raw else None
-                break
-    if wp is not None:
-        return wp == prefix
-    try:
-        return prefix in Path(f"/proc/{pid}/maps").read_text(errors="replace")
-    except OSError:
-        return False
-
-killed = []
-for pid in list(os.listdir("/proc")):
-    if not pid.isdigit():
-        continue
-    try:
-        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
-    except OSError:
-        continue
-    if "bash" in cmd or "extglob" in cmd:
-        continue
-    if not any(k in cmd for k in keys):
-        continue
-    if not belongs(pid):
-        continue
-    print(f"  kill {pid}: {cmd[:90]}")
-    try:
-        os.kill(int(pid), signal.SIGTERM)
-        killed.append(int(pid))
-    except ProcessLookupError:
-        pass
-time.sleep(2)
-for pid in killed:
-    try:
-        os.kill(pid, 0)
-        os.kill(pid, signal.SIGKILL)
-        print(f"  SIGKILL {pid}")
-    except ProcessLookupError:
-        pass
-print("  done")
-PY
+kill_terminal64_processes
 
 term="$(find_terminal64)" || die "terminal64.exe not found. Run ./scripts/02-install-mt5.sh"
 # If path is Windows-style in .env, resolve Linux path

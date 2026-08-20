@@ -2,6 +2,13 @@
 # Force MT5 trade-server login from .env and re-attach the file-bridge EA.
 # Uses MetaTrader /config: auto-login (does NOT print the password).
 #
+# Kills are prefix-scoped: only $WINEPREFIX is signaled. Other brokers stay up.
+#   WINEPREFIX=~/.mt5-vantage ./scripts/13-force-login-bridge.sh
+#   # FP Markets / Exness / WSF wineservers and terminals are not killed.
+# Prefix is read from /proc/<pid>/environ (WINEPREFIX=), not argv.
+# cmdline is usually `./terminal64.exe /portable` — do not pkill -f the prefix.
+# Empty WINEPREFIX aborts; never host-wide `wineserver -k` / `killall wineserver`.
+#
 # Usage:
 #   ./scripts/13-force-login-bridge.sh
 #   ./scripts/13-force-login-bridge.sh --no-restart   # only write config + EA files
@@ -12,6 +19,7 @@ source "$SCRIPT_DIR/lib.sh"
 
 load_dotenv
 export_wine_env
+require_wineprefix
 require_cmd wine
 
 NO_RESTART=0
@@ -313,44 +321,13 @@ if [[ "$NO_RESTART" -eq 1 ]]; then
   exit 0
 fi
 
-info "Stopping MetaTrader / MetaEditor / wineserver processes"
-# Kill wineserver too so LD_PRELOAD (force_src_bind) applies to a fresh server.
+info "Stopping MetaTrader processes in $WINEPREFIX only (FP/Exness/WSF stay up)"
+# Same dialect as 07-restart-terminal.sh / hypr_geometry.kill_terminal64_processes:
+# match terminal64 via cmdline, scope via /proc/<pid>/environ WINEPREFIX=.
+kill_terminal64_processes
+# Fresh wineserver for THIS prefix so LD_PRELOAD (force_src_bind) applies.
 # A long-lived wineserver started without preload keeps Docker-bridge source IPs.
-python3 - <<'PY'
-import os, signal, time
-keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe", "wineserver")
-for pid in list(os.listdir("/proc")):
-    if not pid.isdigit():
-        continue
-    try:
-        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
-    except OSError:
-        continue
-    if any(x in cmd for x in ("bash", "extglob", "python", "grok")):
-        continue
-    if any(k in cmd for k in keys):
-        print(f"  stop {pid}")
-        try:
-            os.kill(int(pid), signal.SIGTERM)
-        except ProcessLookupError:
-            pass
-time.sleep(2)
-for pid in list(os.listdir("/proc")):
-    if not pid.isdigit():
-        continue
-    try:
-        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
-    except OSError:
-        continue
-    if any(x in cmd for x in ("bash", "extglob", "python", "grok")):
-        continue
-    if any(k in cmd for k in keys):
-        try:
-            os.kill(int(pid), signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-print("  done")
-PY
+kill_prefix_wineserver
 
 # Fresh log for this attempt
 LOG_DIR="$MT5_DIR/logs"
