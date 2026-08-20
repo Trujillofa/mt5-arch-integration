@@ -254,3 +254,128 @@ def test_cli_parser_has_mcp() -> None:
 
     args = build_parser().parse_args(["mcp"])
     assert args.command == "mcp"
+
+
+def test_jsonrpc_malformed_unknown_and_invalid_params() -> None:
+    session = _session()
+    stdin = io.StringIO(
+        "{not-json\n"
+        + json.dumps({"jsonrpc": "2.0", "id": 2, "method": "ping"})
+        + "\n"
+    )
+    stdout = io.StringIO()
+    assert run_stdio(stdin, stdout, session) == 0
+    lines = [json.loads(line) for line in stdout.getvalue().splitlines() if line]
+    assert lines[0]["error"]["code"] == -32700
+    assert lines[0]["id"] is None
+    assert lines[1]["id"] == 2
+    assert "result" in lines[1]
+
+    missing_rpc = handle_message({"id": 3, "method": "ping"}, session)
+    assert missing_rpc is not None
+    assert missing_rpc["error"]["code"] == -32600
+
+    bad_params = handle_message(
+        {"jsonrpc": "2.0", "id": 4, "method": "initialize", "params": []},
+        session,
+    )
+    assert bad_params is not None
+    assert bad_params["error"]["code"] == -32602
+
+    unknown = handle_message({"jsonrpc": "2.0", "id": 5, "method": "resources/list"}, session)
+    assert unknown is not None
+    assert unknown["error"]["code"] == -32601
+
+
+def test_notifications_vs_requests() -> None:
+    session = _session()
+    assert handle_message({"jsonrpc": "2.0", "method": "ping"}, session) is None
+    assert handle_message({"jsonrpc": "2.0", "method": "notifications/cancelled"}, session) is None
+
+    null_id = handle_message({"jsonrpc": "2.0", "id": None, "method": "ping"}, session)
+    assert null_id is not None
+    assert null_id["id"] is None
+    assert "result" in null_id
+
+
+def test_batch_and_non_object_are_invalid_requests() -> None:
+    session = _session()
+    stdin = io.StringIO(
+        json.dumps([{"jsonrpc": "2.0", "id": 1, "method": "ping"}]) + "\n"
+        + "42\n"
+    )
+    stdout = io.StringIO()
+    assert run_stdio(stdin, stdout, session) == 0
+    lines = [json.loads(line) for line in stdout.getvalue().splitlines() if line]
+    assert [row["error"]["code"] for row in lines] == [-32600, -32600]
+    assert all(row["id"] is None for row in lines)
+
+
+def test_tools_call_protocol_errors_are_jsonrpc() -> None:
+    session = _session()
+    missing_name = handle_message(
+        {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {}},
+        session,
+    )
+    assert missing_name is not None
+    assert missing_name["error"]["code"] == -32602
+
+    bad_args = handle_message(
+        {
+            "jsonrpc": "2.0",
+            "id": 7,
+            "method": "tools/call",
+            "params": {"name": "ping", "arguments": ["nope"]},
+        },
+        session,
+    )
+    assert bad_args is not None
+    assert bad_args["error"]["code"] == -32602
+
+
+def test_count_rejects_bool_and_unknown_tool_is_iserror() -> None:
+    session = _session()
+    boom = call_tool("candles", {"symbol": "EURUSD", "count": True}, session)
+    assert boom["isError"] is True
+    unknown = call_tool("positions", {}, session)
+    assert unknown["isError"] is True
+    assert "isError" in unknown
+
+
+def test_tool_errors_redact_password() -> None:
+    class Boom:
+        def ping(self) -> None:
+            raise RuntimeError("cannot connect hunter2")
+
+    settings = Settings(
+        _env_file=None,
+        mt5_backend="file",
+        mt5_password="hunter2",
+        mt5_login=118248,
+        mt5_server="WSFmarkets-Server",
+    )
+    session = McpSession(settings, client=Boom())
+    result = call_tool("ping", {}, session)
+    assert result["isError"] is True
+    text = _text(result)
+    assert "hunter2" not in text
+    assert "***" in text
+
+    stdin = io.StringIO(
+        json.dumps({"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {"name": "ping"}})
+        + "\n"
+    )
+    stdout = io.StringIO()
+    assert run_stdio(stdin, stdout, session) == 0
+    wire = stdout.getvalue()
+    assert "hunter2" not in wire
+    reply = json.loads(wire.strip())
+    assert reply["result"]["isError"] is True
+
+
+def test_named_broker_exports_have_no_password() -> None:
+    session = _session()
+    payload = json.loads(_text(call_tool("brokers", {"name": "vantage"}, session)))
+    blob = json.dumps(payload)
+    assert "PASSWORD" not in blob
+    assert "password" not in blob.lower()

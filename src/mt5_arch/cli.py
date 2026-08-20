@@ -96,6 +96,7 @@ def _configure_logging(verbosity: int) -> None:
     logging.basicConfig(
         level=level,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
     )
 
 

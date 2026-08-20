@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 import sys
 from collections.abc import Callable, Mapping
@@ -32,6 +33,7 @@ SUPPORTED_PROTOCOL_VERSIONS = frozenset(
     {"2024-11-05", "2025-03-26", "2025-06-18"}
 )
 MAX_CANDLE_COUNT = 500
+MAX_MESSAGE_BYTES = 1_048_576
 SERVER_INSTRUCTIONS = (
     "Read-only mt5-arch tools over the file bridge (or RPyC). "
     "No order placement, no live trading, no password fields. "
@@ -192,6 +194,25 @@ def _rpc_error(msg_id: Any, code: int, message: str) -> dict[str, Any]:
     }
 
 
+def _secret_values(session: McpSession | None) -> list[str]:
+    secrets: list[str] = []
+    if session is not None:
+        password = getattr(session.settings, "mt5_password", None)
+        if isinstance(password, str) and password:
+            secrets.append(password)
+    env_pw = os.environ.get("MT5_PASSWORD")
+    if env_pw:
+        secrets.append(env_pw)
+    return secrets
+
+
+def _redact_secrets(text: str, session: McpSession | None) -> str:
+    out = text
+    for secret in _secret_values(session):
+        out = out.replace(secret, "***")
+    return out
+
+
 def _tool_text(payload: Any, *, is_error: bool = False) -> dict[str, Any]:
     text = payload if isinstance(payload, str) else json.dumps(payload, default=str)
     return {
@@ -220,6 +241,8 @@ def _as_symbols(args: Mapping[str, Any]) -> list[str]:
 def _as_count(raw: Any, default: int = 10) -> int:
     if raw is None:
         return default
+    if isinstance(raw, bool):
+        raise ValueError("count must be an integer")
     try:
         count = int(raw)
     except (TypeError, ValueError) as exc:
@@ -301,10 +324,11 @@ def call_tool(name: str, arguments: Mapping[str, Any] | None, session: McpSessio
         MT5ArchError,
         SymbolRegistryError,
     ) as exc:
-        return _tool_text(str(exc), is_error=True)
+        return _tool_text(_redact_secrets(str(exc), session), is_error=True)
     except Exception as exc:  # noqa: BLE001
-        logger.exception("mcp tool %s failed", name)
-        return _tool_text(str(exc), is_error=True)
+        safe = _redact_secrets(str(exc), session)
+        logger.error("mcp tool %s failed: %s", name, safe)
+        return _tool_text(safe, is_error=True)
 
 
 def initialize_result(params: Mapping[str, Any] | None = None) -> dict[str, Any]:
@@ -320,15 +344,24 @@ def initialize_result(params: Mapping[str, Any] | None = None) -> dict[str, Any]
     }
 
 
-def handle_message(message: Mapping[str, Any], session: McpSession) -> dict[str, Any] | None:
+def handle_message(message: Any, session: McpSession) -> dict[str, Any] | None:
     """Handle one JSON-RPC message. Notifications return None."""
+    if not isinstance(message, Mapping):
+        return _rpc_error(None, -32600, "Invalid Request")
+
+    has_id = "id" in message
+    msg_id = message.get("id") if has_id else None
+    if has_id and not isinstance(msg_id, str | int | float | type(None)):
+        return _rpc_error(None, -32600, "Invalid Request")
+    if isinstance(msg_id, bool):
+        return _rpc_error(None, -32600, "Invalid Request")
+
     method = message.get("method")
-    msg_id = message.get("id")
-    if not isinstance(method, str):
-        if msg_id is None:
+    if message.get("jsonrpc") != "2.0" or not isinstance(method, str) or not method:
+        if not has_id:
             return None
         return _rpc_error(msg_id, -32600, "Invalid Request")
-    if method.startswith("notifications/") or msg_id is None:
+    if method.startswith("notifications/") or not has_id:
         return None
     params = message.get("params")
     if params is None:
@@ -354,7 +387,7 @@ def handle_message(message: Mapping[str, Any], session: McpSession) -> dict[str,
     return _rpc_error(msg_id, -32601, f"Method not found: {method}")
 
 
-def read_message(stdin: TextIO) -> dict[str, Any] | None:
+def read_message(stdin: TextIO) -> Any:
     """Read one MCP message. Returns None on EOF."""
     header_len: int | None = None
     while True:
@@ -364,8 +397,10 @@ def read_message(stdin: TextIO) -> dict[str, Any] | None:
         if line.lower().startswith("content-length:"):
             try:
                 header_len = int(line.split(":", 1)[1].strip())
-            except ValueError:
-                header_len = None
+            except ValueError as exc:
+                raise json.JSONDecodeError("invalid Content-Length", line, 0) from exc
+            if header_len < 0 or header_len > MAX_MESSAGE_BYTES:
+                raise json.JSONDecodeError("invalid Content-Length", line, 0)
             continue
         if header_len is not None:
             if line.strip() == "":
@@ -380,23 +415,48 @@ def read_message(stdin: TextIO) -> dict[str, Any] | None:
         return json.loads(stripped)
 
 
-def write_message(stdout: TextIO, message: Mapping[str, Any]) -> None:
-    stdout.write(json.dumps(message, ensure_ascii=False) + "\n")
+def write_message(
+    stdout: TextIO,
+    message: Mapping[str, Any],
+    session: McpSession | None = None,
+) -> None:
+    payload = json.dumps(message, ensure_ascii=False)
+    stdout.write(_redact_secrets(payload, session) + "\n")
     stdout.flush()
 
 
+def _redirect_stdout_logs() -> None:
+    """Keep JSON-RPC on stdout; move any StreamHandler off that pipe."""
+    for handler in logging.getLogger().handlers:
+        stream = getattr(handler, "stream", None)
+        if stream is sys.stdout:
+            handler.stream = sys.stderr
+
+
 def run_stdio(stdin: TextIO, stdout: TextIO, session: McpSession) -> int:
+    _redirect_stdout_logs()
     while True:
         try:
             message = read_message(stdin)
         except json.JSONDecodeError as exc:
-            write_message(stdout, _rpc_error(None, -32700, f"Parse error: {exc}"))
+            write_message(
+                stdout,
+                _rpc_error(None, -32700, _redact_secrets(f"Parse error: {exc}", session)),
+                session,
+            )
             continue
         if message is None:
             return 0
-        reply = handle_message(message, session)
+        try:
+            reply = handle_message(message, session)
+        except Exception as exc:  # noqa: BLE001
+            safe = _redact_secrets(str(exc), session)
+            logger.error("mcp handle_message failed: %s", safe)
+            msg_id = message.get("id") if isinstance(message, Mapping) else None
+            write_message(stdout, _rpc_error(msg_id, -32603, f"Internal error: {safe}"), session)
+            continue
         if reply is not None:
-            write_message(stdout, reply)
+            write_message(stdout, reply, session)
 
 
 def run_stdio_server(settings: Settings | None = None) -> int:
