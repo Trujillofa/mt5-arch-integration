@@ -61,41 +61,53 @@ Horizons: `{5,10,20,50,100}`. Develop mask only: `et_date < 2025-03-01`. Holdout
 
 Report: n_signals, n_fills, fill_rate, mean/median/t per horizon, best/worst, median paper RT, verdict.
 
-## Paper-gate pass rule (binary — no knobs)
+## Paper-gate pass rule
+
+### As frozen for this run (v1 coded rule — flawed)
+
+The first implementation compared **best-horizon mean edge ≥ median paper RT**, plus `n_fills ≥ 200`, `t ≥ 2`, not ANTI. That **mean-vs-median** pairing is structurally biased toward PASS when costs are right-skewed. It is retained here only as the historical coded rule for this artifact.
+
+### Standing rule for any *future* paper gate (do not rewrite this run)
 
 **PASS** only if all hold on develop:
 
 1. `n_fills ≥ 200` (thin-fill fail-closed),
-2. best-horizon mean edge **≥** develop median paper RT (pts),
-3. that best-horizon **t ≥ 2.0**,
-4. worst-horizon is **not** ANTI under the triage rule (`worst mean < 0` and `t ≤ −2`).
+2. **fill_rate ≤ 0.70** (validity: above this, the study has not modelled a resting limit — reject **before** reading edge),
+3. best-horizon **mean** edge **≥ mean** paper RT,
+4. best-horizon **median** edge **≥ median** paper RT (**binding**),
+5. that best-horizon **t ≥ 2.0** (with overlap caveat noted),
+6. worst-horizon is **not** ANTI (`worst mean < 0` and `t ≤ −2`).
+
+Never compare mean edge to median RT alone.
 
 Otherwise **FAIL** → stop; do not write a screen; do not retune fill rules after seeing the number.
 
 ## Explicitly not authorized by this memo
 
-- Running the paper diagnostic (needs separate **`AUTHORIZE PAPER DIAGNOSTIC`**)
 - Full trading charter / exit grid / null / screen
 - Editing `mean_reversion_signals`
 - Holdout evaluation
 - promote / live
+- Revival of `eurusd_ny_scalp_develop_v1`
 
-## Immediate next
-
-1. Adversarial read of this paper-gate declaration.  
-2. On **`AUTHORIZE PAPER DIAGNOSTIC`**: one develop-only run implementing the contracts above (read-only artifact under `results/`).  
-3. FAIL → archive and stop. PASS → only then consider a full freeze charter for `eurusd_ny_mr_limit_fill_v1`.
-
-## Paper diagnostic result (2026-08-21)
+## Paper diagnostic result (2026-08-21) — **FAIL → stop**
 
 **AUTHORIZED** and executed develop-only. Artifact: `results/eurusd_ny_mr_limit_fill_paper_gate_v1.{json,md}`.
 
 | Field | Value |
 |-------|--------|
-| **pass_gate** | **PASS** (bare) |
-| n_signals / n_fills | 7819 / 7704 (fill_rate 0.985) |
-| median paper RT | **11.00** pts |
-| best | H50 mean **11.50**, t **4.03**, median edge **7.00** |
+| **pass_gate (coded mean vs median RT)** | labelled PASS (only mixed pairing) |
+| **pass_gate (standing / adversarial)** | **FAIL** |
+| n_signals / n_fills | 7819 / 7704 (fill_rate **0.985**) |
+| mean / median paper RT | **11.52** / **11.00** pts |
+| best H50 | mean **11.50** · median edge **7.00** · t **4.03** |
+| mean edge vs mean RT | **FAIL** (−0.01) |
+| median edge vs median RT | **FAIL** (−4.00) — binding |
 | promote / live_go | false / false |
 
-**Caveats before any full freeze:** clearance is thin (11.50 vs 11.00); mean ≫ median at H50; fill-rate ≈98.5% means “limit@close if traded through” rarely skips — maker economics may be overstated. Still **not** a screen authorization and **not** a revival of `eurusd_ny_scalp_develop_v1`.
+**Disposition:** FAIL → **stop**. No charter freeze, no screen. The cost-side lever was not actually tested (fill_rate 98.5% ≈ market fill with nicer price). Honest prior stands: ~11.7 vs ~12 at zero slip — break-even at best, not a business.
+
+### Reusable lessons
+
+1. Future paper gates: **mean-vs-mean and median-vs-median**, median binding.  
+2. **Fill rate is a validity check**, not a vanity metric — ≳70% ⇒ reject before reading edge.

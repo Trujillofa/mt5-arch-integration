@@ -30,6 +30,8 @@ POINT = 1e-5
 HOLDOUT = date(2025, 3, 1)
 HORIZONS = (5, 10, 20, 50, 100)
 N_FILLS_MIN = 200
+# Limit-fill validity: above this, the study has not modelled a resting limit.
+FILL_RATE_MAX = 0.70
 GATE_MEMO = "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md"
 OUT_JSON = ROOT / "results" / "eurusd_ny_mr_limit_fill_paper_gate_v1.json"
 OUT_MD = ROOT / "results" / "eurusd_ny_mr_limit_fill_paper_gate_v1.md"
@@ -138,15 +140,27 @@ def run() -> PaperResult:
     best = max(finite, key=lambda s: s.mean_pts) if finite else None
     worst = min(finite, key=lambda s: s.mean_pts) if finite else None
 
+    # Standing gate (post-adversarial): mean-vs-mean AND median-vs-median;
+    # median binding; fill_rate is a validity check before edge is trusted.
     fail: list[str] = []
     if n_fills < N_FILLS_MIN:
         fail.append(f"n_fills={n_fills} < {N_FILLS_MIN}")
-    if best is None or not np.isfinite(median_rt):
-        fail.append("no usable best horizon / median RT")
+    if fill_rate > FILL_RATE_MAX:
+        fail.append(
+            f"fill_rate={fill_rate:.3f} > {FILL_RATE_MAX} "
+            "(limit model invalid — reject before edge)"
+        )
+    if best is None or not np.isfinite(median_rt) or not np.isfinite(mean_rt):
+        fail.append("no usable best horizon / paper RT")
     else:
-        if not (best.mean_pts >= median_rt):
+        if not (best.mean_pts >= mean_rt):
             fail.append(
-                f"best mean {best.mean_pts:.2f} < median paper RT {median_rt:.2f} (H{best.horizon})"
+                f"mean edge {best.mean_pts:.4f} < mean RT {mean_rt:.4f} (H{best.horizon})"
+            )
+        if not (best.median_pts >= median_rt):
+            fail.append(
+                f"median edge {best.median_pts:.4f} < median RT {median_rt:.4f} "
+                f"(H{best.horizon}, binding)"
             )
         if best.t_stat < 2.0:
             fail.append(f"best t {best.t_stat:.2f} < 2.0 (H{best.horizon})")
@@ -159,15 +173,14 @@ def run() -> PaperResult:
             f"ANTI worst H{worst.horizon} mean {worst.mean_pts:.2f} t {worst.t_stat:.2f}"
         )
 
-    # triage-style label for reporting (not the binary gate)
     if best is None:
         label = "EMPTY"
-    elif best.mean_pts >= median_rt and best.t_stat >= 2.0:
+    elif fail:
+        label = "FAIL_PAPER_GATE"
+    elif best.mean_pts >= mean_rt and best.median_pts >= median_rt and best.t_stat >= 2.0:
         label = "CLEARS-PAPER-RT"
     elif worst is not None and worst.mean_pts < 0 and worst.t_stat <= -2.0:
         label = "ANTI"
-    elif best.mean_pts > 0 and best.t_stat >= 2.0:
-        label = "COST-BOUND-VS-PAPER-RT"
     else:
         label = "DEAD"
 
@@ -188,6 +201,37 @@ def run() -> PaperResult:
 
 def main() -> None:
     r = run()
+    b = r.best
+    four = None
+    if b is not None:
+        four = {
+            "mean_edge_vs_mean_rt": {
+                "edge": b.mean_pts,
+                "rt": r.mean_paper_rt_pts,
+                "delta": b.mean_pts - r.mean_paper_rt_pts,
+                "result": "PASS" if b.mean_pts >= r.mean_paper_rt_pts else "FAIL",
+            },
+            "mean_edge_vs_median_rt": {
+                "edge": b.mean_pts,
+                "rt": r.median_paper_rt_pts,
+                "delta": b.mean_pts - r.median_paper_rt_pts,
+                "result": "PASS_MIXED_ONLY"
+                if b.mean_pts >= r.median_paper_rt_pts
+                else "FAIL",
+            },
+            "median_edge_vs_mean_rt": {
+                "edge": b.median_pts,
+                "rt": r.mean_paper_rt_pts,
+                "delta": b.median_pts - r.mean_paper_rt_pts,
+                "result": "PASS" if b.median_pts >= r.mean_paper_rt_pts else "FAIL",
+            },
+            "median_edge_vs_median_rt": {
+                "edge": b.median_pts,
+                "rt": r.median_paper_rt_pts,
+                "delta": b.median_pts - r.median_paper_rt_pts,
+                "result": "PASS" if b.median_pts >= r.median_paper_rt_pts else "FAIL_BINDING",
+            },
+        }
     payload = {
         "gate_memo": GATE_MEMO,
         "search_id_sketch": "eurusd_ny_mr_limit_fill_v1",
@@ -195,6 +239,7 @@ def main() -> None:
         "point": POINT,
         "horizons": list(HORIZONS),
         "n_fills_min": N_FILLS_MIN,
+        "fill_rate_max": FILL_RATE_MAX,
         "n_signals": r.n_signals,
         "n_fills": r.n_fills,
         "fill_rate": r.fill_rate,
@@ -204,11 +249,23 @@ def main() -> None:
         "best": asdict(r.best) if r.best else None,
         "worst": asdict(r.worst) if r.worst else None,
         "verdict_label": r.verdict,
+        "disposition": "PASS" if r.pass_gate else "FAIL",
         "pass_gate": r.pass_gate,
         "fail_reasons": r.fail_reasons,
+        "four_comparisons": four,
+        "future_gate_rule": {
+            "require": ["mean_edge >= mean_rt", "median_edge >= median_rt"],
+            "binding": "median_vs_median",
+            "fill_rate_max_for_limit_validity": FILL_RATE_MAX,
+            "reject_before_edge_if_fill_rate_above_max": True,
+        },
         "promote": False,
         "live_go": False,
-        "note": "Paper gate only. Does not authorize screen, charter freeze, or revival of eurusd_ny_scalp_develop_v1.",
+        "note": (
+            "Standing gate: mean-vs-mean AND median-vs-median (median binding); "
+            f"fill_rate <= {FILL_RATE_MAX}. FAIL → stop. No screen, no charter freeze, "
+            "no revival of eurusd_ny_scalp_develop_v1."
+        ),
     }
     OUT_JSON.write_text(json.dumps(payload, indent=2) + "\n")
 
@@ -221,9 +278,9 @@ def main() -> None:
         f"| **Develop** | `et_date < {HOLDOUT.isoformat()}` |",
         f"| **n_signals** | {r.n_signals} |",
         f"| **n_fills** | {r.n_fills} |",
-        f"| **fill_rate** | {r.fill_rate:.3f} |",
-        f"| **median paper RT (pts)** | {r.median_paper_rt_pts:.2f} |",
-        f"| **pass_gate** | **{'PASS' if r.pass_gate else 'FAIL'}** |",
+        f"| **fill_rate** | {r.fill_rate:.3f} (max valid {FILL_RATE_MAX}) |",
+        f"| **mean / median paper RT (pts)** | {r.mean_paper_rt_pts:.2f} / {r.median_paper_rt_pts:.2f} |",
+        f"| **pass_gate / disposition** | **{'PASS' if r.pass_gate else 'FAIL'}** |",
         f"| **verdict_label** | {r.verdict} |",
         "| **promote / live_go** | false / false |",
         "",
@@ -235,7 +292,23 @@ def main() -> None:
         lines.append(
             f"{s.horizon:>4} {s.n:>7} {s.mean_pts:>9.2f} {s.median_pts:>9.2f} {s.t_stat:>7.2f}"
         )
-    lines += ["", "## Fail reasons" if r.fail_reasons else "## Fail reasons", ""]
+    if four is not None and b is not None:
+        lines += [
+            "",
+            "## Four comparisons",
+            "",
+            "| Comparison | Edge | RT | Δ | Result |",
+            "|------------|-----:|---:|--:|--------|",
+            f"| mean edge vs mean RT | {b.mean_pts:.2f} | {r.mean_paper_rt_pts:.2f} | "
+            f"{b.mean_pts - r.mean_paper_rt_pts:+.2f} | {four['mean_edge_vs_mean_rt']['result']} |",
+            f"| mean edge vs median RT | {b.mean_pts:.2f} | {r.median_paper_rt_pts:.2f} | "
+            f"{b.mean_pts - r.median_paper_rt_pts:+.2f} | {four['mean_edge_vs_median_rt']['result']} |",
+            f"| median edge vs mean RT | {b.median_pts:.2f} | {r.mean_paper_rt_pts:.2f} | "
+            f"{b.median_pts - r.mean_paper_rt_pts:+.2f} | {four['median_edge_vs_mean_rt']['result']} |",
+            f"| median edge vs median RT (binding) | {b.median_pts:.2f} | {r.median_paper_rt_pts:.2f} | "
+            f"{b.median_pts - r.median_paper_rt_pts:+.2f} | {four['median_edge_vs_median_rt']['result']} |",
+        ]
+    lines += ["", "## Fail reasons", ""]
     if r.fail_reasons:
         for fr in r.fail_reasons:
             lines.append(f"- {fr}")
@@ -245,9 +318,10 @@ def main() -> None:
         "",
         "## Standing",
         "",
-        "- FAIL → stop; do not write a screen; do not retune fill rules after seeing the number.",
-        "- PASS → only then consider a full freeze charter (separate authorization).",
+        "- **FAIL → stop**; do not write a screen; do not retune fill rules after seeing the number.",
         "- Not a revival of `eurusd_ny_scalp_develop_v1`.",
+        "- Future gates: mean-vs-mean **and** median-vs-median (median binding); "
+        f"fill_rate ≤ {FILL_RATE_MAX} or reject before reading edge.",
         "",
     ]
     OUT_MD.write_text("\n".join(lines))
