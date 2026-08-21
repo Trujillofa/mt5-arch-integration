@@ -51,8 +51,9 @@ title while the trade server is offline:
 **Force login from `.env` + re-attach EA:**
 
 ```bash
-./scripts/13-force-login-bridge.sh
-# writes ~/.mt5/.../auto_login.ini (chmod 600), restarts terminal with /config
+# Prefix-scoped kill: WINEPREFIX=~/.mt5-vantage leaves FP/Exness/WSF up.
+WINEPREFIX=~/.mt5-vantage ./scripts/13-force-login-bridge.sh
+# writes auto_login.ini (chmod 600), restarts only that prefix with /config
 uv run mt5-arch account
 ```
 

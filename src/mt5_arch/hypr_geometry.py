@@ -11,6 +11,7 @@ import re
 import subprocess
 from collections.abc import Sequence
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 
@@ -235,13 +236,105 @@ def is_ghost_terminal(
     return len(list_terminal64_clients(any_terminal_window)) == 0
 
 
-def kill_terminal64_processes() -> list[int]:
-    """SIGTERM then SIGKILL MetaTrader terminal/editor processes. Returns PIDs killed."""
-    import signal
-    import time
+def _lua_quote(value: str) -> str:
+    """Single-quote a string for Hyprland 0.56 ``hyprctl eval`` Lua."""
+    return "'" + str(value).replace("\\", "\\\\").replace("'", "\\'") + "'"
 
+
+def lua_focus_window(window: str) -> str:
+    return f"hl.dispatch(hl.dsp.focus({{ window = {_lua_quote(window)} }}))"
+
+
+def lua_move_window_workspace(window: str, workspace: int, *, follow: bool = True) -> str:
+    follow_lit = "true" if follow else "false"
+    return (
+        "hl.dispatch(hl.dsp.window.move({ "
+        f"window = {_lua_quote(window)}, workspace = {int(workspace)}, "
+        f"follow = {follow_lit} }}))"
+    )
+
+
+def lua_move_window_monitor(window: str, monitor: str, *, follow: bool = False) -> str:
+    follow_lit = "true" if follow else "false"
+    return (
+        "hl.dispatch(hl.dsp.window.move({ "
+        f"window = {_lua_quote(window)}, monitor = {_lua_quote(monitor)}, "
+        f"follow = {follow_lit} }}))"
+    )
+
+
+def lua_move_window_xy(window: str, x: int, y: int) -> str:
+    return (
+        "hl.dispatch(hl.dsp.window.move({ "
+        f"window = {_lua_quote(window)}, x = {int(x)}, y = {int(y)} }}))"
+    )
+
+
+def lua_set_tiled(window: str) -> str:
+    return (
+        "hl.dispatch(hl.dsp.window.float({ "
+        f"window = {_lua_quote(window)}, action = 'disable' }}))"
+    )
+
+
+def lua_fullscreen_state(window: str, *, internal: int, client: int) -> str:
+    return (
+        "hl.dispatch(hl.dsp.window.fullscreen_state({ "
+        f"window = {_lua_quote(window)}, internal = {int(internal)}, "
+        f"client = {int(client)}, action = 'set' }}))"
+    )
+
+
+def hypr_eval(lua: str) -> subprocess.CompletedProcess[str]:
+    """Run ``hyprctl eval`` (Hyprland 0.56+). Legacy ``dispatch NAME args`` is Lua now."""
+    return subprocess.run(
+        ["hyprctl", "eval", lua],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+
+def environ_wineprefix(environ_bytes: bytes) -> str | None:
+    """Return realpath of WINEPREFIX from a /proc/pid/environ blob, or None."""
+    for part in environ_bytes.split(b"\x00"):
+        if part.startswith(b"WINEPREFIX="):
+            raw = part.split(b"=", 1)[1].decode("utf-8", "replace")
+            if not raw:
+                return None
+            return os.path.realpath(os.path.expanduser(raw))
+    return None
+
+
+def pid_belongs_to_wineprefix(
+    *,
+    wineprefix: str,
+    environ_bytes: bytes | None = None,
+    maps_text: str | None = None,
+) -> bool:
+    """True when a process is bound to ``wineprefix`` (environ first, then maps)."""
+    target = os.path.realpath(os.path.expanduser(wineprefix))
+    if environ_bytes is not None:
+        wp = environ_wineprefix(environ_bytes)
+        if wp is not None:
+            return wp == target
+    if maps_text:
+        return target in maps_text
+    return False
+
+
+def list_terminal64_pids(*, wineprefix: str | None = None) -> list[int]:
+    """MetaTrader pids bound to ``wineprefix`` via /proc environ (not argv).
+
+    Cmdline is usually ``./terminal64.exe /portable``; the prefix lives in
+    ``WINEPREFIX=``. Empty prefix returns [] so callers never scan the host.
+    """
+    prefix = wineprefix or os.environ.get("WINEPREFIX")
+    if not prefix:
+        return []
+    target = os.path.realpath(os.path.expanduser(prefix))
     keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
-    killed: list[int] = []
+    found: list[int] = []
     for pid_s in list(os.listdir("/proc")):
         if not pid_s.isdigit():
             continue
@@ -254,7 +347,35 @@ def kill_terminal64_processes() -> list[int]:
             continue
         if not any(k in cmd for k in keys) and "webview-exe-name=terminal64" not in cmd:
             continue
-        pid = int(pid_s)
+        env: bytes | None
+        maps: str | None = None
+        try:
+            env = Path(f"/proc/{pid_s}/environ").read_bytes()
+        except OSError:
+            env = None
+        if env is None or environ_wineprefix(env) is None:
+            try:
+                maps = Path(f"/proc/{pid_s}/maps").read_text(errors="replace")
+            except OSError:
+                maps = None
+        if not pid_belongs_to_wineprefix(
+            wineprefix=target, environ_bytes=env, maps_text=maps
+        ):
+            continue
+        found.append(int(pid_s))
+    return found
+
+
+def kill_terminal64_processes(*, wineprefix: str | None = None) -> list[int]:
+    """SIGTERM then SIGKILL MetaTrader processes in one Wine prefix.
+
+    Refuses a host-wide kill when no prefix is given so FP/Exness stay up.
+    """
+    import signal
+    import time
+
+    killed: list[int] = []
+    for pid in list_terminal64_pids(wineprefix=wineprefix):
         try:
             os.kill(pid, signal.SIGTERM)
             killed.append(pid)
@@ -318,9 +439,6 @@ def patch_mt5_terminal_ini(
 
     Returns path written, or None if missing.
     """
-    import os
-    from pathlib import Path
-
     prefix = Path(wineprefix or os.environ.get("WINEPREFIX", Path.home() / ".mt5")).expanduser()
     ini = prefix / "drive_c" / "Program Files" / "MetaTrader 5" / "Config" / "terminal.ini"
     if not ini.is_file():
@@ -389,61 +507,40 @@ def apply_placement(
 ) -> list[str]:
     """Dispatch Hyprland commands to maximize/fullscreen the client.
 
-    Uses absolute ``fullscreenstate`` (not toggle) so re-runs stay stable.
+    Uses absolute ``fullscreen_state`` (not toggle) so re-runs stay stable.
     - maximize → internal=1 client=1 (fills monitor minus gaps; Wine-safe)
     - fullscreen → internal=2 client=2 (exclusive; can unmap after chart clicks)
 
-    hyprctl expects dispatcher args as a *single* string after the name.
+    Hyprland 0.56 evaluates ``hyprctl dispatch`` as Lua. Call ``hyprctl eval``
+    with ``hl.dispatch(hl.dsp.*)`` tables (address selectors stay per-window).
     """
-    addr = f"address:{client.address}"
-    # fullscreenstate is absolute (Hyprland ≥0.40). Prefer over `fullscreen`
-    # toggle, which unmaximizes on second apply and can unmap Wine surfaces.
-    fs_args = f"2 2,{addr}" if placement.mode == "fullscreen" else f"1 1,{addr}"
-    steps: list[tuple[str, str]] = [
-        ("focuswindow", addr),
-        ("movewindow", f"mon:{placement.monitor}"),
-        ("settiled", addr),
-        ("fullscreenstate", fs_args),
+    sel = f"address:{client.address}"
+    internal = 2 if placement.mode == "fullscreen" else 1
+    steps = [
+        lua_focus_window(sel),
+        lua_move_window_monitor(sel, placement.monitor),
+        lua_set_tiled(sel),
+        lua_fullscreen_state(sel, internal=internal, client=internal),
     ]
 
-    cmds = [f"{d} {a}" for d, a in steps]
+    cmds = list(steps)
     if patch_ini:
         cmds.append(f"# patch terminal.ini -> {placement.width}x{placement.height}")
     if dry_run:
         return cmds
     if patch_ini:
         patch_mt5_terminal_ini(placement, wineprefix=wineprefix)
-    for dispatcher, args in steps:
-        subprocess.run(
-            ["hyprctl", "dispatch", dispatcher, args],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+    for lua in steps:
+        hypr_eval(lua)
     # Second pass: only re-assert absolute fullscreenstate.
     # Re-running settiled/movewindow here clears maximize (fs → 0).
     import time
 
     time.sleep(0.35)
-    subprocess.run(
-        ["hyprctl", "dispatch", "focuswindow", addr],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    subprocess.run(
-        ["hyprctl", "dispatch", "fullscreenstate", fs_args],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    hypr_eval(lua_focus_window(sel))
+    hypr_eval(lua_fullscreen_state(sel, internal=internal, client=internal))
     time.sleep(0.2)
-    subprocess.run(
-        ["hyprctl", "dispatch", "fullscreenstate", fs_args],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
+    hypr_eval(lua_fullscreen_state(sel, internal=internal, client=internal))
     return cmds
 
 

@@ -17,7 +17,7 @@ uv run ruff check src tests             # lint (line-length 100, py311 target)
 ./scripts/08-status.sh                  # process / bridge / ghost-window check
 ```
 
-The `mt5-arch` CLI (`uv run mt5-arch ping|account|symbols|candles|brokers|config`, plus `--json`, `-v/-vv`) is documented in `README.md`.
+The `mt5-arch` CLI (`uv run mt5-arch ping|account|symbols|candles|brokers|config|mcp`, plus `--json`, `-v/-vv`) is documented in `README.md`. `mcp` is a read-only stdio server (no orders); see `docs/HOWTO-MT5-AI-MCP.md`.
 
 The offline research scripts (`backtest.py`, `fetch_data.py`, `live_trader.py`, `scripts/xau_*.py`, `scripts/htf_fib_*.py`) are run with plain `python3`, **not** `uv run` — they need `numpy`/`pandas`, which are deliberately not declared in `pyproject.toml` and come from the host/venv site-packages. `uv sync` does not install them.
 

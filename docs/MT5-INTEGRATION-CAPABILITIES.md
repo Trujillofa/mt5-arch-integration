@@ -34,6 +34,7 @@ uv run mt5-arch candles EURUSD --tf H1 --count 10
 uv run mt5-arch brokers
 uv run mt5-arch resolve fpmarkets XAUUSD
 uv run mt5-arch config                  # redacted; no password
+uv run mt5-arch mcp                     # read-only MCP stdio (AI agents; no orders)
 ./scripts/08-status.sh                  # process + bridge age
 ./scripts/healthcheck.sh --ping         # also probes RPyC; file-only hosts may warn
 ```
@@ -46,6 +47,7 @@ uv run mt5-arch config                  # redacted; no password
 | `candles` | Last N OHLCV from `candles_<brokerSymbol>_<TF>.json` |
 | `brokers` / `resolve` | Profiles + canonical ↔ broker map. No MT5 connection |
 | `config` | Redacted settings |
+| `mcp` | Read-only MCP stdio server — same data as the rows above. No positions/orders. See [HOWTO-MT5-AI-MCP.md](HOWTO-MT5-AI-MCP.md) |
 
 `--json` and `-v` / `-vv` work on all of the above. There is **no** `positions` / order CLI. The EA writes `positions.json`; Python does not expose it.
 

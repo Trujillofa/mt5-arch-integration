@@ -24,37 +24,8 @@ export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 # Never use Wine virtual desktop here (breaks mouse with Hyprland)
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
-info "Stopping MetaTrader terminal processes..."
-python3 <<'PY'
-import os, signal, time
-keys = ("terminal64.exe", "MetaEditor64.exe", "metaeditor64.exe", "metatester64.exe")
-killed = []
-for pid in list(os.listdir("/proc")):
-    if not pid.isdigit():
-        continue
-    try:
-        cmd = open(f"/proc/{pid}/cmdline", "rb").read().replace(b"\x00", b" ").decode("utf-8", "replace")
-    except OSError:
-        continue
-    if "bash" in cmd or "extglob" in cmd:
-        continue
-    if any(k in cmd for k in keys):
-        print(f"  kill {pid}: {cmd[:90]}")
-        try:
-            os.kill(int(pid), signal.SIGTERM)
-            killed.append(int(pid))
-        except ProcessLookupError:
-            pass
-time.sleep(2)
-for pid in killed:
-    try:
-        os.kill(pid, 0)
-        os.kill(pid, signal.SIGKILL)
-        print(f"  SIGKILL {pid}")
-    except ProcessLookupError:
-        pass
-print("  done")
-PY
+info "Stopping MetaTrader terminal processes in $WINEPREFIX only..."
+kill_terminal64_processes
 
 term="$(find_terminal64)" || die "terminal64.exe not found. Run ./scripts/02-install-mt5.sh"
 # If path is Windows-style in .env, resolve Linux path
@@ -82,9 +53,9 @@ PY
     if [[ -n "${MAIN_ADDR:-}" ]]; then
       cur="$(hyprctl activeworkspace -j 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)"
       if [[ -n "$cur" ]]; then
-        hyprctl dispatch movetoworkspace "${cur},address:${MAIN_ADDR}" >/dev/null 2>&1 || true
+        hypr_move_window_workspace "address:${MAIN_ADDR}" "$cur"
       fi
-      hyprctl dispatch focuswindow "address:${MAIN_ADDR}" >/dev/null 2>&1 || true
+      hypr_focus_window "address:${MAIN_ADDR}"
       info "Focused main terminal on workspace ${cur:-?} ($MAIN_ADDR)"
       break
     fi
@@ -100,7 +71,7 @@ for c in cs:
         print(c.get('address', ''))
 " 2>/dev/null || true)
     if [[ ${#addrs[@]} -gt 0 && -n "${addrs[0]:-}" ]]; then
-      hyprctl dispatch focuswindow "address:${addrs[0]}" >/dev/null 2>&1 || true
+      hypr_focus_window "address:${addrs[0]}"
     fi
     sleep 0.4
   done

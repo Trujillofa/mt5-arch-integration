@@ -168,3 +168,92 @@ mt5server_dir() {
 mt5server_path() {
   echo "$(mt5server_dir)/mt5server.exe"
 }
+
+# Hyprland 0.56+ evaluates `hyprctl dispatch` as Lua. Use `hyprctl eval`.
+hypr_eval() {
+  hyprctl eval "$1" >/dev/null 2>&1 || true
+}
+
+_hypr_safe_selector() {
+  local sel="${1:-}"
+  [[ -n "$sel" ]] || return 1
+  case "$sel" in
+    *\'*|*\\*)
+      warn "refusing hypr selector with quotes: $sel"
+      return 1
+      ;;
+  esac
+  printf '%s' "$sel"
+}
+
+hypr_focus_window() {
+  local sel
+  sel="$(_hypr_safe_selector "${1:-}")" || return 0
+  hypr_eval "hl.dispatch(hl.dsp.focus({ window = '${sel}' }))"
+}
+
+hypr_move_window_workspace() {
+  local sel ws
+  sel="$(_hypr_safe_selector "${1:-}")" || return 0
+  ws="${2:-}"
+  [[ -n "$ws" ]] || return 0
+  hypr_eval "hl.dispatch(hl.dsp.window.move({ window = '${sel}', workspace = ${ws}, follow = true }))"
+}
+
+# --- prefix-scoped process control (PR #36 dialect) ---
+# Prefix lives in /proc/<pid>/environ as WINEPREFIX=, not in argv.
+# cmdline is usually `./terminal64.exe /portable` — never pkill -f "$WINEPREFIX".
+
+require_wineprefix() {
+  local raw="${1:-${WINEPREFIX:-}}"
+  if [[ -z "$raw" ]]; then
+    die "WINEPREFIX is empty; refusing host-wide wineserver/terminal kill"
+  fi
+  if [[ "$raw" == "~" ]]; then
+    raw="$HOME"
+  elif [[ "$raw" == "~/"* ]]; then
+    raw="$HOME/${raw#~/}"
+  fi
+  local resolved
+  resolved="$(readlink -f -- "$raw" 2>/dev/null || true)"
+  if [[ -z "$resolved" || ! -d "$resolved" ]]; then
+    die "WINEPREFIX is not an existing prefix directory: $raw"
+  fi
+  export WINEPREFIX="$resolved"
+}
+
+# Dry: print MetaTrader pids bound to $WINEPREFIX (no signals).
+list_terminal64_pids() {
+  require_wineprefix
+  PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+from mt5_arch.hypr_geometry import list_terminal64_pids
+
+for pid in list_terminal64_pids():
+    print(pid)
+PY
+}
+
+# SIGTERM/SIGKILL MetaTrader processes whose environ WINEPREFIX= matches.
+kill_terminal64_processes() {
+  require_wineprefix
+  PYTHONPATH="$REPO_ROOT/src${PYTHONPATH:+:$PYTHONPATH}" python3 - <<'PY'
+from mt5_arch.hypr_geometry import kill_terminal64_processes
+
+killed = kill_terminal64_processes()
+for pid in killed:
+    print(f"  kill {pid}")
+print("  done")
+PY
+}
+
+# Kill only this prefix's wineserver (fresh server so LD_PRELOAD applies).
+# MUST be `env WINEPREFIX=... wineserver -k` after require_wineprefix.
+kill_prefix_wineserver() {
+  require_wineprefix
+  if ! command -v wineserver >/dev/null 2>&1; then
+    warn "wineserver not on PATH; skip prefix-scoped wineserver -k"
+    return 0
+  fi
+  info "Stopping wineserver for WINEPREFIX=$WINEPREFIX only"
+  env WINEPREFIX="$WINEPREFIX" wineserver -k || true
+}

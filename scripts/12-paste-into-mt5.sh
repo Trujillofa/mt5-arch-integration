@@ -90,7 +90,7 @@ if mains:
     print(m.get("address",""))
 ' 2>/dev/null || true)"
   if [[ -n "$ADDR" ]]; then
-    hyprctl dispatch focuswindow "address:$ADDR" >/dev/null 2>&1 || true
+    hypr_focus_window "address:$ADDR"
     sleep 0.15
   else
     warn "no terminal64.exe window found — sending keys to whatever is focused"

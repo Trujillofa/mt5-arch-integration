@@ -179,13 +179,13 @@ def _run(df: pd.DataFrame, **kw):
 # --- charter / plugin -----------------------------------------------------------------
 
 
-def test_charter_v2_valid_v1_superseded_when_registered():
+def test_charter_v2_screen_fail_v1_superseded():
     assert validate_charter_file(CHARTER_V2) == []
     assert validate_charter_file(CHARTER_V1) == []
     assert hashlib.sha256(CHARTER_V2.read_bytes()).hexdigest() == V2_SHA
     assert hashlib.sha256(CHARTER_V1.read_bytes()).hexdigest() == V1_SHA
     ok2, why2 = is_charter_runnable(CHARTER_V2)
-    assert ok2 is True, why2
+    assert ok2 is False and "SCREEN_FAIL" in why2
     ok1, why1 = is_charter_runnable(CHARTER_V1)
     assert ok1 is False and "SUPERSEDED" in why1
 

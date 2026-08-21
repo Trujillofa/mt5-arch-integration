@@ -16,6 +16,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [FOREX-MT5-ROADMAP.md](FOREX-MT5-ROADMAP.md) | Forex observe → paper → live waves |
 | [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) | **Operator inventory** of the live Wine/MT5 path |
 | [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) | **Offline US-index session screens** (locks, holdout, python3 replay; promote=no) |
+| [HOWTO-MT5-AI-MCP.md](HOWTO-MT5-AI-MCP.md) | Official MT5 AI Assistant / MCP vs read-only `mt5-arch mcp` |
 | [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
 | [MQL5-PYTHON-PARITY.md](MQL5-PYTHON-PARITY.md) | HTF Fib buffer / ATR / pivot-timing check (no orders) |
 | [SYMBOL-REGISTRY.md](SYMBOL-REGISTRY.md) | Explicit broker → symbol maps (no suffix first-match) |
@@ -53,7 +54,7 @@ Details and “one install for all brokers?” answer: [MULTI-BROKER-MT5.md](MUL
 | `scripts/02-install-mt5.sh` | Generic MT5 installer |
 | `scripts/04-start-terminal.sh` | Start terminal |
 | `scripts/06-install-file-bridge.sh` | Deploy `Mt5ArchBridge` EA |
-| `scripts/13-force-login-bridge.sh` | auto_login.ini + EA + restart (no password log) |
+| `scripts/13-force-login-bridge.sh` | auto_login.ini + EA + prefix-scoped restart (no password log; `WINEPREFIX=~/.mt5-vantage` leaves FP up) |
 | `scripts/14-isolate-net-and-login.sh` | Stop docker/ts, force-login, restore |
 | `scripts/15-bridge-down-and-login.sh` | Root bridge-down + force-login + restore |
 | `scripts/16-use-broker.sh` | Activate `config/brokers/<name>.env` |
