@@ -93,6 +93,7 @@ Best horizon = argmax of mean edge across horizons (tool field). Edge/t are that
   - `ny_cash_liquidity_sweep` — H50 +3883 pts, t +2.44, n=80
   - `m5_zscore_tick_vol_exhaustion` — H20 +3856 pts, t +2.24, n=92
   - Measurement only. Does **not** promote, does **not** authorize a new exit grid or live. Evidence for a possible future **NEW** `family_id` / search freeze if pursued separately — not revival of a closed screen.
+  - **Skeptic addendum:** `docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md` — short calendar / single-year-driven / thin n / already SCREEN_FAIL under exit books → **not** exit-grid ready.
 - **ANTI (2):** `ny_cash_fvg_mitigation`, `daily_regime_switch:mom_or`. Do **not** invert.
 - **EMPTY (1):** `daily_regime_switch:mr_gap` (n=0 develop signals).
 - **DEAD (15):** remaining US families — no friction-clearing significant edge on develop.
