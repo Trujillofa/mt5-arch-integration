@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-21 — Develop screen · `multi_day_variance_expansion_flat` **SCREEN_FAIL** (deterministic)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `multi_day_variance_expansion_flat` |
+| **charter v1 (operative)** | `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json` · SHA `36829e926f42c1f555d0a0d85941cdaf9c629937b4d65c08f63911e9f0b5faea` (knobs unchanged) |
+| **screen** | `--strict-charter --screen-only` · develop 25,582 H1 bars · 2021-09-03 → 2025-12-31 · holdout **untouched** |
+| **result** | n **206** · PF **0.921** · NP **−505.68** · DD **14.89%** · WR **46.6%** · primary passers **0** (classic 0 / soft 0) |
+| **disposition** | **SCREEN_FAIL — ZERO_PRIMARY_PASSERS** · terminal · null **skipped** (`p_n_passers=1.0` trivially for any n_null) · `r1_burned=false` (screen-only, nonterminal machinery; deterministic fail) |
+| **artifact** | `results/xau_multi_day_variance_expansion_flat_null_maxstat.{json,md}` · provenance `tree_clean=true` · fixtures @ `d55064c` |
+| **falsifier confirmed** | memo falsifier #1 (fade after expansion pays spread; NP≤0 / PF<1.2) — n=206 is not thin-n; DD 14.89% clears ≤15%; PF 0.921 and NP −505.68 fail. Every slippage row worse (0.921 → 0.803 at 20 pt) |
+| **multiplicity** | look consumed · **K_prior=11 for the next family** · dead-lines list gains this family |
+| **null / paper / live** | **forbidden** — family closed; sealed r1 **not run** |
+| **do not** | retune 5/20/1.5 / SL / TP / flatten hour · ride the expansion · revive or rename · peek holdout |
+
+Thesis dead as frozen: fading last daily close-to-close after 5d/20d variance expansion has **negative** develop edge after Standard STP costs (PF 0.921, n=206). Expansion days are frequent enough; the fade loses. Standing: 11 dead families. Next research needs a genuinely new `family_id` + freeze-before-peek.
+
+---
+
 ## 2026-08-21 — Consolidation · `BACKTEST-RECORD`
 
 | Field | Value |

@@ -219,12 +219,11 @@ def _expansion_frame(
 # --- charter / plugin -----------------------------------------------------------------
 
 
-def test_charter_sha_and_runnable():
+def test_charter_sha_and_screen_fail_closed():
     assert validate_charter_file(CHARTER) == []
     assert hashlib.sha256(CHARTER.read_bytes()).hexdigest() == CHARTER_SHA
     ok, why = is_charter_runnable(CHARTER)
-    assert ok is True, why
-    assert "SCREEN_FAIL" not in why
+    assert ok is False and "SCREEN_FAIL" in why
 
 
 def test_grid_cardinality_exactly_one():

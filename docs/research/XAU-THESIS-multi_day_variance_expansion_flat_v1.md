@@ -1,9 +1,9 @@
 # Thesis memo — `multi_day_variance_expansion_flat` v1
 
-**Date:** 2026-08-20  
-**Status:** IMPLEMENT_FIXTURES — family module + synthetic pytest; **no develop grid inspection**; no sealed r1  
+**Date:** 2026-08-20 (screen 2026-08-21)  
+**Status:** **SCREEN_FAIL** — ZERO_PRIMARY_PASSERS · sealed r1 **not run** · do not retune  
 **Branch:** `research/xau-multi-day-variance-expansion-flat` from `origin/main`  
-**Charter:** `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json`
+**Charter:** `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json` (SHA `36829e92…`, knobs unchanged)
 
 ## Standing constraints
 
@@ -11,7 +11,7 @@
 - Holdout sealed (`holdout_start=2026-01-01`); never used for selection
 - **K_prior=10** (asia-box look consumed). This is family 11 in the open catalog (`K=11`)
 - Dead lines **must not be revived** (rename / filter-on-dead-line forbidden)
-- Family module + fixtures authorized; **no develop peek / sealed r1 / paper / live**
+- Family closed on develop screen (2026-08-21): n=206 · PF 0.921 · NP −505.68 · DD 14.89% · soft passers 0. **No sealed r1 / paper / live**. Do not retune.
 
 ## Rejected candidate (recycle)
 
@@ -72,4 +72,4 @@ See charter `execution_contract` and `null`. Canonical session null `within_day_
 
 ## Do not
 
-Peek develop metrics, run sealed r1, paper, live, or promote until a later AUTHORIZE. Family module + synthetic fixtures are in place.
+Retune 5/20/1.5 / SL / TP / flatten hour, run sealed r1, paper, live, promote, or peek holdout. Kill rule stands: new research needs a new `family_id`.
