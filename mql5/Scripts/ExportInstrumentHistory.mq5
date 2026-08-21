@@ -54,7 +54,9 @@ bool ExportTf(const string symbol, const ENUM_TIMEFRAMES period,
       Sleep(2000);
      }
    if(n <= 0)
-      n = CopyRates(symbol, period, 0, InpMonths * 30 * 24, rates);
+      n = CopyRates(symbol, period, 0,
+                    (int)((long)InpMonths * 30L * 24L * 3600L / PeriodSeconds(period)),
+                    rates);
    if(n <= 0)
      {
       Print("ExportTf fail ", symbol, " ", tf_name, " err=", GetLastError());

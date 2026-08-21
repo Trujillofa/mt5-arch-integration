@@ -15,6 +15,7 @@ SYMBOLS="${SYMBOLS:-XAUUSD,EURUSD,GBPUSD}"
 MONTHS="${MONTHS:-60}"
 TFS="${TFS:-H1}"
 TIMEOUT_S="${TIMEOUT_S:-300}"
+MAXBARS="${MAXBARS:-100000}"
 # Expected account identity (must match common.ini after export)
 EXPECT_LOGIN="${EXPECT_LOGIN:-${MT5_LOGIN:-27496181}}"
 EXPECT_SERVER="${EXPECT_SERVER:-${MT5_SERVER:-VantageMarkets-Live 5}}"
@@ -177,7 +178,7 @@ KeepPrivate=1
 NewsEnable=0
 CertInstall=1
 [Charts]
-MaxBars=100000
+MaxBars=${MAXBARS}
 PreloadCharts=1
 [Experts]
 AllowLiveTrading=0
@@ -186,6 +187,7 @@ Enabled=1
 Script=ExportInstrumentHistory
 Symbol=XAUUSD
 Period=H1
+ScriptParameters=ExportInstrumentHistory.set
 ShutdownTerminal=1
 """.replace("\n", "\r\n")
 (mt5 / "export_instruments.ini").write_bytes(text.encode("ascii"))
@@ -196,9 +198,18 @@ InpTfs={'$TFS'}
 InpOutDir=mt5_arch
 InpChallengeFile=mt5_arch\\\\export_challenge.json
 """
-(mt5 / "MQL5/Scripts/ExportInstrumentHistory.set").write_bytes(
+# MT5 loads start-config script inputs from MQL5\\Presets\\<script>.set — NOT
+# from the script's own folder. Verified 2026-08-20: with the .set beside the
+# .ex5 the StartUp script ran on defaults (FATAL: InpBroker empty, 12ms exit).
+# Atomic write per the v4 "set-atomic" freeze.
+preset_dir = mt5 / "MQL5/Presets"
+preset_dir.mkdir(parents=True, exist_ok=True)
+tmp_set = preset_dir / ".ExportInstrumentHistory.set.tmp"
+(tmp_set).write_bytes(
     "\ufeff".encode("utf-16-le") + set_body.encode("utf-16-le")
 )
+tmp_set.replace(preset_dir / "ExportInstrumentHistory.set")
+(preset_dir / "ExportInstrumentHistory.set").chmod(0o644)
 print("ini/set ok")
 PY
 

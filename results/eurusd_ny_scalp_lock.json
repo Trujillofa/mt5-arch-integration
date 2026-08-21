@@ -1,0 +1,161 @@
+{
+  "search_id": "eurusd_ny_scalp_develop_v1",
+  "locked_at": "2026-08-20T14:45:00-05:00",
+  "base_branch": "main",
+  "base_commit": "db579e1b",
+  "freeze_commit_parent": "97714866de281f86cca118a7337734d242746910",
+  "symbol": "EURUSD",
+  "tf": "M5",
+  "promote": false,
+  "live_go": false,
+  "note": "Freeze-before-peek: this lock is committed before any metric, signal, or simulation is computed on the real data. SCREEN_FAIL is a valid outcome; do not widen the grid, cut costs, move the holdout, or relax the null gate to manufacture a passer.",
+
+  "data": {
+    "path": "results/eurusd_data/history_EURUSD.csv",
+    "sha256": "ebf0bcd98439cdc21590c61f682ba0bebe4c41819d957158abfec8fc8663fb1b",
+    "bars": 368302,
+    "time_min_server": "2021.09.15 22:25",
+    "time_max_server": "2026.08.20 22:20",
+    "et_trade_days": 1541,
+    "source": "Vantage Standard STP live terminal export (ExportInstrumentHistory, run_id e2604bb028884569ad65ade0c1d3d3f5)",
+    "server": "VantageMarkets-Live 5",
+    "meta_path": "results/eurusd_data/symbol_meta_EURUSD.csv"
+  },
+
+  "clock": {
+    "rule": "server wall clock = America/New_York + 7h (tracks US DST)",
+    "et_from_server": "et = (server_naive - 7h).tz_localize('America/New_York', ambiguous=True, nonexistent='shift_forward')",
+    "never_use": "us_index_session_backtest.load_m5_csv offset path (constant server_utc_offset_sec mislabels every US-winter bar by 1h in ET)",
+    "verification": "rollover spread spike modal minute = 17:00 ET and 08:30 ET data-release volume spike modal minute, both in JAN(EST) and JUL(EDT) 2021-2026, on this export"
+  },
+
+  "session": {
+    "entry_window": "[08:00, 17:00) ET (FX NY convention, DST-safe local clock)",
+    "force_flat": "16:45 ET same-day, at first bar open >= 16:45 (before the 17:00 rollover spread blowout)",
+    "friday_cutoff": "no new entries at or after 14:00 ET Friday",
+    "same_day_only": true
+  },
+
+  "book": {
+    "balance_usd": 10000,
+    "equity_path": true,
+    "equity_floor": "equity > 0 asserted at every fill; simulation aborts on breach",
+    "sizing_policy": "risk_normalized",
+    "risk_per_trade_usd": 100,
+    "risk_reasoning": "100 = 1% of book = the daily goal, so the goal reads as median trade-day >= +1R against a -3R halt, leaving room for three full losses in a day. At 300 the per-trade risk would equal the halt, making every config one-loss-and-done. R:R is size-invariant (it is just TP/SL), so this choice does not change which configs rank - it changes how many trades a day survives and how the goal reads.",
+    "lots_formula": "floor_to_step(risk_per_trade_usd / (sl_points * point_value_per_lot), 0.01), computed at entry from that trade's own SL distance, then clamp to [min_lot, lot_cap]",
+    "floor_never_round": true,
+    "lot_step": 0.01,
+    "min_lot": 0.01,
+    "lot_cap": 2.0,
+    "lot_cap_note": "defensive only: at risk 100 / min_sl_points 80 the max size is 1.25 lots, so lot_cap cannot bind through a live trade",
+    "min_sl_points": 80,
+    "min_sl_points_rule": "skip the trade if the stop is nearer than 80 points - do not resize into it",
+    "point_value_per_lot": 1.0,
+    "point_value_note": "EURUSD point 1e-5 x contract 100,000 = $1.00/pt/lot",
+    "invariants": [
+      "sl_points * lots * point_value_per_lot <= risk_per_trade_usd at EVERY fill (tight invariant)",
+      "worst single-trade risk <= daily_halt_usd (looser check, implied by the tight invariant)"
+    ],
+    "rejected_seed": {
+      "setup": "6 lots per 10000 USD, TP 0.2%, SL 1% (user's initial recommended numbers)",
+      "why_rejected": "at 6.0 lots round-trip friction at median spread = $132 = 1.32x the $100 daily goal; SL 0.25% = $1,620 and SL 1.0% = $6,480 = 5.4x-22x the -$300 halt, so every SL in the grid blows the halt on its first loser",
+      "honored_as": "one replay-only sensitivity at the frozen best config, clearly labeled, never ranked, never searched"
+    }
+  },
+
+  "costs": {
+    "commission_per_lot": 0.0,
+    "commission_note": "Vantage Standard STP: spread-inclusive, no separate commission (account type STANDARD_STP)",
+    "slippage_points": 5.0,
+    "slippage_note": "STATED ASSUMPTION, not measured - MT5 exposes slippage only on executed deals",
+    "max_spread_points": 30.0,
+    "max_spread_note": "~p99 of measured spread; a tail guard rejecting ~1% of bars, not a filter",
+    "spread_imputation": "3 zero-spread bars (8.2e-6 of 368,302): forward-fill previous bar spread within the same ET day, else global median 12",
+    "cost_formula": "round trip = (spread_pts + 2 * slippage_points) * point_size * contract_size * lots + 2 * commission_per_lot * lots, charged once at fill"
+  },
+
+  "fills_and_exits": {
+    "signal_to_fill": "signal on close of bar i, fill at open of bar i+1 (same ET day only)",
+    "one_position": true,
+    "intrabar_precedence": "SL-first (pessimistic) when a bar touches both",
+    "short_fill_convention": "bid-space: MT5 OHLC is bid; a short covers at ask, so short TP tests low <= TP - spread and short SL tests high >= SL - spread, filling at the shifted level; longs unadjusted; the single round-trip spread deduction is retained (not a double count)",
+    "all_exits_force_flat_1645": true
+  },
+
+  "risk": {
+    "daily_halt_usd": -300,
+    "daily_halt_rule": "-3% realized-day: once cumulative day PnL <= -300, no NEW entries that ET day (open position still managed to its exit/flatten)",
+    "session_lock_pct": 0.01,
+    "session_lock_note": "+1%/day is a REPORTED metric only, never an exit rule (an exit rule keyed on realized day PnL doubles the search space for no hypothesis)"
+  },
+
+  "goals": {
+    "median_trade_day_pct": 0.01,
+    "median_trade_month_pct": 0.20,
+    "normalization": "equity path: day_pct = day_pnl / equity_at_day_start (NOT a static balance); month = sum of day_pnl / equity_at_month_start",
+    "trade_days_only": "medians over ET days/months that actually traded",
+    "reported_also": ["halt_days", "halt_breaches", "max_drawdown_equity"]
+  },
+
+  "holdout": {
+    "holdout_start": "2025-03-01",
+    "holdout_boundary_unit": "ET session-date (et_date < 2025-03-01 = develop; >= = holdout). Note: the instrument-data lane's holdout_start_server '2026-01-01 00:00:00' is server-clock = 2025-12-31 17:00 ET; different lane, different unit, do not mix.",
+    "split_basis": "chosen from the measured span after export (1,541 ET days): develop 1,080 days (70.1%), holdout 461 days (29.9%) - the ~70/30 target",
+    "holdout_rule": "NEVER used for selection. Selection ranks develop-only. Holdout is scored only after the ranking is frozen.",
+    "peek_status": "Holdout 2025-03-01 → 2026-08-20 overlaps the instrument-data lane's EURUSD H1 develop window (server_time < 2026-01-01) and EURUSD appears in several XAU exogenous charters. Not verified whether those selections actually touched this window — record-and-check, not a contamination finding. Contamination would bias toward false positives; this run found zero, and the holdout was never used for selection. Stated here per CLAUDE.md 'do not relabel already-peeked windows as OOS' and the v8 burned-buffer precedent.",
+    "assert_not_default": "effective holdout_start must NOT equal us_index_session_backtest.HOLDOUT_START (2026-06-01)"
+  },
+
+  "grid": {
+    "n_configs": 192,
+    "structure": "3 families x 32 exits x one_per_day {true,false}",
+    "min_trades_develop": 40,
+    "ranking": "develop-only: eligible = trades >= 40 and net_pnl > 0; rank by profit_factor (None/inf pinned to 3.0) then expectancy",
+    "families": {
+      "trend_continuation": {
+        "description": "VWAP + EMA9/21 pullback continuation (user strategy 1)",
+        "frozen_params": {
+          "ema_fast": 9,
+          "ema_slow": 21,
+          "vwap": "session VWAP from first bar >= 08:00 ET, typical price x tick_volume, volume floor 1",
+          "pullback": "long: bar i-1 low <= EMA9 or VWAP (pullback touch), bar i closes back above EMA9 with EMA9 > EMA21 and close > VWAP; short mirror",
+          "volume_confirm": "bar i tick_volume > 1.2 x rolling 20-bar mean (excluding bar i)"
+        }
+      },
+      "mean_reversion": {
+        "description": "Bollinger(20,2) + RSI(7) band pierce (user strategy 2)",
+        "frozen_params": {
+          "bb_period": 20,
+          "bb_std": 2.0,
+          "rsi_period": 7,
+          "entry": "long: close < lower band AND RSI7 < 30; short: close > upper band AND RSI7 > 70"
+        }
+      },
+      "breakout": {
+        "description": "consolidation box break + volume spike + EMA ribbon fan (user strategy 3)",
+        "frozen_params": {
+          "box_bars": 12,
+          "box": "high/low of bars [i-12, i-1] inclusive (strictly prior to signal bar)",
+          "entry": "long: close > box high AND tick_volume >= 2 x rolling 20-bar mean AND ribbon fanned (EMA8 > EMA10 > EMA12 > EMA15); short mirror"
+        }
+      }
+    },
+    "exits_32": [
+      "pct: TP {0.10,0.15,0.20,0.25,0.30}% x SL {0.25,0.50,1.00}%  (15)",
+      "atr: SL {1.0,1.5} x TP {1.5,2.0,2.5} ATR14-multiples            (6)",
+      "structure TP (family-native target: trend = prior-20-bar extreme (recent high/low, per user strategy 1); mean_reversion = BB middle band; breakout = box-height projection from the box extreme) x SL {0.25,0.50,1.00}%  (3)",
+      "time-stop: flat at open of bar fill+6 / fill+12, SL 1.00% guard  (2)",
+      "flatten 11:30 / 14:00 ET x SL {0.25,0.50,1.00}%                 (6)"
+    ]
+  },
+
+  "null_calibration": {
+    "procedure": "within-ET-day circular phase rotation of M5 close-to-close log returns: per ET day, one uniform rotation offset drawn from the seeded RNG, returns rolled circularly, OHLC rebuilt (open = day's first open, then cumprod); volumes, spreads, times unchanged; full 192-config grid re-run per seed; rank develop-only exactly as the real run",
+    "seeds": [11, 23, 37, 41, 53, 67, 79, 97, 113, 127],
+    "max_null_best": "max over the 10 seeds of the top-ranked develop config's median_trade_day_pct",
+    "gate": "the real run's top-ranked develop config must have median_trade_day_pct >= max_null_best + 0.5 * goal_daily (0.5pp margin). Without the margin the develop winner is indistinguishable from best-of-192 selection noise.",
+    "order": "null run BEFORE the real run; both after this freeze",
+    "caveat": "max-of-10-seeds is itself an estimate; the null preserves intraday autocorrelation within days (phase rotation is circular, not iid shuffling), so it is conservative for signal-frequency but not a full block bootstrap"
+  }
+}
