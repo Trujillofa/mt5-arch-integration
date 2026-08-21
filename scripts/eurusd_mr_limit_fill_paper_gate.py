@@ -88,10 +88,9 @@ def run() -> PaperResult:
             continue
         s = float(side[i])
         lim = float(d.close[i])
-        if s > 0:
-            filled = float(d.low[j]) <= lim
-        else:
-            filled = float(d.high[j]) >= lim
+        filled = (
+            float(d.low[j]) <= lim if s > 0 else float(d.high[j]) >= lim
+        )
         if not filled:
             continue
         fill_i.append(j)
