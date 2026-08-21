@@ -1,5 +1,19 @@
 # XAU offline loop status
 
+## 2026-08-21 — Consolidation · `BACKTEST-RECORD`
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go** | **no / false** |
+| **record** | `docs/research/BACKTEST-RECORD.md` — single-page dead ledger (triage, skeptic, nulls, PF 1.837→0.588, paper-gate FAIL) |
+| **last paper gate** | `eurusd_ny_mr_limit_fill_v1` **FAIL** (mean-vs-mean + median-vs-median + fill_rate) |
+| **do not** | subset MR signals · invert ANTI · retune closed books · screen without paper clearance |
+
+Intraday indicator-on-own-price class falsified under friction on hand. Next thesis must change horizon/structure, not revive a closed family.
+
+---
+
 ## 2026-08-19 — Develop screen · `asia_box_london_sweep_fade_flat` **SCREEN_FAIL** (deterministic)
 
 | Field | Value |
