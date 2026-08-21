@@ -94,10 +94,21 @@ Invariants: open/ref multiset, TR/ref multiset, per-day bar counts, continuity.
 | Failed harness | `disposition=FAILED_RUN_UNKNOWN`, `execution_state=UNKNOWN`; do not claim zero nulls without full screen proof |
 | Attempt ledger | STARTED pre-launch + terminal row share `attempt_id`; count by unique id |
 
+## Paper gates (cost / fill studies) — standing rules (2026-08-21)
+
+Before writing a full screen for a **cost-side** or **limit-fill** thesis, a develop-only paper gate may be declared and run once. FAIL → stop (cheaper than a screen).
+
+1. **Self-consistent cost comparison.** Require **mean-vs-mean and median-vs-median**; **median-vs-median is binding**. Never compare mean edge to median RT alone (right-skewed costs bias that pairing toward PASS).
+2. **Fill rate is a validity check.** For limit-fill studies, if `fill_rate ≳ 0.70`, the study has **not** modelled a resting limit — **reject before reading edge**.
+3. Paper gates do **not** revive closed `family_id`s, authorize screens, or touch holdout.
+
+See also: `docs/research/BACKTEST-RECORD.md`, `docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md`.
+
 ## Next family (not server-hour / TOD)
 
 New `family_id` · freeze under `results/xau_charters/` · git-tracked · match HEAD ·  
-freeze **before** inspecting real grid · null only if primary passers ≥ 1.
+freeze **before** inspecting real grid · null only if primary passers ≥ 1.  
+Consult `docs/research/BACKTEST-RECORD.md` before proposing anything that overlaps a closed class.
 
 ## Sealed path requirements
 
