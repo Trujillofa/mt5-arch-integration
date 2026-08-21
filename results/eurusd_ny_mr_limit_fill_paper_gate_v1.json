@@ -1,0 +1,76 @@
+{
+  "gate_memo": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+  "search_id_sketch": "eurusd_ny_mr_limit_fill_v1",
+  "holdout_start": "2025-03-01",
+  "point": 1e-05,
+  "horizons": [
+    5,
+    10,
+    20,
+    50,
+    100
+  ],
+  "n_fills_min": 200,
+  "n_signals": 7819,
+  "n_fills": 7704,
+  "fill_rate": 0.9852922368589334,
+  "median_paper_rt_pts": 11.0,
+  "mean_paper_rt_pts": 11.516484942886812,
+  "stats": [
+    {
+      "horizon": 5,
+      "n": 7704,
+      "mean_pts": 4.1138369678088935,
+      "median_pts": 4.999999999988347,
+      "t_stat": 3.117807066686892
+    },
+    {
+      "horizon": 10,
+      "n": 7704,
+      "mean_pts": 2.7760903426791983,
+      "median_pts": 4.000000000004,
+      "t_stat": 1.642345385446231
+    },
+    {
+      "horizon": 20,
+      "n": 7704,
+      "mean_pts": 6.884345794392598,
+      "median_pts": 5.999999999994897,
+      "t_stat": 3.0843676506434035
+    },
+    {
+      "horizon": 50,
+      "n": 7704,
+      "mean_pts": 11.502855659397685,
+      "median_pts": 7.000000000001449,
+      "t_stat": 4.026201718530704
+    },
+    {
+      "horizon": 100,
+      "n": 7704,
+      "mean_pts": 10.960669781931525,
+      "median_pts": 8.000000000008,
+      "t_stat": 3.2854294525994754
+    }
+  ],
+  "best": {
+    "horizon": 50,
+    "n": 7704,
+    "mean_pts": 11.502855659397685,
+    "median_pts": 7.000000000001449,
+    "t_stat": 4.026201718530704
+  },
+  "worst": {
+    "horizon": 10,
+    "n": 7704,
+    "mean_pts": 2.7760903426791983,
+    "median_pts": 4.000000000004,
+    "t_stat": 1.642345385446231
+  },
+  "verdict_label": "CLEARS-PAPER-RT",
+  "pass_gate": true,
+  "fail_reasons": [],
+  "promote": false,
+  "live_go": false,
+  "note": "Paper gate only. Does not authorize screen, charter freeze, or revival of eurusd_ny_scalp_develop_v1."
+}

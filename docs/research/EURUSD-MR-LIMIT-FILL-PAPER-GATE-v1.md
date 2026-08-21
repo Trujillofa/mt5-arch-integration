@@ -85,3 +85,17 @@ Otherwise **FAIL** → stop; do not write a screen; do not retune fill rules aft
 1. Adversarial read of this paper-gate declaration.  
 2. On **`AUTHORIZE PAPER DIAGNOSTIC`**: one develop-only run implementing the contracts above (read-only artifact under `results/`).  
 3. FAIL → archive and stop. PASS → only then consider a full freeze charter for `eurusd_ny_mr_limit_fill_v1`.
+
+## Paper diagnostic result (2026-08-21)
+
+**AUTHORIZED** and executed develop-only. Artifact: `results/eurusd_ny_mr_limit_fill_paper_gate_v1.{json,md}`.
+
+| Field | Value |
+|-------|--------|
+| **pass_gate** | **PASS** (bare) |
+| n_signals / n_fills | 7819 / 7704 (fill_rate 0.985) |
+| median paper RT | **11.00** pts |
+| best | H50 mean **11.50**, t **4.03**, median edge **7.00** |
+| promote / live_go | false / false |
+
+**Caveats before any full freeze:** clearance is thin (11.50 vs 11.00); mean ≫ median at H50; fill-rate ≈98.5% means “limit@close if traded through” rarely skips — maker economics may be overstated. Still **not** a screen authorization and **not** a revival of `eurusd_ny_scalp_develop_v1`.
