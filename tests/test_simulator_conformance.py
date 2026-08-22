@@ -6,9 +6,7 @@ Engines are never edited to force PASS — DIVERGENCE is a finding.
 from __future__ import annotations
 
 import json
-import math
 import sys
-from copy import deepcopy
 from datetime import date
 from pathlib import Path
 
