@@ -69,6 +69,11 @@ def load_usd_lock(path: Path = LOCK_PATH) -> dict:
         raise SystemExit("usd-book lock lots must be 3.0")
     if float(b["tp_usd"]) != 20.0 or float(b["sl_usd"]) != 100.0:
         raise SystemExit("usd-book lock TP/SL must be $20 / $100")
+    costs = lock.get("costs") if isinstance(lock.get("costs"), dict) else {}
+    if float(costs.get("slippage_points", -1)) != 5.0:
+        raise SystemExit("usd-book lock slippage_points must stay 5.0")
+    if float(costs.get("max_spread_points", -1)) != 30.0:
+        raise SystemExit("usd-book lock max_spread_points must stay 30.0")
     return lock
 
 

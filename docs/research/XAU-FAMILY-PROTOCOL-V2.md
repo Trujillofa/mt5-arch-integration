@@ -102,6 +102,16 @@ Before writing a full screen for a **cost-side** or **limit-fill** thesis, a dev
 2. **Fill rate is a validity check.** For limit-fill studies, if `fill_rate ≳ 0.70`, the study has **not** modelled a resting limit — **reject before reading edge**.
 3. Paper gates do **not** revive closed `family_id`s, authorize screens, or touch holdout.
 
+## Bias-sanity gates (simulator / diagnostic) — standing rules (2026-08-21)
+
+`scripts/research_bias_gates.py` (port of cTrader 2026-04-08 same-bar shelving gates):
+
+1. **`first_bar_exit_pct > 40%`** → warn (likely look-ahead / entry-bar exit clustering).
+2. **`win_rate > 75%` with `n < 100`** → warn (thin-sample WR).
+3. **Signal-edge diagnostic:** `CLEARS-FRICTION` / `COST-BOUND` with `n_signals < 100` → warn (thin-sample positive label; triage CLEARS at n=80/92).
+
+These do not select or promote; they refuse silent acceptance of historically biased shapes.
+
 See also: `docs/research/BACKTEST-RECORD.md`, `docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md`.
 
 ## Next family (not server-hour / TOD)

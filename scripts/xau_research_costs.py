@@ -24,6 +24,11 @@ __all__ = [
     "SIM_COST_KEYS",
     "load_research_costs",
     "load_research_costs_full",
+    "refuse_mutated_research_costs",
+    "FROZEN_POINT_SIZE",
+    "FROZEN_COMMISSION_PER_LOT",
+    "FROZEN_SLIPPAGE_POINTS",
+    "FROZEN_SPREAD_COL",
 ]
 
 # Keys accepted by backtest.simulate / lane simulators as cost kwargs.
@@ -33,6 +38,12 @@ SIM_COST_KEYS = (
     "commission_per_lot",
     "slippage_points",
 )
+
+# Locked Standard STP book. slip=0 is UNMEASURED, not a claim of zero slip.
+FROZEN_SPREAD_COL = "spread"
+FROZEN_POINT_SIZE = 0.01
+FROZEN_COMMISSION_PER_LOT = 0.0
+FROZEN_SLIPPAGE_POINTS = 0.0
 
 
 def load_research_costs_full() -> dict[str, Any]:
@@ -70,6 +81,33 @@ def load_research_costs() -> dict[str, Any]:
     out.setdefault("commission_per_lot", 0.0)
     out.setdefault("slippage_points", 0.0)
     return out
+
+
+def refuse_mutated_research_costs(costs: dict[str, Any]) -> None:
+    """Refuse a book that is not the locked Standard STP / UNMEASURED-slip book.
+
+    ``slippage_points=0`` is explicitly unmeasured, not a claim of zero slip.
+    Sensitivity belongs in a dedicated script or ``--allow-cost-override``.
+    """
+    slip = costs.get("slippage_points")
+    if slip is not None and float(slip) != FROZEN_SLIPPAGE_POINTS:
+        raise SystemExit(
+            "research cost book slippage_points must stay 0.0 "
+            "(UNMEASURED, not a claim of zero slip)"
+        )
+    comm = costs.get("commission_per_lot")
+    if comm is not None and float(comm) != FROZEN_COMMISSION_PER_LOT:
+        raise SystemExit(
+            "research cost book commission_per_lot must stay 0.0 (Standard STP)"
+        )
+    pt = costs.get("point_size")
+    if pt is not None and abs(float(pt) - FROZEN_POINT_SIZE) > 1e-12:
+        raise SystemExit(
+            "research cost book point_size must stay 0.01 (MT5 point, not pip)"
+        )
+    col = costs.get("spread_col")
+    if col is not None and str(col) != FROZEN_SPREAD_COL:
+        raise SystemExit("research cost book spread_col must stay 'spread'")
 
 
 if __name__ == "__main__":

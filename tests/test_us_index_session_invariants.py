@@ -95,6 +95,38 @@ def test_rank_ignores_swapped_holdout():
     assert order1 == order2 == ["a", "b"]
 
 
+def test_better_develop_ranks_first_despite_fantasy_holdout():
+    ho_fantasy = {
+        "trades": MIN_TRADES_DEVELOP,
+        "net_pnl": 999.0,
+        "profit_factor": 9.0,
+        "expectancy": 50.0,
+        "median_daily_pct": 0.5,
+    }
+    ho_bad = {
+        "trades": MIN_TRADES_DEVELOP,
+        "net_pnl": -999.0,
+        "profit_factor": 0.1,
+        "expectancy": -50.0,
+        "median_daily_pct": -0.5,
+    }
+    a_dev = _develop(2.0, 2.0)
+    b_dev = _develop(1.05, 0.1)
+    a = {
+        "params": {"id": "a"},
+        "develop": a_dev,
+        "holdout": ho_bad,
+        "develop_score": score_row(a_dev),
+    }
+    b = {
+        "params": {"id": "b"},
+        "develop": b_dev,
+        "holdout": ho_fantasy,
+        "develop_score": score_row(b_dev),
+    }
+    assert [r["params"]["id"] for r in rank_develop_rows([a, b])] == ["a", "b"]
+
+
 def test_score_row_none_pf_pins_to_three():
     base = {
         "trades": MIN_TRADES_DEVELOP,

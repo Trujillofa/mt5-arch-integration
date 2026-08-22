@@ -54,6 +54,10 @@ NULL_JSON = _ROOT / "results" / "eurusd_ny_scalp_null.json"
 # H2: the us_index default holdout. Kept as a literal here on purpose — the
 # research script itself never imports that module's holdout machinery.
 FORBIDDEN_HOLDOUT_DEFAULT = date(2026, 6, 1)
+FROZEN_SLIPPAGE_POINTS = 5.0
+FROZEN_MAX_SPREAD_POINTS = 30.0
+FROZEN_COMMISSION_PER_LOT = 0.0
+FROZEN_RISK_PER_TRADE_USD = 100.0
 
 
 # ---------------------------------------------------------------------------
@@ -61,12 +65,32 @@ FORBIDDEN_HOLDOUT_DEFAULT = date(2026, 6, 1)
 # ---------------------------------------------------------------------------
 
 
+def refuse_mutated_eurusd_lock(lock: dict) -> None:
+    """Refuse promote/live_go flips or a mutated 5 pt slip / 30 pt cap book."""
+    if lock.get("promote") is True:
+        raise SystemExit("promote must stay false")
+    if lock.get("live_go") is True:
+        raise SystemExit("live_go must stay false")
+    costs = lock.get("costs") if isinstance(lock.get("costs"), dict) else {}
+    if float(costs.get("slippage_points", -1)) != FROZEN_SLIPPAGE_POINTS:
+        raise SystemExit("eurusd lock slippage_points must stay 5.0")
+    if float(costs.get("max_spread_points", -1)) != FROZEN_MAX_SPREAD_POINTS:
+        raise SystemExit("eurusd lock max_spread_points must stay 30.0")
+    if float(costs.get("commission_per_lot", -1)) != FROZEN_COMMISSION_PER_LOT:
+        raise SystemExit("eurusd lock commission_per_lot must stay 0.0")
+    book = lock.get("book") if isinstance(lock.get("book"), dict) else {}
+    if (
+        str(book.get("sizing_policy") or "") == "risk_normalized"
+        and float(book.get("risk_per_trade_usd", -1)) != FROZEN_RISK_PER_TRADE_USD
+    ):
+        raise SystemExit("eurusd lock risk_per_trade_usd must stay 100")
+
+
 def load_lock(path: Path = LOCK_PATH) -> dict:
     lock = json.loads(Path(path).read_text())
     if lock.get("search_id") != SEARCH_ID:
         raise SystemExit(f"search_id mismatch: {lock.get('search_id')}")
-    if lock.get("promote") is True or lock.get("live_go") is True:
-        raise SystemExit("promote / live_go must stay false")
+    refuse_mutated_eurusd_lock(lock)
     return lock
 
 

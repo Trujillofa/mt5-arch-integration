@@ -25,6 +25,8 @@ Friction is roughly **fixed per round trip**; edge scales with hold horizon:
 | EURUSD M5, ~4h (H50) | ~100 pts | ~22 pts | ~22% |
 | EURUSD daily range | ~700 pts | ~22 pts | ~3% |
 
+**Friction composition (do not treat 22 as fully observed):** under `results/eurusd_ny_scalp_lock.json`, round-trip ≈ median spread (~12 pts, measured) + **2 × `slippage_points=5.0`** (= **10 pts assumed** — lock: *"STATED ASSUMPTION, not measured"*). So **~10 of 22 pts are assumed**. Sensitivity: if true slip were 2 pts/side, RT ≈ 16 and mean paper comparisons near 11.5 can flip sign — **median** comparisons and **fill_rate** validity do not; the paper-gate FAIL still stands on those. Slippage calibration from live/deal histograms is deferred until a thesis again lands near break-even.
+
 ~**7×** easier bar from horizon alone. Measured EURUSD MR edge **saturates ~11.7 pts by H50** — holding the same signal longer does not clear 22 pts. Lever = thesis whose edge lives where 22 pts is noise — not “hold this MR longer.”
 
 ---
@@ -106,6 +108,8 @@ Any future **paper gate** must:
 
 Encoded in: `docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md` (standing future rule) and `docs/research/XAU-FAMILY-PROTOCOL-V2.md` (pointer section).
 
+**Simulator / diagnostic bias gates** (IDLE-compatible validation): `scripts/research_bias_gates.py` — `first_bar_exit_pct > 40%` and thin-n WR `>75%` with `n < 100`; plus thin-n positive edge labels (`CLEARS-FRICTION` / `COST-BOUND` with `n < 100`) auto-warned from `signal_edge_diagnostic` (would have flagged triage CLEARS at n=80/92 without a manual skeptic).
+
 ---
 
 ## Explicitly forbidden next moves
@@ -134,6 +138,7 @@ Closest *structurally different* shape already in-repo: **exogenous predictor** 
 
 | Topic | Path |
 |-------|------|
+| How to run each path | [HOWTO-BACKTEST-PATHS.md](HOWTO-BACKTEST-PATHS.md) |
 | Loop status | `results/xau_loop_status.md` |
 | Triage | `docs/research/SIGNAL-EDGE-TRIAGE.md` |
 | CLEARS skeptic | `docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md` |

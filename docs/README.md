@@ -15,6 +15,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [ARCH-SETUP.md](ARCH-SETUP.md) | Extra Arch environment notes |
 | [FOREX-MT5-ROADMAP.md](FOREX-MT5-ROADMAP.md) | Forex observe → paper → live waves |
 | [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) | **Operator inventory** of the live Wine/MT5 path |
+| [research/HOWTO-BACKTEST-PATHS.md](research/HOWTO-BACKTEST-PATHS.md) | **Run index** for offline backtest paths (split, costs, promote=no) |
 | [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) | **Offline US-index session screens** (locks, holdout, python3 replay; promote=no) |
 | [HOWTO-MT5-AI-MCP.md](HOWTO-MT5-AI-MCP.md) | Official MT5 AI Assistant / MCP vs read-only `mt5-arch mcp` |
 | [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
