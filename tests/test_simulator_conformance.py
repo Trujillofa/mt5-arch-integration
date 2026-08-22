@@ -6,6 +6,7 @@ Engines are never edited to force PASS — DIVERGENCE is a finding.
 from __future__ import annotations
 
 import json
+import os
 import sys
 from datetime import date
 from pathlib import Path
@@ -267,32 +268,102 @@ def test_c2_sl_first_when_bar_contains_both():
     assert t.exit != pytest.approx(t.entry * (1.0 + 0.0010))
 
 
+# Anchors for the mutation. Each must appear EXACTLY once in the engine; a
+# refactor that moves them makes the gate fail loudly rather than silently
+# degrade into a tautology.
+_SL_BLOCK_START = "            if sl is not None:"
+_TP_BLOCK_START = "            if tp is not None:"
+_TP_BLOCK_LAST = '                    exit_i, exit_px, reason = j, lvl, "tp"'
+
+
+def _mutate_tp_first(source: str) -> str:
+    """Reorder the exit loop so TP is checked before SL.
+
+    Operates on the real engine source, not a local reimplementation: a gate
+    that re-derives the precedence in the test proves only that "sl" != "tp".
+    """
+    lines = source.splitlines(keepends=True)
+
+    def _sole(anchor: str) -> int:
+        hits = [i for i, ln in enumerate(lines) if ln.rstrip("\n") == anchor]
+        if len(hits) != 1:
+            pytest.fail(
+                f"mutation anchor found {len(hits)}x, expected exactly 1: {anchor!r}. "
+                "The exit loop moved — repair this gate before trusting the suite."
+            )
+        return hits[0]
+
+    sl_start = _sole(_SL_BLOCK_START)
+    tp_start = _sole(_TP_BLOCK_START)
+    tp_last = _sole(_TP_BLOCK_LAST)
+    if not sl_start < tp_start < tp_last:
+        pytest.fail("exit-loop blocks are not in the expected SL-then-TP order")
+
+    tp_end = tp_last + 2  # the assignment plus its `break`
+    if "break" not in lines[tp_end - 1]:
+        pytest.fail("TP block does not end in `break` — repair this gate")
+
+    sl_block = lines[sl_start:tp_start]
+    tp_block = lines[tp_start:tp_end]
+    mutated = "".join(lines[:sl_start] + tp_block + sl_block + lines[tp_end:])
+    if mutated == source:
+        pytest.fail("mutation was a no-op")
+    return mutated
+
+
+def _load_mutant(source: str):
+    """Import the mutated engine as a separate module.
+
+    Written beside the real engine so ``Path(__file__).parents[1]`` still
+    resolves to the repo root inside the mutant.
+    """
+    import importlib.util
+
+    tmp = SCRIPTS / f"_mutant_engine_{os.getpid()}.py"
+    tmp.write_text(source)
+    try:
+        spec = importlib.util.spec_from_file_location(tmp.stem, tmp)
+        assert spec is not None and spec.loader is not None
+        mod = importlib.util.module_from_spec(spec)
+        # @dataclass resolves sys.modules[cls.__module__]; register before exec.
+        sys.modules[spec.name] = mod
+        try:
+            spec.loader.exec_module(mod)
+        except Exception:
+            sys.modules.pop(spec.name, None)
+            raise
+        return mod
+    finally:
+        tmp.unlink(missing_ok=True)
+
+
 def test_c2_mutant_tp_first_is_caught():
-    """SANITY GATE: flip SL/TP precedence in a scratch copy — suite must fail."""
+    """SANITY GATE: mutate the real engine to TP-first; the C2 fixture must flip.
+
+    If this passes while ``test_c2_sl_first_when_bar_contains_both`` is removed,
+    the suite has no teeth. The mutation is applied to engine *source*, so the
+    gate cannot degrade into asserting ``"sl" != "tp"``.
+    """
     d, sig = _sl_first_day()
     lock = synth_lock()
     costs = synth_costs(lock)
     exit_spec = {"kind": "pct", "tp": 0.0010, "sl": 0.0050}
+    args = (d, sig, exit_spec, None, None, atr_all(d), costs, lock)
 
-    # Run correct engine
-    trades = ar.simulate_config(
-        d, sig, exit_spec, None, None, atr_all(d), costs, lock
+    real = ar.simulate_config(*args)
+    assert real, "expected a trade from the real engine"
+    assert real[0].reason == "sl", "real engine must resolve both-touch as SL"
+
+    engine_src = (SCRIPTS / "eurusd_ny_scalp_autoresearch.py").read_text()
+    mutant = _load_mutant(_mutate_tp_first(engine_src))
+
+    mutated = mutant.simulate_config(*args)
+    assert mutated, "mutant produced no trade — fixture no longer exercises the loop"
+    assert mutated[0].reason == "tp", (
+        "TP-first mutant did not change the outcome; the C2 fixture does not "
+        "discriminate precedence and the conformance claim is unsupported"
     )
-    assert trades and trades[0].reason == "sl"
-
-    # Mutant: temporarily patch exit loop order by replaying with inverted check
-    # via a local clone of the both-touch resolution
-    entry = trades[0].entry
-    sl = entry * (1.0 - 0.0050)
-    tp = entry * (1.0 + 0.0010)
-    bar_h, bar_l = 1.10200, 1.09400
-    # Correct: SL first
-    correct = "sl" if bar_l <= sl else ("tp" if bar_h >= tp else None)
-    # Mutant: TP first
-    mutant = "tp" if bar_h >= tp else ("sl" if bar_l <= sl else None)
-    assert correct == "sl"
-    assert mutant == "tp"
-    assert mutant != correct  # suite detects the mutation
+    assert mutated[0].reason != real[0].reason
 
 
 # ---------------------------------------------------------------------------

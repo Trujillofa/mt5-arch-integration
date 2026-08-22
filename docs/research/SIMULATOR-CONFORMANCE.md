@@ -29,7 +29,16 @@ Expected values are **derived on paper** (each fixture ships a `derivation` stri
 
 **Divergences:** **0**
 
-**Mutant gate:** flipping both-touch precedence from SL-first → TP-first yields opposite reason (`sl` vs `tp`) — suite catches the mutation (`test_c2_mutant_tp_first_is_caught`).
+**Mutant gate:** `test_c2_mutant_tp_first_is_caught` rewrites the **real engine source**
+(`scripts/eurusd_ny_scalp_autoresearch.py`), reordering the exit loop to check TP before SL,
+loads the result as a separate module, and asserts the C2 fixture flips `sl` → `tp`. The
+mutation is anchored on three exact source lines; if a refactor moves any of them the gate
+**fails loudly** ("repair this gate before trusting the suite") rather than degrading into a
+tautology. Verified end-to-end: a genuinely TP-first engine fails both C2 tests.
+
+**Known gap:** **C3 (no same-bar exit)** is N/A on every engine — see footnotes. It is the
+lookahead signature and therefore the highest-value clause still untested; closing it needs
+indicator warmup fixtures or the Strategy Tester path, not a thin unit suite.
 
 **Regression gate:** `test_eurusd_ny_scalp` + `test_xau_pipeline` + `test_htf_fib_pivot_confirmation` → **43 passed, 1 skipped** (engines unchanged).
 
