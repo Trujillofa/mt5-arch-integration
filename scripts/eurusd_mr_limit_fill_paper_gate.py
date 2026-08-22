@@ -27,7 +27,7 @@ from eurusd_ny_scalp_core import load_eurusd_m5, mean_reversion_signals  # noqa:
 from signal_edge_diagnostic import HorizonStat  # noqa: E402
 
 POINT = 1e-5
-HOLDOUT = date(2025, 3, 1)
+EURUSD_LOCK = ROOT / "results" / "eurusd_ny_scalp_lock.json"
 HORIZONS = (5, 10, 20, 50, 100)
 N_FILLS_MIN = 200
 # Limit-fill validity: above this, the study has not modelled a resting limit.
@@ -52,6 +52,12 @@ class PaperResult:
     fail_reasons: list[str]
 
 
+def holdout_from_lock(lock_path: Path = EURUSD_LOCK) -> date:
+    """Develop cutoff is the EURUSD NY-scalp lock, not a hardcoded twin."""
+    lock = json.loads(lock_path.read_text())
+    return date.fromisoformat(str(lock["holdout"]["holdout_start"]))
+
+
 def _t_stat(x: np.ndarray) -> float:
     x = x[np.isfinite(x)]
     n = x.size
@@ -64,12 +70,13 @@ def _t_stat(x: np.ndarray) -> float:
     return mu / (sd / np.sqrt(n))
 
 
-def run() -> PaperResult:
+def run(holdout: date | None = None) -> PaperResult:
+    holdout = holdout or holdout_from_lock()
     csv = ROOT / "results" / "eurusd_data" / "history_EURUSD.csv"
     d = load_eurusd_m5(csv)
     sig = mean_reversion_signals(d, one_per_day=False)
     et = pd.to_datetime(pd.Series(d.et_key).astype(str))
-    develop = (et.dt.date < HOLDOUT).to_numpy()
+    develop = (et.dt.date < holdout).to_numpy()
 
     n = len(d.close)
     side = np.sign(sig).astype(float)
@@ -200,7 +207,8 @@ def run() -> PaperResult:
 
 
 def main() -> None:
-    r = run()
+    holdout = holdout_from_lock()
+    r = run(holdout)
     b = r.best
     four = None
     if b is not None:
@@ -235,7 +243,7 @@ def main() -> None:
     payload = {
         "gate_memo": GATE_MEMO,
         "search_id_sketch": "eurusd_ny_mr_limit_fill_v1",
-        "holdout_start": HOLDOUT.isoformat(),
+        "holdout_start": holdout.isoformat(),
         "point": POINT,
         "horizons": list(HORIZONS),
         "n_fills_min": N_FILLS_MIN,
@@ -275,7 +283,7 @@ def main() -> None:
         "| Field | Value |",
         "|-------|--------|",
         f"| **Gate memo** | `{GATE_MEMO}` |",
-        f"| **Develop** | `et_date < {HOLDOUT.isoformat()}` |",
+        f"| **Develop** | `et_date < {holdout.isoformat()}` |",
         f"| **n_signals** | {r.n_signals} |",
         f"| **n_fills** | {r.n_fills} |",
         f"| **fill_rate** | {r.fill_rate:.3f} (max valid {FILL_RATE_MAX}) |",

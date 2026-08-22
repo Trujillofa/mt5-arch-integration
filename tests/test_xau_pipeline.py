@@ -12,11 +12,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from backtest import (  # noqa: E402
+    HOLDOUT_LOCK,
+    Metrics,
+    develop_only,
+    holdout_start,
     indicators,
     load_h1,
+    load_holdout_lock,
     metrics_from_pnls,
     normalize_params,
     passes,
+    rank_develop_rows,
+    refuse_mutated_holdout_lock,
     simulate,
     slice_to_window,
 )
@@ -252,3 +259,85 @@ def test_metrics_helper_not_trivial():
     assert m.n_trades == 3
     assert m.wins == 2
     assert m.profit_factor == pytest.approx(180 / 50)
+
+
+def test_develop_only_excludes_holdout():
+    cutoff = holdout_start()
+    assert cutoff is not None
+    raw = load_h1()
+    d = develop_only(raw, cutoff)
+    assert d["time"].max() < cutoff
+    assert (raw["time"] >= cutoff).any()
+
+
+def test_holdout_lock_stays_research_only():
+    lock = load_holdout_lock()
+    assert lock["promote"] is False
+    assert lock["live_go"] is False
+    assert str(lock["holdout_start"]).startswith("2026-01-01")
+    refuse_mutated_holdout_lock(lock)
+    bad = dict(lock)
+    bad["promote"] = True
+    with pytest.raises(SystemExit, match="promote"):
+        refuse_mutated_holdout_lock(bad)
+    live = dict(lock)
+    live["live_go"] = True
+    with pytest.raises(SystemExit, match="live_go"):
+        refuse_mutated_holdout_lock(live)
+    moved = dict(lock)
+    moved["holdout_start"] = "2025-01-01T00:00:00+00:00"
+    with pytest.raises(SystemExit, match="holdout_start"):
+        refuse_mutated_holdout_lock(moved)
+
+
+def test_research_costs_refuse_mutated_slip():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from xau_research_costs import (  # noqa: E402
+        load_research_costs,
+        refuse_mutated_research_costs,
+    )
+
+    book = load_research_costs()
+    refuse_mutated_research_costs(book)
+    mutated = dict(book)
+    mutated["slippage_points"] = 10.0
+    with pytest.raises(SystemExit, match="slippage"):
+        refuse_mutated_research_costs(mutated)
+    pip = dict(book)
+    pip["point_size"] = 0.1
+    with pytest.raises(SystemExit, match="point_size"):
+        refuse_mutated_research_costs(pip)
+
+
+def test_rank_develop_rows_ignores_swapped_holdout():
+    develop = Metrics(100.0, 60.0, 2.0, 5.0, 30, 18, 12)
+    a = {"id": "a", "develop": develop, "holdout": {"profit_factor": 9.0, "net_profit": 999.0}}
+    b = {"id": "b", "develop": develop, "holdout": {"profit_factor": 0.1, "net_profit": -999.0}}
+    order1 = [r["id"] for r in rank_develop_rows([a, b])]
+    order2 = [r["id"] for r in rank_develop_rows([{**a, "holdout": b["holdout"]}, {**b, "holdout": a["holdout"]}])]
+    assert order1 == order2 == ["a", "b"]
+
+
+def test_better_develop_ranks_first_despite_fantasy_holdout():
+    better = Metrics(80.0, 62.0, 2.2, 4.0, 28, 17, 11)
+    worse = Metrics(10.0, 51.0, 1.1, 9.0, 28, 14, 14)
+    a = {"id": "a", "develop": better, "holdout": {"profit_factor": 0.2}}
+    b = {"id": "b", "develop": worse, "holdout": {"profit_factor": 9.9}}
+    assert [r["id"] for r in rank_develop_rows([a, b])] == ["a", "b"]
+
+
+def test_offline_backtest_paths_have_no_ordersend():
+    paths = [
+        ROOT / "backtest.py",
+        ROOT / "scripts" / "htf_fib_offline_backtest.py",
+        ROOT / "scripts" / "eurusd_ny_scalp_autoresearch.py",
+        ROOT / "scripts" / "us_index_session_backtest.py",
+    ]
+    for path in paths:
+        text = path.read_text()
+        assert "OrderSend" not in text
+
+
+def test_holdout_lock_file_is_the_tracked_one():
+    assert HOLDOUT_LOCK.is_file()
+    assert HOLDOUT_LOCK.name == "xau_holdout_lock.json"

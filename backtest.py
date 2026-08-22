@@ -8,6 +8,36 @@ Writing strategy_params.json is opt-in (``--save``): a plain run is read-only so
 tests and exploratory runs never mutate tracked state. Saved params carry the
 ``data`` window they were fitted on, so the recorded metrics stay reproducible
 after the CSV is extended (see ``slice_to_window``).
+
+Clock
+-----
+CSV ``time`` is UTC (``fetch_data.py``). The ``hours`` filter is the **UTC hour**
+of that timestamp — not MT5 server hour and not America/New_York. Shipped
+``strategy_params.json`` hours ``[12..20]`` are UTC hours.
+
+Fill contract (historical baseline — do not silently change)
+------------------------------------------------------------
+Signals use closed-bar OHLC/indicators on bar ``i``. Entry fills at ``close[i]``
+on that same bar (not next-bar open). SL/TP are first checked on a later bar
+(the loop inspects an already-open position at the start of each iteration).
+Switching to next-bar-open fills would invalidate ``strategy_params.json`` and
+requires an explicit refit. Family-protocol screens use next-bar fills; this
+baseline path does not.
+
+Points
+------
+``spread_col`` and ``slippage_points`` are **MT5 points** (``MqlRates.spread``).
+XAUUSD ``point_size`` is 0.01 (1 point = $0.01 of price), not a pip (0.1) and
+not $1. Round-trip =
+``(spread_pts + 2*slippage_points) * point_size * CONTRACT_SIZE * lots
+ + 2*commission_per_lot * lots``.
+
+Split / promote
+---------------
+Default CLI fits ``time < holdout_start`` from ``results/xau_holdout_lock.json``
+(2026-01-01). Holdout is never used for selection. ``promote`` / ``live_go``
+stay false. CLI costs must match ``results/xau_research_costs.json`` unless
+``--allow-cost-override``. No orders.
 """
 from __future__ import annotations
 
@@ -28,6 +58,7 @@ HOLDOUT_LOCK = Path(__file__).resolve().parent / "results" / "xau_holdout_lock.j
 START_BALANCE = 10_000.0
 # $1 move on 1.0 lot ≈ $100 (100 oz); so $1 move on 0.01 lot ≈ $1
 CONTRACT_SIZE = 100.0
+REQUIRED_HOLDOUT_START_PREFIX = "2026-01-01"
 
 
 @dataclass
@@ -47,6 +78,26 @@ def load_h1() -> pd.DataFrame:
     if df.empty:
         raise RuntimeError(f"No H1 data in {CSV_PATH}")
     return df
+
+
+def load_holdout_lock(lock_path: Path = HOLDOUT_LOCK) -> dict:
+    if not lock_path.is_file():
+        raise SystemExit(f"missing holdout lock: {lock_path}")
+    data = json.loads(lock_path.read_text())
+    if not isinstance(data, dict):
+        raise SystemExit(f"holdout lock must be a JSON object: {lock_path}")
+    return data
+
+
+def refuse_mutated_holdout_lock(lock: dict) -> None:
+    """Refuse promote/live_go flips or a moved sealed holdout start."""
+    if lock.get("promote") is True:
+        raise SystemExit("promote must stay false")
+    if lock.get("live_go") is True:
+        raise SystemExit("live_go must stay false")
+    start = str(lock.get("holdout_start") or "")
+    if not start.startswith(REQUIRED_HOLDOUT_START_PREFIX):
+        raise SystemExit(f"holdout_start must stay {REQUIRED_HOLDOUT_START_PREFIX}")
 
 
 def holdout_start(lock_path: Path = HOLDOUT_LOCK) -> pd.Timestamp | None:
@@ -192,9 +243,12 @@ def simulate(
     """Bar loop simulator with OHLC stop/target and RSI soft exit.
 
     Costs default to zero, i.e. frictionless — the historical behaviour. Pass
-    ``spread_col`` (per-bar spread in points, from MqlRates.spread) plus
+    ``spread_col`` (per-bar spread in **MT5 points**, from MqlRates.spread) plus
     ``commission_per_lot``/``slippage_points`` to charge realistic costs; each
     closed trade is debited the round trip once, priced off its entry bar.
+
+    Fill: entry at ``close[i]`` on the signal bar. SL/TP first apply on a later
+    bar. See the module docstring before changing this.
     """
     n = len(d)
     close = d["close"].to_numpy(float)
@@ -400,6 +454,29 @@ def search_score(m: Metrics) -> float:
     return score
 
 
+def rank_develop_rows(rows: list[dict]) -> list[dict]:
+    """Rank by develop ``search_score``. Holdout keys are ignored.
+
+    ``search()`` itself never sees holdout bars (CLI slices first). This helper
+    exists so ranking cannot be quietly keyed on a holdout block.
+    """
+
+    def _metrics(dev: Any) -> Metrics:
+        if isinstance(dev, Metrics):
+            return dev
+        return Metrics(
+            net_profit=float(dev["net_profit"]),
+            win_rate=float(dev["win_rate"]),
+            profit_factor=float(dev["profit_factor"]),
+            max_drawdown_pct=float(dev["max_drawdown_pct"]),
+            n_trades=int(dev["n_trades"]),
+            wins=int(dev.get("wins") or 0),
+            losses=int(dev.get("losses") or 0),
+        )
+
+    return sorted(rows, key=lambda r: search_score(_metrics(r["develop"])), reverse=True)
+
+
 def build_search_candidates(max_n: int = 1200, seed: int = 42) -> list[dict]:
     """Full combinatorial grid subsampled the same way ``search()`` does.
 
@@ -561,8 +638,23 @@ def main(argv: list[str] | None = None) -> int:
         help="per-bar spread column in points; '' disables the spread charge",
     )
     ap.add_argument("--commission-per-lot", type=float, default=0.0, help="per lot per side")
-    ap.add_argument("--slippage-points", type=float, default=0.0, help="per fill, in points")
-    ap.add_argument("--point-size", type=float, default=0.01, help="price per point (XAU: 0.01)")
+    ap.add_argument(
+        "--slippage-points",
+        type=float,
+        default=0.0,
+        help="per fill, in MT5 points (not pips)",
+    )
+    ap.add_argument(
+        "--point-size",
+        type=float,
+        default=0.01,
+        help="price per MT5 point (XAU: 0.01, not a pip)",
+    )
+    ap.add_argument(
+        "--allow-cost-override",
+        action="store_true",
+        help="permit CLI costs that differ from results/xau_research_costs.json",
+    )
     ap.add_argument(
         "--charter",
         type=Path,
@@ -571,6 +663,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = ap.parse_args(argv)
 
+    if HOLDOUT_LOCK.is_file():
+        refuse_mutated_holdout_lock(load_holdout_lock())
+
     global COSTS
     COSTS = {
         "spread_col": args.spread_col or None,
@@ -578,6 +673,13 @@ def main(argv: list[str] | None = None) -> int:
         "commission_per_lot": args.commission_per_lot,
         "slippage_points": args.slippage_points,
     }
+    if not args.allow_cost_override:
+        scripts = Path(__file__).resolve().parent / "scripts"
+        if str(scripts) not in sys.path:
+            sys.path.insert(0, str(scripts))
+        from xau_research_costs import refuse_mutated_research_costs
+
+        refuse_mutated_research_costs(COSTS)
 
     raw = load_h1()
     cutoff = None

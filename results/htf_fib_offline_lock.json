@@ -1,0 +1,27 @@
+{
+  "search_id": "htf_fib_offline_replay_v1",
+  "promote": false,
+  "live_go": false,
+  "note": "Single-config offline approximation. Not a search. Not a sealed EURUSD holdout. promote=no.",
+  "fill_contract": "closed-bar signal on i; fill at close[i] (next-open approximation). SL/TP first checked on a later bar. Pivots stamp at confirmation bar c+right via htf_fib_core.",
+  "clock": {
+    "csv_timestamps": "forced UTC on load",
+    "h4_resample": "pandas resample('4h') left-labels the bucket; residual <=4h optimism vs a true H4 close. MTF eligibility is not the parity htf_available_at rule.",
+    "not": "America/New_York. Not Vantage server hour unless the CSV was exported that way."
+  },
+  "book": {
+    "lots": 0.10,
+    "contract_size": 100000.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "point_size": 0.00001,
+    "points_note": "PnL uses price delta * contract * lots. No spread column is charged. Frictionless — not live-matched. EURUSD pip = 0.0001 = 10 MT5 points; this runner does not convert to pips.",
+    "friction": "frictionless — UNMEASURED spread/slip"
+  },
+  "window": {
+    "default_from": "2024-06-01",
+    "default_to": "2025-01-01",
+    "split": "free research slice, not a sealed develop/holdout. Do not rank or select on this window. XAU HTF selection uses results/xau_holdout_lock.json via backtest.py / family protocol.",
+    "xau_holdout_cap": "2026-01-01"
+  }
+}

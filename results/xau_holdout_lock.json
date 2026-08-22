@@ -24,5 +24,19 @@
   },
   "holdout_rule": "NEVER used for selection; single evaluation after all configs frozen",
   "safety": "offline only; never --live; never open a large grid",
-  "locked_at_note": "Pre-registration lock: registry frozen before any holdout evaluation."
+  "locked_at_note": "Pre-registration lock: registry frozen before any holdout evaluation.",
+  "promote": false,
+  "live_go": false,
+  "clock": {
+    "bar_timestamps": "UTC as stored in xauusd_data.csv",
+    "hours_filter": "UTC hour of the bar timestamp — not MT5 server hour and not America/New_York",
+    "note": "Shipped strategy_params hours [12..20] are UTC hours."
+  },
+  "points": {
+    "unit": "MT5 points (MqlRates.spread)",
+    "point_size": 0.01,
+    "note": "1 point = $0.01 of XAUUSD price. Not a pip (0.1) and not $1."
+  },
+  "costs_lock": "results/xau_research_costs.json",
+  "costs_note": "slippage_points=0 is UNMEASURED, not a claim of zero slip. Standard STP commission 0. Runners refuse mutation unless --allow-cost-override."
 }

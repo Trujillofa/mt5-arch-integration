@@ -779,3 +779,116 @@ def test_gap_through_stop_fills_at_bar_open():
     intended = t.sl_points * t.lots * 1.0
     realized = (t.entry - t.exit) * 100_000.0 * t.lots
     assert realized > intended  # measured, not capped
+
+
+# ---------------------------------------------------------------------------
+# lock tamper + develop rank independence
+# ---------------------------------------------------------------------------
+
+
+def test_rank_develop_ignores_swapped_holdout():
+    develop = {
+        "trades": ar.MIN_TRADES_DEVELOP,
+        "net_pnl": 10.0,
+        "profit_factor": 1.4,
+        "expectancy": 1.0,
+    }
+    a = {
+        "params": {"id": "a"},
+        "develop": develop,
+        "holdout": {"profit_factor": 9.0, "expectancy": 50.0},
+        "develop_score": ar.score_row(develop),
+    }
+    b = {
+        "params": {"id": "b"},
+        "develop": dict(develop),
+        "holdout": {"profit_factor": 0.1, "expectancy": -50.0},
+        "develop_score": ar.score_row(develop),
+    }
+    order1 = [r["params"]["id"] for r in ar.rank_develop([a, b])]
+    swapped = [{**a, "holdout": b["holdout"]}, {**b, "holdout": a["holdout"]}]
+    order2 = [r["params"]["id"] for r in ar.rank_develop(swapped)]
+    assert order1 == order2 == ["a", "b"]
+
+
+def test_better_develop_ranks_first_despite_fantasy_holdout():
+    a_dev = {
+        "trades": ar.MIN_TRADES_DEVELOP,
+        "net_pnl": 20.0,
+        "profit_factor": 2.0,
+        "expectancy": 2.0,
+    }
+    b_dev = {
+        "trades": ar.MIN_TRADES_DEVELOP,
+        "net_pnl": 5.0,
+        "profit_factor": 1.05,
+        "expectancy": 0.1,
+    }
+    a = {
+        "params": {"id": "a"},
+        "develop": a_dev,
+        "holdout": {"profit_factor": 0.2},
+        "develop_score": ar.score_row(a_dev),
+    }
+    b = {
+        "params": {"id": "b"},
+        "develop": b_dev,
+        "holdout": {"profit_factor": 9.9},
+        "develop_score": ar.score_row(b_dev),
+    }
+    assert [r["params"]["id"] for r in ar.rank_develop([a, b])] == ["a", "b"]
+
+
+def test_eurusd_lock_promote_true_is_refused():
+    lock = synth_lock()
+    lock["promote"] = True
+    with pytest.raises(SystemExit, match="promote"):
+        ar.refuse_mutated_eurusd_lock(lock)
+
+
+def test_eurusd_lock_mutated_slip_is_refused():
+    lock = synth_lock()
+    lock["costs"] = dict(lock["costs"])
+    lock["costs"]["slippage_points"] = 0.0
+    with pytest.raises(SystemExit, match="slippage"):
+        ar.refuse_mutated_eurusd_lock(lock)
+
+
+def test_honest_eurusd_lock_is_accepted():
+    ar.refuse_mutated_eurusd_lock(synth_lock())
+    loaded = ar.load_lock()
+    assert loaded["promote"] is False
+    assert loaded["live_go"] is False
+    assert loaded["costs"]["slippage_points"] == 5.0
+
+
+def test_usd_book_lock_tamper_refused(tmp_path):
+    import eurusd_ny_scalp_usd_book as usd
+
+    lock = json.loads(usd.LOCK_PATH.read_text())
+    usd.load_usd_lock()
+    tmp = tmp_path / "usd_lock.json"
+    bad = dict(lock)
+    bad["promote"] = True
+    tmp.write_text(json.dumps(bad))
+    with pytest.raises(SystemExit, match="promote"):
+        usd.load_usd_lock(tmp)
+    lots = dict(lock)
+    lots["book"] = dict(lock["book"])
+    lots["book"]["lots"] = 6.0
+    tmp.write_text(json.dumps(lots))
+    with pytest.raises(SystemExit, match="lots"):
+        usd.load_usd_lock(tmp)
+    slip = dict(lock)
+    slip["costs"] = dict(lock["costs"])
+    slip["costs"]["slippage_points"] = 0.0
+    tmp.write_text(json.dumps(slip))
+    with pytest.raises(SystemExit, match="slippage"):
+        usd.load_usd_lock(tmp)
+
+
+def test_paper_gate_holdout_comes_from_lock():
+    from eurusd_mr_limit_fill_paper_gate import holdout_from_lock
+
+    assert holdout_from_lock() == date(2025, 3, 1)
+    assert holdout_from_lock() == ar.effective_holdout_start(synth_lock())

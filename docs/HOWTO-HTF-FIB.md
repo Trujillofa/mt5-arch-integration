@@ -448,7 +448,13 @@ cd ~/Projects/trading/mt5-arch-integration
 
 ### 13.3 Offline research script (Dukascopy CSV)
 
-Approximation of the same rules on H1 CSV (H4 pivots resampled from H1). **Not identical** to MT5 `iCustom`.
+Approximation of the same rules on H1 CSV (H4 pivots resampled from H1). **Not identical** to MT5 `iCustom`. **`promote=no`.** Lock: `results/htf_fib_offline_lock.json`.
+
+Clock: CSV timestamps are forced **UTC**. H4 is `resample("4h")` left-labeled (residual ≤4h vs a true H4 close). Not America/New_York.
+
+Fill: closed-bar signal on bar `i`; fill at `close[i]` (next-open approximation). Pivots stamp at confirmation `c+right` via `htf_fib_core`.
+
+Costs: frictionless **0.10 lot × 100k**. PnL is price-delta × contract × lots — **not pips** (EURUSD pip = 0.0001 = 10 MT5 points). `--to` at or after the sealed XAU holdout `2026-01-01` is refused unless `--unbounded`. This is a free research slice, not a sealed develop/holdout.
 
 ```bash
 # needs pandas/numpy
@@ -474,6 +480,7 @@ Example offline run (EURUSD H1, 2022–2024, filter off, 0.1 lot, ATR exits):
 - Sparse signals with RSI-MA filter is expected (strict confluence).
 - Tune SL/TP, mode, and filters in the **EA inputs**, re-run tester.
 - Optimize only out-of-sample after a fixed rule set (walk-forward).
+- Do not treat the offline JSON as a sealed holdout or a promote path. Committed `results/htf_fib_offline_*.json` files are slim metrics from the historical frictionless runner; regenerate with the command above (no trade dump).
 
 ---
 
