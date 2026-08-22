@@ -98,3 +98,20 @@ Otherwise **FAIL → stop**. Do not write a screen; do not retune symbols/sign/h
 1. Adversarial read of this declaration.  
 2. On **`AUTHORIZE PAPER DIAGNOSTIC`**: one develop-only run; artifact under `results/`.  
 3. FAIL → archive. PASS → only then full exogenous charter freeze (null method, H, costs) under a new authorization.
+
+## Paper diagnostic result (2026-08-22) — **FAIL → stop**
+
+**AUTHORIZED** and executed develop-only. Artifact: `results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.{json,md}`.
+
+| Field | Value |
+|-------|--------|
+| **n_fills** | 842 |
+| **edge mean / median (pts)** | 36.93 / 26.50 |
+| **t** | **0.395** |
+| **RT mean / median (slip=5)** | 25.94 / 28.00 |
+| **median vs median** | **FAIL** (−1.50) binding |
+| **mean vs mean** | PASS (+10.99) but t fails |
+| **disposition** | **FAIL** |
+| **promote / live_go** | false / false |
+
+Even at **slip=0**, gate fails (t≪2). Typical trade after costs is negative at binding slip. **Stop** — no charter freeze, no screen, not a revival of H1 exog follow.

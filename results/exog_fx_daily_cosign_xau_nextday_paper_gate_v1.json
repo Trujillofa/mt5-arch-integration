@@ -1,0 +1,126 @@
+{
+  "gate_memo": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
+  "family_id_sketch": "exog_fx_daily_cosign_xau_nextday_follow_flat",
+  "package_id": "4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd",
+  "holdout_start": "2026-01-01",
+  "n_fills": 842,
+  "n_fills_min": 40,
+  "point_size": 0.01,
+  "lots": 0.01,
+  "edge_mean_pts": 36.93230403800443,
+  "edge_median_pts": 26.500000000010004,
+  "edge_t": 0.3954846079711589,
+  "by_slip": {
+    "0.0": {
+      "slippage_points": 0.0,
+      "mean_rt_pts": 15.94418052256532,
+      "median_rt_pts": 18.0,
+      "four_comparisons": {
+        "mean_edge_vs_mean_rt": {
+          "edge": 36.93230403800443,
+          "rt": 15.94418052256532,
+          "delta": 20.988123515439113,
+          "result": "PASS"
+        },
+        "mean_edge_vs_median_rt": {
+          "edge": 36.93230403800443,
+          "rt": 18.0,
+          "delta": 18.932304038004432,
+          "result": "PASS_MIXED_ONLY"
+        },
+        "median_edge_vs_mean_rt": {
+          "edge": 26.500000000010004,
+          "rt": 15.94418052256532,
+          "delta": 10.555819477444684,
+          "result": "PASS"
+        },
+        "median_edge_vs_median_rt": {
+          "edge": 26.500000000010004,
+          "rt": 18.0,
+          "delta": 8.500000000010004,
+          "result": "PASS"
+        }
+      },
+      "t": 0.3954846079711589,
+      "anti": false,
+      "pass_gate": false
+    },
+    "5.0": {
+      "slippage_points": 5.0,
+      "mean_rt_pts": 25.944180522565322,
+      "median_rt_pts": 28.0,
+      "four_comparisons": {
+        "mean_edge_vs_mean_rt": {
+          "edge": 36.93230403800443,
+          "rt": 25.944180522565322,
+          "delta": 10.98812351543911,
+          "result": "PASS"
+        },
+        "mean_edge_vs_median_rt": {
+          "edge": 36.93230403800443,
+          "rt": 28.0,
+          "delta": 8.932304038004432,
+          "result": "PASS_MIXED_ONLY"
+        },
+        "median_edge_vs_mean_rt": {
+          "edge": 26.500000000010004,
+          "rt": 25.944180522565322,
+          "delta": 0.5558194774446825,
+          "result": "PASS"
+        },
+        "median_edge_vs_median_rt": {
+          "edge": 26.500000000010004,
+          "rt": 28.0,
+          "delta": -1.4999999999899956,
+          "result": "FAIL_BINDING"
+        }
+      },
+      "t": 0.3954846079711589,
+      "anti": false,
+      "pass_gate": false
+    },
+    "10.0": {
+      "slippage_points": 10.0,
+      "mean_rt_pts": 35.94418052256532,
+      "median_rt_pts": 38.0,
+      "four_comparisons": {
+        "mean_edge_vs_mean_rt": {
+          "edge": 36.93230403800443,
+          "rt": 35.94418052256532,
+          "delta": 0.9881235154391135,
+          "result": "PASS"
+        },
+        "mean_edge_vs_median_rt": {
+          "edge": 36.93230403800443,
+          "rt": 38.0,
+          "delta": -1.0676959619955682,
+          "result": "FAIL"
+        },
+        "median_edge_vs_mean_rt": {
+          "edge": 26.500000000010004,
+          "rt": 35.94418052256532,
+          "delta": -9.444180522555314,
+          "result": "FAIL"
+        },
+        "median_edge_vs_median_rt": {
+          "edge": 26.500000000010004,
+          "rt": 38.0,
+          "delta": -11.499999999989996,
+          "result": "FAIL_BINDING"
+        }
+      },
+      "t": 0.3954846079711589,
+      "anti": false,
+      "pass_gate": false
+    }
+  },
+  "promote": false,
+  "live_go": false,
+  "pass_gate": false,
+  "disposition": "FAIL",
+  "fail_reasons": [
+    "median edge 26.5000 < median RT 28.0000 (slip=5.0, binding)",
+    "t=0.395 < 2.0"
+  ],
+  "note": "Paper gate only. Not a revival of exog_london_fx_cosign_xau_follow_flat. FAIL \u2192 stop. No screen."
+}
