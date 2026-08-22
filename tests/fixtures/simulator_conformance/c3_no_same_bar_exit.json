@@ -1,0 +1,29 @@
+{
+  "id": "c3_no_same_bar_exit",
+  "clause": "C3",
+  "cases": [
+    {
+      "engine": "htf_fib_offline_simulate_from_signals",
+      "derivation": "Signal long at bar i=3, fill at close[3]=100. ATR=10, sl_m=1.5 ⇒ SL=85, tp_m=2 ⇒ TP=120. Bar 3 also has low=50 and high=150 (contains both SL and TP). Contract: exits are inspected at the start of each bar before new entries, so bar 3 cannot be the exit bar. First legal exit bar is i=4. Expect entry_i=3, exit_i!=3. If the loop entered then exited on the same iteration, exit_i would equal 3 (lookahead signature).",
+      "expected": {
+        "entry_i": 3,
+        "entry": 100.0,
+        "exit_i_ne": 3,
+        "sl": 85.0,
+        "tp": 120.0
+      }
+    },
+    {
+      "engine": "xau_backtest_simulate",
+      "derivation": "After warmup=220, bar 220 fires bb_rsi long at close=2000; SL=2000-1.5*atr, TP=2000+2*atr with atr=10 ⇒ SL=1985, TP=2020. Bar 220 OHLC spans 1970..2030 (contains SL and TP). Exit check runs only when pos!=0 at bar start — on bar 220 pos is still 0 when exits are evaluated, so entry cannot exit same bar. First possible exit is bar 221+. Expect one trade whose exit is not on the entry bar (or end-of-series after 221).",
+      "expected": {
+        "warmup": 220,
+        "signal_bar": 220,
+        "entry_px": 2000.0,
+        "atr": 10.0,
+        "sl_atr": 1.5,
+        "tp_atr": 2.0
+      }
+    }
+  ]
+}

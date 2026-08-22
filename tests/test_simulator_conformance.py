@@ -440,8 +440,225 @@ def test_c1_eurusd_entry_next_bar_open():
 
 
 # ---------------------------------------------------------------------------
-# Report helper data for docs (optional collection)
+# C3 no same-bar exit (lookahead signature)
 # ---------------------------------------------------------------------------
+
+
+def test_c3_htf_no_exit_on_entry_bar():
+    """Hand: entry bar spans SL+TP; exit must not be on entry_i.
+
+    See fixtures/c3_no_same_bar_exit.json derivation for htf case.
+    """
+    from htf_fib_offline_backtest import simulate_from_signals
+
+    fx = next(
+        c
+        for c in _load("c3_no_same_bar_exit.json")["cases"]
+        if c["engine"].startswith("htf")
+    )
+    assert fx["derivation"]
+    n = 8
+    signal = np.zeros(n, dtype=int)
+    signal[3] = 1
+    close = np.full(n, 100.0)
+    high = np.full(n, 100.0)
+    low = np.full(n, 100.0)
+    atr = np.full(n, 10.0)
+    # Entry bar contains both SL (85) and TP (120)
+    high[3] = 150.0
+    low[3] = 50.0
+    # Next bar quiet — if engine wrongly exited on 3, we'd never get here;
+    # if it holds, force SL on bar 4 for a clean close.
+    low[4] = 50.0
+    trades = simulate_from_signals(signal, close, high, low, atr, sl_m=1.5, tp_m=2.0)
+    assert len(trades) == 1
+    t = trades[0]
+    exp = fx["expected"]
+    assert t.entry_i == exp["entry_i"]
+    assert t.entry == pytest.approx(exp["entry"])
+    assert t.sl == pytest.approx(exp["sl"])
+    assert t.tp == pytest.approx(exp["tp"])
+    assert t.exit_i != exp["exit_i_ne"]
+    assert t.exit_i == 4
+    assert t.reason == "sl"
+
+
+def test_c3_htf_mutant_same_bar_exit_is_caught():
+    """SANITY: reorder loop to exit after entry on same bar — must flip exit_i==3."""
+    from htf_fib_offline_backtest import Trade
+
+    n = 8
+    signal = np.zeros(n, dtype=int)
+    signal[3] = 1
+    close = np.full(n, 100.0)
+    high = np.full(n, 100.0)
+    low = np.full(n, 100.0)
+    atr_v = np.full(n, 10.0)
+    high[3] = 150.0
+    low[3] = 50.0
+    low[4] = 50.0
+
+    def mutant_same_bar_exit(signal, close, high, low, atr_v, *, sl_m=1.5, tp_m=2.0):
+        """Broken contract: enter then immediately allow exit on same i."""
+        trades = []
+        pos = None
+        for i in range(len(signal)):
+            s = int(signal[i])
+            if s != 0 and not np.isnan(atr_v[i]) and atr_v[i] > 0 and pos is None:
+                entry = close[i]
+                dist_sl = atr_v[i] * sl_m
+                dist_tp = atr_v[i] * tp_m
+                if s > 0:
+                    pos = Trade(1, i, entry, entry - dist_sl, entry + dist_tp)
+                else:
+                    pos = Trade(-1, i, entry, entry + dist_sl, entry - dist_tp)
+            if pos is not None:
+                hit = False
+                if pos.side == 1:
+                    if low[i] <= pos.sl:
+                        pos.exit_i, pos.exit, pos.reason = i, pos.sl, "sl"
+                        hit = True
+                    elif high[i] >= pos.tp:
+                        pos.exit_i, pos.exit, pos.reason = i, pos.tp, "tp"
+                        hit = True
+                if hit:
+                    trades.append(pos)
+                    pos = None
+        if pos is not None:
+            pos.exit_i, pos.exit, pos.reason = n - 1, close[-1], "eod"
+            trades.append(pos)
+        return trades
+
+    from htf_fib_offline_backtest import simulate_from_signals
+
+    real = simulate_from_signals(signal, close, high, low, atr_v, sl_m=1.5, tp_m=2.0)
+    mut = mutant_same_bar_exit(signal, close, high, low, atr_v, sl_m=1.5, tp_m=2.0)
+    assert real and real[0].exit_i != 3
+    assert mut and mut[0].exit_i == 3, (
+        "mutant must exit on entry bar; otherwise C3 fixture does not discriminate"
+    )
+    assert mut[0].exit_i != real[0].exit_i
+
+
+def test_c3_xau_backtest_no_exit_on_entry_bar():
+    """Hand: after warmup, bb_rsi long on bar 220; entry bar spans SL+TP.
+
+    Exit check runs before entry while pos==0, so bar 220 cannot close the trade.
+    """
+    import pandas as pd
+
+    import backtest as bt
+
+    fx = next(
+        c
+        for c in _load("c3_no_same_bar_exit.json")["cases"]
+        if c["engine"].startswith("xau")
+    )
+    assert fx["derivation"]
+    exp = fx["expected"]
+    n = exp["warmup"] + 5  # 225 bars
+    i_sig = exp["signal_bar"]
+    atr = float(exp["atr"])
+    entry_px = float(exp["entry_px"])
+
+    close = np.full(n, entry_px)
+    high = np.full(n, entry_px + 1.0)
+    low = np.full(n, entry_px - 1.0)
+    # Quiet warmup: stay above bb and in uptrend without reclaim signal
+    bb_lo = np.full(n, entry_px - 50.0)
+    bb_mid = np.full(n, entry_px + 50.0)
+    bb_up = np.full(n, entry_px + 100.0)
+    ema100 = np.full(n, entry_px - 20.0)  # close > ema ⇒ uptrend
+    ema20 = np.full(n, entry_px)
+    rsi = np.full(n, 50.0)
+    macd_h = np.zeros(n)
+    hour = np.full(n, 10, dtype=int)
+    atr_a = np.full(n, atr)
+
+    # Signal bar: reclaim lower band
+    low[i_sig] = entry_px - 5.0  # pierce bb_lo temporarily — set bb_lo up
+    bb_lo[i_sig] = entry_px - 2.0
+    close[i_sig] = entry_px
+    high[i_sig] = entry_px + 40.0  # would hit TP=2020 if same-bar exit
+    low[i_sig] = entry_px - 40.0  # would hit SL=1985 if same-bar exit
+    rsi[i_sig] = 40.0  # <= rsi_buy(35)+10
+    bb_mid[i_sig] = entry_px + 10.0  # close < mid
+
+    # Next bar: hit SL for a clean exit after entry
+    low[i_sig + 1] = entry_px - 40.0
+    high[i_sig + 1] = entry_px + 1.0
+    close[i_sig + 1] = entry_px - 5.0
+
+    d = pd.DataFrame(
+        {
+            "close": close,
+            "high": high,
+            "low": low,
+            "rsi": rsi,
+            "atr": atr_a,
+            "bb_lo": bb_lo,
+            "bb_mid": bb_mid,
+            "bb_up": bb_up,
+            "ema100": ema100,
+            "ema20": ema20,
+            "macd_hist": macd_h,
+            "hour": hour,
+        }
+    )
+    # Frictionless; capture trade via equity path — simulate returns Metrics only.
+    # Use a thin wrapper: monkeypatch by reading pnls through trade_log isn't available.
+    # Instead assert via instrumented copy of control flow on the signal bar only:
+    # After simulate, if same-bar exit were allowed, SL hit on bar 220 would book
+    # pnl at SL; we check metrics consistency with exit on 221.
+    m = bt.simulate(
+        d,
+        mode="bb_rsi",
+        rsi_buy=35.0,
+        rsi_sell=60.0,
+        sl_atr=exp["sl_atr"],
+        tp_atr=exp["tp_atr"],
+        risk_pct=0.01,
+        max_lots=0.5,
+        require_uptrend=True,
+        long_only=True,
+        cooldown=0,
+    )
+    assert m.n_trades >= 1, "expected at least one trade after warmup signal"
+    # Hand: if exited same bar at SL=1985: gross=(1985-2000)*100*lots = -15*100*lots
+    # If exited next bar at SL same level: same gross — cannot distinguish by PnL alone!
+    # So instrument: re-run with entry-bar high/low NOT spanning stops, then
+    # only next bar hits SL — vs spanning on entry bar. Both should yield one trade.
+    # Discriminator: shorten series to end on signal bar — same-bar-exit engine would
+    # close; correct engine carries to eod on signal bar only if we truncate.
+    d_trunc = d.iloc[: i_sig + 1].copy()
+    m_trunc = bt.simulate(
+        d_trunc,
+        mode="bb_rsi",
+        rsi_buy=35.0,
+        rsi_sell=60.0,
+        sl_atr=exp["sl_atr"],
+        tp_atr=exp["tp_atr"],
+        risk_pct=0.01,
+        max_lots=0.5,
+        require_uptrend=True,
+        long_only=True,
+        cooldown=0,
+    )
+    # Correct: open at end of trunc series ⇒ still one booked trade at eod close
+    # (simulate force-closes at end). Same-bar SL exit would also book one trade.
+    # PnL differs: eod at close=2000 ⇒ gross≈0; SL exit ⇒ negative.
+    sl_px = entry_px - exp["sl_atr"] * atr
+    # End-of-series close on trunc is entry_px ⇒ pnl ≈ -trade_cost only (frictionless 0)
+    # If same-bar SL fired, pnl = (sl_px - entry_px) * CONTRACT * lots < 0 materially.
+    assert m_trunc.n_trades == 1
+    # lots ≈ floor(0.01*10000 / (15*100)) = floor(100/1500)=floor(0.066)=0.06
+    # SL pnl = (1985-2000)*100*0.06 = -90
+    assert m_trunc.net_profit == pytest.approx(0.0, abs=1e-6), (
+        f"trunc series must eod-exit at entry close (no same-bar SL); "
+        f"got NP={m_trunc.net_profit} (SL would be ~-90). derivation: {fx['derivation']}"
+    )
+    # Full series should realize the SL on bar 221
+    assert m.net_profit < -1.0, "full path should exit at SL on bar after entry"
 
 
 def test_conformance_matrix_smoke():
@@ -452,6 +669,7 @@ def test_conformance_matrix_smoke():
         "C7": "PASS",
         "C9": "PASS",
         "C2": "PASS",
+        "C3": "PASS",
         "C4": "PASS",
         "C1": "PASS",
         "mutant_caught": True,

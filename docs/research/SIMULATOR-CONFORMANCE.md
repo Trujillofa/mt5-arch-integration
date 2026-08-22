@@ -17,15 +17,16 @@ Expected values are **derived on paper** (each fixture ships a `derivation` stri
 
 | Engine | C1 entry | C2 SL-first | C3 no same-bar exit | C4 gap | C5 bid-space short | C6 RT cost | C7 lot floor | C8 force-flat | C9 pivot | C10 equity floor |
 |--------|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| `backtest.simulate` (XAU) | N/A* | N/A* | N/A* | N/A | N/A | **PASS** | N/A | N/A | N/A | N/A |
-| `eurusd_ny_scalp_autoresearch` | **PASS** | **PASS** | N/A | **PASS** | **PASS** | **PASS** | **PASS** | N/A† | N/A | N/A† |
+| `backtest.simulate` (XAU) | N/A* | N/A* | **PASS** | N/A | N/A | **PASS** | N/A | N/A | N/A | N/A |
+| `eurusd_ny_scalp_autoresearch` | **PASS** | **PASS** | N/A†† | **PASS** | **PASS** | **PASS** | **PASS** | N/A† | N/A | N/A† |
 | `us_index_session_backtest` | N/A‡ | N/A‡ | N/A | N/A | N/A | **PASS** | N/A | N/A | N/A | N/A |
-| `htf_fib_offline_backtest` | N/A‡ | N/A‡ | N/A‡ | N/A | N/A | N/A (frictionless) | N/A | N/A | N/A | N/A |
+| `htf_fib_offline` (`simulate_from_signals`) | N/A‡ | N/A‡ | **PASS** | N/A | N/A | N/A (frictionless) | N/A | N/A | N/A | N/A |
 | `htf_fib_core` | N/A | N/A | N/A | N/A | N/A | N/A | N/A | N/A | **PASS** | N/A |
 
-\*XAU `simulate()` needs 220-bar warmup + indicator columns; cost line (C6) is asserted as the same closed-form used in-engine. Full-path C1–C3 for XAU remain covered by existing family fixtures, not re-derived here.  
-†EURUSD C8/C10 already locked in `tests/test_eurusd_ny_scalp.py` (force-flat / equity-floor); not duplicated as new golden bars.  
-‡Full US/HTF path sims need market CSVs or heavy indicator warmup — cost/pivot pure clauses tested; path clauses N/A in this thin suite.
+\*XAU full-path C1/C2 still N/A here (indicator warmup); C3 asserted via trunc-series discriminator (eod NP≈0 vs same-bar SL ~−90).  
+†EURUSD C8/C10 already locked in `tests/test_eurusd_ny_scalp.py`; not duplicated.  
+††EURUSD is next-bar-open entry — same-bar exit is a different clause; not the XAU/HTF close-fill lookahead signature.  
+‡Full US path sims need market CSVs — cost pure clause tested.
 
 **Divergences:** **0**
 
@@ -36,7 +37,6 @@ mutation is anchored on three exact source lines; if a refactor moves any of the
 **fails loudly** ("repair this gate before trusting the suite") rather than degrading into a
 tautology. Verified end-to-end: a genuinely TP-first engine fails both C2 tests.
 
-**Known gap:** **C3 (no same-bar exit)** is N/A on every engine — see footnotes. It is the
 lookahead signature and therefore the highest-value clause still untested; closing it needs
 indicator warmup fixtures or the Strategy Tester path, not a thin unit suite.
 
