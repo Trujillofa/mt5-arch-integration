@@ -34,7 +34,6 @@ from us_index_session_backtest import (
 from test_eurusd_ny_scalp import (  # noqa: E402
     atr_all,
     build_data,
-    flat_day,
     make_day,
     synth_costs,
     synth_lock,
