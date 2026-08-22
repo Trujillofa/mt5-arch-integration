@@ -1,0 +1,44 @@
+{
+  "engines": [
+    {
+      "id": "xau_backtest_simulate",
+      "module": "backtest",
+      "symbol": "simulate",
+      "clauses": ["C1", "C2", "C3", "C6"],
+      "runnable": true,
+      "notes": "Entry at close[i] same bar; exits from next bar (exit check before entry on each bar). CONTRACT_SIZE=100, point_size default 0.01."
+    },
+    {
+      "id": "eurusd_ny_scalp",
+      "module": "eurusd_ny_scalp_autoresearch",
+      "symbol": "simulate_config / size_lots / effective_levels / _rt_cost",
+      "clauses": ["C1", "C2", "C4", "C5", "C6", "C7", "C8", "C10"],
+      "runnable": true,
+      "notes": "Next-bar-open fill; bid-space shorts; SL-first; gap at open; floor lots; equity floor."
+    },
+    {
+      "id": "us_index_session_backtest",
+      "module": "us_index_session_backtest",
+      "symbol": "_round_trip_cost / require_frozen_cost_book",
+      "clauses": ["C6"],
+      "runnable": true,
+      "notes": "Frozen book 1.0 lot / 10 pt slip. Full path sim needs US CSV — cost arithmetic tested directly."
+    },
+    {
+      "id": "htf_fib_offline",
+      "module": "htf_fib_offline_backtest",
+      "symbol": "run_backtest Trade fill at close[i]",
+      "clauses": ["C1", "C3"],
+      "runnable": true,
+      "notes": "Frictionless; entry at close[i]. Full signal path needs indicators — C1 fill price asserted via Trade construction contract in unit scope."
+    },
+    {
+      "id": "htf_fib_core",
+      "module": "htf_fib_core",
+      "symbol": "confirmed_pivots_with_centers",
+      "clauses": ["C9"],
+      "runnable": true,
+      "notes": "active_idx = center + right; not visible at center."
+    }
+  ]
+}
