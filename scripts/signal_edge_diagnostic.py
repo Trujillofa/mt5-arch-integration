@@ -130,6 +130,15 @@ class EdgeResult:
             return "COST-BOUND"
         return "DEAD"
 
+    @property
+    def bias_warnings(self) -> tuple[str, ...]:
+        """Thin-n positive labels (does not change ``verdict``)."""
+        from research_bias_gates import detect_edge_verdict_warnings
+
+        return detect_edge_verdict_warnings(
+            verdict=self.verdict, n_signals=self.n_signals
+        )
+
 
 @dataclass(frozen=True)
 class LaneFamily:
@@ -224,6 +233,8 @@ def format_table(results: list[EdgeResult], horizons: tuple[int, ...]) -> str:
             f"{w.mean_pts:>8.1f}{w.t_stat:>7.2f}  {r.verdict}"
         )
         out.append(row)
+        for wmsg in r.bias_warnings:
+            out.append(f"  ! bias: {wmsg}")
     return "\n".join(out) + "\n"
 
 
