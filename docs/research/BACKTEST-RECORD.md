@@ -134,6 +134,7 @@ Closest *structurally different* shape already in-repo: **exogenous predictor** 
 
 | Topic | Path |
 |-------|------|
+| How to run each path | [HOWTO-BACKTEST-PATHS.md](HOWTO-BACKTEST-PATHS.md) |
 | Loop status | `results/xau_loop_status.md` |
 | Triage | `docs/research/SIGNAL-EDGE-TRIAGE.md` |
 | CLEARS skeptic | `docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md` |

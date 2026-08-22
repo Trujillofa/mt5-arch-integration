@@ -7,7 +7,19 @@ is unreliable. Logic mirrors the indicator defaults (INTRADAY-style):
   - Directional Fib golden zone 61.8–78.6
   - EMA 20/50 timing + EMA 200 bias
   - RSI(14) zone + RSI SMA(14) filter
-  - Entry on closed H1 bar; SL=1.5*ATR, TP=2.0*ATR; one position; reverse on flip
+  - Closed-bar signal; fill at close[i] (next-open approximation)
+  - SL=1.5*ATR, TP=2.0*ATR; one position; reverse on flip
+
+Clock: CSV timestamps are forced UTC. H4 is ``resample('4h')`` left-labeled
+(residual ≤4h optimism vs a true H4 close). This is **not** America/New_York
+and not the MQL5 ``htf_available_at`` MTF rule.
+
+Costs: frictionless 0.10 lot × 100k contract. No spread/slip/commission.
+That is a locked book (``results/htf_fib_offline_lock.json``), not live-matched.
+PnL is price-delta × contract × lots — **not** pip accounting.
+``promote=false``. ``live_go=false``. Not a search; ``--from/--to`` is a free
+slice. ``--to`` at or after the sealed XAU holdout (2026-01-01) is refused
+unless ``--unbounded``.
 
 Usage:
   python3 scripts/htf_fib_offline_backtest.py \\
@@ -27,8 +39,12 @@ import pandas as pd
 
 # Allow `python3 scripts/htf_fib_offline_backtest.py` to find htf_fib_core
 _SCRIPTS = Path(__file__).resolve().parent
+_ROOT = _SCRIPTS.parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
+
+LOCK_PATH = _ROOT / "results" / "htf_fib_offline_lock.json"
+XAU_HOLDOUT_CAP = "2026-01-01"
 
 
 def ema(series: pd.Series, period: int) -> pd.Series:
@@ -80,6 +96,108 @@ class Trade:
     exit_i: int | None = None
     exit: float | None = None
     reason: str = ""
+
+
+def load_offline_lock(path: Path = LOCK_PATH) -> dict:
+    if not path.is_file():
+        raise SystemExit(f"missing htf offline lock: {path}")
+    lock = json.loads(path.read_text())
+    if not isinstance(lock, dict):
+        raise SystemExit("htf offline lock must be a JSON object")
+    return lock
+
+
+def refuse_mutated_htf_offline_lock(lock: dict) -> None:
+    if lock.get("promote") is True:
+        raise SystemExit("promote must stay false")
+    if lock.get("live_go") is True:
+        raise SystemExit("live_go must stay false")
+    book = lock.get("book") if isinstance(lock.get("book"), dict) else {}
+    if abs(float(book.get("lots", 0.0)) - 0.10) > 1e-12:
+        raise SystemExit("htf offline lock lots must stay 0.10")
+    if float(book.get("slippage_points", 0.0)) != 0.0:
+        raise SystemExit("htf offline lock slippage_points must stay 0 (frictionless)")
+    if float(book.get("commission_per_lot", 0.0)) != 0.0:
+        raise SystemExit("htf offline lock commission_per_lot must stay 0")
+
+
+def refuse_holdout_selection(date_to: str, *, unbounded: bool) -> None:
+    """This path is not a search. Cap --to at the sealed XAU holdout unless unbounded."""
+    if unbounded:
+        return
+    to = pd.Timestamp(date_to, tz="UTC")
+    cap = pd.Timestamp(XAU_HOLDOUT_CAP, tz="UTC")
+    if to >= cap:
+        raise SystemExit(
+            f"--to {date_to} reaches sealed XAU holdout {XAU_HOLDOUT_CAP}; "
+            "pass --unbounded to replay through it (still not a selection)"
+        )
+
+
+def simulate_from_signals(
+    signal: np.ndarray,
+    close: np.ndarray,
+    high: np.ndarray,
+    low: np.ndarray,
+    atr_v: np.ndarray,
+    *,
+    sl_m: float = 1.5,
+    tp_m: float = 2.0,
+) -> list[Trade]:
+    """Apply ATR SL/TP to a closed-bar signal series.
+
+    Fill contract (historical approximation — do not silently change):
+    signal on closed bar ``i`` fills at ``close[i]`` (next-bar open ≈ this
+    close). SL/TP are inspected at the start of each bar, so the entry bar
+    is not also the first exit bar.
+    """
+    n = len(signal)
+    trades: list[Trade] = []
+    pos: Trade | None = None
+
+    for i in range(n):
+        if pos is not None:
+            hit = False
+            if pos.side == 1:
+                if low[i] <= pos.sl:
+                    pos.exit_i, pos.exit, pos.reason = i, pos.sl, "sl"
+                    hit = True
+                elif high[i] >= pos.tp:
+                    pos.exit_i, pos.exit, pos.reason = i, pos.tp, "tp"
+                    hit = True
+            else:
+                if high[i] >= pos.sl:
+                    pos.exit_i, pos.exit, pos.reason = i, pos.sl, "sl"
+                    hit = True
+                elif low[i] <= pos.tp:
+                    pos.exit_i, pos.exit, pos.reason = i, pos.tp, "tp"
+                    hit = True
+            if hit:
+                trades.append(pos)
+                pos = None
+
+        s = int(signal[i])
+        if s == 0 or np.isnan(atr_v[i]) or atr_v[i] <= 0:
+            continue
+        if pos is not None:
+            if pos.side == s:
+                continue
+            pos.exit_i, pos.exit, pos.reason = i, close[i], "reverse"
+            trades.append(pos)
+            pos = None
+
+        entry = close[i]
+        dist_sl = atr_v[i] * sl_m
+        dist_tp = atr_v[i] * tp_m
+        if s > 0:
+            pos = Trade(1, i, entry, entry - dist_sl, entry + dist_tp)
+        else:
+            pos = Trade(-1, i, entry, entry + dist_sl, entry - dist_tp)
+
+    if pos is not None:
+        pos.exit_i, pos.exit, pos.reason = n - 1, close[-1], "eod"
+        trades.append(pos)
+    return trades
 
 
 def run_backtest(
@@ -176,57 +294,8 @@ def run_backtest(
             if not prev:
                 signal[i] = -1
 
-    # Trade simulation
-    trades: list[Trade] = []
-    pos: Trade | None = None
-    sl_m, tp_m = 1.5, 2.0
-
-    for i in range(n):
-        if pos is not None:
-            hit = False
-            if pos.side == 1:
-                if low[i] <= pos.sl:
-                    pos.exit_i, pos.exit, pos.reason = i, pos.sl, "sl"
-                    hit = True
-                elif high[i] >= pos.tp:
-                    pos.exit_i, pos.exit, pos.reason = i, pos.tp, "tp"
-                    hit = True
-            else:
-                if high[i] >= pos.sl:
-                    pos.exit_i, pos.exit, pos.reason = i, pos.sl, "sl"
-                    hit = True
-                elif low[i] <= pos.tp:
-                    pos.exit_i, pos.exit, pos.reason = i, pos.tp, "tp"
-                    hit = True
-            if hit:
-                trades.append(pos)
-                pos = None
-
-        s = int(signal[i])
-        if s == 0 or np.isnan(atr_v[i]) or atr_v[i] <= 0:
-            continue
-        # enter next bar open ≈ this close for simplicity
-        if pos is not None:
-            if pos.side == s:
-                continue
-            # reverse
-            pos.exit_i, pos.exit, pos.reason = i, close[i], "reverse"
-            trades.append(pos)
-            pos = None
-
-        entry = close[i]
-        dist_sl = atr_v[i] * sl_m
-        dist_tp = atr_v[i] * tp_m
-        if s > 0:
-            pos = Trade(1, i, entry, entry - dist_sl, entry + dist_tp)
-        else:
-            pos = Trade(-1, i, entry, entry + dist_sl, entry - dist_tp)
-
-    if pos is not None:
-        pos.exit_i, pos.exit, pos.reason = n - 1, close[-1], "eod"
-        trades.append(pos)
-
-    # PnL in R (risk units) and crude $ (1 lot ≈ $10/pip for EURUSD; use price pnl * 100000 for 1 lot)
+    trades = simulate_from_signals(signal, close, high, low, atr_v)
+    # Frictionless book (locked): price delta × contract × lots. Not pip PnL.
     contract = 100_000.0
     lots = 0.10
     pnls = []
@@ -267,11 +336,25 @@ def main() -> None:
     ap.add_argument("--to", dest="date_to", default="2025-01-01")
     ap.add_argument("--out", type=Path, default=None)
     ap.add_argument(
+        "--lock",
+        type=Path,
+        default=LOCK_PATH,
+        help="research lock (promote/live_go/frictionless book)",
+    )
+    ap.add_argument(
+        "--unbounded",
+        action="store_true",
+        help="allow --to to reach the sealed XAU holdout (2026-01-01); still not a search",
+    )
+    ap.add_argument(
         "--no-rsi-ma-filter",
         action="store_true",
         help="Disable RSI>MA / RSI<MA filter (matches InpUseRsiMaFilter=false)",
     )
     args = ap.parse_args()
+    lock = load_offline_lock(args.lock)
+    refuse_mutated_htf_offline_lock(lock)
+    refuse_holdout_selection(args.date_to, unbounded=args.unbounded)
 
     df = pd.read_csv(args.csv)
     if "timestamp" in df.columns:
@@ -298,10 +381,30 @@ def main() -> None:
     stats["from"] = args.date_from
     stats["to"] = args.date_to
     stats["use_rsi_ma_filter"] = use_filter
+    stats["promote"] = False
+    stats["live_go"] = False
+    stats["holdout_used"] = False
+    stats["fill_contract"] = lock.get("fill_contract")
+    stats["clock"] = lock.get("clock")
+    stats["costs"] = {
+        "lots": 0.10,
+        "contract_size": 100_000.0,
+        "commission_per_lot": 0.0,
+        "slippage_points": 0.0,
+        "friction": "frictionless",
+        "points_note": (
+            "PnL is price-delta * contract * lots. Not pip accounting. "
+            "EURUSD pip = 0.0001 = 10 MT5 points; this runner does not convert."
+        ),
+    }
+    stats["split"] = lock.get("window", {}).get("split")
     stats["note"] = (
         "Offline approximation of HTF Fib (H4 pivots from H1). "
         "Pivots stamped at confirmation bar c+right (causal). "
-        "Not identical to MT5 iCustom; use ForexHtfFibTester in Strategy Tester for platform parity."
+        "Fill at close[i] (next-open approximation). Frictionless 0.10 lot. "
+        "promote=no. Not a sealed holdout. "
+        "Not identical to MT5 iCustom; use ForexHtfFibTester in Strategy Tester "
+        "for platform parity."
     )
     text = json.dumps(stats, indent=2)
     print(text)
