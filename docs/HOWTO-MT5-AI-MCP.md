@@ -190,3 +190,4 @@ does (Algo Trading off or EA detached).
 - CLI inventory: [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md)
 - File bridge vs RPyC: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Wine / Algo Trading: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Zacks fundamentals / ETF holdings (separate user MCP, not MT5): [research/ZACKS-MCP-OVERLAY-LANE.md](research/ZACKS-MCP-OVERLAY-LANE.md)
