@@ -20,4 +20,4 @@ US-index London/XAU gates are **not** XAU Phase E; do not edit
 
 Commit **locks + slim metrics**. Do not add full trade dumps (`*_full.json` is gitignored). Historical result JSON already in git stays; regenerate from the script + lock if you need a full local dump.
 
-Standing XAU disposition is in `results/xau_loop_status.md` (do not flip `promote` / `live_go` / `next_step` from a backtest edit).
+Standing XAU disposition is in `results/xau_loop_status.md` (do not flip `promote` / `live_go` / `next_step` from a backtest edit). Model-class queue (GARCH risk filter, TV-β, OU/coint — design only): [MATH-MODELS-ROADMAP.md](MATH-MODELS-ROADMAP.md).

@@ -118,7 +118,7 @@ See also: `docs/research/BACKTEST-RECORD.md`, `docs/research/EURUSD-MR-LIMIT-FIL
 
 New `family_id` · freeze under `results/xau_charters/` · git-tracked · match HEAD ·  
 freeze **before** inspecting real grid · null only if primary passers ≥ 1.  
-Consult `docs/research/BACKTEST-RECORD.md` before proposing anything that overlaps a closed class.
+Consult `docs/research/BACKTEST-RECORD.md` before proposing anything that overlaps a closed class. Model-class queue (not a screen auth): [MATH-MODELS-ROADMAP.md](MATH-MODELS-ROADMAP.md).
 
 ## Sealed path requirements
 
