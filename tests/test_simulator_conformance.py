@@ -3,6 +3,7 @@
 Expected values are derived on paper (see each fixture's ``derivation``).
 Engines are never edited to force PASS — DIVERGENCE is a finding.
 """
+
 from __future__ import annotations
 
 import json
@@ -20,24 +21,22 @@ FIX = ROOT / "tests" / "fixtures" / "simulator_conformance"
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
-import eurusd_ny_scalp_autoresearch as ar  # noqa: E402
-import eurusd_ny_scalp_core as core  # noqa: E402
-from htf_fib_core import confirmed_pivots_with_centers  # noqa: E402
-from us_index_session_backtest import (  # noqa: E402
-    CostSpec as UsCostSpec,
-)
-from us_index_session_backtest import (
-    _round_trip_cost,
-    require_frozen_cost_book,
-)
-
 # Reuse EURUSD synthetic builders
+import eurusd_ny_scalp_autoresearch as ar  # noqa: E402
+from htf_fib_core import confirmed_pivots_with_centers  # noqa: E402
 from test_eurusd_ny_scalp import (  # noqa: E402
     atr_all,
     build_data,
     make_day,
     synth_costs,
     synth_lock,
+)
+from us_index_session_backtest import (  # noqa: E402
+    CostSpec as UsCostSpec,
+)
+from us_index_session_backtest import (  # noqa: E402
+    _round_trip_cost,
+    require_frozen_cost_book,
 )
 
 
@@ -252,9 +251,7 @@ def test_c2_sl_first_when_bar_contains_both():
     lock = synth_lock()
     costs = synth_costs(lock)
     exit_spec = {"kind": "pct", "tp": 0.0010, "sl": 0.0050}  # 10bps TP, 50bps SL
-    trades = ar.simulate_config(
-        d, sig, exit_spec, None, None, atr_all(d), costs, lock
-    )
+    trades = ar.simulate_config(d, sig, exit_spec, None, None, atr_all(d), costs, lock)
     assert trades, "expected a trade"
     t = trades[0]
     # fill at open of bar after signal = bar index 2 open = 1.10000
@@ -398,9 +395,7 @@ def test_c4_gap_through_stop_fills_at_open():
     d.low[7] = gap_open - 0.0002
     d.high[7] = gap_open + 0.0002
     d.close[7] = gap_open
-    trades = ar.simulate_config(
-        d, sig, exit_spec, None, None, atr_all(d), costs, lock
-    )
+    trades = ar.simulate_config(d, sig, exit_spec, None, None, atr_all(d), costs, lock)
     assert trades
     t = trades[0]
     assert t.fill_i == 6
@@ -426,17 +421,13 @@ def test_c1_eurusd_entry_next_bar_open():
     lock = synth_lock()
     costs = synth_costs(lock)
     exit_spec = {"kind": "bars", "n": 6, "sl": 0.0100}
-    trades = ar.simulate_config(
-        d, sig, exit_spec, None, None, atr_all(d), costs, lock
-    )
+    trades = ar.simulate_config(d, sig, exit_spec, None, None, atr_all(d), costs, lock)
     assert trades
     t = trades[0]
     assert t.fill_i == 2
     assert t.entry == pytest.approx(float(d.open[2]))
     # Not filled at signal close
-    assert t.entry != pytest.approx(float(d.close[1])) or float(d.open[2]) == float(
-        d.close[1]
-    )
+    assert t.entry != pytest.approx(float(d.close[1])) or float(d.open[2]) == float(d.close[1])
 
 
 # ---------------------------------------------------------------------------
@@ -452,9 +443,7 @@ def test_c3_htf_no_exit_on_entry_bar():
     from htf_fib_offline_backtest import simulate_from_signals
 
     fx = next(
-        c
-        for c in _load("c3_no_same_bar_exit.json")["cases"]
-        if c["engine"].startswith("htf")
+        c for c in _load("c3_no_same_bar_exit.json")["cases"] if c["engine"].startswith("htf")
     )
     assert fx["derivation"]
     n = 8
@@ -550,9 +539,7 @@ def test_c3_xau_backtest_no_exit_on_entry_bar():
     import backtest as bt
 
     fx = next(
-        c
-        for c in _load("c3_no_same_bar_exit.json")["cases"]
-        if c["engine"].startswith("xau")
+        c for c in _load("c3_no_same_bar_exit.json")["cases"] if c["engine"].startswith("xau")
     )
     assert fx["derivation"]
     exp = fx["expected"]
@@ -647,7 +634,6 @@ def test_c3_xau_backtest_no_exit_on_entry_bar():
     # Correct: open at end of trunc series ⇒ still one booked trade at eod close
     # (simulate force-closes at end). Same-bar SL exit would also book one trade.
     # PnL differs: eod at close=2000 ⇒ gross≈0; SL exit ⇒ negative.
-    sl_px = entry_px - exp["sl_atr"] * atr
     # End-of-series close on trunc is entry_px ⇒ pnl ≈ -trade_cost only (frictionless 0)
     # If same-bar SL fired, pnl = (sl_px - entry_px) * CONTRACT * lots < 0 materially.
     assert m_trunc.n_trades == 1
