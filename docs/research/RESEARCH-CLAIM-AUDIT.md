@@ -86,6 +86,12 @@ Real drift; belongs to open **PR #42** / the Zacks lane doc. Left standing on pu
 
 A `kind=sha` claim that cannot be resolved is an **integrity failure**, not a neutral shrug. Result field **`n_sha_unresolvable`**: any value `> 0` fails the run. Current run: **0**.
 
+**Named check — exog v4 charter SHA:**  
+`docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md:5` claims  
+`3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5`  
+→ **OK** against `results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json.sha256`  
+(attribution prose `exog v4 charter` resolved via `family_id` + `vN`; this was `unresolvable` under run 3).
+
 Attribution matching resolves on `family_id` + `vN`, accepts `.json.sha256` / `.sha256` sidecars, and falls back to hashing the charter `.json` when no sidecar exists. A located digest that **disagrees** with the claim is **`drift`**, not `unresolvable`.
 
 ### Self-referential metrics
