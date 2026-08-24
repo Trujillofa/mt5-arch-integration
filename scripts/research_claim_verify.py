@@ -215,12 +215,140 @@ def _sha_candidates(attr: str) -> list[str]:
     return names
 
 
+
+def _list_charter_sha_files() -> list[Path]:
+    d = ROOT / "results" / "xau_charters"
+    if not d.is_dir():
+        return []
+    out: list[Path] = []
+    for p in sorted(d.iterdir()):
+        name = p.name
+        if name.endswith(".json.sha256") or (
+            name.endswith(".sha256") and not name.endswith(".json.sha256")
+        ):
+            out.append(p)
+    return out
+
+
+def _parse_family_version(attr: str) -> list[tuple[str, str]]:
+    """Return (family_id, vN) candidates from prose attribution."""
+    attr_l = (attr or "").lower()
+    found: list[tuple[str, str]] = []
+    # Explicit family_id_vN (optional .json)
+    for m in re.finditer(r"\b([a-z][a-z0-9_]{5,})_v(\d+)(?:\.json)?\b", attr_l):
+        found.append((m.group(1), f"v{m.group(2)}"))
+    versions = re.findall(r"\bv(\d+)\b", attr_l)
+    if not versions:
+        return found
+    # Prose like "exog v4 charter" — match charter stems containing the keyword
+    tokens = [t for t in re.findall(r"[a-z][a-z0-9_]{2,}", attr_l) if t not in {"charter", "sha", "json", "results", "xau"}]
+    for p in _list_charter_sha_files():
+        stem = p.name
+        # strip date prefix and .json.sha256 / .sha256
+        core = stem
+        for suf in (".json.sha256", ".sha256"):
+            if core.endswith(suf):
+                core = core[: -len(suf)]
+                break
+        # core like 2026-08-15_exog_london_..._v4
+        m = re.search(r"_([a-z][a-z0-9_]+)_v(\d+)$", core)
+        if not m:
+            continue
+        fam, ver = m.group(1), f"v{m.group(2)}"
+        for ver_n in versions:
+            if ver != f"v{ver_n}":
+                continue
+            for tok in tokens:
+                if tok in fam or fam.startswith(tok):
+                    found.append((fam, ver))
+                    break
+    # dedupe preserve order
+    seen = set()
+    out = []
+    for item in found:
+        if item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
+def _charter_digest_paths_for(family_id: str, version: str) -> list[str]:
+    """Locate charter digest sources: .json.sha256 / .sha256 siblings, else the .json."""
+    d = ROOT / "results" / "xau_charters"
+    if not d.is_dir():
+        return []
+    sha_paths: list[str] = []
+    json_paths: list[str] = []
+    needle = f"_{family_id}_{version}"
+    for p in d.iterdir():
+        name = p.name
+        if needle not in name:
+            continue
+        rel = str(p.relative_to(ROOT))
+        if name.endswith(".json.sha256") or (
+            name.endswith(".sha256") and not name.endswith(".json.sha256")
+        ):
+            sha_paths.append(rel)
+        elif name.endswith(".json") and not name.endswith(".json.sha256"):
+            json_paths.append(rel)
+    # Prefer explicit sidecar digests; fall back to hashing the JSON charter.
+    return sorted(sha_paths) + sorted(json_paths)
+
+
+def _digest_from_path(rel: str) -> str | None:
+    """Read a .sha256 sidecar or sha256-hash a .json charter file."""
+    if rel.endswith(".sha256"):
+        txt = _read(rel)
+        if not txt:
+            return None
+        return txt.strip().split()[0].lower()
+    p = ROOT / rel
+    if p.is_file() and rel.endswith(".json"):
+        return hashlib.sha256(p.read_bytes()).hexdigest()
+    return None
+
+
 def resolve_sha(claim: dict, tracked: set[str]) -> tuple[str, str]:
     claimed = claim["claimed"].strip().lower()
     attr = claim.get("attribution") or ""
+    attr_l = attr.lower()
 
-    # Search .sha256 siblings and registry
-    # 1) registry jsonl
+    # A) family_id + version → sibling .sha256 (mismatch is DRIFT, not unresolvable)
+    fam_vers = _parse_family_version(attr)
+    # Also try attribution that is already a charter basename
+    for name in _sha_candidates(attr):
+        base = Path(name).name
+        m = re.search(r"([a-z][a-z0-9_]+)_v(\d+)", base.lower())
+        if m:
+            fam_vers.append((m.group(1), f"v{m.group(2)}"))
+    seen_fv = set()
+    for fam, ver in fam_vers:
+        if (fam, ver) in seen_fv:
+            continue
+        seen_fv.add((fam, ver))
+        for rel in _charter_digest_paths_for(fam, ver):
+            h = _digest_from_path(rel)
+            if not h:
+                continue
+            if h.startswith(claimed) or (
+                len(claimed) >= 8 and claimed == h[: len(claimed)]
+            ):
+                return "ok", f"{rel}:{h}"
+            # Located the freeze digest and claim disagrees → drift
+            return "drift", f"{rel}:{h}"
+
+    # B) digest-content search across results/xau_charters/*.sha256 sidecars
+    for p in _list_charter_sha_files():
+        rel = str(p.relative_to(ROOT))
+        h = _digest_from_path(rel)
+        if not h:
+            continue
+        if h.startswith(claimed) or (
+            len(claimed) >= 8 and claimed == h[: len(claimed)]
+        ):
+            return "ok", f"{rel}:{h}"
+
+    # C) registry jsonl
     reg = _read("results/xau_charter_disposition_registry.jsonl") or ""
     for line in reg.splitlines():
         try:
@@ -229,17 +357,15 @@ def resolve_sha(claim: dict, tracked: set[str]) -> tuple[str, str]:
             continue
         for key in ("charter_sha256", "superseded_by_sha256", "costs_sha256"):
             h = str(row.get(key) or "").lower()
-            if h.startswith(claimed) or (claimed.startswith(h[: len(claimed)]) and len(h) >= 8):
-                # confirm attribution roughly matches path if present
+            if not h:
+                continue
+            if h.startswith(claimed) or (
+                len(claimed) >= 8 and claimed.startswith(h[: len(claimed)])
+            ):
                 cpath = str(row.get("charter_path") or "")
-                if any(part in cpath for part in re.findall(r"[a-z0-9_]+_v\d+", attr)) or not re.search(
-                    r"_v\d+", attr
-                ):
-                    return "ok", f"{cpath}:{h}" if cpath else h
-                if claimed[:8] == h[:8]:
-                    return "ok", f"{cpath}:{h}"
+                return "ok", f"{cpath}:{h}" if cpath else h
 
-    # 2) explicit charter files + sha256 siblings
+    # D) explicit path candidates from attribution (legacy)
     for name in _sha_candidates(attr):
         paths = []
         if name.startswith("results/"):
@@ -249,59 +375,52 @@ def resolve_sha(claim: dict, tracked: set[str]) -> tuple[str, str]:
             paths.append(name)
         for p in paths:
             for sib in (p + ".sha256", p.replace(".json", ".sha256"), p + ".json.sha256"):
-                # normalize double
                 sib = sib.replace(".json.json", ".json")
-                txt = _read(sib)
-                if txt:
-                    h = txt.strip().split()[0].lower()
-                    if h.startswith(claimed):
-                        return "ok", f"{sib}:{h}"
-            # hash file content if tracked
+                h = _digest_from_path(sib)
+                if not h:
+                    continue
+                if h.startswith(claimed) or (
+                    len(claimed) >= 8 and claimed == h[: len(claimed)]
+                ):
+                    return "ok", f"{sib}:{h}"
+                if fam_vers:
+                    return "drift", f"{sib}:{h}"
             if p in tracked or (ROOT / p).is_file():
-                raw = (ROOT / p).read_bytes()
-                h = hashlib.sha256(raw).hexdigest()
-                if h.startswith(claimed):
+                h = _digest_from_path(p) or hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
+                if h.startswith(claimed) or (
+                    len(claimed) >= 8 and claimed == h[: len(claimed)]
+                ):
                     return "ok", f"{p}:{h}"
-                # embedded sha references inside json
-                jtxt = raw.decode("utf-8", errors="replace").lower()
-                if claimed[:12] in jtxt:
-                    return "ok", f"{p}:embedded:{claimed}"
+                if fam_vers and p.endswith(".json"):
+                    return "drift", f"{p}:{h}"
 
-    # 3) scan all tracked sha256 near attr keywords
-    attr_l = attr.lower()
-    for t in tracked:
-        if not t.endswith((".sha256", ".json")):
+    # E) costs / csv / lock digest-content search (non-charter freeze artifacts)
+    search_tracked = [
+        t
+        for t in tracked
+        if t.endswith((".sha256", ".json", ".jsonl"))
+        and (
+            "costs" in t
+            or "lock" in t
+            or "instrument" in t
+            or "csv" in attr_l
+            or t.startswith("results/")
+        )
+    ]
+    for t in search_tracked:
+        txt = (_read(t) or "").lower()
+        if not txt:
             continue
-        if "xau_charters" in t or "lock" in t or "costs" in t or "instrument_data" in t:
-            txt = (_read(t) or "").lower()
-            if t.endswith(".sha256"):
-                h = txt.strip().split()[0] if txt.strip() else ""
-                if h.startswith(claimed):
-                    # filter by attr token if charter-ish
-                    if "charter" in attr_l or "_v" in attr_l:
-                        stem = Path(t).stem.replace(".json", "")
-                        if any(tok in stem for tok in re.findall(r"[a-z0-9]+", attr_l) if len(tok) > 6):
-                            return "ok", f"{t}:{h}"
-                    else:
-                        return "ok", f"{t}:{h}"
-            elif claimed[:16] in txt.replace('"', "") and (
-                any(
-                    tok in t.lower() or tok in txt
-                    for tok in re.findall(r"[a-z0-9_]{6,}", attr_l)
-                )
-                or "sha256" in txt
-            ) and claimed[:8] in txt:
-                # prefer lock / costs / csv sha fields
-                return "ok", f"{t}:{claimed}"
+        if t.endswith(".sha256"):
+            h = txt.strip().split()[0]
+            if h.startswith(claimed) or (
+                len(claimed) >= 8 and claimed == h[: len(claimed)]
+            ):
+                return "ok", f"{t}:{h}"
+        elif claimed[:16] in txt.replace('"', ""):
+            return "ok", f"{t}:embedded:{claimed[:16]}"
 
-    # 4) EURUSD history csv → lock
-    if "eurusd" in attr_l and "csv" in attr_l:
-        lock = _read("results/eurusd_ny_scalp_lock.json") or ""
-        if claimed[:8] in lock.lower():
-            return "ok", f"results/eurusd_ny_scalp_lock.json:{claimed}"
-        return "unresolvable", f"no file for attr={attr!r}"
-
-    # 5) git commit object
+    # F) git commit object
     if re.fullmatch(r"[0-9a-f]{7,40}", claimed):
         try:
             tip = (
@@ -325,12 +444,6 @@ def resolve_sha(claim: dict, tracked: set[str]) -> tuple[str, str]:
             return "ok", f"git-object:{claimed}"
         except Exception:
             pass
-
-    # costs document
-    if "xau_research_costs" in attr_l or "costs" in attr_l:
-        for t in tracked:
-            if "costs" in t and claimed[:12] in (_read(t) or "").lower():
-                return "ok", t
 
     return "unresolvable", f"no file for attr={attr!r}"
 
@@ -510,59 +623,85 @@ def _text_has_metric(txt: str, claimed: str) -> bool:
     return bool(nums and all(n in txt for n in nums))
 
 
+
 def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
+    """Prefer results/*.json oracles. Markdown-only corroboration → self_referential."""
     claimed = claim["claimed"].strip()
     attr = claim.get("attribution") or ""
     src = claim["file"]
     corpus = _metric_corpus(attr, src)
-    sot = {
-        "docs/research/BACKTEST-RECORD.md",
-        "results/xau_loop_status.md",
-        "results/xau_charter_disposition_registry.jsonl",
-    }
-    sot |= {f for f in corpus if f.startswith("results/") and f.endswith((".json", ".md", ".jsonl"))}
 
-    checked = []
-    for f in corpus:
+    def _rank(f: str) -> tuple[int, str]:
+        if f.startswith("results/") and f.endswith(".json"):
+            return (0, f)
+        if f.startswith("results/") and f.endswith(".jsonl"):
+            return (1, f)
+        if f.startswith("results/") and f.endswith(".md"):
+            return (2, f)
+        if f == "docs/research/BACKTEST-RECORD.md":
+            return (3, f)
+        if f.endswith(".md"):
+            return (4, f)
+        return (5, f)
+
+    ordered = sorted(set(corpus), key=_rank)
+    # Concrete results/*.json oracles only (not disposition registry jsonl).
+    json_artifacts = [
+        f
+        for f in ordered
+        if f.startswith("results/") and f.endswith(".json") and "registry" not in f
+    ]
+    checked: list[str] = []
+
+    # Pass 1: JSON only
+    for f in json_artifacts:
+        checked.append(f)
+        txt = _read(f)
+        if txt and _text_has_metric(txt, claimed):
+            return "ok", f
+
+    # Pass 2: results/*.md and BACKTEST-RECORD (SoT markdown) before drift
+    for f in ordered:
+        if f in json_artifacts:
+            continue
+        if not (f.startswith("results/") or f == "docs/research/BACKTEST-RECORD.md"):
+            continue
         checked.append(f)
         txt = _read(f)
         if not txt:
             continue
         if _text_has_metric(txt, claimed):
-            # If only found in the claiming doc and attribution points at a family/result,
-            # require SoT/artifact (except BACKTEST-RECORD itself is SoT).
-            if f == src and src != "docs/research/BACKTEST-RECORD.md":
-                # continue searching artifacts; if none, may be drift/unresolvable
-                continue
             return "ok", f
 
-    # second pass: allow source doc for triage-local metrics when numbers appear only there
+    # Family-linked JSON oracle present, figure absent from JSON *and* results md → drift.
+    # (Mutant restating-doc case: oracle survives in results/*.json.)
+    if (
+        json_artifacts
+        and re.search(
+            r"(PF|n\s*=|profit_factor|\d+\s*/\s*\d+|[+-]?\d+\.\d+)", claimed, re.I
+        )
+        and any((_read(f) or "").strip() for f in json_artifacts)
+        and not any(_text_has_metric(_read(f) or "", claimed) for f in json_artifacts)
+    ):
+        return "drift", f"json_oracle_miss checked={json_artifacts!r}; claimed={claimed!r}"
+
+    # Pass 3: other markdown — self-referential if that is the only corroboration
+    for f in ordered:
+        if f.startswith("results/") or f == "docs/research/BACKTEST-RECORD.md":
+            continue
+        if f == src:
+            continue
+        checked.append(f)
+        txt = _read(f)
+        if txt and _text_has_metric(txt, claimed):
+            return "self_referential", f"md_only:{f}"
+
     src_txt = _read(src) or ""
     if _text_has_metric(src_txt, claimed):
-        # family-attributed metrics that SoT doesn't carry → unresolvable (not invented ok)
-        if any(
-            k in attr.lower()
-            for k in (
-                "exog_london",
-                "asia_box",
-                "bb_rsi",
-                "donchian",
-                "walk-forward",
-                "eurusd_ny_scalp_develop",
-                "flatten",
-                "ny_cash",
-                "m5_zscore",
-                "mean_reversion",
-            )
-        ):
-            # special: triage diagnostic numbers living only in triage doc
-            if src.endswith("SIGNAL-EDGE-TRIAGE.md") or src.endswith("SIGNAL-EDGE-TRIAGE-SKEPTIC.md"):
-                # n=885 exists in loop status as n **885** — already checked; if we are here, fail
-                return "unresolvable", f"checked={checked!r}; claimed={claimed!r}"
-            return "unresolvable", f"checked={checked!r}; claimed={claimed!r}"
-        return "ok", src
+        return "self_referential", f"md_only:{src}"
 
     return "unresolvable", f"checked={checked!r}; claimed={claimed!r}"
+
 
 
 def _zacks_status() -> str:
@@ -731,10 +870,13 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
     """Resolve a claim list. Returns structured drift[] and exempt_secrets."""
     tracked = tracked if tracked is not None else run_git_ls_files()
     n_ok = n_drift = n_unresolvable = n_exempt_secrets = 0
+    n_sha_unresolvable = 0
+    n_self_referential = 0
     evidence: list[str] = []
     drift: list[dict] = []
     unresolvable: list[dict] = []
     exempt_secrets: list[dict] = []
+    self_referential: list[dict] = []
     zacks_handcheck: list[str] = []
 
     st = _zacks_status()
@@ -792,23 +934,36 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
             evidence.append(
                 f"{cl['file']}|{cl['line']}|{cl['kind']}|{cl['claimed']}|{actual}"
             )
+        elif status == "self_referential":
+            n_self_referential += 1
+            self_referential.append(row)
+            evidence.append(
+                f"{cl['file']}|{cl['line']}|{cl['kind']}|{cl['claimed']}|SELF_REF:{actual}"
+            )
         else:
             n_unresolvable += 1
             unresolvable.append(row)
+            if kind == "sha":
+                n_sha_unresolvable += 1
             evidence.append(
                 f"{cl['file']}|{cl['line']}|{cl['kind']}|{cl['claimed']}|UNRESOLVABLE:{actual}"
             )
 
+    # Digest claims that cannot be resolved are an integrity failure, not a shrug.
+    ok = n_sha_unresolvable == 0
     return {
-        "ok": True,
+        "ok": ok,
         "n_ok": n_ok,
         "n_drift": n_drift,
         "n_unresolvable": n_unresolvable,
+        "n_sha_unresolvable": n_sha_unresolvable,
         "n_exempt_secrets": n_exempt_secrets,
+        "n_self_referential": n_self_referential,
         "n_claims": len(claims),
         "drift": drift,
         "unresolvable": unresolvable,
         "exempt_secrets": exempt_secrets,
+        "self_referential": self_referential,
         "zacks_handcheck": zacks_handcheck,
         "evidence": evidence,
     }
@@ -956,14 +1111,20 @@ def main(argv: list[str] | None = None) -> int:
     inv_path = args.inventory if args.inventory.is_absolute() else ROOT / args.inventory
     report = verify_all(inv_path)
     out_path.write_text(json.dumps(report, indent=2) + "\n")
+    try:
+        out_disp = str(out_path.resolve().relative_to(ROOT.resolve()))
+    except ValueError:
+        out_disp = str(out_path.resolve())
     summary = {
         "ok": report["ok"],
         "n_ok": report["n_ok"],
         "n_drift": report["n_drift"],
         "n_unresolvable": report["n_unresolvable"],
+        "n_sha_unresolvable": report.get("n_sha_unresolvable", 0),
         "n_exempt_secrets": report["n_exempt_secrets"],
+        "n_self_referential": report.get("n_self_referential", 0),
         "n_claims": report["n_claims"],
-        "out": str(out_path.relative_to(ROOT)),
+        "out": out_disp,
     }
     print(json.dumps(summary, indent=2))
     print("---DRIFT---")

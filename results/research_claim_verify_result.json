@@ -1,9 +1,11 @@
 {
   "ok": true,
-  "n_ok": 432,
+  "n_ok": 429,
   "n_drift": 1,
-  "n_unresolvable": 3,
+  "n_unresolvable": 0,
+  "n_sha_unresolvable": 0,
   "n_exempt_secrets": 1,
+  "n_self_referential": 6,
   "n_claims": 436,
   "drift": [
     {
@@ -14,29 +16,7 @@
       "actual": "Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)"
     }
   ],
-  "unresolvable": [
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 50,
-      "kind": "metric",
-      "claimed": "+70.19",
-      "actual": "checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='+70.19'"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 48,
-      "kind": "metric",
-      "claimed": "n=7819",
-      "actual": "checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='n=7819'"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 5,
-      "kind": "sha",
-      "claimed": "3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5",
-      "actual": "no file for attr='exog v4 charter'"
-    }
-  ],
+  "unresolvable": [],
   "exempt_secrets": [
     {
       "file": "docs/README.md",
@@ -44,6 +24,50 @@
       "kind": "path",
       "claimed": "config/local.paths",
       "actual": "gitignored:config/local.paths"
+    }
+  ],
+  "self_referential": [
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "actual": "md_only:docs/research/SIGNAL-EDGE-TRIAGE.md"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 48,
+      "kind": "metric",
+      "claimed": "n=7819",
+      "actual": "md_only:docs/research/SIGNAL-EDGE-TRIAGE.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "PF 0.80",
+      "actual": "md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "0.96 holdout",
+      "actual": "md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "PF 1.20",
+      "actual": "md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 148,
+      "kind": "metric",
+      "claimed": "2026-08-20",
+      "actual": "md_only:docs/research/EURUSD-NY-SCALP-DESIGN.md"
     }
   ],
   "zacks_handcheck": [
@@ -57,8 +81,11 @@
   "evidence": [
     "docs/README.md|21|disposition|New edge|Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)",
     "docs/README.md|69|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|UNRESOLVABLE:checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='+70.19'",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|48|metric|n=7819|UNRESOLVABLE:checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='n=7819'",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|5|sha|3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5|UNRESOLVABLE:no file for attr='exog v4 charter'"
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|SELF_REF:md_only:docs/research/SIGNAL-EDGE-TRIAGE.md",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|48|metric|n=7819|SELF_REF:md_only:docs/research/SIGNAL-EDGE-TRIAGE.md",
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|92|metric|PF 0.80|SELF_REF:md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|92|metric|0.96 holdout|SELF_REF:md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|92|metric|PF 1.20|SELF_REF:md_only:docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+    "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2026-08-20|SELF_REF:md_only:docs/research/EURUSD-NY-SCALP-DESIGN.md"
   ]
 }

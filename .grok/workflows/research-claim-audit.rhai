@@ -27,13 +27,15 @@ let ext_schema = #{
 };
 let ver_schema = #{
     "type": "object",
-    "required": ["ok", "n_ok", "n_drift", "n_unresolvable", "n_exempt_secrets", "negative_controls_ok", "evidence"],
+    "required": ["ok", "n_ok", "n_drift", "n_unresolvable", "n_sha_unresolvable", "n_exempt_secrets", "n_self_referential", "negative_controls_ok", "evidence"],
     "properties": #{
         ok: #{ "type": "boolean" },
         n_ok: #{ "type": "integer" },
         n_drift: #{ "type": "integer" },
         n_unresolvable: #{ "type": "integer" },
+        n_sha_unresolvable: #{ "type": "integer" },
         n_exempt_secrets: #{ "type": "integer" },
+        n_self_referential: #{ "type": "integer" },
         negative_controls_ok: #{ "type": "boolean" },
         evidence: #{ "type": "string" },
     },
@@ -97,19 +99,24 @@ p2 += "Work ONLY in " + wt + "\n" + rules;
 p2 += "Run the tracked verifier (do not reimplement):\n";
 p2 += "  python3 scripts/research_claim_verify.py --out results/research_claim_verify_result.json\n";
 p2 += "  python3 scripts/research_claim_verify.py --negative-controls --out results/research_claim_negative_controls.json\n";
-p2 += "Read both JSON results. ok=true only if verify completed AND negative_controls all_red=true. ";
+p2 += "Read both JSON results. ok=true only if verify completed AND negative_controls all_red=true ";
+p2 += "AND n_sha_unresolvable==0 (digest unresolvable is fatal). ";
 p2 += "If any negative control is green, ok=false and stop — the B/C fixes are a blindfold. ";
-p2 += "Return n_ok, n_drift, n_unresolvable, n_exempt_secrets from verify result; ";
+p2 += "Return n_ok, n_drift, n_unresolvable, n_sha_unresolvable, n_exempt_secrets, n_self_referential; ";
 p2 += "negative_controls_ok from the controls run. ";
-p2 += "evidence must quote the drift[] entries and exempt_secrets (esp. config/local.paths) ";
-p2 += "and the four control names with RED/GREEN. Expected on this tree: n_drift==1 ";
-p2 += "(docs/README.md:21 New edge). n_drift==0 means checker regression.\n";
+p2 += "evidence must quote the drift[] entries, exempt_secrets (esp. config/local.paths), ";
+p2 += "confirm exog v4 SHA 3dec09ef… resolves OK, and the four control names with RED/GREEN. ";
+p2 += "Expected on this tree: n_drift==1 (docs/README.md:21 New edge). n_drift==0 means regression.\n";
 let ver = agent(p2, #{ label: "verify", capability_mode: "execute", cwd: wt, output_schema: ver_schema });
 if ver == () || !ver.success || ver.output == () || ver.output.ok != true {
     complete(#{ ok: false, summary: "Verify or negative-controls failed", verify: ver });
 }
 if ver.output.negative_controls_ok != true {
     complete(#{ ok: false, summary: "Anti-overcorrection gate failed — negative control went green", verify: ver.output });
+}
+let n_sha_bad = if ver.output.n_sha_unresolvable == () { 0 } else { ver.output.n_sha_unresolvable };
+if n_sha_bad > 0 {
+    complete(#{ ok: false, summary: "n_sha_unresolvable>0 — digest integrity gap is fatal", verify: ver.output });
 }
 
 phase("Mutant");
@@ -119,10 +126,12 @@ p3 += "Run the tracked mutant gate (do not reimplement):\n";
 p3 += "  python3 scripts/research_claim_mutant.py --out results/research_claim_mutant_result.json\n";
 p3 += "It must: seed >=4 known-bad claims in scratch only; route them through ";
 p3 += "scripts/research_claim_verify.resolve_one (same entry as Verify); ";
-p3 += "temporarily break the verifier and prove gate_can_fail=true; then restore and ";
-p3 += "show mutant_caught=true with 4/4. ";
+p3 += "score caught ONLY when status==drift (unresolvable is NOT caught); ";
+p3 += "seed metric mutants in a RESTATING doc (not BACKTEST-RECORD); ";
+p3 += "temporarily break the verifier and prove gate_can_fail=true under the NEW scorer; ";
+p3 += "then restore and show mutant_caught=true with 4/4 all status==drift. ";
 p3 += "ok=true only if mutant_caught AND gate_can_fail. ";
-p3 += "Prior run's mutant_caught was STALE (read-only Mutant) — this run supersedes it.\n";
+p3 += "Run-3 mutant_caught 4/4 was scored on the wrong criterion (really 2/4) — this run supersedes it.\n";
 let mut = agent(p3, #{ label: "mutant", capability_mode: "execute", cwd: wt, output_schema: mut_schema });
 if mut == () || !mut.success || mut.output == () || mut.output.ok != true {
     complete(#{ ok: false, summary: "Mutant gate failed to run", mutant: mut });

@@ -82,9 +82,16 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         ),
         (
             "metric",
+            # Restating doc (NOT BACKTEST-RECORD / results JSON) so the oracle survives.
             lambda c: c["kind"] == "metric"
             and "PF" in c["claimed"]
-            and "asia_box" in (c.get("attribution") or "").lower(),
+            and not str(c["file"]).endswith("BACKTEST-RECORD.md")
+            and not str(c["file"]).startswith("results/")
+            and (
+                "US-INDEX" in str(c["file"])
+                or "HOWTO-US-INDEX" in str(c["file"])
+                or "SIGNAL-EDGE" in str(c["file"])
+            ),
         ),
         (
             "disposition",
@@ -95,10 +102,17 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
     for kind, pred in preferred:
         for c in claims:
             if pred(c):
-                st, _ = v.resolve_one(c, tracked)
-                if st in ("ok", "exempt_secrets"):
-                    wanted[kind] = c
-                    break
+                st, act = v.resolve_one(c, tracked)
+                if st != "ok":
+                    continue
+                # Metric anchors must resolve against a results/* oracle, not md-only.
+                if kind == "metric" and not (
+                    isinstance(act, str)
+                    and act.startswith("results/")
+                ):
+                    continue
+                wanted[kind] = c
+                break
 
     for c in claims:
         kind = c["kind"]
@@ -106,9 +120,20 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
             continue
         if kind not in ("path", "sha", "metric", "disposition"):
             continue
-        st, _ = v.resolve_one(c, tracked)
-        if st in ("ok", "exempt_secrets"):
-            wanted[kind] = c
+        # Never seed metric mutants in the markdown SoT or in results/* itself.
+        if kind == "metric" and (
+            str(c["file"]).endswith("BACKTEST-RECORD.md")
+            or str(c["file"]).startswith("results/")
+        ):
+            continue
+        st, act = v.resolve_one(c, tracked)
+        if st != "ok":
+            continue
+        if kind == "metric" and not (
+            isinstance(act, str) and act.startswith("results/")
+        ):
+            continue
+        wanted[kind] = c
 
     missing = [k for k, c in wanted.items() if c is None]
     if missing:
@@ -147,7 +172,9 @@ def _eval_seeds(v, seeds: list[dict], tracked: set[str]) -> tuple[list[dict], in
     n_caught = 0
     for s in seeds:
         status, actual = v.resolve_one(s["mutant"], tracked)
-        caught = status not in ("ok", "exempt_secrets")
+        # Caught only means reported as drift. unresolvable is NOT caught —
+        # that is the verifier saying "I cannot tell", which the gate must detect.
+        caught = status == "drift"
         if caught:
             n_caught += 1
         per.append(
@@ -264,6 +291,10 @@ def main(argv: list[str] | None = None) -> int:
 
     result = run_gate(root)
     out.write_text(json.dumps(result, indent=2) + "\n")
+    try:
+        out_disp = str(out.resolve().relative_to(root.resolve()))
+    except ValueError:
+        out_disp = str(out.resolve())
     print(
         json.dumps(
             {
@@ -272,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
                 "gate_can_fail": result["gate_can_fail"],
                 "n_seeded": result["n_seeded"],
                 "n_caught": result["n_caught"],
-                "out": str(out.relative_to(root)),
+                "out": out_disp,
             },
             indent=2,
         )
