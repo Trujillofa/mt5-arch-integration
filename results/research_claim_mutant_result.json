@@ -1,0 +1,59 @@
+{
+  "ok": true,
+  "mutant_caught": true,
+  "gate_can_fail": true,
+  "n_seeded": 4,
+  "n_caught": 4,
+  "evidence": "gate_can_fail=True (broken verifier caught 0/4); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=unresolvable caught=True | metric_digit: orig='PF 0.553'->'PF 0.559' status=unresolvable caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
+  "per_seed": [
+    {
+      "seed_kind": "dead_path",
+      "kind": "path",
+      "file": "docs/README.md",
+      "line": 40,
+      "orig_claimed": "scripts/16-use-broker.sh",
+      "mutant_claimed": "scripts/__mutant_dead_path_does_not_exist__.sh",
+      "attribution": "broker switch",
+      "status": "drift",
+      "actual": "missing:scripts/__mutant_dead_path_does_not_exist__.sh",
+      "caught": true
+    },
+    {
+      "seed_kind": "sha_one_char",
+      "kind": "sha",
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 15,
+      "orig_claimed": "11099b2a",
+      "mutant_claimed": "11099b20",
+      "attribution": "early_server_range_break_flat_v2.json",
+      "status": "unresolvable",
+      "actual": "no file for attr='early_server_range_break_flat_v2.json'",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_digit",
+      "kind": "metric",
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 94,
+      "orig_claimed": "PF 0.553",
+      "mutant_claimed": "PF 0.559",
+      "attribution": "asia_box_london_sweep_fade_flat",
+      "status": "unresolvable",
+      "actual": "checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md']; claimed='PF 0.559'",
+      "caught": true
+    },
+    {
+      "seed_kind": "inverted_disposition",
+      "kind": "disposition",
+      "file": "docs/README.md",
+      "line": 18,
+      "orig_claimed": "promote=no",
+      "mutant_claimed": "promote=true",
+      "attribution": "offline backtest paths",
+      "status": "drift",
+      "actual": "standing promote='no'",
+      "caught": true
+    }
+  ],
+  "broken_caught": 0
+}

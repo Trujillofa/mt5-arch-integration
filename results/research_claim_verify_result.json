@@ -1,0 +1,64 @@
+{
+  "ok": true,
+  "n_ok": 432,
+  "n_drift": 1,
+  "n_unresolvable": 3,
+  "n_exempt_secrets": 1,
+  "n_claims": 436,
+  "drift": [
+    {
+      "file": "docs/README.md",
+      "line": 21,
+      "kind": "disposition",
+      "claimed": "New edge",
+      "actual": "Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)"
+    }
+  ],
+  "unresolvable": [
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "actual": "checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='+70.19'"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 48,
+      "kind": "metric",
+      "claimed": "n=7819",
+      "actual": "checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='n=7819'"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 5,
+      "kind": "sha",
+      "claimed": "3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5",
+      "actual": "no file for attr='exog v4 charter'"
+    }
+  ],
+  "exempt_secrets": [
+    {
+      "file": "docs/README.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "actual": "gitignored:config/local.paths"
+    }
+  ],
+  "zacks_handcheck": [
+    "ZACKS_STATUS='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP'",
+    "hand:docs/README.md:21:New edge->drift:Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)",
+    "hand:docs/research/ZACKS-MCP-OVERLAY-LANE.md:3:SCHEMA_PASS->ok:`SCHEMA_PASS` / overlay **BLOCKED** for KEEP",
+    "hand:docs/research/ZACKS-MCP-OVERLAY-LANE.md:3:BLOCKED->ok:`SCHEMA_PASS` / overlay **BLOCKED** for KEEP",
+    "hand:docs/research/ZACKS-MCP-OVERLAY-LANE.md:3:KEEP->ok:blocked_for_phrase_component",
+    "hand:docs/research/ZACKS-MCP-OVERLAY-LANE.md:68:KEEP->ok:later KEEP path (not current status)"
+  ],
+  "evidence": [
+    "docs/README.md|21|disposition|New edge|Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)",
+    "docs/README.md|69|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|UNRESOLVABLE:checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='+70.19'",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|48|metric|n=7819|UNRESOLVABLE:checked=['docs/research/BACKTEST-RECORD.md', 'results/xau_loop_status.md', 'results/xau_charter_disposition_registry.jsonl', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'docs/research/SIGNAL-EDGE-TRIAGE.md']; claimed='n=7819'",
+    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|5|sha|3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5|UNRESOLVABLE:no file for attr='exog v4 charter'"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "ok": true,
+  "all_red": true,
+  "n_controls": 4,
+  "n_red": 4,
+  "controls": [
+    {
+      "name": "missing_path_non_secrets",
+      "claim": {
+        "file": "docs/README.md",
+        "line": 40,
+        "kind": "path",
+        "claimed": "scripts/__negctrl_missing_path_does_not_exist__.sh",
+        "attribution": "broker switch"
+      },
+      "status": "drift",
+      "actual": "missing:scripts/__negctrl_missing_path_does_not_exist__.sh",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "secrets_context_not_gitignored",
+      "claim": {
+        "file": "docs/README.md",
+        "line": 69,
+        "kind": "path",
+        "claimed": "scripts/__negctrl_secrets_ctx_not_ignored__.py",
+        "attribution": "never-commit instruction context"
+      },
+      "status": "drift",
+      "actual": "missing:scripts/__negctrl_secrets_ctx_not_ignored__.py",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "standalone_KEEP",
+      "claim": {
+        "file": "docs/research/BACKTEST-RECORD.md",
+        "line": 1,
+        "kind": "disposition",
+        "claimed": "KEEP",
+        "attribution": "asia_box_london_sweep_fade_flat standalone KEEP assertion"
+      },
+      "status": "drift",
+      "actual": "asia_box_london_sweep_fade_flat:SCREEN_FAIL",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "KEEP_vs_SCREEN_FAIL_family",
+      "claim": {
+        "file": "docs/research/BACKTEST-RECORD.md",
+        "line": 20,
+        "kind": "disposition",
+        "claimed": "KEEP",
+        "attribution": "asia_box_london_sweep_fade_flat"
+      },
+      "status": "drift",
+      "actual": "asia_box_london_sweep_fade_flat:SCREEN_FAIL",
+      "must_be_red": true,
+      "is_red": true
+    }
+  ],
+  "evidence": "missing_path_non_secrets=drift:RED; secrets_context_not_gitignored=drift:RED; standalone_KEEP=drift:RED; KEEP_vs_SCREEN_FAIL_family=drift:RED"
+}
