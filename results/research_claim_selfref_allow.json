@@ -1,90 +1,140 @@
 {
   "schema": "research_claim_selfref_allow_v1",
-  "note": "Each entry is a human-reviewed self-referential metric with no tracked results/ write-up that carries the figure. Silent accumulation is forbidden — add a reason per claim.",
+  "note": "Regenerated after full tracked results/** search. Each entry carries n_searched from attribution-gated full-tree search. Reasons must not assert missing artifacts on a partial search.",
+  "search_scope": "git ls-files results/** (excluding csv/instrument_data/research_claim_*)",
+  "n_results_tracked": 184,
   "allow": [
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
+      "kind": "metric",
+      "claimed": "n < 100",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "Qualitative thin-n threshold prose in the SoT ledger, not a concrete oracle figure. Full-tree search found no structured n_signals/profit_factor match."
+    },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 50,
       "kind": "metric",
       "claimed": "+70.19",
-      "reason": "Lane-all triage table is the primary record of signal_edge_diagnostic.py --lane all (tool writes nothing). No results/*.md carries this XAU edge; eurusd_ny_scalp_signal_diagnostic.md is the EURUSD regression subsection only."
+      "n_searched": 17,
+      "searched_sample": [
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json"
+      ],
+      "reason": "Lane-all triage table is the primary record of signal_edge_diagnostic.py --lane all (tool writes nothing). Full-tree exog-tied search found no matching signed edge in results/**."
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 55,
       "kind": "metric",
       "claimed": "n=80",
-      "reason": "US CLEARS-FRICTION row lives only in the lane-all triage table (tool writes nothing to results/)."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "US CLEARS-FRICTION n from lane-all triage table only; no results/** write-up stores this n under a tied artifact. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 55,
       "kind": "metric",
       "claimed": "t +2.44",
-      "reason": "t-stat for ny_cash_liquidity_sweep from lane-all triage table; no separate results write-up."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "t-stat for ny_cash_liquidity_sweep recorded only in the triage table (tool writes nothing). (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 68,
       "kind": "metric",
       "claimed": "n=92",
-      "reason": "US CLEARS-FRICTION row for m5_zscore_tick_vol_exhaustion; triage table is primary."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "US CLEARS-FRICTION n for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 68,
       "kind": "metric",
       "claimed": "t +2.24",
-      "reason": "t-stat for m5_zscore_tick_vol_exhaustion from lane-all triage table; no separate results write-up."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "t-stat for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 65,
       "kind": "metric",
       "claimed": "n=0",
-      "reason": "EMPTY/zero-signal row recorded only in the triage table."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v6.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v6.md"
+      ],
+      "reason": "EMPTY/zero-signal row recorded only in the triage table. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
       "line": 22,
       "kind": "metric",
       "claimed": "t 2.44",
-      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in SIGNAL-EDGE-TRIAGE.md (docs peer), not a results/ artifact."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
       "line": 22,
       "kind": "metric",
       "claimed": "t 2.24",
-      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in SIGNAL-EDGE-TRIAGE.md (docs peer), not a results/ artifact."
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 95,
-      "kind": "metric",
-      "claimed": "pooled PF 0.903",
-      "reason": "BACKTEST-RECORD is the curated SoT ledger for closed XAU screens; pooled PF 0.903 is summarized there without a matching results/*.json profit_factor field at that precision."
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 133,
-      "kind": "metric",
-      "claimed": "pooled PF 0.90",
-      "reason": "Rounded restatement of the SoT ledger row; no separate results artifact at two-decimal pooled PF."
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 111,
-      "kind": "metric",
-      "claimed": "n < 100",
-      "reason": "Qualitative thin-n threshold prose in the SoT ledger, not a concrete oracle figure."
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 13,
       "kind": "metric",
       "claimed": "0 eligible",
-      "reason": "Design-doc summary of develop-eligible count; write-up path not labeled on that line and figure is narrative."
+      "n_searched": 31,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Design-doc narrative count; no Write-up label on that line and no structured eligible-count field matched in tied results/**. (full-tree attribution-gated search n_searched=31.)"
     }
   ]
 }

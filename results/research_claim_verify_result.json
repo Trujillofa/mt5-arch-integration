@@ -1,13 +1,14 @@
 {
   "ok": true,
-  "n_ok": 413,
+  "n_ok": 415,
   "n_drift": 1,
   "n_unresolvable": 0,
   "n_sha_unresolvable": 0,
   "n_exempt_secrets": 1,
-  "n_self_referential": 12,
+  "n_self_referential": 10,
   "n_selfref_unallowlisted": 0,
   "n_skipped_dates": 10,
+  "n_results_tracked": 184,
   "n_claims": 436,
   "drift": [
     {
@@ -31,87 +32,73 @@
   "self_referential": [
     {
       "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 95,
-      "kind": "metric",
-      "claimed": "pooled PF 0.903",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
       "line": 111,
       "kind": "metric",
       "claimed": "n < 100",
-      "actual": "claiming_file_only searched=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 133,
-      "kind": "metric",
-      "claimed": "pooled PF 0.90",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=1; scope_results=184; sample=['results/xau_loop_status.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 50,
       "kind": "metric",
       "claimed": "+70.19",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 55,
       "kind": "metric",
       "claimed": "n=80",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 55,
       "kind": "metric",
       "claimed": "t +2.44",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 68,
       "kind": "metric",
       "claimed": "n=92",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 68,
       "kind": "metric",
       "claimed": "t +2.24",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 65,
       "kind": "metric",
       "claimed": "n=0",
-      "actual": "claiming_file_only searched=['results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
       "line": 22,
       "kind": "metric",
       "claimed": "t 2.44",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
       "line": 22,
       "kind": "metric",
       "claimed": "t 2.24",
-      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 13,
       "kind": "metric",
       "claimed": "0 eligible",
-      "actual": "claiming_file_only searched=['results/xau_loop_status.md']"
+      "actual": "claiming_file_only n_searched=31; scope_results=184; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
     }
   ],
   "zacks_handcheck": [
@@ -125,23 +112,21 @@
   "evidence": [
     "docs/README.md|21|disposition|New edge|Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)",
     "docs/README.md|69|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
-    "docs/research/BACKTEST-RECORD.md|95|metric|pooled PF 0.903|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|111|metric|n < 100|SELF_REF:claiming_file_only searched=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|133|metric|pooled PF 0.90|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
+    "docs/research/BACKTEST-RECORD.md|111|metric|n < 100|SELF_REF:claiming_file_only n_searched=1; scope_results=184; sample=['results/xau_loop_status.md']",
     "docs/research/HOWTO-BACKTEST-PATHS.md|15|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|17|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|18|metric|2026-06-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|18|metric|2026-07-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|19|metric|2025-03-01|SKIPPED_DATE",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|n=80|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|t +2.44|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|n=92|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|t +2.24|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|65|metric|n=0|SELF_REF:claiming_file_only searched=['results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.44|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.24|SELF_REF:claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
-    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|13|metric|0 eligible|SELF_REF:claiming_file_only searched=['results/xau_loop_status.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|SELF_REF:claiming_file_only n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|n=80|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|t +2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|n=92|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|t +2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE.md|65|metric|n=0|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=184; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|13|metric|0 eligible|SELF_REF:claiming_file_only n_searched=31; scope_results=184; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
     "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md|90|metric|2026-06-01|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2021-09-15|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2026-08-20|SKIPPED_DATE",

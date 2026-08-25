@@ -125,13 +125,11 @@ let p3 = "";
 p3 += "Work ONLY in " + wt + "\n" + rules;
 p3 += "Run the tracked mutant gate (do not reimplement):\n";
 p3 += "  python3 scripts/research_claim_mutant.py --out results/research_claim_mutant_result.json\n";
-p3 += "It must: seed >=5 known-bad claims in scratch only; route them through ";
+p3 += "It must: seed >=6 known-bad claims in scratch only; route them through ";
 p3 += "scripts/research_claim_verify.resolve_one (same entry as Verify); ";
-p3 += "score caught ONLY when status==drift (unresolvable is NOT caught); ";
-p3 += "include metric_digit in a restating doc AND metric_md_writeup backed by results/*.md; ";
-p3 += "temporarily break the verifier and prove gate_can_fail=true; ";
-p3 += "then restore and show mutant_caught=true with 5/5 all status==drift. ";
-p3 += "ok=true only if mutant_caught AND gate_can_fail.\n";
+p3 += "score caught ONLY when status==drift; include metric_digit, metric_md_writeup, ";
+p3 += "AND metric_nested_json (results/xau_runs/*/report.json); ";
+p3 += "prove gate_can_fail=true; mutant_caught=true with 6/6 all status==drift.\n";
 let mut = agent(p3, #{ label: "mutant", capability_mode: "execute", cwd: wt, output_schema: mut_schema });
 if mut == () || !mut.success || mut.output == () || mut.output.ok != true {
     complete(#{ ok: false, summary: "Mutant gate failed to run", mutant: mut });

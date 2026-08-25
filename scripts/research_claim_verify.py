@@ -648,17 +648,16 @@ def _named_result_artifacts(claim: dict) -> list[str]:
     return out
 
 
+
 def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
     """Structured metric match — reject CSV/price-row coincidence and bare float substrings."""
     if not txt:
         return False
-    # Never resolve metrics from raw instrument CSVs or non-results binary-ish paths.
     pl = path.replace("\\", "/").lower()
     if pl.endswith(".csv") or "/instrument_data/" in pl or pl.startswith("instrument_data/"):
         return False
 
     claimed = claimed.strip()
-    # n=7819
     m = re.fullmatch(r"n\s*=\s*(\d+)", claimed, re.I)
     if m:
         n = m.group(1)
@@ -670,7 +669,6 @@ def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
         ]
         return any(re.search(p, txt, re.I) for p in patterns)
 
-    # t 2.44 / t +2.44
     m = re.fullmatch(r"t\s*[+]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
     if m:
         num = m.group(1)
@@ -682,24 +680,18 @@ def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
         ]
         return any(re.search(p, txt, re.I) for p in patterns)
 
-    # PF 0.80 / profit_factor
     m = re.search(r"(?:PF|profit_factor)\s*[~≈]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
     if m:
         num = m.group(1)
+        # Markdown / text: exact display forms (rounding handled for JSON walk separately)
         patterns = [
-            rf"\bprofit_factor\b[^0-9]{{0,20}}{re.escape(num)}",
             rf"\bPF\b[^0-9]{{0,10}}{re.escape(num)}\b",
             rf"\*\*{re.escape(num)}\*\*",
             rf"\|\s*{re.escape(num)}\s*\|",
+            rf"profit_factor[^\n]{{0,40}}{re.escape(num)}",
         ]
-        # JSON: accept 0.80 matching profit_factor 0.803…
-        if path.endswith(".json") and re.search(
-            rf'"profit_factor"\s*:\s*{re.escape(num)}', txt
-        ):
-            return True
         return any(re.search(p, txt, re.I) for p in patterns)
 
-    # holdout 0.96 / 0.96 holdout
     m = re.search(r"(?:holdout\s*)?([0-9]+\.[0-9]+)\s*(?:holdout)?", claimed, re.I)
     if m and "holdout" in claimed.lower():
         num = m.group(1)
@@ -710,25 +702,19 @@ def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
         ):
             return True
         return bool(
-            re.search(
-                rf"\|\s*Holdout\s*\|[^\n]*\*\*?{re.escape(num)}",
-                txt,
-                re.I,
-            )
+            re.search(rf"\|\s*Holdout\s*\|[^\n]*\*\*?{re.escape(num)}", txt, re.I)
         )
 
-    # signed edge +70.19 / -11.85 / H50 −11.85 (unicode minus)
     m = re.search(r"([+−-]\d+\.\d+)", claimed)
     if m and (
         claimed.startswith(("+", "-", "−", "H", "t", "T"))
         or re.fullmatch(r"[+−-]\d+\.\d+", claimed)
     ):
         num = m.group(1).replace("−", "-")
-        # Normalize unicode minus in artifact text
         norm = txt.replace("−", "-")
         variants = {num, num.replace("-", "−")}
         if num.startswith(("+", "-")):
-            variants.add(num[1:])  # table cells sometimes drop the sign's twin
+            variants.add(num[1:])
         for v in variants:
             if re.search(rf"(?<![0-9.]){re.escape(v)}(?![0-9])", norm):
                 return True
@@ -736,25 +722,189 @@ def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
                 return True
         return False
 
-    # ratios like 0 / 205
     m = re.fullmatch(r"(\d+)\s*/\s*(\d+)", claimed)
     if m:
         a, b = m.group(1), m.group(2)
         return bool(re.search(rf"\b{a}\s*/\s*{b}\b", txt))
 
-    # Fallback: exact claimed string only (no bare numeric scatter)
     return claimed in txt
 
 
 def _text_has_metric(txt: str, claimed: str) -> bool:
-    """Backward-compatible wrapper used by older call sites."""
     return _metric_match(txt, claimed, path="")
 
 
-def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
-    """Resolve metric claims against results/ artifacts (json preferred, md allowed).
+def _tracked_results_files(tracked: set[str]) -> list[str]:
+    """All tracked files under results/ at any depth (git ls-files), excluding raw CSVs."""
+    out = []
+    for f in sorted(tracked):
+        if not f.startswith("results/"):
+            continue
+        fl = f.lower()
+        if fl.endswith(".csv") or "/instrument_data/" in fl:
+            continue
+        if "registry" in fl and fl.endswith(".jsonl"):
+            continue
+        # Never use the auditor's own outputs as metric oracles
+        base = f.rsplit("/", 1)[-1]
+        if base.startswith("research_claim"):
+            continue
+        out.append(f)
+    return out
 
-    docs/ peers are never oracles. Self-referential = only the claiming file supports it.
+
+def _attr_tokens(attr: str, src: str = "") -> list[str]:
+    """Family/lane tokens used to gate oracle paths."""
+    blob = f"{attr} {src}".lower()
+    toks = re.findall(r"[a-z][a-z0-9_]{4,}", blob)
+    # Drop noise
+    noise = {
+        "results", "docs", "research", "claim", "metric", "pooled", "profit",
+        "factor", "screen", "family", "attribution", "record", "backtest",
+        "write", "status", "loop", "charter", "json", "report",
+    }
+    out = []
+    seen = set()
+    for t in toks:
+        t = re.sub(r"_v\d+$", "", t)
+        t = t.rstrip("*")
+        if t in noise or len(t) < 5:
+            continue
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    # Aliases so lane jargon ties to artifact paths/search_ids
+    extras: list[str] = []
+    joined = " ".join(out)
+    if "mean_reversion" in joined or "reversion" in joined:
+        extras.extend(["ny_mr", "mr_limit", "mean_reversion", "eurusd_ny_mr"])
+    if "us100" in joined or "us_index" in joined or "flatten" in joined:
+        extras.extend(["us_index", "us100", "scalp_backtest"])
+    for t in extras:
+        if t not in seen:
+            seen.add(t)
+            out.append(t)
+    return out
+
+
+def _path_tied_to_attr(path: str, tokens: list[str]) -> bool:
+    if not tokens:
+        return False
+    pl = path.lower()
+    for t in tokens:
+        if t in pl:
+            return True
+        # prefix of multi-segment family ids (exog_london ⊂ exog_london_fx_...)
+        parts = t.split("_")
+        if len(parts) >= 2 and "_".join(parts[:2]) in pl and parts[0] in pl:
+            return True
+    return False
+
+
+def _content_tied_to_attr(path: str, tokens: list[str]) -> bool:
+    """True when artifact text mentions an attribution token (family_id / lane)."""
+    if not tokens:
+        return False
+    txt = (_read(path) or "")[:80000].lower()
+    if not txt:
+        return False
+    return any(t in txt for t in tokens)
+
+
+def _artifact_tied(path: str, tokens: list[str]) -> bool:
+    return _path_tied_to_attr(path, tokens) or _content_tied_to_attr(path, tokens)
+
+
+def _claimed_float(claimed: str) -> tuple[float, int, str] | None:
+    """Return (value, decimals, kind) for numeric metric claims."""
+    claimed = claimed.strip()
+    m = re.search(r"(?:PF|profit_factor|pooled\s+PF)\s*[~≈]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
+    if m:
+        s = m.group(1)
+        return float(s), len(s.split(".")[-1]), "pf"
+    m = re.fullmatch(r"n\s*=\s*(\d+)", claimed, re.I)
+    if m:
+        return float(m.group(1)), 0, "n"
+    m = re.fullmatch(r"t\s*[+]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
+    if m:
+        s = m.group(1)
+        return float(s), len(s.split(".")[-1]), "t"
+    m = re.search(r"([+−-]\d+\.\d+)", claimed)
+    if m and claimed[0:1] in "+-−HtT":
+        s = m.group(1).replace("−", "-")
+        return float(s), len(s.split(".")[-1].lstrip("-")), "signed"
+    return None
+
+
+def _round_eq(artifact: float, claimed: float, decimals: int) -> bool:
+    return round(artifact, decimals) == round(claimed, decimals)
+
+
+def _walk_json_numbers(obj: object, prefix: str = "") -> list[tuple[str, float]]:
+    """Yield (json_key_path, number) for every numeric leaf."""
+    out: list[tuple[str, float]] = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            p = f"{prefix}/{k}" if prefix else f"/{k}"
+            out.extend(_walk_json_numbers(v, p))
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            p = f"{prefix}/{i}"
+            out.extend(_walk_json_numbers(v, p))
+    elif isinstance(obj, bool):
+        return out
+    elif isinstance(obj, (int, float)):
+        out.append((prefix or "/", float(obj)))
+    return out
+
+
+def _json_pf_hit(path: str, claimed: str) -> tuple[bool, str]:
+    """Match PF/profit_factor in nested JSON with rounding; return (ok, key_path)."""
+    info = _claimed_float(claimed)
+    if info is None or info[2] not in {"pf", "n", "t", "signed"}:
+        return False, ""
+    claimed_v, decimals, kind = info
+    try:
+        obj = json.loads(_read(path) or "")
+    except Exception:
+        return False, ""
+    numbers = _walk_json_numbers(obj)
+    # Prefer semantically matching keys
+    preferred = []
+    other = []
+    for jp, val in numbers:
+        jl = jp.lower()
+        is_pref = (
+            (kind == "pf" and ("profit_factor" in jl or jl.endswith("/pf")))
+            or (kind == "n" and ("n_signals" in jl or jl.endswith("/n") or "n_trades" in jl))
+            or (kind == "t" and (jl.endswith("/t") or "t_stat" in jl or "/tstat" in jl))
+        )
+        if is_pref:
+            preferred.append((jp, val))
+        else:
+            other.append((jp, val))
+    for jp, val in preferred:
+        if _round_eq(val, claimed_v, decimals):
+            return True, jp
+    # Do NOT fall back to arbitrary numeric leaves — that is cross-field coincidence
+    return False, ""
+
+
+def _rank_results(f: str) -> tuple[int, str]:
+    if f.endswith(".json"):
+        return (0, f)
+    if f.endswith(".jsonl"):
+        return (1, f)
+    if f.endswith(".md"):
+        return (2, f)
+    return (5, f)
+
+
+def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
+    """Resolve metric claims against the full tracked results/** tree.
+
+    Named write-ups first. Attribution gates which artifacts may resolve a claim.
+    Nested JSON is walked by key path; floats round to the claim's precision.
     """
     claimed = claim["claimed"].strip()
     if _is_iso_date_metric(claimed):
@@ -764,77 +914,73 @@ def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
     src = claim["file"]
     tracked = tracked or run_git_ls_files()
     checked: list[str] = []
+    tokens = _attr_tokens(attr, "")
 
     def _is_results_artifact(f: str) -> bool:
         return f.startswith("results/") and f in tracked
 
-    # --- Pass 0: explicitly named write-up / artifact (strongest signal) ---
+    # --- Pass 0: explicitly named write-up (strongest) ---
     named = [f for f in _named_result_artifacts(claim) if _is_results_artifact(f)]
     named_tried: list[str] = []
     for f in named:
         checked.append(f)
         named_tried.append(f)
+        if f.endswith(".json"):
+            hit, jkey = _json_pf_hit(f, claimed)
+            if hit:
+                return "ok", f"named:{f}{jkey}"
+            # also allow text match inside json (rare)
         txt = _read(f)
         if txt is None:
             continue
         if _metric_match(txt, claimed, path=f):
             return "ok", f"named:{f}"
+        # JSON walk miss already handled; md miss → continue other named
+        if f.endswith((".md", ".txt")) and not _metric_match(txt, claimed, path=f):
+            pass
     if named_tried:
-        # Doc named an artifact that does not contain the figure → drift
-        return "drift", f"named_writeup_miss:{named_tried[0]}; checked={checked!r}"
+        # All named files missed (ok returns would have exited already).
+        return "drift", f"named_writeup_miss:{named_tried[0]}; checked={checked!r}; n_searched={len(checked)}"
 
-    corpus = _metric_corpus(attr, src)
+    # --- Candidate set: full tracked results/** gated by attribution ---
+    all_results = _tracked_results_files(tracked)
+    n_results_scope = len(all_results)
+    if tokens:
+        # Path or content must tie to family_id/lane — full tree is visible to the gate.
+        candidates = [f for f in all_results if _artifact_tied(f, tokens)]
+    else:
+        # No attribution → keep legacy corpus only (do not open full tree ungated)
+        corpus = _metric_corpus(attr, src)
+        candidates = [f for f in corpus if _is_results_artifact(f) and f in all_results]
 
-    def _rank(f: str) -> tuple[int, str]:
-        if f.startswith("results/") and f.endswith(".json"):
-            return (0, f)
-        if f.startswith("results/") and f.endswith(".jsonl"):
-            return (1, f)
-        if f.startswith("results/") and f.endswith(".md"):
-            return (2, f)
-        return (9, f)  # docs/ and others last — never ok-oracles
+    candidates = sorted(set(candidates), key=_rank_results)
 
-    # Only tracked results/** count as oracles
-    results_corpus = [
-        f
-        for f in sorted(set(corpus), key=_rank)
-        if _is_results_artifact(f) and "registry" not in f
-    ]
-
-    # Pass 1: results/*.json
-    json_artifacts = [f for f in results_corpus if f.endswith(".json")]
+    # Pass 1: JSON (nested walk + rounding)
+    json_artifacts = [f for f in candidates if f.endswith(".json")]
     for f in json_artifacts:
         checked.append(f)
-        if _metric_match(_read(f) or "", claimed, path=f):
-            return "ok", f
+        hit, jkey = _json_pf_hit(f, claimed)
+        if hit:
+            return "ok", f"{f}{jkey}"
 
-    # Pass 2: results/*.md (repo convention: run write-ups)
-    md_artifacts = [f for f in results_corpus if f.endswith(".md")]
+    # Pass 2: results markdown write-ups
+    md_artifacts = [f for f in candidates if f.endswith(".md")]
     for f in md_artifacts:
         checked.append(f)
         if _metric_match(_read(f) or "", claimed, path=f):
             return "ok", f
 
-    # Results oracles searched but missed. If the claiming file also lacks the
-    # figure → drift (mutant / restating-doc disagreement). If only the claiming
-    # file has it → self_referential.
-    results_oracles = json_artifacts + md_artifacts
     src_txt = _read(src) or ""
     src_has = _metric_match(src_txt, claimed, path=src)
-    if (
-        results_oracles
-        and re.search(
-            r"(PF|n\s*=|profit_factor|\d+\s*/\s*\d+|[+-]?\d+\.\d+)", claimed, re.I
-        )
-        and any((_read(f) or "").strip() for f in results_oracles)
-        and not src_has
-    ):
-        return "drift", f"results_oracle_miss checked={checked!r}; claimed={claimed!r}"
+    searched_note = f"n_searched={len(checked)}; scope_results={n_results_scope}; sample={checked[:5]!r}"
+
+    if checked and not src_has and _claimed_float(claimed) is not None:
+        return "drift", f"results_oracle_miss {searched_note}; claimed={claimed!r}"
 
     if src_has:
-        return "self_referential", f"claiming_file_only searched={checked!r}"
+        return "self_referential", f"claiming_file_only {searched_note}"
 
-    return "unresolvable", f"checked={checked!r}; claimed={claimed!r}"
+    return "unresolvable", f"{searched_note}; claimed={claimed!r}"
 
 
 
@@ -1019,7 +1165,17 @@ def _selfref_allowlisted(row: dict, allow: list[dict]) -> bool:
             and a.get("kind") == row.get("kind")
             and a.get("claimed") == row.get("claimed")
             and (a.get("reason") or "").strip()
+            and int(a.get("n_searched") or 0) > 0
+            and isinstance(a.get("searched_sample"), list)
         ):
+            # Reject reasons that assert no-artifact without full-tree provenance
+            reason = str(a.get("reason") or "").lower()
+            if (
+                ("no separate results artifact" in reason or "no results artifact" in reason)
+                and "full tree" not in reason
+                and "n_searched" not in reason
+            ):
+                continue
             return True
     return False
 
@@ -1120,6 +1276,7 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
         1 for r in self_referential if not _selfref_allowlisted(r, allow)
     )
     ok = n_sha_unresolvable == 0 and n_selfref_unallowlisted == 0
+    n_results_tracked = len(_tracked_results_files(tracked))
     return {
         "ok": ok,
         "n_ok": n_ok,
@@ -1130,6 +1287,7 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
         "n_self_referential": n_self_referential,
         "n_selfref_unallowlisted": n_selfref_unallowlisted,
         "n_skipped_dates": n_skipped_dates,
+        "n_results_tracked": n_results_tracked,
         "n_claims": len(claims),
         "drift": drift,
         "unresolvable": unresolvable,
@@ -1303,6 +1461,72 @@ def run_negative_controls() -> dict:
         }
     )
 
+    # 9) Rounding must not swallow real disagreement at claimed precision
+    check(
+        "precision_disagreement_not_rounded_away",
+        {
+            "file": "docs/README.md",
+            "line": 1,
+            "kind": "metric",
+            "claimed": "pooled PF 0.913",
+            "attribution": "exog_london_fx_cosign_xau_follow_flat",
+        },
+    )
+
+    # 10) Cross-family numeric collision is NOT ok
+    st_xf, act_xf = resolve_one(
+        {
+            "file": "docs/README.md",
+            "line": 1,
+            "kind": "metric",
+            "claimed": "pooled PF 0.903",
+            "attribution": "asia_box_london_sweep_fade_flat",
+        },
+        tracked,
+    )
+    controls.append(
+        {
+            "name": "cross_family_numeric_collision",
+            "claim": {
+                "claimed": "pooled PF 0.903",
+                "attribution": "asia_box_london_sweep_fade_flat",
+            },
+            "status": st_xf,
+            "actual": act_xf,
+            "must_be_red": True,
+            "is_red": st_xf != "ok",
+        }
+    )
+
+    # 11) Untracked results/ file is NOT an oracle
+    probe = ROOT / "results" / "_audit_untracked_probe.json"
+    probe.write_text(
+        json.dumps({"report": {"pooled": {"profit_factor": 0.777123456}}}) + "\n"
+    )
+    try:
+        st_ut, act_ut = resolve_one(
+            {
+                "file": "docs/README.md",
+                "line": 1,
+                "kind": "metric",
+                "claimed": "pooled PF 0.777",
+                "attribution": "exog_london_fx_cosign_xau_follow_flat",
+            },
+            tracked,
+        )
+        controls.append(
+            {
+                "name": "untracked_results_not_oracle",
+                "claim": {"claimed": "pooled PF 0.777", "probe": str(probe)},
+                "status": st_ut,
+                "actual": act_ut,
+                "must_be_red": True,
+                "is_red": st_ut != "ok",
+            }
+        )
+    finally:
+        probe.unlink(missing_ok=True)
+
     n_red = sum(1 for c in controls if c["is_red"])
     all_red = n_red == len(controls)
     return {
@@ -1367,6 +1591,7 @@ def main(argv: list[str] | None = None) -> int:
         "n_self_referential": report.get("n_self_referential", 0),
         "n_selfref_unallowlisted": report.get("n_selfref_unallowlisted", 0),
         "n_skipped_dates": report.get("n_skipped_dates", 0),
+        "n_results_tracked": report.get("n_results_tracked", 0),
         "n_claims": report["n_claims"],
         "out": out_disp,
     }

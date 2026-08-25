@@ -71,6 +71,7 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         "sha": None,
         "metric": None,
         "metric_md": None,
+        "metric_nested": None,
         "disposition": None,
     }
     preferred = [
@@ -88,7 +89,6 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         ),
         (
             "metric",
-            # Restating doc (NOT BACKTEST-RECORD) so a results oracle survives.
             lambda c: c["kind"] == "metric"
             and "PF" in c["claimed"]
             and not str(c["file"]).endswith("BACKTEST-RECORD.md")
@@ -100,12 +100,19 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         ),
         (
             "metric_md",
-            # Metric backed by a named/results/*.md write-up (exercises md oracle path).
             lambda c: c["kind"] == "metric"
             and c["claimed"].startswith("PF ")
             and re.search(r"PF\s+\d+\.\d+", c["claimed"])
             and "US-INDEX-SESSION-SCALP-DESIGN" in str(c["file"])
             and c.get("line") == 92,
+        ),
+        (
+            "metric_nested",
+            # Nested results/xau_runs/*/report.json oracle (exercises full-tree search).
+            lambda c: c["kind"] == "metric"
+            and "pooled PF" in c["claimed"]
+            and str(c["file"]).endswith("BACKTEST-RECORD.md")
+            and c.get("line") in (95, 133),
         ),
         (
             "disposition",
@@ -119,10 +126,13 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
                 st, act = v.resolve_one(c, tracked)
                 if st != "ok":
                     continue
-                if kind in ("metric", "metric_md") and not _act_is_results_oracle(str(act)):
+                if kind in ("metric", "metric_md", "metric_nested") and not _act_is_results_oracle(
+                    str(act)
+                ):
                     continue
-                # metric_md must specifically hit a .md write-up
                 if kind == "metric_md" and ".md" not in str(act):
+                    continue
+                if kind == "metric_nested" and "xau_runs/" not in str(act):
                     continue
                 wanted[kind] = c
                 break
@@ -133,10 +143,12 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         if kind in ("path", "sha", "disposition") and wanted.get(kind) is None:
             keys.append(kind)
         if kind == "metric":
-            if wanted["metric"] is None:
+            if wanted["metric"] is None and not str(c["file"]).endswith("BACKTEST-RECORD.md"):
                 keys.append("metric")
             if wanted["metric_md"] is None and "US-INDEX" in str(c["file"]):
                 keys.append("metric_md")
+            if wanted["metric_nested"] is None and str(c["file"]).endswith("BACKTEST-RECORD.md"):
+                keys.append("metric_nested")
         for key in keys:
             if key in ("metric", "metric_md") and (
                 str(c["file"]).endswith("BACKTEST-RECORD.md")
@@ -146,9 +158,13 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
             st, act = v.resolve_one(c, tracked)
             if st != "ok":
                 continue
-            if key in ("metric", "metric_md") and not _act_is_results_oracle(str(act)):
+            if key in ("metric", "metric_md", "metric_nested") and not _act_is_results_oracle(
+                str(act)
+            ):
                 continue
             if key == "metric_md" and ".md" not in str(act):
+                continue
+            if key == "metric_nested" and "xau_runs/" not in str(act):
                 continue
             wanted[key] = c
             break
@@ -184,6 +200,16 @@ def _seed_mutants(anchors: dict[str, dict]) -> list[dict]:
             "seed_kind": "metric_md_writeup",
             "orig": anchors["metric_md"],
             "mutant": met_md,
+        }
+    )
+
+    met_n = deepcopy(anchors["metric_nested"])
+    met_n["claimed"] = flip_metric_digit(met_n["claimed"])
+    seeds.append(
+        {
+            "seed_kind": "metric_nested_json",
+            "orig": anchors["metric_nested"],
+            "mutant": met_n,
         }
     )
 

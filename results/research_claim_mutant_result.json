@@ -2,9 +2,9 @@
   "ok": true,
   "mutant_caught": true,
   "gate_can_fail": true,
-  "n_seeded": 5,
-  "n_caught": 5,
-  "evidence": "gate_can_fail=True (broken verifier caught 0/5); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
+  "n_seeded": 6,
+  "n_caught": 6,
+  "evidence": "gate_can_fail=True (broken verifier caught 0/6); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
   "per_seed": [
     {
       "seed_kind": "dead_path",
@@ -39,7 +39,7 @@
       "mutant_claimed": "PF 0.89",
       "attribution": "flatten US100",
       "status": "drift",
-      "actual": "results_oracle_miss checked=['results/us_index_session_scalp_backtest.json', 'results/eurusd_ny_scalp_autoresearch.md', 'results/us_index_session_playbook_v2.md', 'results/us_index_session_scalp_backtest.md', 'results/us_index_session_structure_v3.md', 'results/us_index_session_v4.md', 'results/us_index_session_v4_cost_size_once.md', 'results/us_index_session_v5.md', 'results/us_index_session_v6.md', 'results/us_index_session_v7.md', 'results/us_index_session_v8.md', 'results/xau_loop_status.md']; claimed='PF 0.89'",
+      "actual": "results_oracle_miss n_searched=33; scope_results=184; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']; claimed='PF 0.89'",
       "caught": true
     },
     {
@@ -51,7 +51,19 @@
       "mutant_claimed": "PF 0.89",
       "attribution": "US100 all",
       "status": "drift",
-      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']; n_searched=1",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_nested_json",
+      "kind": "metric",
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 95,
+      "orig_claimed": "pooled PF 0.903",
+      "mutant_claimed": "pooled PF 0.909",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat",
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.909'",
       "caught": true
     },
     {
