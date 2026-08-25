@@ -72,8 +72,9 @@ if wt == () {
 }
 
 let rules = "";
-rules += "HARD: never edit results/xau_charters/*, results/*_lock.json, results/xau_loop_status.md, ";
-rules += "strategy_params.json, or any *.sha256. Never edit docs to make the run green. ";
+rules += "HARD: never edit CLAUDE.md or AGENTS.md (instruction drift is reported, never repaired). ";
+rules += "Never edit results/xau_charters/*, results/*_lock.json, results/xau_loop_status.md, ";
+rules += "strategy_params.json, any *.sha256, or results/xau_runs/*. Never edit docs to make the run green. ";
 rules += "No revival, no retunes, no holdout, no --live, no OrderSend, no src/mt5_arch edits. ";
 rules += "Standing RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS / promote=no / live_go=false — do not change. ";
 rules += "python3 for research scripts. Lint: uv run ruff check src tests AND ";
@@ -83,12 +84,11 @@ rules += "Phase handoff via results/*.json only — no /tmp dependency. Auditor 
 phase("Extract");
 let p1 = "";
 p1 += "Work ONLY in " + wt + "\n" + rules;
-p1 += "Confirm results/research_claim_inventory.json exists (slim claims). ";
-p1 += "If missing, rebuild from docs/**/*.md with kinds path/link/sha/symbol/metric/disposition. ";
-p1 += "Disposition rule: treat 'BLOCKED for KEEP' (and blocked for <DISP>) as ONE token — ";
-p1 += "do not emit a trailing KEEP claim from that phrase. ";
-p1 += "Do not edit docs. Return counts from the inventory JSON. ";
-p1 += "inventory_path=results/research_claim_inventory.json. ok=true if inventory present with n_claims>0.\n";
+p1 += "Confirm results/research_claim_inventory.json exists. Refresh via: ";
+p1 += "python3 scripts/research_claim_verify.py --out results/research_claim_verify_result.json ";
+p1 += "(verify merges CLAUDE.md/AGENTS.md/README.md/mql5/README.md + consistency claims). ";
+p1 += "HARD: never edit CLAUDE.md or AGENTS.md. Return n_claims and n_instruction_claims. ";
+p1 += "inventory_path=results/research_claim_inventory.json. ok=true if n_claims>0.\n";
 let ext = agent(p1, #{ label: "extract", capability_mode: "execute", cwd: wt, output_schema: ext_schema });
 if ext == () || !ext.success || ext.output == () || ext.output.ok != true {
     complete(#{ ok: false, summary: "Extract failed", extract: ext });
@@ -125,11 +125,10 @@ let p3 = "";
 p3 += "Work ONLY in " + wt + "\n" + rules;
 p3 += "Run the tracked mutant gate (do not reimplement):\n";
 p3 += "  python3 scripts/research_claim_mutant.py --out results/research_claim_mutant_result.json\n";
-p3 += "It must: seed >=6 known-bad claims in scratch only; route them through ";
-p3 += "scripts/research_claim_verify.resolve_one (same entry as Verify); ";
-p3 += "score caught ONLY when status==drift; include metric_digit, metric_md_writeup, ";
-p3 += "AND metric_nested_json (results/xau_runs/*/report.json); ";
-p3 += "prove gate_can_fail=true; mutant_caught=true with 6/6 all status==drift.\n";
+p3 += "It must: seed >=8 known-bad claims in scratch only; route through resolve_one; ";
+p3 += "caught ONLY when status==drift; include metric_nested_json, instruction_stale, ";
+p3 += "consistency_broker (scratch site copy — never edit real CLAUDE.md/AGENTS.md); ";
+p3 += "gate_can_fail=true; mutant_caught=true with 8/8 all status==drift.\n";
 let mut = agent(p3, #{ label: "mutant", capability_mode: "execute", cwd: wt, output_schema: mut_schema });
 if mut == () || !mut.success || mut.output == () || mut.output.ok != true {
     complete(#{ ok: false, summary: "Mutant gate failed to run", mutant: mut });

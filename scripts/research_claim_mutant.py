@@ -72,6 +72,8 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         "metric": None,
         "metric_md": None,
         "metric_nested": None,
+        "instruction_ok": None,
+        "consistency_ok": None,
         "disposition": None,
     }
     preferred = [
@@ -115,6 +117,19 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
             and c.get("line") in (95, 133),
         ),
         (
+            "instruction_ok",
+            lambda c: c["kind"] == "path"
+            and c.get("file") in ("CLAUDE.md", "AGENTS.md", "README.md", "mql5/README.md")
+            and c["claimed"].startswith("scripts/")
+            and c["claimed"].endswith(".sh"),
+        ),
+        (
+            "consistency_ok",
+            lambda c: c["kind"] == "consistency"
+            and c.get("claimed") == "broker_roster_coverage"
+            and c.get("site") == "scripts/19-run-htf-fib-backtest.sh",
+        ),
+        (
             "disposition",
             lambda c: c["kind"] == "disposition"
             and c["claimed"] in ("promote=no", "promote=false"),
@@ -133,6 +148,10 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
                 if kind == "metric_md" and ".md" not in str(act):
                     continue
                 if kind == "metric_nested" and "xau_runs/" not in str(act):
+                    continue
+                if kind == "instruction_ok" and st != "ok":
+                    continue
+                if kind == "consistency_ok" and st != "ok":
                     continue
                 wanted[kind] = c
                 break
@@ -179,7 +198,8 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
     return wanted  # type: ignore[return-value]
 
 
-def _seed_mutants(anchors: dict[str, dict]) -> list[dict]:
+
+def _seed_mutants(anchors: dict[str, dict], root: Path | None = None) -> list[dict]:
     seeds = []
     path_c = deepcopy(anchors["path"])
     path_c["claimed"] = "scripts/__mutant_dead_path_does_not_exist__.sh"
@@ -196,27 +216,50 @@ def _seed_mutants(anchors: dict[str, dict]) -> list[dict]:
     met_md = deepcopy(anchors["metric_md"])
     met_md["claimed"] = flip_metric_digit(met_md["claimed"])
     seeds.append(
-        {
-            "seed_kind": "metric_md_writeup",
-            "orig": anchors["metric_md"],
-            "mutant": met_md,
-        }
+        {"seed_kind": "metric_md_writeup", "orig": anchors["metric_md"], "mutant": met_md}
     )
 
     met_n = deepcopy(anchors["metric_nested"])
     met_n["claimed"] = flip_metric_digit(met_n["claimed"])
     seeds.append(
-        {
-            "seed_kind": "metric_nested_json",
-            "orig": anchors["metric_nested"],
-            "mutant": met_n,
-        }
+        {"seed_kind": "metric_nested_json", "orig": anchors["metric_nested"], "mutant": met_n}
     )
 
     disp_c = deepcopy(anchors["disposition"])
     disp_c["claimed"] = invert_disposition(disp_c["claimed"])
     seeds.append(
         {"seed_kind": "inverted_disposition", "orig": anchors["disposition"], "mutant": disp_c}
+    )
+
+    # instruction_stale — scratch claim only (never edit real CLAUDE.md / AGENTS.md)
+    inst = deepcopy(anchors["instruction_ok"])
+    inst["claimed"] = "scripts/__mutant_instruction_stale_missing__.sh"
+    seeds.append(
+        {"seed_kind": "instruction_stale", "orig": anchors["instruction_ok"], "mutant": inst}
+    )
+
+    # consistency_broker — scratch copy of enumerating site with one roster broker removed
+    import tempfile
+
+    root = root or Path.cwd()
+    cons_orig = anchors["consistency_ok"]
+    site = cons_orig.get("site") or "scripts/19-run-htf-fib-backtest.sh"
+    real_text = (root / site).read_text(encoding="utf-8", errors="replace")
+    scratch_text = "\n".join(
+        ln
+        for ln in real_text.splitlines()
+        if "FP Markets" not in ln and "fpmarkets" not in ln.lower()
+    )
+    td = Path(tempfile.mkdtemp(prefix="claim_mutant_cons_"))
+    scratch_path = td / Path(site).name
+    scratch_path.write_text(scratch_text + "\n", encoding="utf-8")
+    cons_m = deepcopy(cons_orig)
+    cons_m["site_path"] = str(scratch_path)
+    cons_m["site"] = site
+    cons_m["roster"] = list(cons_orig.get("roster") or ["fpmarkets", "vantage", "wsf"])
+    cons_m["generic_ok"] = False
+    seeds.append(
+        {"seed_kind": "consistency_broker", "orig": cons_orig, "mutant": cons_m}
     )
     return seeds
 
@@ -268,7 +311,7 @@ def run_gate(root: Path | None = None) -> dict:
 
     try:
         anchors = _pick_anchors(v, claims, tracked)
-        seeds = _seed_mutants(anchors)
+        seeds = _seed_mutants(anchors, root=Path(v.ROOT))
     except RuntimeError as e:
         return {
             "ok": False,

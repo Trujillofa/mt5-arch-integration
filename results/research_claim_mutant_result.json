@@ -2,9 +2,9 @@
   "ok": true,
   "mutant_caught": true,
   "gate_can_fail": true,
-  "n_seeded": 6,
-  "n_caught": 6,
-  "evidence": "gate_can_fail=True (broken verifier caught 0/6); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
+  "n_seeded": 8,
+  "n_caught": 8,
+  "evidence": "gate_can_fail=True (broken verifier caught 0/8); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True | instruction_stale: orig='scripts/lib.sh'->'scripts/__mutant_instruction_stale_missing__.sh' status=drift caught=True | consistency_broker: orig='broker_roster_coverage'->'broker_roster_coverage' status=drift caught=True",
   "per_seed": [
     {
       "seed_kind": "dead_path",
@@ -76,6 +76,30 @@
       "attribution": "offline backtest paths",
       "status": "drift",
       "actual": "standing promote='no'",
+      "caught": true
+    },
+    {
+      "seed_kind": "instruction_stale",
+      "kind": "path",
+      "file": "CLAUDE.md",
+      "line": 34,
+      "orig_claimed": "scripts/lib.sh",
+      "mutant_claimed": "scripts/__mutant_instruction_stale_missing__.sh",
+      "attribution": "instruction",
+      "status": "drift",
+      "actual": "missing:scripts/__mutant_instruction_stale_missing__.sh",
+      "caught": true
+    },
+    {
+      "seed_kind": "consistency_broker",
+      "kind": "consistency",
+      "file": "scripts/19-run-htf-fib-backtest.sh",
+      "line": 1,
+      "orig_claimed": "broker_roster_coverage",
+      "mutant_claimed": "broker_roster_coverage",
+      "attribution": "config/brokers/*.env",
+      "status": "drift",
+      "actual": "site=scripts/19-run-htf-fib-backtest.sh missing roster brokers ['fpmarkets']; roster=['fpmarkets', 'vantage', 'wsf']",
       "caught": true
     }
   ],

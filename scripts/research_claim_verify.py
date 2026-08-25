@@ -21,6 +21,25 @@ from pathlib import Path
 from urllib.parse import unquote
 
 
+def _load_instruction_mod():
+    import importlib.util
+    mod_path = Path(__file__).resolve().parent / "research_claim_instruction.py"
+    spec = importlib.util.spec_from_file_location("research_claim_instruction", mod_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {mod_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+_instr = _load_instruction_mod()
+INSTRUCTION_FILES = _instr.INSTRUCTION_FILES
+GENERIC_BRIDGE_SITE = _instr.GENERIC_BRIDGE_SITE
+htf_signal_docs_agree = _instr.htf_signal_docs_agree
+merge_instruction_into_inventory = _instr.merge_instruction_into_inventory
+resolve_consistency = _instr.resolve_consistency
+
+
 def _git_root(start: Path | None = None) -> Path:
     cwd = start or Path.cwd()
     out = subprocess.check_output(
@@ -912,6 +931,10 @@ def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
 
     attr = claim.get("attribution") or ""
     src = claim["file"]
+    # Instruction files restate figures for guidance — never metric oracles.
+    # (Repo-root README.md is in INSTRUCTION_FILES; docs/** READMEs remain normal docs.)
+    if src in INSTRUCTION_FILES:
+        return "unresolvable", "instruction_file_not_metric_oracle"
     tracked = tracked or run_git_ls_files()
     checked: list[str] = []
     tokens = _attr_tokens(attr, "")
@@ -1000,6 +1023,13 @@ def disposition_ok(claim: dict, tracked: set[str]) -> tuple[str, str]:
     # "BLOCKED for KEEP" is ONE status phrase — trailing KEEP is not a claim.
     if _blocked_for_phrase_component(claim):
         return "ok", "blocked_for_phrase_component"
+
+    # Instruction claim: "HTF Fib docs disagree on signal index" — verify agreement.
+    if claimed == "HTF Fib docs disagree on signal index":
+        agree, detail = htf_signal_docs_agree(ROOT)
+        if agree:
+            return "drift", f"stale instruction claim; {detail}"
+        return "ok", detail
 
     # Field-name-only keys referencing status
     if claimed in ("promote", "live_go", "next_step"):
@@ -1211,6 +1241,8 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
                 status, actual = resolve_metric(cl, tracked)
             elif kind == "disposition":
                 status, actual = disposition_ok(cl, tracked)
+            elif kind == "consistency":
+                status, actual = resolve_consistency(cl, ROOT)
             else:
                 status, actual = "unresolvable", f"unknown_kind={kind}"
         except Exception as e:  # noqa: BLE001 — auditor must not crash a claim
@@ -1298,10 +1330,17 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
     }
 
 
-def verify_all(inventory_path: Path | None = None) -> dict:
+def verify_all(inventory_path: Path | None = None, *, refresh_instruction: bool = True) -> dict:
     inv_path = inventory_path or INV
     data = json.loads(inv_path.read_text())
-    return verify_claims(data["claims"])
+    if refresh_instruction:
+        data = merge_instruction_into_inventory(ROOT, data)
+        inv_path.write_text(json.dumps(data, indent=2) + "\n")
+    report = verify_claims(data["claims"])
+    report["n_instruction_claims"] = data.get("n_instruction_claims", 0)
+    report["corpus"] = data.get("corpus", {})
+    report["instruction_files"] = data.get("instruction_files", list(INSTRUCTION_FILES))
+    return report
 
 
 def resolve_one(claim: dict, tracked: set[str] | None = None) -> tuple[str, str]:
@@ -1318,6 +1357,8 @@ def resolve_one(claim: dict, tracked: set[str] | None = None) -> tuple[str, str]
         return resolve_metric(claim, tracked)
     if kind == "disposition":
         return disposition_ok(claim, tracked)
+    if kind == "consistency":
+        return resolve_consistency(claim, ROOT)
     return "unresolvable", f"unknown_kind={kind}"
 
 
@@ -1527,6 +1568,71 @@ def run_negative_controls() -> dict:
     finally:
         probe.unlink(missing_ok=True)
 
+    # 12) Instruction-file claim contradicting its target doc → drift
+    check(
+        "instruction_contradicts_target",
+        {
+            "file": "CLAUDE.md",
+            "line": 67,
+            "kind": "disposition",
+            "claimed": "HTF Fib docs disagree on signal index",
+            "attribution": "mql5/README.md + docs/HOWTO-HTF-FIB.md",
+        },
+    )
+
+    # 13) Roster broker missing from enumerating site → drift
+    check(
+        "roster_broker_missing_from_site",
+        {
+            "file": "fetch_data.py",
+            "line": 1,
+            "kind": "consistency",
+            "claimed": "broker_roster_coverage",
+            "attribution": "config/brokers/*.env",
+            "site": "fetch_data.py",
+            "roster": ["fpmarkets", "vantage", "wsf"],
+            "generic_ok": False,
+        },
+    )
+
+    # 14) Metric claim must NOT resolve ok against CLAUDE.md
+    st_mo, act_mo = resolve_one(
+        {
+            "file": "CLAUDE.md",
+            "line": 1,
+            "kind": "metric",
+            "claimed": "PF 0.903",
+            "attribution": "exog_london_fx_cosign_xau_follow_flat",
+        },
+        tracked,
+    )
+    controls.append(
+        {
+            "name": "instruction_not_metric_oracle",
+            "claim": {"file": "CLAUDE.md", "claimed": "PF 0.903"},
+            "status": st_mo,
+            "actual": act_mo,
+            "must_be_red": True,
+            "is_red": st_mo != "ok",
+        }
+    )
+
+    # 15) Generic overridable default_bridge_dir is NOT missing-broker drift
+    check(
+        "generic_bridge_not_false_positive",
+        {
+            "file": GENERIC_BRIDGE_SITE,
+            "line": 23,
+            "kind": "consistency",
+            "claimed": "generic_bridge_default_exempt",
+            "attribution": "MT5_BRIDGE_DIR overridable",
+            "site": GENERIC_BRIDGE_SITE,
+            "roster": ["fpmarkets", "vantage", "wsf"],
+            "generic_ok": True,
+        },
+        expect_status="ok",  # red means: must stay ok (control checks is_red = status==expect)
+    )
+
     n_red = sum(1 for c in controls if c["is_red"])
     all_red = n_red == len(controls)
     return {
@@ -1592,6 +1698,7 @@ def main(argv: list[str] | None = None) -> int:
         "n_selfref_unallowlisted": report.get("n_selfref_unallowlisted", 0),
         "n_skipped_dates": report.get("n_skipped_dates", 0),
         "n_results_tracked": report.get("n_results_tracked", 0),
+        "n_instruction_claims": report.get("n_instruction_claims", 0),
         "n_claims": report["n_claims"],
         "out": out_disp,
     }

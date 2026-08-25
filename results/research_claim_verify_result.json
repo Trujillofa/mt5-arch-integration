@@ -1,15 +1,15 @@
 {
   "ok": true,
-  "n_ok": 415,
-  "n_drift": 1,
+  "n_ok": 506,
+  "n_drift": 6,
   "n_unresolvable": 0,
   "n_sha_unresolvable": 0,
-  "n_exempt_secrets": 1,
+  "n_exempt_secrets": 3,
   "n_self_referential": 10,
   "n_selfref_unallowlisted": 0,
   "n_skipped_dates": 10,
   "n_results_tracked": 184,
-  "n_claims": 436,
+  "n_claims": 532,
   "drift": [
     {
       "file": "docs/README.md",
@@ -17,6 +17,41 @@
       "kind": "disposition",
       "claimed": "New edge",
       "actual": "Zacks status='`SCHEMA_PASS` / overlay **BLOCKED** for KEEP' (BLOCKED/SCHEMA_PASS, not New edge)"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 67,
+      "kind": "disposition",
+      "claimed": "HTF Fib docs disagree on signal index",
+      "actual": "stale instruction claim; mql5/README.md + HOWTO-HTF-FIB.md both document HTF Fib signal buffer 8"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 63,
+      "kind": "disposition",
+      "claimed": "HTF Fib docs disagree on signal index",
+      "actual": "stale instruction claim; mql5/README.md + HOWTO-HTF-FIB.md both document HTF Fib signal buffer 8"
+    },
+    {
+      "file": "fetch_data.py",
+      "line": 1,
+      "kind": "consistency",
+      "claimed": "broker_roster_coverage",
+      "actual": "site=fetch_data.py missing roster brokers ['fpmarkets', 'wsf']; roster=['fpmarkets', 'vantage', 'wsf']"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 52,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "actual": "instruction names ~/.mt5-exness but config/brokers/ has no exness.env; roster=['fpmarkets', 'vantage', 'wsf']"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 48,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "actual": "instruction names ~/.mt5-exness but config/brokers/ has no exness.env; roster=['fpmarkets', 'vantage', 'wsf']"
     }
   ],
   "unresolvable": [],
@@ -24,6 +59,20 @@
     {
       "file": "docs/README.md",
       "line": 69,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "actual": "gitignored:config/local.paths"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 87,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "actual": "gitignored:config/local.paths"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 78,
       "kind": "path",
       "claimed": "config/local.paths",
       "actual": "gitignored:config/local.paths"
@@ -131,6 +180,68 @@
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2021-09-15|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2026-08-20|SKIPPED_DATE",
     "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md|5|metric|2026-01-01|SKIPPED_DATE",
-    "docs/HOWTO-HTF-FIB.md|457|metric|2026-01-01|SKIPPED_DATE"
+    "docs/HOWTO-HTF-FIB.md|457|metric|2026-01-01|SKIPPED_DATE",
+    "CLAUDE.md|87|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
+    "CLAUDE.md|67|disposition|HTF Fib docs disagree on signal index|stale instruction claim; mql5/README.md + HOWTO-HTF-FIB.md both document HTF Fib signal buffer 8",
+    "AGENTS.md|78|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
+    "AGENTS.md|63|disposition|HTF Fib docs disagree on signal index|stale instruction claim; mql5/README.md + HOWTO-HTF-FIB.md both document HTF Fib signal buffer 8",
+    "fetch_data.py|1|consistency|broker_roster_coverage|site=fetch_data.py missing roster brokers ['fpmarkets', 'wsf']; roster=['fpmarkets', 'vantage', 'wsf']",
+    "CLAUDE.md|52|consistency|instruction_prefix_in_roster|instruction names ~/.mt5-exness but config/brokers/ has no exness.env; roster=['fpmarkets', 'vantage', 'wsf']",
+    "AGENTS.md|48|consistency|instruction_prefix_in_roster|instruction names ~/.mt5-exness but config/brokers/ has no exness.env; roster=['fpmarkets', 'vantage', 'wsf']"
+  ],
+  "n_instruction_claims": 93,
+  "corpus": {
+    "docs/README.md": 45,
+    "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 7,
+    "docs/CHARTER-RESEARCH-LAYER.md": 18,
+    "docs/research/BACKTEST-RECORD.md": 48,
+    "docs/research/HOWTO-BACKTEST-PATHS.md": 31,
+    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 21,
+    "docs/research/SIGNAL-EDGE-TRIAGE.md": 40,
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 8,
+    "docs/HOWTO-US-INDEX-SCALP.md": 26,
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md": 22,
+    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 16,
+    "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md": 12,
+    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 11,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 12,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md": 4,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md": 5,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md": 4,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md": 8,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md": 4,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md": 4,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 5,
+    "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 7,
+    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 6,
+    "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md": 6,
+    "docs/ARTICLE-INTAKE.md": 10,
+    "docs/HOWTO-HTF-FIB.md": 8,
+    "docs/MT5-INTEGRATION-CAPABILITIES.md": 7,
+    "docs/FOREX-MT5-ROADMAP.md": 3,
+    "docs/HOWTO-MT5-AI-MCP.md": 7,
+    "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md": 13,
+    "docs/research/WAVE-B-OBSERVE.md": 1,
+    "docs/research/PHASE0-DISCOVERY.md": 1,
+    "docs/research/BTC-INDICATOR-DESIGN.md": 3,
+    "docs/MQL5-PYTHON-PARITY.md": 4,
+    "docs/SYMBOL-REGISTRY.md": 2,
+    "docs/SYMBOL-SYNC-AUDIT.md": 2,
+    "docs/TRADE-JOURNAL.md": 2,
+    "docs/MULTI-BROKER-MT5.md": 2,
+    "docs/TROUBLESHOOTING.md": 1,
+    "CLAUDE.md": 47,
+    "AGENTS.md": 40,
+    "README.md": 4,
+    "mql5/README.md": 2,
+    "scripts/19-run-htf-fib-backtest.sh": 1,
+    "fetch_data.py": 1,
+    "src/mt5_arch/file_bridge.py": 1
+  },
+  "instruction_files": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "README.md",
+    "mql5/README.md"
   ]
 }
