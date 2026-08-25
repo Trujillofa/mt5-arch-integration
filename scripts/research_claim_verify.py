@@ -531,10 +531,6 @@ def _metric_corpus(attr: str, src: str) -> list[str]:
             "results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json",
             "results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md",
         ],
-        "exog_london": [
-            "results/xau_loop_status.md",
-            "docs/research/BACKTEST-RECORD.md",
-        ],
         "bb_rsi": ["results/xau_null_maxstat.md", "results/xau_null_maxstat.json"],
         "donchian": [
             "results/xau_donchian_null_maxstat.md",
@@ -547,7 +543,18 @@ def _metric_corpus(attr: str, src: str) -> list[str]:
         ],
         "ny_cash_liquidity": ["results/eurusd_ny_scalp_signal_diagnostic.md", src],
         "m5_zscore": ["results/eurusd_ny_scalp_signal_diagnostic.md", src],
-        "mean_reversion": ["results/eurusd_ny_scalp_signal_diagnostic.md", src],
+        "mean_reversion": [
+            "results/eurusd_ny_scalp_signal_diagnostic.md",
+            "results/eurusd_ny_mr_limit_fill_paper_gate_v1.md",
+            "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+            src,
+        ],
+        "exog_london": [
+            "results/xau_loop_status.md",
+            "docs/research/BACKTEST-RECORD.md",
+            "results/eurusd_ny_scalp_signal_diagnostic.md",
+            src,
+        ],
         "xau_holdout": ["results/xau_holdout_lock.json"],
         "htf fib": ["results/htf_fib_offline_lock.json"],
         "us-index": [
@@ -601,34 +608,181 @@ def _metric_corpus(attr: str, src: str) -> list[str]:
     return out
 
 
-def _text_has_metric(txt: str, claimed: str) -> bool:
-    if claimed in txt:
-        return True
-    # n=885 vs n **885** / | 885 |
-    m = re.fullmatch(r"n\s*=\s*(\d+)", claimed)
+
+def _is_iso_date_metric(claimed: str) -> bool:
+    return bool(re.fullmatch(r"\d{4}-\d{2}-\d{2}", claimed.strip()))
+
+
+def _named_result_artifacts(claim: dict) -> list[str]:
+    """Extract results/ paths from explicit Write-up/Executed/source/artifact labels near the claim."""
+    src = claim.get("file") or ""
+    line_no = int(claim.get("line") or 0)
+    txt = _read(src) or ""
+    if not txt:
+        return []
+    lines = txt.splitlines()
+    lo = max(0, line_no - 25)
+    hi = min(len(lines), line_no + 5)
+    window = "\n".join(lines[lo:hi])
+    found: list[str] = []
+    # Only explicit oracle labels — do NOT scoop every backtick results/ path
+    # (those are often unrelated citations like xau_loop_status.md).
+    for m in re.finditer(
+        r"(?i)(?:write-?up|executed|source|artifact)\s*:\s*`?(results/[A-Za-z0-9_./-]+)`?",
+        window,
+    ):
+        found.append(m.group(1).rstrip(").,;"))
+    # "reproduced prior write-up" then (`results/...`) possibly on the next line
+    for m in re.finditer(
+        r"(?i)(?:write-?up|reproduced prior write-up)[^\n`]{0,60}(?:\n[^\n`]{0,20})?`?(results/[A-Za-z0-9_./-]+)`?",
+        window,
+    ):
+        found.append(m.group(1).rstrip(").,;"))
+    out: list[str] = []
+    seen = set()
+    for f in found:
+        f = f.strip()
+        if f and f not in seen:
+            seen.add(f)
+            out.append(f)
+    return out
+
+
+def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
+    """Structured metric match — reject CSV/price-row coincidence and bare float substrings."""
+    if not txt:
+        return False
+    # Never resolve metrics from raw instrument CSVs or non-results binary-ish paths.
+    pl = path.replace("\\", "/").lower()
+    if pl.endswith(".csv") or "/instrument_data/" in pl or pl.startswith("instrument_data/"):
+        return False
+
+    claimed = claimed.strip()
+    # n=7819
+    m = re.fullmatch(r"n\s*=\s*(\d+)", claimed, re.I)
     if m:
         n = m.group(1)
-        if re.search(rf"\bn\s*\*{{0,2}}\s*{n}\b", txt) or re.search(
-            rf"\|\s*{n}\s*\|", txt
+        patterns = [
+            rf"\bn_signals\b[^0-9]{{0,20}}\b{n}\b",
+            rf"\bn\s*=\s*{n}\b",
+            rf"\|\s*{n}\s*\|",
+            rf"\bn\s*\*{{0,2}}\s*{n}\b",
+        ]
+        return any(re.search(p, txt, re.I) for p in patterns)
+
+    # t 2.44 / t +2.44
+    m = re.fullmatch(r"t\s*[+]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
+    if m:
+        num = m.group(1)
+        patterns = [
+            rf"\bt\s*[+=]?\s*\+?{re.escape(num)}\b",
+            rf"\*\*\+?{re.escape(num)}\*\*",
+            rf"\|\s*\+?{re.escape(num)}\s*\|",
+            rf"(?<![0-9.])\+?{re.escape(num)}(?![0-9])",
+        ]
+        return any(re.search(p, txt, re.I) for p in patterns)
+
+    # PF 0.80 / profit_factor
+    m = re.search(r"(?:PF|profit_factor)\s*[~≈]?\s*([0-9]+\.[0-9]+)", claimed, re.I)
+    if m:
+        num = m.group(1)
+        patterns = [
+            rf"\bprofit_factor\b[^0-9]{{0,20}}{re.escape(num)}",
+            rf"\bPF\b[^0-9]{{0,10}}{re.escape(num)}\b",
+            rf"\*\*{re.escape(num)}\*\*",
+            rf"\|\s*{re.escape(num)}\s*\|",
+        ]
+        # JSON: accept 0.80 matching profit_factor 0.803…
+        if path.endswith(".json") and re.search(
+            rf'"profit_factor"\s*:\s*{re.escape(num)}', txt
         ):
             return True
-    # PF forms
-    m = re.search(r"(PF|profit_factor).*?([0-9]+\.[0-9]+)", claimed, re.I)
-    if m:
-        num = m.group(2)
-        if num in txt:
-            return True
-    # bare numbers / dates
-    nums = re.findall(r"-?\d+\.?\d*", claimed)
-    return bool(nums and all(n in txt for n in nums))
+        return any(re.search(p, txt, re.I) for p in patterns)
 
+    # holdout 0.96 / 0.96 holdout
+    m = re.search(r"(?:holdout\s*)?([0-9]+\.[0-9]+)\s*(?:holdout)?", claimed, re.I)
+    if m and "holdout" in claimed.lower():
+        num = m.group(1)
+        if re.search(
+            rf"holdout[^\n]{{0,40}}{re.escape(num)}|{re.escape(num)}[^\n]{{0,40}}holdout",
+            txt,
+            re.I,
+        ):
+            return True
+        return bool(
+            re.search(
+                rf"\|\s*Holdout\s*\|[^\n]*\*\*?{re.escape(num)}",
+                txt,
+                re.I,
+            )
+        )
+
+    # signed edge +70.19 / -11.85 / H50 −11.85 (unicode minus)
+    m = re.search(r"([+−-]\d+\.\d+)", claimed)
+    if m and (
+        claimed.startswith(("+", "-", "−", "H", "t", "T"))
+        or re.fullmatch(r"[+−-]\d+\.\d+", claimed)
+    ):
+        num = m.group(1).replace("−", "-")
+        # Normalize unicode minus in artifact text
+        norm = txt.replace("−", "-")
+        variants = {num, num.replace("-", "−")}
+        if num.startswith(("+", "-")):
+            variants.add(num[1:])  # table cells sometimes drop the sign's twin
+        for v in variants:
+            if re.search(rf"(?<![0-9.]){re.escape(v)}(?![0-9])", norm):
+                return True
+            if re.search(rf"(?<![0-9.]){re.escape(v)}(?![0-9])", txt):
+                return True
+        return False
+
+    # ratios like 0 / 205
+    m = re.fullmatch(r"(\d+)\s*/\s*(\d+)", claimed)
+    if m:
+        a, b = m.group(1), m.group(2)
+        return bool(re.search(rf"\b{a}\s*/\s*{b}\b", txt))
+
+    # Fallback: exact claimed string only (no bare numeric scatter)
+    return claimed in txt
+
+
+def _text_has_metric(txt: str, claimed: str) -> bool:
+    """Backward-compatible wrapper used by older call sites."""
+    return _metric_match(txt, claimed, path="")
 
 
 def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
-    """Prefer results/*.json oracles. Markdown-only corroboration → self_referential."""
+    """Resolve metric claims against results/ artifacts (json preferred, md allowed).
+
+    docs/ peers are never oracles. Self-referential = only the claiming file supports it.
+    """
     claimed = claim["claimed"].strip()
+    if _is_iso_date_metric(claimed):
+        return "skipped_date", "date_not_a_metric"
+
     attr = claim.get("attribution") or ""
     src = claim["file"]
+    tracked = tracked or run_git_ls_files()
+    checked: list[str] = []
+
+    def _is_results_artifact(f: str) -> bool:
+        return f.startswith("results/") and f in tracked
+
+    # --- Pass 0: explicitly named write-up / artifact (strongest signal) ---
+    named = [f for f in _named_result_artifacts(claim) if _is_results_artifact(f)]
+    named_tried: list[str] = []
+    for f in named:
+        checked.append(f)
+        named_tried.append(f)
+        txt = _read(f)
+        if txt is None:
+            continue
+        if _metric_match(txt, claimed, path=f):
+            return "ok", f"named:{f}"
+    if named_tried:
+        # Doc named an artifact that does not contain the figure → drift
+        return "drift", f"named_writeup_miss:{named_tried[0]}; checked={checked!r}"
+
     corpus = _metric_corpus(attr, src)
 
     def _rank(f: str) -> tuple[int, str]:
@@ -638,67 +792,47 @@ def resolve_metric(claim: dict, tracked: set[str]) -> tuple[str, str]:
             return (1, f)
         if f.startswith("results/") and f.endswith(".md"):
             return (2, f)
-        if f == "docs/research/BACKTEST-RECORD.md":
-            return (3, f)
-        if f.endswith(".md"):
-            return (4, f)
-        return (5, f)
+        return (9, f)  # docs/ and others last — never ok-oracles
 
-    ordered = sorted(set(corpus), key=_rank)
-    # Concrete results/*.json oracles only (not disposition registry jsonl).
-    json_artifacts = [
+    # Only tracked results/** count as oracles
+    results_corpus = [
         f
-        for f in ordered
-        if f.startswith("results/") and f.endswith(".json") and "registry" not in f
+        for f in sorted(set(corpus), key=_rank)
+        if _is_results_artifact(f) and "registry" not in f
     ]
-    checked: list[str] = []
 
-    # Pass 1: JSON only
+    # Pass 1: results/*.json
+    json_artifacts = [f for f in results_corpus if f.endswith(".json")]
     for f in json_artifacts:
         checked.append(f)
-        txt = _read(f)
-        if txt and _text_has_metric(txt, claimed):
+        if _metric_match(_read(f) or "", claimed, path=f):
             return "ok", f
 
-    # Pass 2: results/*.md and BACKTEST-RECORD (SoT markdown) before drift
-    for f in ordered:
-        if f in json_artifacts:
-            continue
-        if not (f.startswith("results/") or f == "docs/research/BACKTEST-RECORD.md"):
-            continue
+    # Pass 2: results/*.md (repo convention: run write-ups)
+    md_artifacts = [f for f in results_corpus if f.endswith(".md")]
+    for f in md_artifacts:
         checked.append(f)
-        txt = _read(f)
-        if not txt:
-            continue
-        if _text_has_metric(txt, claimed):
+        if _metric_match(_read(f) or "", claimed, path=f):
             return "ok", f
 
-    # Family-linked JSON oracle present, figure absent from JSON *and* results md → drift.
-    # (Mutant restating-doc case: oracle survives in results/*.json.)
+    # Results oracles searched but missed. If the claiming file also lacks the
+    # figure → drift (mutant / restating-doc disagreement). If only the claiming
+    # file has it → self_referential.
+    results_oracles = json_artifacts + md_artifacts
+    src_txt = _read(src) or ""
+    src_has = _metric_match(src_txt, claimed, path=src)
     if (
-        json_artifacts
+        results_oracles
         and re.search(
             r"(PF|n\s*=|profit_factor|\d+\s*/\s*\d+|[+-]?\d+\.\d+)", claimed, re.I
         )
-        and any((_read(f) or "").strip() for f in json_artifacts)
-        and not any(_text_has_metric(_read(f) or "", claimed) for f in json_artifacts)
+        and any((_read(f) or "").strip() for f in results_oracles)
+        and not src_has
     ):
-        return "drift", f"json_oracle_miss checked={json_artifacts!r}; claimed={claimed!r}"
+        return "drift", f"results_oracle_miss checked={checked!r}; claimed={claimed!r}"
 
-    # Pass 3: other markdown — self-referential if that is the only corroboration
-    for f in ordered:
-        if f.startswith("results/") or f == "docs/research/BACKTEST-RECORD.md":
-            continue
-        if f == src:
-            continue
-        checked.append(f)
-        txt = _read(f)
-        if txt and _text_has_metric(txt, claimed):
-            return "self_referential", f"md_only:{f}"
-
-    src_txt = _read(src) or ""
-    if _text_has_metric(src_txt, claimed):
-        return "self_referential", f"md_only:{src}"
+    if src_has:
+        return "self_referential", f"claiming_file_only searched={checked!r}"
 
     return "unresolvable", f"checked={checked!r}; claimed={claimed!r}"
 
@@ -866,18 +1000,44 @@ def disposition_ok(claim: dict, tracked: set[str]) -> tuple[str, str]:
 
 
 
+def _load_selfref_allowlist() -> list[dict]:
+    p = ROOT / "results" / "research_claim_selfref_allow.json"
+    if not p.is_file():
+        return []
+    try:
+        data = json.loads(p.read_text())
+    except Exception:
+        return []
+    return list(data.get("allow") or [])
+
+
+def _selfref_allowlisted(row: dict, allow: list[dict]) -> bool:
+    for a in allow:
+        if (
+            a.get("file") == row.get("file")
+            and int(a.get("line") or -1) == int(row.get("line") or -2)
+            and a.get("kind") == row.get("kind")
+            and a.get("claimed") == row.get("claimed")
+            and (a.get("reason") or "").strip()
+        ):
+            return True
+    return False
+
+
 def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
     """Resolve a claim list. Returns structured drift[] and exempt_secrets."""
     tracked = tracked if tracked is not None else run_git_ls_files()
     n_ok = n_drift = n_unresolvable = n_exempt_secrets = 0
     n_sha_unresolvable = 0
     n_self_referential = 0
+    n_skipped_dates = 0
     evidence: list[str] = []
     drift: list[dict] = []
     unresolvable: list[dict] = []
     exempt_secrets: list[dict] = []
     self_referential: list[dict] = []
     zacks_handcheck: list[str] = []
+    allow = _load_selfref_allowlist()
 
     st = _zacks_status()
     zacks_handcheck.append(f"ZACKS_STATUS={st!r}")
@@ -919,6 +1079,12 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
             "claimed": cl.get("claimed"),
             "actual": actual,
         }
+        if status == "skipped_date":
+            n_skipped_dates += 1
+            evidence.append(
+                f"{cl['file']}|{cl['line']}|{cl['kind']}|{cl['claimed']}|SKIPPED_DATE"
+            )
+            continue
         if status == "ok":
             n_ok += 1
         elif status == "exempt_secrets":
@@ -949,8 +1115,11 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
                 f"{cl['file']}|{cl['line']}|{cl['kind']}|{cl['claimed']}|UNRESOLVABLE:{actual}"
             )
 
-    # Digest claims that cannot be resolved are an integrity failure, not a shrug.
-    ok = n_sha_unresolvable == 0
+    # Digest unresolvable is fatal. Self-referential is fatal unless allowlisted.
+    n_selfref_unallowlisted = sum(
+        1 for r in self_referential if not _selfref_allowlisted(r, allow)
+    )
+    ok = n_sha_unresolvable == 0 and n_selfref_unallowlisted == 0
     return {
         "ok": ok,
         "n_ok": n_ok,
@@ -959,6 +1128,8 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
         "n_sha_unresolvable": n_sha_unresolvable,
         "n_exempt_secrets": n_exempt_secrets,
         "n_self_referential": n_self_referential,
+        "n_selfref_unallowlisted": n_selfref_unallowlisted,
+        "n_skipped_dates": n_skipped_dates,
         "n_claims": len(claims),
         "drift": drift,
         "unresolvable": unresolvable,
@@ -1061,6 +1232,77 @@ def run_negative_controls() -> dict:
         },
     )
 
+    # 5) Metric that disagrees with its named results/*.md write-up → drift
+    check(
+        "metric_disagrees_named_writeup",
+        {
+            "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+            "line": 92,
+            "kind": "metric",
+            "claimed": "PF 9.99",
+            "attribution": "US100 all",
+        },
+    )
+
+    # 6) Named write-up omits the figure entirely → drift (not self_referential)
+    check(
+        "named_writeup_omits_figure",
+        {
+            "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+            "line": 92,
+            "kind": "metric",
+            "claimed": "n=424242",
+            "attribution": "US100 all",
+        },
+    )
+
+    # 7) Genuinely self-referential claim → self_referential, never ok
+    check(
+        "genuine_self_referential",
+        {
+            "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+            "line": 50,
+            "kind": "metric",
+            "claimed": "+70.19",
+            "attribution": "exog_london_fx_cosign_xau_follow_flat",
+        },
+        expect_status="self_referential",
+    )
+
+    # 8) Substring in unrelated CSV price rows is NOT a resolution
+    csv_paths = [
+        t
+        for t in tracked
+        if t.endswith(".csv") and ("xauusd" in t.lower() or "instrument_data" in t)
+    ][:5]
+    csv_hit = False
+    for cp in csv_paths:
+        if _metric_match(_read(cp) or "", "1.20", path=cp):
+            csv_hit = True
+            break
+    # Also ensure resolve_one does not return ok for a PF that only coincides in CSV
+    st_csv, act_csv = resolve_one(
+        {
+            "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+            "line": 1,
+            "kind": "metric",
+            "claimed": "PF 1.20",
+            "attribution": "unrelated csv coincidence probe",
+        },
+        tracked,
+    )
+    csv_ok = (not csv_hit) and st_csv != "ok"
+    controls.append(
+        {
+            "name": "csv_substring_not_resolution",
+            "claim": {"claimed": "1.20", "paths": csv_paths, "resolve_status": st_csv},
+            "status": "ok" if not csv_ok else "drift",
+            "actual": f"csv_hit={csv_hit}; resolve={st_csv}:{act_csv}",
+            "must_be_red": True,
+            "is_red": csv_ok,
+        }
+    )
+
     n_red = sum(1 for c in controls if c["is_red"])
     all_red = n_red == len(controls)
     return {
@@ -1123,6 +1365,8 @@ def main(argv: list[str] | None = None) -> int:
         "n_sha_unresolvable": report.get("n_sha_unresolvable", 0),
         "n_exempt_secrets": report["n_exempt_secrets"],
         "n_self_referential": report.get("n_self_referential", 0),
+        "n_selfref_unallowlisted": report.get("n_selfref_unallowlisted", 0),
+        "n_skipped_dates": report.get("n_skipped_dates", 0),
         "n_claims": report["n_claims"],
         "out": out_disp,
     }

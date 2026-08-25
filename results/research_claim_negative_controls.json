@@ -1,8 +1,8 @@
 {
   "ok": true,
   "all_red": true,
-  "n_controls": 4,
-  "n_red": 4,
+  "n_controls": 8,
+  "n_red": 8,
   "controls": [
     {
       "name": "missing_path_non_secrets",
@@ -59,7 +59,66 @@
       "actual": "asia_box_london_sweep_fade_flat:SCREEN_FAIL",
       "must_be_red": true,
       "is_red": true
+    },
+    {
+      "name": "metric_disagrees_named_writeup",
+      "claim": {
+        "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+        "line": 92,
+        "kind": "metric",
+        "claimed": "PF 9.99",
+        "attribution": "US100 all"
+      },
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "named_writeup_omits_figure",
+      "claim": {
+        "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+        "line": 92,
+        "kind": "metric",
+        "claimed": "n=424242",
+        "attribution": "US100 all"
+      },
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "genuine_self_referential",
+      "claim": {
+        "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+        "line": 50,
+        "kind": "metric",
+        "claimed": "+70.19",
+        "attribution": "exog_london_fx_cosign_xau_follow_flat"
+      },
+      "status": "self_referential",
+      "actual": "claiming_file_only searched=['results/eurusd_ny_scalp_signal_diagnostic.md', 'results/xau_loop_status.md']",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "csv_substring_not_resolution",
+      "claim": {
+        "claimed": "1.20",
+        "paths": [
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/eurusd_h1.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
+          "xauusd_data.csv"
+        ],
+        "resolve_status": "self_referential"
+      },
+      "status": "drift",
+      "actual": "csv_hit=False; resolve=self_referential:claiming_file_only searched=['results/xau_loop_status.md']",
+      "must_be_red": true,
+      "is_red": true
     }
   ],
-  "evidence": "missing_path_non_secrets=drift:RED; secrets_context_not_gitignored=drift:RED; standalone_KEEP=drift:RED; KEEP_vs_SCREEN_FAIL_family=drift:RED"
+  "evidence": "missing_path_non_secrets=drift:RED; secrets_context_not_gitignored=drift:RED; standalone_KEEP=drift:RED; KEEP_vs_SCREEN_FAIL_family=drift:RED; metric_disagrees_named_writeup=drift:RED; named_writeup_omits_figure=drift:RED; genuine_self_referential=self_referential:RED; csv_substring_not_resolution=drift:RED"
 }

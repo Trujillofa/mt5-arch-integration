@@ -27,7 +27,7 @@ let ext_schema = #{
 };
 let ver_schema = #{
     "type": "object",
-    "required": ["ok", "n_ok", "n_drift", "n_unresolvable", "n_sha_unresolvable", "n_exempt_secrets", "n_self_referential", "negative_controls_ok", "evidence"],
+    "required": ["ok", "n_ok", "n_drift", "n_unresolvable", "n_sha_unresolvable", "n_exempt_secrets", "n_self_referential", "n_selfref_unallowlisted", "negative_controls_ok", "evidence"],
     "properties": #{
         ok: #{ "type": "boolean" },
         n_ok: #{ "type": "integer" },
@@ -36,6 +36,7 @@ let ver_schema = #{
         n_sha_unresolvable: #{ "type": "integer" },
         n_exempt_secrets: #{ "type": "integer" },
         n_self_referential: #{ "type": "integer" },
+        n_selfref_unallowlisted: #{ "type": "integer" },
         negative_controls_ok: #{ "type": "boolean" },
         evidence: #{ "type": "string" },
     },
@@ -100,9 +101,9 @@ p2 += "Run the tracked verifier (do not reimplement):\n";
 p2 += "  python3 scripts/research_claim_verify.py --out results/research_claim_verify_result.json\n";
 p2 += "  python3 scripts/research_claim_verify.py --negative-controls --out results/research_claim_negative_controls.json\n";
 p2 += "Read both JSON results. ok=true only if verify completed AND negative_controls all_red=true ";
-p2 += "AND n_sha_unresolvable==0 (digest unresolvable is fatal). ";
-p2 += "If any negative control is green, ok=false and stop — the B/C fixes are a blindfold. ";
-p2 += "Return n_ok, n_drift, n_unresolvable, n_sha_unresolvable, n_exempt_secrets, n_self_referential; ";
+p2 += "AND n_sha_unresolvable==0 AND n_selfref_unallowlisted==0 (self_referential fatal unless allowlisted). ";
+p2 += "If any negative control is green, ok=false and stop. ";
+p2 += "Return n_ok, n_drift, n_unresolvable, n_sha_unresolvable, n_exempt_secrets, n_self_referential, n_selfref_unallowlisted; ";
 p2 += "negative_controls_ok from the controls run. ";
 p2 += "evidence must quote the drift[] entries, exempt_secrets (esp. config/local.paths), ";
 p2 += "confirm exog v4 SHA 3dec09ef… resolves OK, and the four control names with RED/GREEN. ";
@@ -124,14 +125,13 @@ let p3 = "";
 p3 += "Work ONLY in " + wt + "\n" + rules;
 p3 += "Run the tracked mutant gate (do not reimplement):\n";
 p3 += "  python3 scripts/research_claim_mutant.py --out results/research_claim_mutant_result.json\n";
-p3 += "It must: seed >=4 known-bad claims in scratch only; route them through ";
+p3 += "It must: seed >=5 known-bad claims in scratch only; route them through ";
 p3 += "scripts/research_claim_verify.resolve_one (same entry as Verify); ";
 p3 += "score caught ONLY when status==drift (unresolvable is NOT caught); ";
-p3 += "seed metric mutants in a RESTATING doc (not BACKTEST-RECORD); ";
-p3 += "temporarily break the verifier and prove gate_can_fail=true under the NEW scorer; ";
-p3 += "then restore and show mutant_caught=true with 4/4 all status==drift. ";
-p3 += "ok=true only if mutant_caught AND gate_can_fail. ";
-p3 += "Run-3 mutant_caught 4/4 was scored on the wrong criterion (really 2/4) — this run supersedes it.\n";
+p3 += "include metric_digit in a restating doc AND metric_md_writeup backed by results/*.md; ";
+p3 += "temporarily break the verifier and prove gate_can_fail=true; ";
+p3 += "then restore and show mutant_caught=true with 5/5 all status==drift. ";
+p3 += "ok=true only if mutant_caught AND gate_can_fail.\n";
 let mut = agent(p3, #{ label: "mutant", capability_mode: "execute", cwd: wt, output_schema: mut_schema });
 if mut == () || !mut.success || mut.output == () || mut.output.ok != true {
     complete(#{ ok: false, summary: "Mutant gate failed to run", mutant: mut });

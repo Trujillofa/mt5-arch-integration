@@ -1,0 +1,90 @@
+{
+  "schema": "research_claim_selfref_allow_v1",
+  "note": "Each entry is a human-reviewed self-referential metric with no tracked results/ write-up that carries the figure. Silent accumulation is forbidden — add a reason per claim.",
+  "allow": [
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "reason": "Lane-all triage table is the primary record of signal_edge_diagnostic.py --lane all (tool writes nothing). No results/*.md carries this XAU edge; eurusd_ny_scalp_signal_diagnostic.md is the EURUSD regression subsection only."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "n=80",
+      "reason": "US CLEARS-FRICTION row lives only in the lane-all triage table (tool writes nothing to results/)."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "t +2.44",
+      "reason": "t-stat for ny_cash_liquidity_sweep from lane-all triage table; no separate results write-up."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "n=92",
+      "reason": "US CLEARS-FRICTION row for m5_zscore_tick_vol_exhaustion; triage table is primary."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "t +2.24",
+      "reason": "t-stat for m5_zscore_tick_vol_exhaustion from lane-all triage table; no separate results write-up."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 65,
+      "kind": "metric",
+      "claimed": "n=0",
+      "reason": "EMPTY/zero-signal row recorded only in the triage table."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.44",
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in SIGNAL-EDGE-TRIAGE.md (docs peer), not a results/ artifact."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.24",
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in SIGNAL-EDGE-TRIAGE.md (docs peer), not a results/ artifact."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 95,
+      "kind": "metric",
+      "claimed": "pooled PF 0.903",
+      "reason": "BACKTEST-RECORD is the curated SoT ledger for closed XAU screens; pooled PF 0.903 is summarized there without a matching results/*.json profit_factor field at that precision."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 133,
+      "kind": "metric",
+      "claimed": "pooled PF 0.90",
+      "reason": "Rounded restatement of the SoT ledger row; no separate results artifact at two-decimal pooled PF."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
+      "kind": "metric",
+      "claimed": "n < 100",
+      "reason": "Qualitative thin-n threshold prose in the SoT ledger, not a concrete oracle figure."
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 13,
+      "kind": "metric",
+      "claimed": "0 eligible",
+      "reason": "Design-doc summary of develop-eligible count; write-up path not labeled on that line and figure is narrative."
+    }
+  ]
+}

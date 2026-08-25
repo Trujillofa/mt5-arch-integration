@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from copy import deepcopy
 from pathlib import Path
@@ -59,12 +60,17 @@ def invert_disposition(claimed: str) -> str:
     raise RuntimeError(f"no invert rule for disposition {claimed!r}")
 
 
+def _act_is_results_oracle(act: str) -> bool:
+    return isinstance(act, str) and "results/" in act
+
+
 def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
     """Pick currently-ok anchors so mutants exercise real checkers."""
     wanted: dict[str, dict | None] = {
         "path": None,
         "sha": None,
         "metric": None,
+        "metric_md": None,
         "disposition": None,
     }
     preferred = [
@@ -82,16 +88,24 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         ),
         (
             "metric",
-            # Restating doc (NOT BACKTEST-RECORD / results JSON) so the oracle survives.
+            # Restating doc (NOT BACKTEST-RECORD) so a results oracle survives.
             lambda c: c["kind"] == "metric"
             and "PF" in c["claimed"]
             and not str(c["file"]).endswith("BACKTEST-RECORD.md")
             and not str(c["file"]).startswith("results/")
             and (
-                "US-INDEX" in str(c["file"])
-                or "HOWTO-US-INDEX" in str(c["file"])
+                "HOWTO-US-INDEX" in str(c["file"])
                 or "SIGNAL-EDGE" in str(c["file"])
             ),
+        ),
+        (
+            "metric_md",
+            # Metric backed by a named/results/*.md write-up (exercises md oracle path).
+            lambda c: c["kind"] == "metric"
+            and c["claimed"].startswith("PF ")
+            and re.search(r"PF\s+\d+\.\d+", c["claimed"])
+            and "US-INDEX-SESSION-SCALP-DESIGN" in str(c["file"])
+            and c.get("line") == 92,
         ),
         (
             "disposition",
@@ -105,35 +119,39 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
                 st, act = v.resolve_one(c, tracked)
                 if st != "ok":
                     continue
-                # Metric anchors must resolve against a results/* oracle, not md-only.
-                if kind == "metric" and not (
-                    isinstance(act, str)
-                    and act.startswith("results/")
-                ):
+                if kind in ("metric", "metric_md") and not _act_is_results_oracle(str(act)):
+                    continue
+                # metric_md must specifically hit a .md write-up
+                if kind == "metric_md" and ".md" not in str(act):
                     continue
                 wanted[kind] = c
                 break
 
     for c in claims:
         kind = c["kind"]
-        if kind not in wanted or wanted[kind] is not None:
-            continue
-        if kind not in ("path", "sha", "metric", "disposition"):
-            continue
-        # Never seed metric mutants in the markdown SoT or in results/* itself.
-        if kind == "metric" and (
-            str(c["file"]).endswith("BACKTEST-RECORD.md")
-            or str(c["file"]).startswith("results/")
-        ):
-            continue
-        st, act = v.resolve_one(c, tracked)
-        if st != "ok":
-            continue
-        if kind == "metric" and not (
-            isinstance(act, str) and act.startswith("results/")
-        ):
-            continue
-        wanted[kind] = c
+        keys: list[str] = []
+        if kind in ("path", "sha", "disposition") and wanted.get(kind) is None:
+            keys.append(kind)
+        if kind == "metric":
+            if wanted["metric"] is None:
+                keys.append("metric")
+            if wanted["metric_md"] is None and "US-INDEX" in str(c["file"]):
+                keys.append("metric_md")
+        for key in keys:
+            if key in ("metric", "metric_md") and (
+                str(c["file"]).endswith("BACKTEST-RECORD.md")
+                or str(c["file"]).startswith("results/")
+            ):
+                continue
+            st, act = v.resolve_one(c, tracked)
+            if st != "ok":
+                continue
+            if key in ("metric", "metric_md") and not _act_is_results_oracle(str(act)):
+                continue
+            if key == "metric_md" and ".md" not in str(act):
+                continue
+            wanted[key] = c
+            break
 
     missing = [k for k, c in wanted.items() if c is None]
     if missing:
@@ -158,6 +176,16 @@ def _seed_mutants(anchors: dict[str, dict]) -> list[dict]:
     met_c = deepcopy(anchors["metric"])
     met_c["claimed"] = flip_metric_digit(met_c["claimed"])
     seeds.append({"seed_kind": "metric_digit", "orig": anchors["metric"], "mutant": met_c})
+
+    met_md = deepcopy(anchors["metric_md"])
+    met_md["claimed"] = flip_metric_digit(met_md["claimed"])
+    seeds.append(
+        {
+            "seed_kind": "metric_md_writeup",
+            "orig": anchors["metric_md"],
+            "mutant": met_md,
+        }
+    )
 
     disp_c = deepcopy(anchors["disposition"])
     disp_c["claimed"] = invert_disposition(disp_c["claimed"])

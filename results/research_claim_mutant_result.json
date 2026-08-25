@@ -2,9 +2,9 @@
   "ok": true,
   "mutant_caught": true,
   "gate_can_fail": true,
-  "n_seeded": 4,
-  "n_caught": 4,
-  "evidence": "gate_can_fail=True (broken verifier caught 0/4); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
+  "n_seeded": 5,
+  "n_caught": 5,
+  "evidence": "gate_can_fail=True (broken verifier caught 0/5); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True",
   "per_seed": [
     {
       "seed_kind": "dead_path",
@@ -39,7 +39,19 @@
       "mutant_claimed": "PF 0.89",
       "attribution": "flatten US100",
       "status": "drift",
-      "actual": "json_oracle_miss checked=['results/us_index_session_scalp_backtest.json']; claimed='PF 0.89'",
+      "actual": "results_oracle_miss checked=['results/us_index_session_scalp_backtest.json', 'results/eurusd_ny_scalp_autoresearch.md', 'results/us_index_session_playbook_v2.md', 'results/us_index_session_scalp_backtest.md', 'results/us_index_session_structure_v3.md', 'results/us_index_session_v4.md', 'results/us_index_session_v4_cost_size_once.md', 'results/us_index_session_v5.md', 'results/us_index_session_v6.md', 'results/us_index_session_v7.md', 'results/us_index_session_v8.md', 'results/xau_loop_status.md']; claimed='PF 0.89'",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_md_writeup",
+      "kind": "metric",
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "orig_claimed": "PF 0.80",
+      "mutant_claimed": "PF 0.89",
+      "attribution": "US100 all",
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']",
       "caught": true
     },
     {
