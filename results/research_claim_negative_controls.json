@@ -107,10 +107,10 @@
       "claim": {
         "claimed": "1.20",
         "paths": [
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
           "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/eurusd_h1.csv",
           "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv",
-          "xauusd_data.csv",
-          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv"
+          "xauusd_data.csv"
         ],
         "resolve_status": "self_referential"
       },
