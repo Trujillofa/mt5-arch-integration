@@ -73,6 +73,10 @@ def extract_instruction_claims(root: Path) -> list[dict[str, Any]]:
                     continue  # wine prefixes → consistency claims
                 if "*" in tok or "::" in tok or " " in tok:
                     continue  # globs, qualified symbols, flagged commands
+                # Skip paths asserted as absent ("no `config/brokers/exness.env`")
+                pre = line[: m.start()].lower()
+                if re.search(r"\bno\b\s*$", pre) or "there is no" in pre or "no broker env" in line.lower():
+                    continue
                 norm = tok[2:] if tok.startswith("./") else tok
                 if norm in allow_files or norm.startswith(allow_prefixes):
                     claims.append({
@@ -169,6 +173,24 @@ def resolve_consistency(claim: dict, root: Path) -> tuple[str, str]:
         broker = claim.get("prefix_broker") or "exness"
         if broker in roster:
             return "ok", f"roster contains {broker}"
+        # Remediated docs acknowledge the missing env and direct users to WINEPREFIX.
+        src = claim.get("file") or ""
+        text = ""
+        sp = root / src
+        if sp.is_file():
+            text = sp.read_text(encoding="utf-8", errors="replace")
+        ack = (
+            f"no `config/brokers/{broker}.env`" in text
+            or f"no config/brokers/{broker}.env" in text
+            or "no broker env" in text.lower()
+            or "exporting `WINEPREFIX` directly" in text
+            or "exporting WINEPREFIX directly" in text
+        )
+        if ack:
+            return "ok", (
+                f"instruction acknowledges missing {broker}.env; "
+                f"prefix selected via WINEPREFIX (roster={roster})"
+            )
         return "drift", (
             f"instruction names ~/.mt5-{broker} but config/brokers/ has no {broker}.env; "
             f"roster={roster}"
@@ -179,22 +201,40 @@ def resolve_consistency(claim: dict, root: Path) -> tuple[str, str]:
         if claim.get("generic_ok"):
             return "ok", f"{site} is generic/overridable (exempt)"
         text = ""
-        # Mutant/scratch override: never reads real instruction governance files as site text
-        # unless site_path points at an explicit scratch copy.
+        # Mutant/scratch override: site_path points at an explicit scratch copy.
         site_path = claim.get("site_path")
         p = Path(site_path) if site_path else (root / site)
         if p.is_file():
             text = p.read_text(encoding="utf-8", errors="replace")
+        # Sites that consume config/broker_install_dirs.json are covered by that SoT.
+        # Scratch mutants (site_path set) must NOT fall back to the real SoT — otherwise
+        # removing a broker from the site copy is masked by the JSON.
+        sot = root / "config" / "broker_install_dirs.json"
+        sot_text = ""
+        if (
+            not site_path
+            and sot.is_file()
+            and (
+                "broker_install_dirs" in text
+                or site.endswith("fetch_data.py")
+                or site.endswith("19-run-htf-fib-backtest.sh")
+            )
+        ):
+            sot_text = sot.read_text(encoding="utf-8", errors="replace")
+        haystacks = [text]
+        if sot_text:
+            haystacks.append(sot_text)
         missing = []
         for broker in roster:
-            # Heuristics: broker name or known install-dir fragments
             fragments = {
                 "vantage": ["vantage", "Vantage International"],
                 "fpmarkets": ["fpmarkets", "FP Markets"],
                 "wsf": ["wsf", "WSFmarkets", "WSF"],
                 "exness": ["exness", "Exness"],
             }.get(broker, [broker])
-            if not any(frag.lower() in text.lower() for frag in fragments):
+            if not any(
+                any(frag.lower() in h.lower() for frag in fragments) for h in haystacks
+            ):
                 missing.append(broker)
         if missing:
             return "drift", (
@@ -218,6 +258,40 @@ def htf_signal_docs_agree(root: Path) -> tuple[bool, str]:
     return False, f"mql_8={mql_8} how_8={how_8} auth={auth}"
 
 
+def _refresh_zacks_index_claim(root: Path, claims: list[dict]) -> list[dict]:
+    """Keep docs/README Zacks disposition claim aligned with the live index row."""
+    claims = [
+        c
+        for c in claims
+        if not (
+            c.get("file") == "docs/README.md"
+            and c.get("kind") == "disposition"
+            and c.get("claimed") in {"New edge", "Observe-only"}
+            and "zacks" in (c.get("attribution") or "").lower()
+        )
+    ]
+    readme = root / "docs" / "README.md"
+    if not readme.is_file():
+        return claims
+    lines = readme.read_text(encoding="utf-8", errors="replace").splitlines()
+    for i, line in enumerate(lines, 1):
+        if "ZACKS-MCP-OVERLAY-LANE" not in line:
+            continue
+        if "**New edge:**" in line:
+            claims.append(
+                {
+                    "file": "docs/README.md",
+                    "line": i,
+                    "kind": "disposition",
+                    "claimed": "New edge",
+                    "attribution": "Zacks MCP gold-complex overlay",
+                }
+            )
+        # Observe-only is the remediated lead-in — not a disposition drift claim.
+        break
+    return claims
+
+
 def merge_instruction_into_inventory(root: Path, inv: dict) -> dict:
     """Append instruction + consistency claims; recompute corpus stats."""
     claims = list(inv.get("claims") or [])
@@ -233,6 +307,7 @@ def merge_instruction_into_inventory(root: Path, inv: dict) -> dict:
             )
         )
     ]
+    claims = _refresh_zacks_index_claim(root, claims)
     instr = extract_instruction_claims(root)
     cons = build_consistency_claims(root)
     claims.extend(instr)

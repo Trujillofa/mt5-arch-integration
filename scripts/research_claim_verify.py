@@ -1580,16 +1580,25 @@ def run_negative_controls() -> dict:
         },
     )
 
-    # 13) Roster broker missing from enumerating site → drift
+    # 13) Roster broker missing from enumerating site → drift (scratch site without SoT)
+    import tempfile
+    from pathlib import Path as _P
+
+    _td = _P(tempfile.mkdtemp(prefix="claim_neg_roster_"))
+    _scratch = _td / "site_no_wsf.sh"
+    _scratch.write_text(
+        'for d in "Vantage International MT5" "FP Markets MT5 Terminal"; do :; done\n'
+    )
     check(
         "roster_broker_missing_from_site",
         {
-            "file": "fetch_data.py",
+            "file": "scripts/19-run-htf-fib-backtest.sh",
             "line": 1,
             "kind": "consistency",
             "claimed": "broker_roster_coverage",
             "attribution": "config/brokers/*.env",
-            "site": "fetch_data.py",
+            "site": "scripts/19-run-htf-fib-backtest.sh",
+            "site_path": str(_scratch),
             "roster": ["fpmarkets", "vantage", "wsf"],
             "generic_ok": False,
         },
