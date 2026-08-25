@@ -1,6 +1,6 @@
 {
   "schema": "research_claim_inventory/v1",
-  "scope": "docs/**/*.md + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster) + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster) + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster) + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster)",
+  "scope": "docs/**/*.md + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster)",
   "method": "grep+read_file walk of docs/**/*.md (min docs/README.md + docs/research/*.md + other docs/*.md); kinds path/link/sha/symbol/metric/disposition; links resolved relative to containing file; slim {file,line,kind,claimed,attribution}",
   "n_claims": 532,
   "counts": {

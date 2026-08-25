@@ -252,9 +252,14 @@ def merge_instruction_into_inventory(root: Path, inv: dict) -> dict:
     inv["corpus"] = corpus
     inv["n_instruction_claims"] = n_instruction
     inv["instruction_files"] = list(INSTRUCTION_FILES)
+    # Idempotent: replace rather than append (re-runs must not grow scope).
+    base = inv.get("scope", "") or "docs/**/*.md"
+    marker = " + instruction files "
+    if marker in base:
+        base = base.split(marker, 1)[0]
     inv["scope"] = (
-        inv.get("scope", "")
-        + " + instruction files "
+        base
+        + marker
         + ",".join(INSTRUCTION_FILES)
         + " + consistency(broker_roster)"
     )
