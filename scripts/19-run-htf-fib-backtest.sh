@@ -43,12 +43,41 @@ SKIP_COMPILE="${SKIP_COMPILE:-0}"
 
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 MT5_DIR=""
-for d in \
-  "$WINEPREFIX/drive_c/Program Files/Vantage International MT5" \
-  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5" \
-  "$WINEPREFIX/drive_c/Program Files/FP Markets MT5 Terminal" \
-  "$WINEPREFIX/drive_c/Program Files/WSFmarkets MT5 Terminal"
-do
+# Install dirs from config/broker_install_dirs.json (single source of truth with fetch_data.py).
+BROKER_DIRS_JSON="$REPO_ROOT/config/broker_install_dirs.json"
+mapfile -t _INSTALL_DIRS < <(
+  python3 - "$BROKER_DIRS_JSON" <<'PY'
+import json, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+try:
+    data = json.loads(p.read_text(encoding="utf-8"))
+except Exception:
+    data = {
+        "vantage": "Vantage International MT5",
+        "fpmarkets": "FP Markets MT5 Terminal",
+        "wsf": "WSFmarkets MT5 Terminal",
+        "_generic": "MetaTrader 5",
+    }
+preferred = [
+    "Vantage International MT5",
+    "FP Markets MT5 Terminal",
+    "WSFmarkets MT5 Terminal",
+    "MetaTrader 5",
+]
+dirs = []
+for k, v in data.items():
+    if k.startswith("_") and k != "_generic":
+        continue
+    if isinstance(v, str) and v.strip():
+        dirs.append(v.strip())
+ordered = [d for d in preferred if d in dirs]
+ordered.extend(d for d in dirs if d not in ordered)
+print("\n".join(ordered or preferred))
+PY
+)
+for name in "${_INSTALL_DIRS[@]}"; do
+  d="$WINEPREFIX/drive_c/Program Files/$name"
   if [[ -f "$d/terminal64.exe" ]]; then MT5_DIR="$d"; break; fi
 done
 if [[ -z "${MT5_DIR:-}" ]]; then

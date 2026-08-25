@@ -45,9 +45,9 @@ Note: `tests/test_xau_pipeline.py` asserts `xauusd_data.csv` exists and spans �
 
 ## Multi-broker model
 
-One Wine prefix **per broker** (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`, `~/.mt5-exness`; legacy generic `~/.mt5`). Brand installers only pre-seed a terminal's server list — cross-company logins fail with `Invalid account`. Switch with `./scripts/16-use-broker.sh <name>` or `uv run mt5-arch brokers` (`config/brokers/*.env`).
+One Wine prefix **per broker** (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`, `~/.mt5-exness`; legacy generic `~/.mt5`). Brand installers only pre-seed a terminal's server list — cross-company logins fail with `Invalid account`. Brokers with `config/brokers/<name>.env` switch via `./scripts/16-use-broker.sh <name>` or `uv run mt5-arch brokers`. `~/.mt5-exness` exists on disk but there is no `config/brokers/exness.env` yet — select Exness by exporting `WINEPREFIX` directly (same note as `docs/MT5-INTEGRATION-CAPABILITIES.md`).
 
-Brand install dirs differ (`Program Files/Vantage International MT5`, `.../FP Markets MT5 Terminal`, …) and are **hardcoded in several places**: the search list in `scripts/19-run-htf-fib-backtest.sh`, a Vantage path in `fetch_data.py`, and the generic `MetaTrader 5` default in `file_bridge.py::default_bridge_dir` (overridable via `MT5_BRIDGE_DIR`). Adding a broker means updating all of them.
+Brand install dirs differ (`Program Files/Vantage International MT5`, `.../FP Markets MT5 Terminal`, …) and are listed in `config/broker_install_dirs.json` (consumed by `scripts/19-run-htf-fib-backtest.sh` and `fetch_data.py`). The generic `MetaTrader 5` default in `file_bridge.py::default_bridge_dir` stays overridable via `MT5_BRIDGE_DIR` (platform layer). Adding a broker means updating that JSON (and adding a broker env when ready).
 
 One MT5 install runs one `terminal64.exe` at a time — the headless tester defaults to `KILL_EXISTING=1` and kills a running terminal.
 
@@ -60,7 +60,7 @@ Repo `mql5/` is source of truth, but MT5 only sees what's copied into the Wine p
 # then MetaEditor F7, or headless: wine MetaEditor64.exe /compile:<file>.mq5
 ```
 
-Indicators expose signals through `iCustom` buffers consumed by `ForexSignalLogger.mq5` (log-only, never `OrderSend`) and `ForexHtfFibTester.mq5`. **Read the buffer table in `mql5/README.md` / `docs/HOWTO-HTF-FIB.md` for the exact indicator version before wiring `CopyBuffer`** — the two docs don't agree on the HTF Fib signal index, and version drift is the usual cause.
+Indicators expose signals through `iCustom` buffers consumed by `ForexSignalLogger.mq5` (log-only, never `OrderSend`) and `ForexHtfFibTester.mq5`. **Read the buffer table in `mql5/README.md` (authoritative map) / `docs/HOWTO-HTF-FIB.md` for the exact indicator version before wiring `CopyBuffer`**.
 
 Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`; its header documents the non-obvious constraints: login from `Config/common.ini` (UTF-16) because `Login=0` fails, the `/config` ini must be ASCII + CRLF, `.set` presets must be UTF-16LE, `Expert=` takes a bare name.
 
