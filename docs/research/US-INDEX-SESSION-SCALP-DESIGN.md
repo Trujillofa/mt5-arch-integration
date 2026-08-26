@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|--------|
 | **Date** | 2026-08-18 |
-| **Status** | Overlay shipped; **v1–v8 screens missed 1%/20%; promote=no** |
+| **Status** | Overlay shipped; **v1–v8 missed 1%/20%; goal archived 2026-08-20; promote=no** |
 | **Indicator** | `UsIndexSessionScalp` v1.40 |
 | **Family** | `ny_cash_orb_vwap_ema_flat` (defaults frozen) |
 | **Repo boundary** | Platform / research overlay: visual + `iCustom` + logger — **no** `OrderSend` |
@@ -12,7 +12,7 @@
 | **promote / live_go** | **no / false** |
 | **Develop screen** | **executed** `us_index_session_develop_v1` — 0 eligible hit goals |
 
-> **Not XAU Phase E.** This US-index work does **not** authorize or substitute for XAU Phase E. Do **not** edit `results/xau_loop_status.md` from this lane; see that file for current XAU disposition (`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`). Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. Locks already say this is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`.
+> **Not XAU Phase E.** US-index 1%/20% is **archived** (`results/us_index_session_goal_archived.md`). See `results/xau_loop_status.md` for current XAU disposition. Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`.
 
 ---
 
