@@ -1588,9 +1588,8 @@ def run_negative_controls() -> dict:
 
     # 13) Roster broker missing from enumerating site → drift (scratch site without SoT)
     import tempfile
-    from pathlib import Path as _P
 
-    _td = _P(tempfile.mkdtemp(prefix="claim_neg_roster_"))
+    _td = Path(tempfile.mkdtemp(prefix="claim_neg_roster_"))
     _scratch = _td / "site_no_wsf.sh"
     _scratch.write_text(
         'for d in "Vantage International MT5" "FP Markets MT5 Terminal"; do :; done\n'
