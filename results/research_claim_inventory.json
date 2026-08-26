@@ -2,12 +2,12 @@
   "schema": "research_claim_inventory/v1",
   "scope": "docs/**/*.md + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster)",
   "method": "grep+read_file walk of docs/**/*.md (min docs/README.md + docs/research/*.md + other docs/*.md); kinds path/link/sha/symbol/metric/disposition; links resolved relative to containing file; slim {file,line,kind,claimed,attribution}",
-  "n_claims": 532,
+  "n_claims": 531,
   "counts": {
     "link": 71,
-    "disposition": 133,
+    "disposition": 130,
     "symbol": 53,
-    "path": 192,
+    "path": 194,
     "metric": 53,
     "sha": 25,
     "consistency": 5
@@ -124,13 +124,6 @@
       "kind": "link",
       "claimed": "research/ZACKS-MCP-OVERLAY-LANE.md",
       "attribution": "docs/research/ZACKS-MCP-OVERLAY-LANE.md"
-    },
-    {
-      "file": "docs/README.md",
-      "line": 21,
-      "kind": "disposition",
-      "claimed": "New edge",
-      "attribution": "Zacks MCP gold-complex overlay"
     },
     {
       "file": "docs/README.md",
@@ -3237,6 +3230,13 @@
       "file": "CLAUDE.md",
       "line": 54,
       "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
       "claimed": "scripts/19-run-htf-fib-backtest.sh",
       "attribution": "instruction"
     },
@@ -3381,13 +3381,6 @@
       "attribution": "instruction"
     },
     {
-      "file": "CLAUDE.md",
-      "line": 67,
-      "kind": "disposition",
-      "claimed": "HTF Fib docs disagree on signal index",
-      "attribution": "mql5/README.md + docs/HOWTO-HTF-FIB.md"
-    },
-    {
       "file": "AGENTS.md",
       "line": 3,
       "kind": "path",
@@ -3512,6 +3505,13 @@
       "kind": "symbol",
       "claimed": "client.py",
       "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
     },
     {
       "file": "AGENTS.md",
@@ -3654,13 +3654,6 @@
       "attribution": "instruction"
     },
     {
-      "file": "AGENTS.md",
-      "line": 63,
-      "kind": "disposition",
-      "claimed": "HTF Fib docs disagree on signal index",
-      "attribution": "mql5/README.md + docs/HOWTO-HTF-FIB.md"
-    },
-    {
       "file": "README.md",
       "line": 100,
       "kind": "path",
@@ -3772,7 +3765,7 @@
     }
   ],
   "corpus": {
-    "docs/README.md": 45,
+    "docs/README.md": 44,
     "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 7,
     "docs/CHARTER-RESEARCH-LAYER.md": 18,
     "docs/research/BACKTEST-RECORD.md": 48,
