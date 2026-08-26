@@ -1,4 +1,5 @@
 # Offline CI — lint, claim audit, unit tests.
+# trigger-touch
 # Never runs screens, backtests, fetch_data, live_trader, Strategy Tester, or Wine.
 name: ci
 
