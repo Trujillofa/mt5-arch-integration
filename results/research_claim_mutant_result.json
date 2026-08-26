@@ -4,7 +4,7 @@
   "gate_can_fail": true,
   "n_seeded": 8,
   "n_caught": 8,
-  "evidence": "gate_can_fail=True (broken verifier caught 0/8); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5'->'3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf0' status=drift caught=True | metric_digit: orig='pooled PF 0.90'->'pooled PF 0.99' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True | instruction_stale: orig='scripts/lib.sh'->'scripts/__mutant_instruction_stale_missing__.sh' status=drift caught=True | consistency_broker: orig='broker_roster_coverage'->'broker_roster_coverage' status=drift caught=True",
+  "evidence": "gate_can_fail=True (broken verifier caught 0/8); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5'->'3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf0' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True | instruction_stale: orig='scripts/lib.sh'->'scripts/__mutant_instruction_stale_missing__.sh' status=drift caught=True | consistency_broker: orig='broker_roster_coverage'->'broker_roster_coverage' status=drift caught=True",
   "per_seed": [
     {
       "seed_kind": "dead_path",
@@ -33,13 +33,13 @@
     {
       "seed_kind": "metric_digit",
       "kind": "metric",
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 14,
-      "orig_claimed": "pooled PF 0.90",
-      "mutant_claimed": "pooled PF 0.99",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1",
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 78,
+      "orig_claimed": "PF 0.80",
+      "mutant_claimed": "PF 0.89",
+      "attribution": "us_index_session_backtest",
       "status": "drift",
-      "actual": "results_oracle_miss n_searched=107; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']; claimed='pooled PF 0.99'",
+      "actual": "results_oracle_miss n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']; claimed='PF 0.89'",
       "caught": true
     },
     {
@@ -81,8 +81,8 @@
     {
       "seed_kind": "instruction_stale",
       "kind": "path",
-      "file": "AGENTS.md",
-      "line": 12,
+      "file": "CLAUDE.md",
+      "line": 34,
       "orig_claimed": "scripts/lib.sh",
       "mutant_claimed": "scripts/__mutant_instruction_stale_missing__.sh",
       "attribution": "instruction",

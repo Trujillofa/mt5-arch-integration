@@ -1,74 +1,17 @@
 {
   "ok": true,
-  "n_ok": 1226,
+  "n_ok": 1261,
   "n_drift": 0,
-  "n_unresolvable": 8,
+  "n_unresolvable": 0,
   "n_sha_unresolvable": 0,
   "n_exempt_secrets": 21,
-  "n_self_referential": 108,
+  "n_self_referential": 10,
   "n_selfref_unallowlisted": 0,
-  "n_skipped_dates": 71,
+  "n_skipped_dates": 69,
   "n_results_tracked": 190,
-  "n_claims": 1413,
+  "n_claims": 1340,
   "drift": [],
-  "unresolvable": [
-    {
-      "file": "docs/README.md",
-      "line": 21,
-      "kind": "disposition",
-      "claimed": "KEEP",
-      "actual": "disposition 'KEEP' attr='README'"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 119,
-      "kind": "disposition",
-      "claimed": "BLOCKED",
-      "actual": "disposition 'BLOCKED' attr='RESEARCH-CLAIM-AUDIT'"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 121,
-      "kind": "disposition",
-      "claimed": "BLOCKED",
-      "actual": "disposition 'BLOCKED' attr='RESEARCH-CLAIM-AUDIT'"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 135,
-      "kind": "disposition",
-      "claimed": "BLOCKED",
-      "actual": "disposition 'BLOCKED' attr='drift'"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 136,
-      "kind": "disposition",
-      "claimed": "KEEP",
-      "actual": "disposition 'KEEP' attr='drift'"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 189,
-      "kind": "disposition",
-      "claimed": "New edge",
-      "actual": "disposition 'New edge' attr='RESEARCH-CLAIM-AUDIT'"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "n < 20",
-      "actual": "n_searched=42; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json']; claimed='n < 20'"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md",
-      "line": 45,
-      "kind": "metric",
-      "claimed": "n < 40",
-      "actual": "n_searched=43; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json']; claimed='n < 40'"
-    }
-  ],
+  "unresolvable": [],
   "exempt_secrets": [
     {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
@@ -221,111 +164,6 @@
   "self_referential": [
     {
       "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "+11.75",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "+4.14",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "H50 +11.75",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "H50 \u221211.85",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "H50 \u221219.18",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "t +4.14",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "t \u22121.68",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "t \u22123.13",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "\u22121.68",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "\u221211.85",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "\u221219.18",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "\u22123.13",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 69,
-      "kind": "metric",
-      "claimed": "PF 1.00",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 80,
-      "kind": "metric",
-      "claimed": "\u22124.00",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 92,
-      "kind": "metric",
-      "claimed": "max PF 1.995",
-      "actual": "claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
       "line": 93,
       "kind": "metric",
       "claimed": "OOS PF 0.588",
@@ -346,195 +184,6 @@
       "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md']"
     },
     {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 111,
-      "kind": "metric",
-      "claimed": "n=80",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 381,
-      "kind": "metric",
-      "claimed": "0 / 99",
-      "actual": "claiming_file_only n_searched=95; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/htf_fib_offline_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 60,
-      "kind": "metric",
-      "claimed": "+0.0008",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 60,
-      "kind": "metric",
-      "claimed": "+0.0012",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 61,
-      "kind": "metric",
-      "claimed": "\u22120.0009",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 61,
-      "kind": "metric",
-      "claimed": "\u22120.0011",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "+0.0010",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "\u22120.0005",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 63,
-      "kind": "metric",
-      "claimed": "+0.0000",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 63,
-      "kind": "metric",
-      "claimed": "+0.0010",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 134,
-      "kind": "metric",
-      "claimed": "n=999",
-      "actual": "claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 64,
-      "kind": "metric",
-      "claimed": "0 / 14",
-      "actual": "claiming_file_only n_searched=84; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json']"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 162,
-      "kind": "metric",
-      "claimed": "PF 0.89",
-      "actual": "claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 163,
-      "kind": "metric",
-      "claimed": "PF 0.89",
-      "actual": "claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 164,
-      "kind": "metric",
-      "claimed": "pooled PF 0.909",
-      "actual": "claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 22,
-      "kind": "metric",
-      "claimed": "t 2.24",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 22,
-      "kind": "metric",
-      "claimed": "t 2.44",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 36,
-      "kind": "metric",
-      "claimed": "+2.44",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 36,
-      "kind": "metric",
-      "claimed": "n=80",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 37,
-      "kind": "metric",
-      "claimed": "+2.24",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 37,
-      "kind": "metric",
-      "claimed": "n=92",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "t 2.52",
-      "actual": "claiming_file_only n_searched=73; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book_lock.json', 'results/htf_fib_offline_2022_2024_filter_on.json', 'results/htf_fib_offline_2022_2024_nofilter.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 57,
-      "kind": "metric",
-      "claimed": "t 1.12",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "t 0.63",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "n=5379",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book.json', 'results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'results/eurusd_ny_scalp_usd_book.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 49,
-      "kind": "metric",
-      "claimed": "n=764",
-      "actual": "claiming_file_only n_searched=51; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book.json', 'results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v8.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 50,
-      "kind": "metric",
-      "claimed": "+0.83",
-      "actual": "claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']"
-    },
-    {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 50,
       "kind": "metric",
@@ -543,311 +192,10 @@
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 51,
-      "kind": "metric",
-      "claimed": "\u22120.85",
-      "actual": "claiming_file_only n_searched=12; scope_results=190; sample=['results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_scalp_backtest.json', 'results/us_index_session_scalp_backtest_us30.json', 'results/us_index_session_v4_cost_size_once_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 51,
-      "kind": "metric",
-      "claimed": "\u2212695.10",
-      "actual": "claiming_file_only n_searched=12; scope_results=190; sample=['results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_scalp_backtest.json', 'results/us_index_session_scalp_backtest_us30.json', 'results/us_index_session_v4_cost_size_once_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 52,
-      "kind": "metric",
-      "claimed": "n=125",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 52,
-      "kind": "metric",
-      "claimed": "\u2212190.73",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 53,
-      "kind": "metric",
-      "claimed": "+0.49",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 53,
-      "kind": "metric",
-      "claimed": "+1443.35",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 53,
-      "kind": "metric",
-      "claimed": "n=65",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 54,
-      "kind": "metric",
-      "claimed": "+1.26",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 54,
-      "kind": "metric",
-      "claimed": "+3281.29",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 54,
-      "kind": "metric",
-      "claimed": "n=55",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "+2.44",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "+3883.44",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 55,
       "kind": "metric",
       "claimed": "n=80",
       "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 56,
-      "kind": "metric",
-      "claimed": "n=127",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 56,
-      "kind": "metric",
-      "claimed": "\u22120.94",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 56,
-      "kind": "metric",
-      "claimed": "\u2212603.74",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 57,
-      "kind": "metric",
-      "claimed": "+1.43",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 57,
-      "kind": "metric",
-      "claimed": "+2622.00",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "+2165.43",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "n=176",
-      "actual": "claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "n=164",
-      "actual": "claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "\u22120.89",
-      "actual": "claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "\u22121835.78",
-      "actual": "claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 60,
-      "kind": "metric",
-      "claimed": "+0.92",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 60,
-      "kind": "metric",
-      "claimed": "+836.13",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 60,
-      "kind": "metric",
-      "claimed": "n=144",
-      "actual": "claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 61,
-      "kind": "metric",
-      "claimed": "+0.55",
-      "actual": "claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 61,
-      "kind": "metric",
-      "claimed": "+833.48",
-      "actual": "claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 61,
-      "kind": "metric",
-      "claimed": "n=131",
-      "actual": "claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "n=56",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "\u22120.24",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "\u2212315.21",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 63,
-      "kind": "metric",
-      "claimed": "n=86",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 63,
-      "kind": "metric",
-      "claimed": "\u22120.23",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 63,
-      "kind": "metric",
-      "claimed": "\u2212614.73",
-      "actual": "claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 64,
-      "kind": "metric",
-      "claimed": "\u22129167.37",
-      "actual": "claiming_file_only n_searched=60; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book_lock.json', 'results/htf_fib_offline_2022_2024_filter_on.json', 'results/htf_fib_offline_2022_2024_nofilter.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 66,
-      "kind": "metric",
-      "claimed": "n=72",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 66,
-      "kind": "metric",
-      "claimed": "\u22120.07",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 66,
-      "kind": "metric",
-      "claimed": "\u221286.51",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 67,
-      "kind": "metric",
-      "claimed": "+1.61",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 67,
-      "kind": "metric",
-      "claimed": "+2036.84",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 67,
-      "kind": "metric",
-      "claimed": "n=140",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 68,
-      "kind": "metric",
-      "claimed": "+2.24",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 68,
-      "kind": "metric",
-      "claimed": "+3856.11",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
@@ -858,86 +206,9 @@
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 69,
-      "kind": "metric",
-      "claimed": "n=14",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 69,
-      "kind": "metric",
-      "claimed": "\u22120.13",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 69,
-      "kind": "metric",
-      "claimed": "\u2212568.21",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "+0.06",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "+938.35",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "n=23",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 87,
-      "kind": "metric",
-      "claimed": "+0.83",
-      "actual": "claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 87,
-      "kind": "metric",
-      "claimed": "+70.19 pts",
-      "actual": "claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 87,
-      "kind": "metric",
-      "claimed": "t +0.83",
-      "actual": "claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 93,
-      "kind": "metric",
-      "claimed": "+2.44",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 93,
       "kind": "metric",
       "claimed": "n=80",
-      "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 93,
-      "kind": "metric",
-      "claimed": "t +2.44",
       "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']"
     },
     {
@@ -960,20 +231,6 @@
       "kind": "metric",
       "claimed": "t +2.24",
       "actual": "claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 110,
-      "kind": "metric",
-      "claimed": "n < 100",
-      "actual": "claiming_file_only n_searched=52; scope_results=190; sample=['results/htf_fib_offline_lock.json', 'results/us_index_session_v6_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json']"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
-      "line": 21,
-      "kind": "metric",
-      "claimed": "n=999",
-      "actual": "claiming_file_only n_searched=27; scope_results=190; sample=['results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json', 'results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json']"
     }
   ],
   "zacks_handcheck": [
@@ -998,31 +255,14 @@
     "docs/HOWTO-US-INDEX-SCALP.md|56|metric|2026-06-01|SKIPPED_DATE",
     "docs/MULTI-BROKER-MT5.md|14|path|.net-fix-evidence/SUMMARY.md|EXEMPT_SECRETS:gitignored:.net-fix-evidence/SUMMARY.md",
     "docs/MULTI-BROKER-MT5.md|43|path|.net-fix-evidence/SUMMARY.md|EXEMPT_SECRETS:gitignored:.net-fix-evidence/SUMMARY.md",
-    "docs/README.md|21|disposition|KEEP|UNRESOLVABLE:disposition 'KEEP' attr='README'",
     "docs/README.md|69|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
     "docs/TROUBLESHOOTING.md|99|path|.net-fix-evidence/SUMMARY.md|EXEMPT_SECRETS:gitignored:.net-fix-evidence/SUMMARY.md",
     "docs/TROUBLESHOOTING.md|151|path|.net-fix-evidence/SUMMARY.md|EXEMPT_SECRETS:gitignored:.net-fix-evidence/SUMMARY.md",
     "docs/TROUBLESHOOTING.md|154|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
     "docs/TROUBLESHOOTING.md|170|path|.net-fix-evidence/WORKFLOW-REPORT.md|EXEMPT_SECRETS:gitignored:.net-fix-evidence/WORKFLOW-REPORT.md",
-    "docs/research/BACKTEST-RECORD.md|46|metric|+11.75|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|+4.14|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|H50 +11.75|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|H50 \u221211.85|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|H50 \u221219.18|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|t +4.14|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|t \u22121.68|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|t \u22123.13|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|\u22121.68|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|\u221211.85|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|\u221219.18|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|46|metric|\u22123.13|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|69|metric|PF 1.00|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|80|metric|\u22124.00|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
-    "docs/research/BACKTEST-RECORD.md|92|metric|max PF 1.995|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
     "docs/research/BACKTEST-RECORD.md|93|metric|OOS PF 0.588|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
     "docs/research/BACKTEST-RECORD.md|93|metric|n=7|SELF_REF:claiming_file_only n_searched=1; scope_results=190; sample=['results/xau_loop_status.md']",
     "docs/research/BACKTEST-RECORD.md|111|metric|n < 100|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md']",
-    "docs/research/BACKTEST-RECORD.md|111|metric|n=80|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md']",
     "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md|37|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md|102|metric|2026-08-22|SKIPPED_DATE",
     "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md|13|metric|2025-03-01|SKIPPED_DATE",
@@ -1034,7 +274,6 @@
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|148|metric|2026-08-20|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|152|metric|2025-03-01|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|155|metric|2025-12-31|SKIPPED_DATE",
-    "docs/research/EURUSD-NY-SCALP-DESIGN.md|155|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/EURUSD-NY-SCALP-DESIGN.md|171|path|results/eurusd_data/history_EURUSD.csv|EXEMPT_SECRETS:gitignored:results/eurusd_data/history_EURUSD.csv",
     "docs/research/HOWTO-BACKTEST-PATHS.md|15|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|17|metric|2024-06-01|SKIPPED_DATE",
@@ -1044,109 +283,23 @@
     "docs/research/HOWTO-BACKTEST-PATHS.md|18|metric|2026-07-01|SKIPPED_DATE",
     "docs/research/HOWTO-BACKTEST-PATHS.md|19|metric|2025-03-01|SKIPPED_DATE",
     "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md|5|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md|381|metric|0 / 99|SELF_REF:claiming_file_only n_searched=95; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/htf_fib_offline_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
     "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|15|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|60|metric|+0.0008|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|60|metric|+0.0012|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|61|metric|\u22120.0009|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|61|metric|\u22120.0011|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|62|metric|+0.0010|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|62|metric|\u22120.0005|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|63|metric|+0.0000|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|63|metric|+0.0010|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md|134|metric|n=999|SELF_REF:claiming_file_only n_searched=87; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json']",
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md|12|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md|64|metric|0 / 14|SELF_REF:claiming_file_only n_searched=84; scope_results=190; sample=['results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json', 'results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json']",
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md|101|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md|103|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/RESEARCH-CLAIM-AUDIT.md|113|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
     "docs/research/RESEARCH-CLAIM-AUDIT.md|114|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
     "docs/research/RESEARCH-CLAIM-AUDIT.md|115|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|119|disposition|BLOCKED|UNRESOLVABLE:disposition 'BLOCKED' attr='RESEARCH-CLAIM-AUDIT'",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|121|disposition|BLOCKED|UNRESOLVABLE:disposition 'BLOCKED' attr='RESEARCH-CLAIM-AUDIT'",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|135|disposition|BLOCKED|UNRESOLVABLE:disposition 'BLOCKED' attr='drift'",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|136|disposition|KEEP|UNRESOLVABLE:disposition 'KEEP' attr='drift'",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|162|metric|PF 0.89|SELF_REF:claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|163|metric|PF 0.89|SELF_REF:claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|164|metric|pooled PF 0.909|SELF_REF:claiming_file_only n_searched=11; scope_results=190; sample=['results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json', 'results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json', 'results/xau_fib_fix_note.md', 'results/xau_housekeeping_inventory.md']",
-    "docs/research/RESEARCH-CLAIM-AUDIT.md|189|disposition|New edge|UNRESOLVABLE:disposition 'New edge' attr='RESEARCH-CLAIM-AUDIT'",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|22|metric|t 2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|36|metric|+2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|36|metric|n=80|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|37|metric|+2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|37|metric|n=92|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|47|metric|t 2.52|SELF_REF:claiming_file_only n_searched=73; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book_lock.json', 'results/htf_fib_offline_2022_2024_filter_on.json', 'results/htf_fib_offline_2022_2024_nofilter.json']",
     "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|51|metric|2025-10-23|SKIPPED_DATE",
     "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|51|metric|2026-08-18|SKIPPED_DATE",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|57|metric|t 1.12|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md|58|metric|t 0.63|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|15|metric|2025-03-01|SKIPPED_DATE",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|47|metric|n=5379|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book.json', 'results/eurusd_ny_scalp_autoresearch.md', 'results/eurusd_ny_scalp_signal_diagnostic.md', 'results/eurusd_ny_scalp_usd_book.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|49|metric|n=764|SELF_REF:claiming_file_only n_searched=51; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book.json', 'results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v8.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+0.83|SELF_REF:claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|50|metric|+70.19|SELF_REF:claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|51|metric|\u22120.85|SELF_REF:claiming_file_only n_searched=12; scope_results=190; sample=['results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_scalp_backtest.json', 'results/us_index_session_scalp_backtest_us30.json', 'results/us_index_session_v4_cost_size_once_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|51|metric|\u2212695.10|SELF_REF:claiming_file_only n_searched=12; scope_results=190; sample=['results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_scalp_backtest.json', 'results/us_index_session_scalp_backtest_us30.json', 'results/us_index_session_v4_cost_size_once_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|52|metric|n=125|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|52|metric|\u2212190.73|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|53|metric|+0.49|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|53|metric|+1443.35|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|53|metric|n=65|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|54|metric|+1.26|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|54|metric|+3281.29|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|54|metric|n=55|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_playbook_v2_lock.json', 'results/us_index_session_playbook_v2.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|+2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|+3883.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|55|metric|n=80|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|56|metric|n=127|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|56|metric|\u22120.94|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|56|metric|\u2212603.74|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|57|metric|+1.43|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|57|metric|+2622.00|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|58|metric|+2165.43|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|58|metric|n=176|SELF_REF:claiming_file_only n_searched=33; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|59|metric|n=164|SELF_REF:claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|59|metric|\u22120.89|SELF_REF:claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|59|metric|\u22121835.78|SELF_REF:claiming_file_only n_searched=6; scope_results=190; sample=['results/us_index_session_v4.json', 'results/us_index_session_v4_cost_size_once_lock.json', 'results/us_index_session_v4_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|60|metric|+0.92|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|60|metric|+836.13|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|60|metric|n=144|SELF_REF:claiming_file_only n_searched=2; scope_results=190; sample=['results/us_index_session_v4_lock.json', 'results/us_index_session_v4.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|61|metric|+0.55|SELF_REF:claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|61|metric|+833.48|SELF_REF:claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|61|metric|n=131|SELF_REF:claiming_file_only n_searched=14; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_autoresearch.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_null.json', 'results/eurusd_ny_scalp_usd_book.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|62|metric|n=56|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|62|metric|\u22120.24|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|62|metric|\u2212315.21|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|63|metric|n=86|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|63|metric|\u22120.23|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|63|metric|\u2212614.73|SELF_REF:claiming_file_only n_searched=5; scope_results=190; sample=['results/us_index_session_v5.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v5.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|64|metric|\u22129167.37|SELF_REF:claiming_file_only n_searched=60; scope_results=190; sample=['results/eurusd_ny_mr_limit_fill_paper_gate_v1.json', 'results/eurusd_ny_scalp_lock.json', 'results/eurusd_ny_scalp_usd_book_lock.json', 'results/htf_fib_offline_2022_2024_filter_on.json', 'results/htf_fib_offline_2022_2024_nofilter.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|66|metric|n=72|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|66|metric|\u22120.07|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|66|metric|\u221286.51|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v6.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v6.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|67|metric|+1.61|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|67|metric|+2036.84|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|67|metric|n=140|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|+2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|+3856.11|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|68|metric|n=92|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|69|metric|n=14|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|69|metric|\u22120.13|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|69|metric|\u2212568.21|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|70|metric|+0.06|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|70|metric|+938.35|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|70|metric|n=23|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v8.json', 'results/us_index_session_v8_lock.json', 'results/us_index_session_v8.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|78|metric|2025-03-01|SKIPPED_DATE",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|85|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|87|metric|+0.83|SELF_REF:claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|87|metric|+70.19 pts|SELF_REF:claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|87|metric|t +0.83|SELF_REF:claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|90|metric|2026-06-01|SKIPPED_DATE",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|90|metric|2026-07-01|SKIPPED_DATE",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|93|metric|+2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|93|metric|n=80|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
-    "docs/research/SIGNAL-EDGE-TRIAGE.md|93|metric|t +2.44|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_structure_v3.json', 'results/us_index_session_structure_v3_lock.json', 'results/us_index_session_structure_v3.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|94|metric|+2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|94|metric|n=92|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
     "docs/research/SIGNAL-EDGE-TRIAGE.md|94|metric|t +2.24|SELF_REF:claiming_file_only n_searched=3; scope_results=190; sample=['results/us_index_session_v7.json', 'results/us_index_session_v7_lock.json', 'results/us_index_session_v7.md']",
@@ -1169,16 +322,13 @@
     "docs/research/WAVE-B-OBSERVE.md|10|path|mql5/Indicators/ForexIndicatorTemplate.ex5|EXEMPT_SECRETS:gitignored:mql5/Indicators/ForexIndicatorTemplate.ex5",
     "docs/research/WAVE-B-OBSERVE.md|11|path|mql5/Experts/ForexSignalLogger.ex5|EXEMPT_SECRETS:gitignored:mql5/Experts/ForexSignalLogger.ex5",
     "docs/research/WAVE-B-OBSERVE.md|12|path|mql5/Experts/Mt5ArchBridge.ex5|EXEMPT_SECRETS:gitignored:mql5/Experts/Mt5ArchBridge.ex5",
-    "docs/research/XAU-FAMILY-PROTOCOL-V2.md|110|metric|n < 100|SELF_REF:claiming_file_only n_searched=52; scope_results=190; sample=['results/htf_fib_offline_lock.json', 'results/us_index_session_v6_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json']",
     "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md|11|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md|115|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md|21|metric|n=999|SELF_REF:claiming_file_only n_searched=27; scope_results=190; sample=['results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json', 'results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json']",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md|11|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md|87|metric|2021-09-03|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md|87|metric|2026-08-07|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md|88|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md|12|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md|46|metric|n < 20|UNRESOLVABLE:n_searched=42; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json']; claimed='n < 20'",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md|113|metric|2021-09-03|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md|113|metric|2026-08-07|SKIPPED_DATE",
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md|114|metric|2026-01-01|SKIPPED_DATE",
@@ -1189,7 +339,6 @@
     "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md|11|metric|2026-01-01|SKIPPED_DATE",
     "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md|14|metric|2026-08-21|SKIPPED_DATE",
     "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md|38|metric|2026-01-01|SKIPPED_DATE",
-    "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md|45|metric|n < 40|UNRESOLVABLE:n_searched=43; scope_results=190; sample=['results/eurusd_ny_scalp_lock.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json', 'results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v1.json', 'results/xau_charters/2026-08-10_server_hour_window_flat_v2.json']; claimed='n < 40'",
     "docs/research/ZACKS-MCP-OVERLAY-LANE.md|50|path|.cursor/mcp.local.json|EXEMPT_SECRETS:gitignored:.cursor/mcp.local.json",
     "CLAUDE.md|87|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths",
     "AGENTS.md|78|path|config/local.paths|EXEMPT_SECRETS:gitignored:config/local.paths"
@@ -1208,40 +357,40 @@
     "docs/MQL5-PYTHON-PARITY.md": 21,
     "docs/MT5-INTEGRATION-CAPABILITIES.md": 23,
     "docs/MULTI-BROKER-MT5.md": 6,
-    "docs/README.md": 47,
+    "docs/README.md": 46,
     "docs/SYMBOL-REGISTRY.md": 17,
     "docs/SYMBOL-SYNC-AUDIT.md": 12,
     "docs/TESTER-PROVENANCE.md": 8,
     "docs/TRADE-JOURNAL.md": 10,
     "docs/TROUBLESHOOTING.md": 17,
     "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md": 61,
-    "docs/research/BACKTEST-RECORD.md": 83,
+    "docs/research/BACKTEST-RECORD.md": 84,
     "docs/research/BTC-INDICATOR-DESIGN.md": 20,
     "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md": 17,
     "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md": 26,
-    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 34,
+    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 33,
     "docs/research/HOWTO-BACKTEST-PATHS.md": 45,
     "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md": 7,
-    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 14,
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 26,
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 21,
+    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 13,
+    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 19,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 20,
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md": 6,
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md": 6,
     "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md": 5,
     "docs/research/PHASE0-DISCOVERY.md": 22,
-    "docs/research/RESEARCH-CLAIM-AUDIT.md": 92,
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 40,
-    "docs/research/SIGNAL-EDGE-TRIAGE.md": 209,
+    "docs/research/RESEARCH-CLAIM-AUDIT.md": 79,
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 37,
+    "docs/research/SIGNAL-EDGE-TRIAGE.md": 166,
     "docs/research/SIMULATOR-CONFORMANCE.md": 9,
     "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md": 76,
     "docs/research/WAVE-B-OBSERVE.md": 8,
-    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 35,
+    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 34,
     "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md": 17,
-    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md": 6,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md": 5,
     "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md": 15,
-    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 19,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 18,
     "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 18,
-    "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md": 21,
+    "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md": 20,
     "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 9,
     "CLAUDE.md": 47,
     "AGENTS.md": 40,

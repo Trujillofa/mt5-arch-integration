@@ -1,0 +1,2181 @@
+{
+  "schema": "research_claim_frozen435_keys/v1",
+  "n_keys": 435,
+  "keys": [
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "link",
+      "claimed": "TRADE-JOURNAL.md"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "link",
+      "claimed": "../results/xau_holdout_lock.json"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "link",
+      "claimed": "../results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "path",
+      "claimed": "scripts/verify_article_intake.py"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "path",
+      "claimed": "scripts/xau_charter_protocol.py"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "path",
+      "claimed": "backtest.py"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "symbol",
+      "claimed": "--charter"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "kind": "link",
+      "claimed": "CHARTER-RESEARCH-LAYER.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "link",
+      "claimed": "../AGENTS.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "link",
+      "claimed": "../CLAUDE.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "link",
+      "claimed": "../results/xau_charter_adopted.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "link",
+      "claimed": "../results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "path",
+      "claimed": "AGENTS.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "path",
+      "claimed": "backtest.py"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "path",
+      "claimed": "fetch_data.py"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "path",
+      "claimed": "live_trader.py"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "next_step"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "kind": "disposition",
+      "claimed": "next_step"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "kind": "link",
+      "claimed": "../mql5/README.md"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "path",
+      "claimed": "MQL5/Indicators/ForexHtfPivotsFib.mq5"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "path",
+      "claimed": "mql5/Experts/ForexHtfFibTester.mq5"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "path",
+      "claimed": "results/htf_fib_offline_lock.json"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "metric",
+      "claimed": "2026-01-01"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "symbol",
+      "claimed": "--unbounded"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "kind": "symbol",
+      "claimed": "--no-rsi-ma-filter"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "link",
+      "claimed": "ARTICLE-INTAKE.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "link",
+      "claimed": "ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "link",
+      "claimed": "TROUBLESHOOTING.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "kind": "link",
+      "claimed": "research/ZACKS-MCP-OVERLAY-LANE.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "../mql5/README.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "research/US-INDEX-SESSION-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "disposition",
+      "claimed": "AWAIT_PHASE_E_SCREEN_AUTHORIZATION"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "symbol",
+      "claimed": "score_row"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "../results/us_index_session_scalp_backtest.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "PF 0.80"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "holdout 0.96"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "path",
+      "claimed": "us_index_session_backtest.py"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "../results/us_index_session_develop_lock.json"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "path",
+      "claimed": "us_index_session_autoresearch.py"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 205"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 129"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 105"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 5"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 43"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 4"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 13"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "link",
+      "claimed": "../results/us_index_session_v8.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "kind": "metric",
+      "claimed": "0 / 0"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportHtfFibParityFixture.mq5"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "kind": "path",
+      "claimed": "scripts/verify_mql5_python_parity.py"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "kind": "path",
+      "claimed": "tests/test_mql5_python_parity.py"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "link",
+      "claimed": "HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "link",
+      "claimed": "HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "link",
+      "claimed": "HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "path",
+      "claimed": "scripts/htf_fib_offline_backtest.py"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/MULTI-BROKER-MT5.md",
+      "kind": "path",
+      "claimed": "config/brokers/wsf.env"
+    },
+    {
+      "file": "docs/MULTI-BROKER-MT5.md",
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "../README.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "INSTALL-LINUX-ARCH.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "TROUBLESHOOTING.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "CHARTS-AND-STABILITY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "ARCH-SETUP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "FOREX-MT5-ROADMAP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/HOWTO-BACKTEST-PATHS.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/ZACKS-MCP-OVERLAY-LANE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "MQL5-PYTHON-PARITY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "SYMBOL-REGISTRY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "SYMBOL-SYNC-AUDIT.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "TESTER-PROVENANCE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "TRADE-JOURNAL.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "ARTICLE-INTAKE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/ALGO-TRADING-BTC-GOLD-FOREX.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/PHASE0-DISCOVERY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/WAVE-B-OBSERVE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "research/BTC-INDICATOR-DESIGN.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "config/brokers/wsf.env"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "config/brokers/vantage.env"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "config/brokers/fpmarkets.env"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/01-create-prefix.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/02-install-mt5.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/04-start-terminal.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/06-install-file-bridge.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/13-force-login-bridge.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/14-isolate-net-and-login.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/15-bridge-down-and-login.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/17-install-desktop-launchers.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "scripts/wine-net/force_src_bind.so"
+    },
+    {
+      "file": "docs/README.md",
+      "kind": "path",
+      "claimed": "config/local.paths"
+    },
+    {
+      "file": "docs/SYMBOL-REGISTRY.md",
+      "kind": "path",
+      "claimed": "config/symbols/registry.json"
+    },
+    {
+      "file": "docs/SYMBOL-REGISTRY.md",
+      "kind": "path",
+      "claimed": "src/mt5_arch/symbol_registry.py"
+    },
+    {
+      "file": "docs/SYMBOL-SYNC-AUDIT.md",
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportSymbolSyncAudit.mq5"
+    },
+    {
+      "file": "docs/SYMBOL-SYNC-AUDIT.md",
+      "kind": "path",
+      "claimed": "src/mt5_arch/symbol_sync_audit.py"
+    },
+    {
+      "file": "docs/TRADE-JOURNAL.md",
+      "kind": "path",
+      "claimed": "mql5/Experts/TradeTransactionJournal.mq5"
+    },
+    {
+      "file": "docs/TRADE-JOURNAL.md",
+      "kind": "path",
+      "claimed": "src/mt5_arch/trade_journal.py"
+    },
+    {
+      "file": "docs/TROUBLESHOOTING.md",
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../AGENTS.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "symbol",
+      "claimed": "--json"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../FOREX-MT5-ROADMAP.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../AGENTS.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../README.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../mql5/README.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../mql5/Mt5ArchBridge.mq5"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/cli.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/client.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/file_bridge.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/models.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "kind": "link",
+      "claimed": "../../scripts/18-install-forex-indicator.sh"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "scripts/signal_edge_diagnostic.py"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "symbol",
+      "claimed": "signal_fn"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "symbol",
+      "claimed": "simulate()"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "0 / 192"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "FAIL \u2192 stop"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "KILL_BB_RSI_LINE"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "max PF 2.242"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "KILL_DONCHIAN_LINE"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "max PF 1.995"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "OOS PF 0.588"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "n=7"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "train PF 1.837"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "PF 0.553"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "n=670"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "pooled PF 0.903"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/XAU-FAMILY-PROTOCOL-V2.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "n < 100"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "scripts/research_bias_gates.py"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "metric",
+      "claimed": "pooled PF 0.90"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "link",
+      "claimed": "HOWTO-BACKTEST-PATHS.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_autoresearch.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_signal_diagnostic.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_null_maxstat.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_donchian_null_maxstat.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_retrain_walkforward_summary.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "kind": "path",
+      "claimed": "results/xau_charter_disposition_registry.jsonl"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "kind": "path",
+      "claimed": "mql5/Indicators/BtcTrendPullback.mq5"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "kind": "path",
+      "claimed": "mql5/Mt5ArchBridge.mq5"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "symbol",
+      "claimed": "eurusd_ny_mr_limit_fill_v1"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "metric",
+      "claimed": "+11.7 pts"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "metric",
+      "claimed": "t +4.14"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "COST-BOUND"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_core.py"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "sha",
+      "claimed": "db579e1b"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "2021-09-15"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "2026-08-20"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "sha",
+      "claimed": "ebf0bcd9"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_core.py"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_autoresearch.py"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "tests/test_eurusd_ny_scalp.py"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_autoresearch.json"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "link",
+      "claimed": "../MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "metric",
+      "claimed": "2026-01-01"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "strategy_params.json"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--allow-cost-override"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--save"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--unbounded"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "python3 backtest.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "link",
+      "claimed": "XAU-FAMILY-PROTOCOL-V2.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--screen-only"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "--strict-charter"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "symbol",
+      "claimed": "python3 scripts/xau_sealed_family_cycle.py --charter \u2026"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "link",
+      "claimed": "../HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "metric",
+      "claimed": "2026-01-01"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "results/htf_fib_offline_lock.json"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "link",
+      "claimed": "../HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "metric",
+      "claimed": "2026-06-01"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "metric",
+      "claimed": "2026-07-01"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "link",
+      "claimed": "EURUSD-NY-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "metric",
+      "claimed": "2025-03-01"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "scripts/eurusd_mr_limit_fill_paper_gate.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_autoresearch.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "disposition",
+      "claimed": "live_go"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "disposition",
+      "claimed": "next_step"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "kind": "disposition",
+      "claimed": "promote"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "metric",
+      "claimed": "2026-01-01"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportInstrumentHistory.mq5"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "path",
+      "claimed": "scripts/export-instruments-from-wine-mt5.sh"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "path",
+      "claimed": "scripts/build_multi_instrument_data_readiness.py"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "path",
+      "claimed": "tests/test_multi_instrument_data_readiness.py"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "kind": "path",
+      "claimed": "results/instrument_data_packages/README.md"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "sha",
+      "claimed": "a492f2c"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "path",
+      "claimed": "docs/research/XAU-FAMILY-PROTOCOL-V2.md"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "sha",
+      "claimed": "3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "sha",
+      "claimed": "10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "sha",
+      "claimed": "a5661ec34e457cbb05d999f92251d443fd86c04cf6d9980dcfc31a8c74762174"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "sha",
+      "claimed": "db7b015aea51ff743ec9d6318de2a1c782824bc6333995591e65a83526b0cb9d"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "path",
+      "claimed": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_runs/2026-08-14_joint_london_open_cosign_fade_flat_screen_r1/"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v1.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "symbol",
+      "claimed": "load_package_snapshot()"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "sha",
+      "claimed": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "sha",
+      "claimed": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "sha",
+      "claimed": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v2.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "kind": "sha",
+      "claimed": "2d3fda48"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "kind": "symbol",
+      "claimed": "gates_from_charter()"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "kind": "sha",
+      "claimed": "e88161be27ab09542e2c49b96da32781454436791666570bc6b06d3eecb51c65"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "kind": "sha",
+      "claimed": "2d3fda48"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "kind": "sha",
+      "claimed": "935534e2"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "kind": "sha",
+      "claimed": "e29b26931b93443d7c903ddd034dfcabbeffde8761c41ad77b70e8292700b994"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "kind": "sha",
+      "claimed": "e88161be"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/PHASE0-DISCOVERY.md",
+      "kind": "link",
+      "claimed": "phase0/"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "metric",
+      "claimed": "t 2.24"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "metric",
+      "claimed": "t 2.44"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "path",
+      "claimed": "scripts/signal_edge_diagnostic.py"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "symbol",
+      "claimed": "python3 scripts/signal_edge_diagnostic.py --lane all --by-year"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "ANTI"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "COST-BOUND"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "+11.75"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "n=7819"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "DEAD"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "+70.19"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "n=885"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "CLEARS-FRICTION"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "n=80"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "t +2.44"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "EMPTY"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "n=0"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "CLEARS-FRICTION"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "n=92"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "t +2.24"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "live_go=true"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "promote=true"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "promote=false"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "KILL_BB_RSI_LINE"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "KILL_DONCHIAN_LINE"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "symbol",
+      "claimed": "simulate_donchian()"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "KILL_PRIOR_DAY_HIGH_BREAK"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "symbol",
+      "claimed": "simulate_joint()"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "H50 \u221211.85"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "metric",
+      "claimed": "H50 +11.75"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "0 eligible"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "PF ~1.0\u20131.07"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "scripts/us_index_session_core.py"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "symbol",
+      "claimed": "--live"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "2026-06-01"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/us_index_session_scalp_backtest.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "scripts/us_index_session_backtest.py"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "0.96 holdout"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "PF 0.80"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "PF 1.20"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "holdout 0.50"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "path",
+      "claimed": "results/us_index_session_develop_lock.json"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "symbol",
+      "claimed": "score_row"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "kind": "metric",
+      "claimed": "0 / 5"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "kind": "link",
+      "claimed": "BTC-INDICATOR-DESIGN.md"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "sha",
+      "claimed": "11099b2a"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SUPERSEDED"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "sha",
+      "claimed": "fee8611c"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "sha",
+      "claimed": "26ff7532"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SUPERSEDED"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "sha",
+      "claimed": "6b5811ee"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "sha",
+      "claimed": "e7cd953f"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "path",
+      "claimed": "results/xau_charter_disposition_registry.jsonl"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "symbol",
+      "claimed": "--strict-charter"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "path",
+      "claimed": "scripts/research_bias_gates.py"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "path",
+      "claimed": "docs/research/BACKTEST-RECORD.md"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "kind": "path",
+      "claimed": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "live_go=false"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "sha",
+      "claimed": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "symbol",
+      "claimed": "--null-seed"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "kind": "path",
+      "claimed": "xauusd_data.csv"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "kind": "sha",
+      "claimed": "7cf9f46fd5ddd44c171f04260f8d4fac167cb005bf3f6d4d03c1c137c1399b7e"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "kind": "path",
+      "claimed": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "kind": "symbol",
+      "claimed": "--screen-only"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "kind": "sha",
+      "claimed": "8eafe48b"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "kind": "symbol",
+      "claimed": "--null-seed"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SUPERSEDED"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "sha",
+      "claimed": "fee8611c"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "promote=no"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "disposition",
+      "claimed": "BLOCKED"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "disposition",
+      "claimed": "KEEP"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "disposition",
+      "claimed": "SCHEMA_PASS"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "path",
+      "claimed": "results/xau_charters/*"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "link",
+      "claimed": "../HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "kind": "disposition",
+      "claimed": "KEEP"
+    }
+  ]
+}
