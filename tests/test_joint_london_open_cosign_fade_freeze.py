@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -303,7 +305,7 @@ def test_multi_instrument_refuse_helper_pure():
     assert multi_instrument_single_frame_refuse_message(single) is None
 
 
-def _host_python_and_env() -> tuple[str, dict[str, str]]:
+def _host_python_and_env() -> tuple[str, dict[str, str]] | None:
     import os
     import shutil
 
@@ -335,11 +337,14 @@ def _host_python_and_env() -> tuple[str, dict[str, str]]:
                 return cand, env
         except OSError:
             continue
-    return "/usr/bin/python3", env
+    return None
 
 
 def test_null_maxstat_refuses_multi_instrument_charter_before_plugin():
-    py, env = _host_python_and_env()
+    host = _host_python_and_env()
+    if host is None:
+        pytest.skip("no host python3 with importable pandas (numpy/pandas gap)")
+    py, env = host
     proc = subprocess.run(
         [
             py,
@@ -364,7 +369,10 @@ def test_null_maxstat_refuses_multi_instrument_charter_before_plugin():
 
 
 def test_sealed_cycle_refuses_multi_instrument_before_fixtures():
-    py, env = _host_python_and_env()
+    host = _host_python_and_env()
+    if host is None:
+        pytest.skip("no host python3 with importable pandas (numpy/pandas gap)")
+    py, env = host
     proc = subprocess.run(
         [
             py,

@@ -81,8 +81,13 @@ jobs:
         run: uv sync --all-extras
       # numpy/pandas deliberately absent from pyproject.toml (platform/research layering).
       # Install them only in this job — do not add them to the manifest.
+      # Host-subprocess freeze tests probe /usr/bin/python3 (PATH strips .venv); that
+      # interpreter also needs numpy/pandas so SCREEN_FAIL assertions still run in CI.
+      # ubuntu-latest pip.conf already enables break-system-packages; no CLI flag needed.
       - name: Install research test deps (numpy, pandas)
-        run: uv pip install numpy pandas
+        run: |
+          uv pip install numpy pandas
+          /usr/bin/python3 -m pip install numpy pandas
       - name: Offline unit tests
         env:
           MT5_LIVE_SMOKE: ""
