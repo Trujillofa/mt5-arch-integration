@@ -32,6 +32,17 @@ def _load_instruction_mod():
     return mod
 
 
+def _load_extract_mod():
+    import importlib.util
+    mod_path = Path(__file__).resolve().parent / "research_claim_extract.py"
+    spec = importlib.util.spec_from_file_location("research_claim_extract", mod_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {mod_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 _instr = _load_instruction_mod()
 INSTRUCTION_FILES = _instr.INSTRUCTION_FILES
 GENERIC_BRIDGE_SITE = _instr.GENERIC_BRIDGE_SITE
@@ -1690,6 +1701,15 @@ def main(argv: list[str] | None = None) -> int:
             "semantics (checker-completed). Implies read-only inventory (no write)."
         ),
     )
+    p.add_argument(
+        "--rebuild-inventory",
+        action="store_true",
+        help=(
+            "delegate to scripts/research_claim_extract.py:build_inventory and write "
+            "the inventory before verify. Ignored with --fail-on-drift (CI stays "
+            "read-only). Prefer running the extract script directly."
+        ),
+    )
     args = p.parse_args(argv)
 
     out_path = args.out
@@ -1704,6 +1724,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["all_red"] else 1
 
     inv_path = args.inventory if args.inventory.is_absolute() else ROOT / args.inventory
+    if args.rebuild_inventory and not args.fail_on_drift:
+        _ex = _load_extract_mod()
+        data = _ex.build_inventory(ROOT)
+        inv_path.parent.mkdir(parents=True, exist_ok=True)
+        inv_path.write_text(json.dumps(data, indent=2) + "\n")
     report = verify_all(
         inv_path,
         refresh_instruction=True,

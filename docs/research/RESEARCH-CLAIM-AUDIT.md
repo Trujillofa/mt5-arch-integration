@@ -3,8 +3,8 @@
 **Date:** 2026-08-25 (instruction corpus + consistency / research-claim-audit closeout)  
 **Branch:** `research/research-claim-audit`  
 **Tip base:** `52c6baf`  
-**Auditor:** [`scripts/research_claim_verify.py`](../../scripts/research_claim_verify.py) + [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py) + [`scripts/research_claim_mutant.py`](../../scripts/research_claim_mutant.py) + [`.grok/workflows/research-claim-audit.rhai`](../../.grok/workflows/research-claim-audit.rhai)  
-**Inventory:** [`results/research_claim_inventory.json`](../../results/research_claim_inventory.json)  
+**Auditor:** [`scripts/research_claim_verify.py`](../../scripts/research_claim_verify.py) + [`scripts/research_claim_extract.py`](../../scripts/research_claim_extract.py) + [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py) + [`scripts/research_claim_mutant.py`](../../scripts/research_claim_mutant.py) + [`.grok/workflows/research-claim-audit.rhai`](../../.grok/workflows/research-claim-audit.rhai)  
+**Inventory:** [`results/research_claim_inventory.json`](../../results/research_claim_inventory.json) (built by the extract script, not agent prose)  
 **Verify:** [`results/research_claim_verify_result.json`](../../results/research_claim_verify_result.json)  
 **Negative controls:** [`results/research_claim_negative_controls.json`](../../results/research_claim_negative_controls.json)  
 **Mutant:** [`results/research_claim_mutant_result.json`](../../results/research_claim_mutant_result.json)  
@@ -46,24 +46,36 @@ git diff --exit-code CLAUDE.md AGENTS.md  → exit 0 (byte-identical to pre-run 
 
 ---
 
-## Extract — per-kind counts
+## Extract — deterministic code
 
-From `results/research_claim_inventory.json` (`n_claims=532`):
+**Extractor:** [`scripts/research_claim_extract.py`](../../scripts/research_claim_extract.py) (`build_inventory`). Stdlib-only. Scope: tracked `docs/**/*.md`, then merges `extract_instruction_claims()` + `build_consistency_claims()` from [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py). Sort key `(file, line, kind, claimed, attribution)`. Inventory `method` is `scripts/research_claim_extract.py:build_inventory` (not agent prose).
+
+```bash
+python3 scripts/research_claim_extract.py              # writes results/research_claim_inventory.json
+python3 scripts/research_claim_extract.py --dry-run     # summary only; no write
+python3 scripts/research_claim_verify.py --rebuild-inventory   # optional thin delegate (not used under --fail-on-drift)
+```
+
+CI `claim-audit` runs `research_claim_verify.py --fail-on-drift` and **never** rebuilds/writes the inventory (tree stays clean).
+
+### Per-kind counts (historical closeout snapshot)
+
+From the pre-extractor frozen inventory (`n_claims=531` research-doc **435** + instruction/consistency):
 
 | Kind | Count |
 |------|------:|
-| path | 192 |
-| disposition | 133 |
+| path | 194 |
+| disposition | 130 |
 | link | 71 |
 | symbol | 53 |
 | metric | 53 |
 | sha | 25 |
 | consistency | 5 |
-| **n_claims** | **532** |
+| **n_claims** | **531** |
 | **n_instruction_claims** | **93** |
 | **n_results_tracked** | **184** |
 
-Corpus includes `docs/**` plus instruction files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `mql5/README.md`) and consistency(broker_roster) claims. Instruction files are **not** metric oracles.
+Corpus includes `docs/**` plus instruction files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `mql5/README.md`) and consistency(broker_roster) claims. Instruction files are **not** metric oracles. A research-doc set smaller than the frozen **435** is a regression.
 
 ### Consistency kind
 
@@ -178,9 +190,9 @@ Supersedes the STALE `mutant_caught` claim from commit **`7ac2233`**.
 
 ## Reproducibility
 
-- Tracked auditor: `scripts/research_claim_verify.py`, `scripts/research_claim_mutant.py`, `.grok/workflows/research-claim-audit.rhai`, this report, inventory, and verify/mutant/negcontrol JSON results.
+- Tracked auditor: `scripts/research_claim_extract.py`, `scripts/research_claim_verify.py`, `scripts/research_claim_instruction.py`, `scripts/research_claim_mutant.py`, `.grok/workflows/research-claim-audit.rhai`, this report, inventory, and verify/mutant/negcontrol JSON results.
 - Phase handoff via `results/*.json` only — no `/tmp` dependency for audit evidence.
-- Lint: `uv run ruff check src tests` and `uv run ruff check scripts/research_claim_verify.py scripts/research_claim_mutant.py`.
+- Lint: `uv run ruff check src tests` and `uv run ruff check scripts/research_claim_extract.py scripts/research_claim_verify.py scripts/research_claim_mutant.py scripts/research_claim_instruction.py`.
 
 ---
 

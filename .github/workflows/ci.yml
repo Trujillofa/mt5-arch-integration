@@ -36,6 +36,7 @@ jobs:
           scripts/research_claim_verify.py
           scripts/research_claim_mutant.py
           scripts/research_claim_instruction.py
+          scripts/research_claim_extract.py
 
   claim-audit:
     name: claim-audit
