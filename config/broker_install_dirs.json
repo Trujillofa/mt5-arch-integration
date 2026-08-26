@@ -1,0 +1,7 @@
+{
+  "_comment": "Single source of truth for Wine MT5 brand install directory names under Program Files. Keys match config/brokers/*.env stems. Exness install dir is unknown (not recorded in-repo) — do not invent an entry; select via WINEPREFIX directly until known.",
+  "vantage": "Vantage International MT5",
+  "fpmarkets": "FP Markets MT5 Terminal",
+  "wsf": "WSFmarkets MT5 Terminal",
+  "_generic": "MetaTrader 5"
+}

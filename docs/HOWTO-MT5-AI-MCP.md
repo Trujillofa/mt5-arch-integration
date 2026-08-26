@@ -108,19 +108,19 @@ Official MCP **can trade** if you allow it. Leave trading permission off or on
 manual confirmation. Multiple `terminal64.exe` instances can fight for 22346
 (`WSAEADDRINUSE` / 10048).
 
-Wine note (verified on Vantage / Wine 11.15 / build 6090):
+Wine note (verified on Vantage / Wine 11.15 / build 6140):
 
 - The portable ini is `Config/assistant.ini` (UTF-16-LE). `[MCP.MetaTrader] Enable=1` is what Tools → Options → MCP → **Enable internal server** writes. MetaEditor uses `[MCP.MetaEditor]` on 22345.
-- The journal line `MCP started on 127.0.0.1:22346` is the *Windows* bind. Wine often remaps that to a LAN address (`ss` showed `192.168.0.144:22346` while `127.0.0.1:22346` was `Connection refused`). Do not commit `127.0.0.1` as if it worked here. Official MCP **can trade** — treat a non-localhost bind as exposed on that interface. Disable the server on every prefix that does not need it (FP/Exness/WSF).
+- Always take the client URL from `ss` / `./scripts/21-official-mcp-status.sh`, not from the journal alone. The journal line `MCP started on 127.0.0.1:22346` is the *Windows* bind; older Wine remaps sometimes exposed a LAN address (`192.168.0.144:22346`) while localhost refused. On the current host (build 6140) the listener is `127.0.0.1:22346` — prefer that. A non-localhost bind exposes a server that **can trade**; disable MCP on every prefix that does not need it (FP/Exness/WSF).
 - Dialog API Key ≈ **42 chars** → `MT5_MCP_TOKEN`. `assistant.ini ApiKey=` ≈ **168 chars** is not that token (HTTP 401, `WWW-Authenticate: Bearer realm="MetaTrader5-MCP"`). Copy a freshly **Generate**d dialog token. Never commit it. Rotate if it was ever printed.
-- Gitignored Cursor HTTP config for this host (LAN bind, not localhost):
+- Gitignored Cursor / Grok HTTP config for this host (match whatever `ss` shows; localhost is current):
 
 ```json
 {
   "mcpServers": {
     "mt5-official": {
       "type": "http",
-      "url": "http://192.168.0.144:22346/mcp",
+      "url": "http://127.0.0.1:22346/mcp",
       "headers": {
         "Authorization": "Bearer ${MT5_MCP_TOKEN}"
       }
@@ -190,3 +190,4 @@ does (Algo Trading off or EA detached).
 - CLI inventory: [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md)
 - File bridge vs RPyC: [ARCHITECTURE.md](ARCHITECTURE.md)
 - Wine / Algo Trading: [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+- Zacks fundamentals / ETF holdings (separate user MCP, not MT5): [research/ZACKS-MCP-OVERLAY-LANE.md](research/ZACKS-MCP-OVERLAY-LANE.md)

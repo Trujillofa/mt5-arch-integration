@@ -89,3 +89,9 @@ results/multi_instrument_data_readiness.FAIL.md
 .cursor/mcp.local.json
 .mcp.local.json
 .mcp.json
+
+# Large local dumps / session artifacts (never commit)
+results/tick_data/
+results/btc_data/
+.crew/
+pi-session-*.html

@@ -1,0 +1,140 @@
+{
+  "schema": "research_claim_selfref_allow_v1",
+  "note": "Regenerated after full tracked results/** search. Each entry carries n_searched from attribution-gated full-tree search. Reasons must not assert missing artifacts on a partial search.",
+  "search_scope": "git ls-files results/** (excluding csv/instrument_data/research_claim_*)",
+  "n_results_tracked": 184,
+  "allow": [
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
+      "kind": "metric",
+      "claimed": "n < 100",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "Qualitative thin-n threshold prose in the SoT ledger, not a concrete oracle figure. Full-tree search found no structured n_signals/profit_factor match."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "n_searched": 17,
+      "searched_sample": [
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json"
+      ],
+      "reason": "Lane-all triage table is the primary record of signal_edge_diagnostic.py --lane all (tool writes nothing). Full-tree exog-tied search found no matching signed edge in results/**."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "n=80",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "US CLEARS-FRICTION n from lane-all triage table only; no results/** write-up stores this n under a tied artifact. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "t +2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "t-stat for ny_cash_liquidity_sweep recorded only in the triage table (tool writes nothing). (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "n=92",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "US CLEARS-FRICTION n for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "t +2.24",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "t-stat for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 65,
+      "kind": "metric",
+      "claimed": "n=0",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v6.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v6.md"
+      ],
+      "reason": "EMPTY/zero-signal row recorded only in the triage table. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.24",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 13,
+      "kind": "metric",
+      "claimed": "0 eligible",
+      "n_searched": 31,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Design-doc narrative count; no Write-up label on that line and no structured eligible-count field matched in tied results/**. (full-tree attribution-gated search n_searched=31.)"
+    }
+  ]
+}

@@ -1,0 +1,3822 @@
+{
+  "schema": "research_claim_inventory/v1",
+  "scope": "docs/**/*.md + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster)",
+  "method": "grep+read_file walk of docs/**/*.md (min docs/README.md + docs/research/*.md + other docs/*.md); kinds path/link/sha/symbol/metric/disposition; links resolved relative to containing file; slim {file,line,kind,claimed,attribution}",
+  "n_claims": 531,
+  "counts": {
+    "link": 71,
+    "disposition": 130,
+    "symbol": 53,
+    "path": 194,
+    "metric": 53,
+    "sha": 25,
+    "consistency": 5
+  },
+  "claims": [
+    {
+      "file": "docs/README.md",
+      "line": 9,
+      "kind": "link",
+      "claimed": "../README.md",
+      "attribution": "README.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 10,
+      "kind": "link",
+      "claimed": "INSTALL-LINUX-ARCH.md",
+      "attribution": "docs/INSTALL-LINUX-ARCH.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 11,
+      "kind": "link",
+      "claimed": "ARCHITECTURE.md",
+      "attribution": "docs/ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 12,
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md",
+      "attribution": "docs/MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 13,
+      "kind": "link",
+      "claimed": "TROUBLESHOOTING.md",
+      "attribution": "docs/TROUBLESHOOTING.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 14,
+      "kind": "link",
+      "claimed": "CHARTS-AND-STABILITY.md",
+      "attribution": "docs/CHARTS-AND-STABILITY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 15,
+      "kind": "link",
+      "claimed": "ARCH-SETUP.md",
+      "attribution": "docs/ARCH-SETUP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 16,
+      "kind": "link",
+      "claimed": "FOREX-MT5-ROADMAP.md",
+      "attribution": "docs/FOREX-MT5-ROADMAP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 17,
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md",
+      "attribution": "docs/MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 18,
+      "kind": "link",
+      "claimed": "research/HOWTO-BACKTEST-PATHS.md",
+      "attribution": "docs/research/HOWTO-BACKTEST-PATHS.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 18,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "offline backtest paths"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 19,
+      "kind": "link",
+      "claimed": "HOWTO-US-INDEX-SCALP.md",
+      "attribution": "docs/HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 19,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "US-index session screens"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 20,
+      "kind": "link",
+      "claimed": "HOWTO-MT5-AI-MCP.md",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 20,
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 21,
+      "kind": "link",
+      "claimed": "research/ZACKS-MCP-OVERLAY-LANE.md",
+      "attribution": "docs/research/ZACKS-MCP-OVERLAY-LANE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 22,
+      "kind": "link",
+      "claimed": "HOWTO-HTF-FIB.md",
+      "attribution": "docs/HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 23,
+      "kind": "link",
+      "claimed": "MQL5-PYTHON-PARITY.md",
+      "attribution": "docs/MQL5-PYTHON-PARITY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 24,
+      "kind": "link",
+      "claimed": "SYMBOL-REGISTRY.md",
+      "attribution": "docs/SYMBOL-REGISTRY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 25,
+      "kind": "link",
+      "claimed": "SYMBOL-SYNC-AUDIT.md",
+      "attribution": "docs/SYMBOL-SYNC-AUDIT.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 26,
+      "kind": "link",
+      "claimed": "TESTER-PROVENANCE.md",
+      "attribution": "docs/TESTER-PROVENANCE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 27,
+      "kind": "link",
+      "claimed": "TRADE-JOURNAL.md",
+      "attribution": "docs/TRADE-JOURNAL.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 28,
+      "kind": "link",
+      "claimed": "ARTICLE-INTAKE.md",
+      "attribution": "docs/ARTICLE-INTAKE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 29,
+      "kind": "link",
+      "claimed": "research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "attribution": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 30,
+      "kind": "link",
+      "claimed": "research/PHASE0-DISCOVERY.md",
+      "attribution": "docs/research/PHASE0-DISCOVERY.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 31,
+      "kind": "link",
+      "claimed": "research/WAVE-B-OBSERVE.md",
+      "attribution": "docs/research/WAVE-B-OBSERVE.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 32,
+      "kind": "link",
+      "claimed": "research/BTC-INDICATOR-DESIGN.md",
+      "attribution": "docs/research/BTC-INDICATOR-DESIGN.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 40,
+      "kind": "path",
+      "claimed": "config/brokers/wsf.env",
+      "attribution": "broker profile"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 41,
+      "kind": "path",
+      "claimed": "config/brokers/vantage.env",
+      "attribution": "broker profile"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 42,
+      "kind": "path",
+      "claimed": "config/brokers/fpmarkets.env",
+      "attribution": "broker profile"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 40,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "broker switch"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 49,
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md",
+      "attribution": "docs/MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 55,
+      "kind": "path",
+      "claimed": "scripts/01-create-prefix.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 56,
+      "kind": "path",
+      "claimed": "scripts/02-install-mt5.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 57,
+      "kind": "path",
+      "claimed": "scripts/04-start-terminal.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 58,
+      "kind": "path",
+      "claimed": "scripts/06-install-file-bridge.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 59,
+      "kind": "path",
+      "claimed": "scripts/13-force-login-bridge.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 60,
+      "kind": "path",
+      "claimed": "scripts/14-isolate-net-and-login.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 61,
+      "kind": "path",
+      "claimed": "scripts/15-bridge-down-and-login.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 62,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 63,
+      "kind": "path",
+      "claimed": "scripts/17-install-desktop-launchers.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 64,
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 65,
+      "kind": "path",
+      "claimed": "scripts/wine-net/force_src_bind.so",
+      "attribution": "ops"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "secrets"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 3,
+      "kind": "disposition",
+      "claimed": "SCHEMA_PASS",
+      "attribution": "Zacks MCP overlay lane"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 3,
+      "kind": "disposition",
+      "claimed": "BLOCKED",
+      "attribution": "Zacks overlay KEEP"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 3,
+      "kind": "disposition",
+      "claimed": "KEEP",
+      "attribution": "Zacks overlay"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 42,
+      "kind": "path",
+      "claimed": "results/xau_charters/*",
+      "attribution": "must-not edit"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 42,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "must-not edit"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 64,
+      "kind": "link",
+      "claimed": "../HOWTO-MT5-AI-MCP.md",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",
+      "line": 68,
+      "kind": "disposition",
+      "claimed": "KEEP",
+      "attribution": "later KEEP path requirements"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE",
+      "attribution": "XAU standing"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "XAU standing"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "XAU standing"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "../AGENTS.md",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "../CLAUDE.md",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "../results/xau_loop_status.md",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "../results/xau_charter_adopted.md",
+      "attribution": "results/xau_charter_adopted.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 7,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "status truth"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 21,
+      "kind": "path",
+      "claimed": "AGENTS.md",
+      "attribution": "dual-layer"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 28,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "research layer"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 28,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "research layer"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 28,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "research layer"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 31,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "live_trader.py"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 34,
+      "kind": "disposition",
+      "claimed": "next_step",
+      "attribution": "RESEARCH_IDLE"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 34,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE",
+      "attribution": "next_step"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 150,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 150,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/CHARTER-RESEARCH-LAYER.md",
+      "line": 151,
+      "kind": "disposition",
+      "claimed": "next_step",
+      "attribution": "RESEARCH_IDLE"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 28,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json",
+      "attribution": "EURUSD friction book"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 36,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "attribution": "triage source"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 36,
+      "kind": "path",
+      "claimed": "scripts/signal_edge_diagnostic.py",
+      "attribution": "triage tool"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 48,
+      "kind": "symbol",
+      "claimed": "signal_fn",
+      "attribution": "simulate()"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 48,
+      "kind": "symbol",
+      "claimed": "simulate()",
+      "attribution": "backtest"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 52,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "attribution": "CLEARS skeptic"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 67,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "eurusd_ny_scalp_develop_v1"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 67,
+      "kind": "metric",
+      "claimed": "0 / 192",
+      "attribution": "eurusd_ny_scalp_develop_v1"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 70,
+      "kind": "disposition",
+      "claimed": "FAIL \u2192 stop",
+      "attribution": "eurusd_ny_mr_limit_fill_v1"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 91,
+      "kind": "disposition",
+      "claimed": "KILL_BB_RSI_LINE",
+      "attribution": "bb_rsi"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 91,
+      "kind": "metric",
+      "claimed": "max PF 2.242",
+      "attribution": "bb_rsi"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 92,
+      "kind": "disposition",
+      "claimed": "KILL_DONCHIAN_LINE",
+      "attribution": "Donchian/turtle"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "max PF 1.995",
+      "attribution": "Donchian"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "train PF 1.837",
+      "attribution": "walk-forward baseline"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "OOS PF 0.588",
+      "attribution": "walk-forward holdout"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "n=7",
+      "attribution": "walk-forward OOS"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 94,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "asia_box_london_sweep_fade_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 94,
+      "kind": "metric",
+      "claimed": "n=670",
+      "attribution": "asia_box_london_sweep_fade_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 94,
+      "kind": "metric",
+      "claimed": "PF 0.553",
+      "attribution": "asia_box_london_sweep_fade_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 95,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 95,
+      "kind": "metric",
+      "claimed": "pooled PF 0.903",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "day_open_reclaim_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "early_server_range_break_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "server_hour_window_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "tod_london_ny_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "joint_london_open_cosign_fade_flat"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "registry pointer"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 109,
+      "kind": "path",
+      "claimed": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "attribution": "paper-gate rule"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 109,
+      "kind": "path",
+      "claimed": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "attribution": "protocol pointer"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
+      "kind": "path",
+      "claimed": "scripts/research_bias_gates.py",
+      "attribution": "bias gates"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
+      "kind": "metric",
+      "claimed": "n < 100",
+      "attribution": "thin-n bias gate"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 133,
+      "kind": "metric",
+      "claimed": "pooled PF 0.90",
+      "attribution": "exog_london_fx_cosign_*"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 133,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "exog_london_fx_cosign_*"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 141,
+      "kind": "link",
+      "claimed": "HOWTO-BACKTEST-PATHS.md",
+      "attribution": "docs/research/HOWTO-BACKTEST-PATHS.md"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 142,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "loop status"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 143,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "attribution": "triage"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 144,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "attribution": "skeptic"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 145,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_autoresearch.md",
+      "attribution": "EURUSD screen"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 146,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_signal_diagnostic.md",
+      "attribution": "EURUSD diagnostic"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 147,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.md",
+      "attribution": "limit paper gate"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 148,
+      "kind": "path",
+      "claimed": "results/xau_null_maxstat.md",
+      "attribution": "BB/RSI null"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 149,
+      "kind": "path",
+      "claimed": "results/xau_donchian_null_maxstat.md",
+      "attribution": "Donchian null"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 150,
+      "kind": "path",
+      "claimed": "results/xau_retrain_walkforward_summary.md",
+      "attribution": "walk-forward"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 151,
+      "kind": "path",
+      "claimed": "results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md",
+      "attribution": "asia-box screen"
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 152,
+      "kind": "path",
+      "claimed": "results/xau_charter_disposition_registry.jsonl",
+      "attribution": "disposition registry"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 4,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "all offline paths"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 4,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "all offline paths"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 4,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "../MT5-INTEGRATION-CAPABILITIES.md",
+      "attribution": "docs/MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 9,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "do not edit"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "symbol",
+      "claimed": "python3 backtest.py",
+      "attribution": "backtest.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "XAU baseline split"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json",
+      "attribution": "XAU costs"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "--save only"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "symbol",
+      "claimed": "--unbounded",
+      "attribution": "backtest.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "symbol",
+      "claimed": "--allow-cost-override",
+      "attribution": "backtest.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "symbol",
+      "claimed": "--save",
+      "attribution": "backtest.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 15,
+      "kind": "metric",
+      "claimed": "2026-01-01",
+      "attribution": "xau_holdout_lock"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 16,
+      "kind": "symbol",
+      "claimed": "python3 scripts/xau_sealed_family_cycle.py --charter \u2026",
+      "attribution": "scripts/xau_sealed_family_cycle.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 16,
+      "kind": "symbol",
+      "claimed": "--strict-charter",
+      "attribution": "xau_sealed_family_cycle.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 16,
+      "kind": "symbol",
+      "claimed": "--screen-only",
+      "attribution": "xau_sealed_family_cycle.py"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 16,
+      "kind": "link",
+      "claimed": "XAU-FAMILY-PROTOCOL-V2.md",
+      "attribution": "docs/research/XAU-FAMILY-PROTOCOL-V2.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 17,
+      "kind": "path",
+      "claimed": "results/htf_fib_offline_lock.json",
+      "attribution": "HTF Fib offline"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 17,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "Wine tester path"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 17,
+      "kind": "link",
+      "claimed": "../HOWTO-HTF-FIB.md",
+      "attribution": "docs/HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 17,
+      "kind": "metric",
+      "claimed": "2026-01-01",
+      "attribution": "HTF Fib --to refuse"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 18,
+      "kind": "link",
+      "claimed": "../HOWTO-US-INDEX-SCALP.md",
+      "attribution": "docs/HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 18,
+      "kind": "metric",
+      "claimed": "2026-06-01",
+      "attribution": "US-index v1-v3 holdout"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 18,
+      "kind": "metric",
+      "claimed": "2026-07-01",
+      "attribution": "US-index v4-v8 holdout"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 19,
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_autoresearch.py",
+      "attribution": "EURUSD NY scalp"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 19,
+      "kind": "link",
+      "claimed": "EURUSD-NY-SCALP-DESIGN.md",
+      "attribution": "docs/research/EURUSD-NY-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 19,
+      "kind": "path",
+      "claimed": "scripts/eurusd_mr_limit_fill_paper_gate.py",
+      "attribution": "paper gate FAIL"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 19,
+      "kind": "metric",
+      "claimed": "2025-03-01",
+      "attribution": "EURUSD develop lock"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 23,
+      "kind": "disposition",
+      "claimed": "promote",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 23,
+      "kind": "disposition",
+      "claimed": "live_go",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
+      "line": 23,
+      "kind": "disposition",
+      "claimed": "next_step",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
+      "attribution": "standing loop"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "standing loop"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing loop"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 15,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "early_server_range_break_flat_v2"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 15,
+      "kind": "sha",
+      "claimed": "11099b2a",
+      "attribution": "early_server_range_break_flat_v2.json"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 16,
+      "kind": "disposition",
+      "claimed": "SUPERSEDED",
+      "attribution": "early_server_range_break_flat_v1"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 16,
+      "kind": "sha",
+      "claimed": "fee8611c",
+      "attribution": "early_server_range_break_flat_v1.json"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 17,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "server_hour_window_flat_v2"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 17,
+      "kind": "sha",
+      "claimed": "26ff7532",
+      "attribution": "server_hour_window_flat_v2.json"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 18,
+      "kind": "disposition",
+      "claimed": "SUPERSEDED",
+      "attribution": "server_hour_window_flat_v1"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 18,
+      "kind": "sha",
+      "claimed": "6b5811ee",
+      "attribution": "server_hour_window_flat_v1.json"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 19,
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID",
+      "attribution": "tod_london_ny_flat_v1"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 19,
+      "kind": "sha",
+      "claimed": "e7cd953f",
+      "attribution": "tod_london_ny_flat_v1.json"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 23,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "zero primary passers rule"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 35,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "verdict.disposition"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 92,
+      "kind": "symbol",
+      "claimed": "--strict-charter",
+      "attribution": "xau_charter_protocol"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 92,
+      "kind": "path",
+      "claimed": "results/xau_charters/",
+      "attribution": "frozen charters"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 92,
+      "kind": "path",
+      "claimed": "results/xau_charter_disposition_registry.jsonl",
+      "attribution": "disposition registry"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 107,
+      "kind": "path",
+      "claimed": "scripts/research_bias_gates.py",
+      "attribution": "bias gates"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 115,
+      "kind": "path",
+      "claimed": "docs/research/BACKTEST-RECORD.md",
+      "attribution": "consult before overlap"
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 115,
+      "kind": "path",
+      "claimed": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "attribution": "paper gate"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "scripts/signal_edge_diagnostic.py",
+      "attribution": "tool"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 7,
+      "kind": "symbol",
+      "claimed": "python3 scripts/signal_edge_diagnostic.py --lane all --by-year",
+      "attribution": "scripts/signal_edge_diagnostic.py"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "phase report"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "phase report"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "n=885",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "disposition",
+      "claimed": "DEAD",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 48,
+      "kind": "metric",
+      "claimed": "n=7819",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 48,
+      "kind": "metric",
+      "claimed": "+11.75",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 48,
+      "kind": "disposition",
+      "claimed": "COST-BOUND",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 47,
+      "kind": "disposition",
+      "claimed": "ANTI",
+      "attribution": "trend_continuation"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "disposition",
+      "claimed": "CLEARS-FRICTION",
+      "attribution": "ny_cash_liquidity_sweep"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "n=80",
+      "attribution": "ny_cash_liquidity_sweep"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "t +2.44",
+      "attribution": "ny_cash_liquidity_sweep"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "disposition",
+      "claimed": "CLEARS-FRICTION",
+      "attribution": "m5_zscore_tick_vol_exhaustion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "n=92",
+      "attribution": "m5_zscore_tick_vol_exhaustion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "t +2.24",
+      "attribution": "m5_zscore_tick_vol_exhaustion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 65,
+      "kind": "disposition",
+      "claimed": "EMPTY",
+      "attribution": "daily_regime_switch:mr_gap"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 65,
+      "kind": "metric",
+      "claimed": "n=0",
+      "attribution": "daily_regime_switch:mr_gap"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "attribution": "skeptic addendum"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 96,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "prior exit-grid books"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 112,
+      "kind": "disposition",
+      "claimed": "promote=true",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 112,
+      "kind": "disposition",
+      "claimed": "live_go=true",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 120,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 120,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 130,
+      "kind": "disposition",
+      "claimed": "KILL_BB_RSI_LINE",
+      "attribution": "bb_rsi"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 131,
+      "kind": "disposition",
+      "claimed": "KILL_DONCHIAN_LINE",
+      "attribution": "donchian_turtle"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 131,
+      "kind": "symbol",
+      "claimed": "simulate_donchian()",
+      "attribution": "donchian_turtle"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 132,
+      "kind": "disposition",
+      "claimed": "KILL_PRIOR_DAY_HIGH_BREAK",
+      "attribution": "prior_day_high_break"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 133,
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID",
+      "attribution": "tod_london_ny_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 133,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "tod_london_ny_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 134,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL ZERO_PRIMARY_PASSERS",
+      "attribution": "server_hour_window_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 135,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "early_server_range_break_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 136,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "day_open_reclaim_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 137,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "joint_london_open_cosign_fade_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 137,
+      "kind": "symbol",
+      "claimed": "simulate_joint()",
+      "attribution": "joint_london_open_cosign_fade_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 138,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "asia_box_london_sweep_fade_flat"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 155,
+      "kind": "metric",
+      "claimed": "H50 \u221211.85",
+      "attribution": "trend_continuation"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 156,
+      "kind": "metric",
+      "claimed": "H50 +11.75",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 165,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "attribution": "parent"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 8,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "CLEARS pair"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 8,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "CLEARS pair"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.44",
+      "attribution": "ny_cash_liquidity_sweep"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.24",
+      "attribution": "m5_zscore_tick_vol_exhaustion"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 73,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "closed search_ids under exit book"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 105,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 105,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 3,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "US-index lane"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 3,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "US-index lane"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 4,
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md",
+      "attribution": "docs/MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 4,
+      "kind": "link",
+      "claimed": "../mql5/README.md",
+      "attribution": "mql5/README.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 6,
+      "kind": "link",
+      "claimed": "research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "attribution": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 14,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "do not edit"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
+      "attribution": "XAU disposition"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "AWAIT_PHASE_E_SCREEN_AUTHORIZATION",
+      "attribution": "do not revive"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 51,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 68,
+      "kind": "symbol",
+      "claimed": "score_row",
+      "attribution": "us_index_session_core"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 72,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "all screens missed"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "us_index_session_backtest.py",
+      "attribution": "flatten replay"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 76,
+      "kind": "metric",
+      "claimed": "PF 0.80",
+      "attribution": "flatten US100"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 76,
+      "kind": "metric",
+      "claimed": "holdout 0.96",
+      "attribution": "flatten US100"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 76,
+      "kind": "link",
+      "claimed": "../results/us_index_session_scalp_backtest.md",
+      "attribution": "results/us_index_session_scalp_backtest.md"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 77,
+      "kind": "path",
+      "claimed": "us_index_session_autoresearch.py",
+      "attribution": "v1 develop"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 77,
+      "kind": "link",
+      "claimed": "../results/us_index_session_develop_lock.json",
+      "attribution": "results/us_index_session_develop_lock.json"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 78,
+      "kind": "metric",
+      "claimed": "0 / 205",
+      "attribution": "v2 playbook"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 79,
+      "kind": "metric",
+      "claimed": "0 / 129",
+      "attribution": "v3 structure"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 80,
+      "kind": "metric",
+      "claimed": "0 / 105",
+      "attribution": "v4"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 81,
+      "kind": "metric",
+      "claimed": "0 / 5",
+      "attribution": "cost/size once books"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 82,
+      "kind": "metric",
+      "claimed": "0 / 43",
+      "attribution": "v5"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 83,
+      "kind": "metric",
+      "claimed": "0 / 4",
+      "attribution": "v6"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 84,
+      "kind": "metric",
+      "claimed": "0 / 13",
+      "attribution": "v7"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 85,
+      "kind": "metric",
+      "claimed": "0 / 0",
+      "attribution": "v8 eligible"
+    },
+    {
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 85,
+      "kind": "link",
+      "claimed": "../results/us_index_session_v8.md",
+      "attribution": "results/us_index_session_v8.md"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 6,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "v1-v8 screens"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 12,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "lane"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 12,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "lane"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 13,
+      "kind": "metric",
+      "claimed": "0 eligible",
+      "attribution": "us_index_session_develop_v1"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 15,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
+      "attribution": "XAU"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "do not edit"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 21,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "XAU session families"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 21,
+      "kind": "metric",
+      "claimed": "PF ~1.0\u20131.07",
+      "attribution": "manual-trading-agent FX ORB"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "scripts/us_index_session_core.py",
+      "attribution": "Python SoT"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 84,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 90,
+      "kind": "path",
+      "claimed": "scripts/us_index_session_backtest.py",
+      "attribution": "first replay"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 90,
+      "kind": "path",
+      "claimed": "results/us_index_session_scalp_backtest.md",
+      "attribution": "write-up"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 90,
+      "kind": "metric",
+      "claimed": "2026-06-01",
+      "attribution": "US holdout lock"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "PF 0.80",
+      "attribution": "US100 all"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "0.96 holdout",
+      "attribution": "US100"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "PF 1.20",
+      "attribution": "US30 pre-holdout"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "holdout 0.50",
+      "attribution": "US30"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "flatten replay"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 98,
+      "kind": "path",
+      "claimed": "results/us_index_session_develop_lock.json",
+      "attribution": "v1 lock"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 102,
+      "kind": "symbol",
+      "claimed": "score_row",
+      "attribution": "PF pin 3.0"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 144,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "cost/size once"
+    },
+    {
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 144,
+      "kind": "metric",
+      "claimed": "0 / 5",
+      "attribution": "cost/size books"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 10,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "EURUSD NY scalp"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 10,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "EURUSD NY scalp"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 11,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json",
+      "attribution": "lock"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 12,
+      "kind": "sha",
+      "claimed": "db579e1b",
+      "attribution": "main base commit"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 14,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 14,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "do not touch"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 148,
+      "kind": "sha",
+      "claimed": "ebf0bcd9",
+      "attribution": "EURUSD history csv"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 148,
+      "kind": "metric",
+      "claimed": "2021-09-15",
+      "attribution": "EURUSD data start"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 148,
+      "kind": "metric",
+      "claimed": "2026-08-20",
+      "attribution": "EURUSD data end"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 160,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "lane"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 160,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "lane"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 164,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "valid deliverable"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 172,
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_core.py",
+      "attribution": "core"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 173,
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_autoresearch.py",
+      "attribution": "search"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 174,
+      "kind": "path",
+      "claimed": "tests/test_eurusd_ny_scalp.py",
+      "attribution": "tests"
+    },
+    {
+      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
+      "line": 175,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_autoresearch.json",
+      "attribution": "result"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 7,
+      "kind": "symbol",
+      "claimed": "eurusd_ny_mr_limit_fill_v1",
+      "attribution": "proposed family_id/search_id"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 8,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "eurusd_ny_scalp_develop_v1"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "paper gate"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 9,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "paper gate"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 15,
+      "kind": "metric",
+      "claimed": "+11.7 pts",
+      "attribution": "mean_reversion H50"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 15,
+      "kind": "metric",
+      "claimed": "t +4.14",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 16,
+      "kind": "disposition",
+      "claimed": "COST-BOUND",
+      "attribution": "mean_reversion"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 21,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "cheaper than running screen"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 25,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_scalp_lock.json",
+      "attribution": "data package"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 26,
+      "kind": "path",
+      "claimed": "scripts/eurusd_ny_scalp_core.py",
+      "attribution": "mean_reversion_signals"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 106,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "paper gate"
+    },
+    {
+      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
+      "line": 106,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "paper gate"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 5,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json",
+      "attribution": "exog follow-flat v4"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 5,
+      "kind": "sha",
+      "claimed": "3dec09efeee0bc11723c93c0e8ed1de683ac6179c176986cd8d4ba53e594edf5",
+      "attribution": "exog v4 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "10ab933be675af39d3459b75d40792893027188794fa6ded668e73ac4c1cc4eb",
+      "attribution": "exog v3 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 8,
+      "kind": "sha",
+      "claimed": "a5661ec34e457cbb05d999f92251d443fd86c04cf6d9980dcfc31a8c74762174",
+      "attribution": "exog v2 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 9,
+      "kind": "sha",
+      "claimed": "db7b015aea51ff743ec9d6318de2a1c782824bc6333995591e65a83526b0cb9d",
+      "attribution": "exog v1 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 10,
+      "kind": "path",
+      "claimed": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "attribution": "protocol"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "exog family"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "exog family"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 23,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "joint_london_open_cosign_fade_flat v4"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 23,
+      "kind": "path",
+      "claimed": "results/xau_runs/2026-08-14_joint_london_open_cosign_fade_flat_screen_r1/",
+      "attribution": "observed artifact"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 70,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers zero"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v1.json",
+      "attribution": "joint v1 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 11,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "joint v1"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 11,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "joint v1"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 94,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers=0"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 104,
+      "kind": "symbol",
+      "claimed": "load_package_snapshot()",
+      "attribution": "package loader"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 124,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 124,
+      "kind": "disposition",
+      "claimed": "ZERO_PRIMARY_PASSERS",
+      "attribution": "joint soft"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 152,
+      "kind": "sha",
+      "claimed": "a0ebeb0bf61902d3c35edf364ab0315a2ec65f127c9c1bf5081559b6420a78da",
+      "attribution": "xauusd_h1.csv"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 153,
+      "kind": "sha",
+      "claimed": "545c664624a5346194b7de4c9fa281dbc60ca84fc4496271f8c208835b0e77ab",
+      "attribution": "eurusd_h1.csv"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 154,
+      "kind": "sha",
+      "claimed": "55e522b0d405d5b8ca234670f80b1223fa4ada40b8facd079acc076c0cd7babd",
+      "attribution": "gbpusd_h1.csv"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 155,
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json",
+      "attribution": "costs"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 156,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "holdout_lock"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v2.json",
+      "attribution": "joint v2 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "2d3fda48",
+      "attribution": "supersedes v1"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "line": 13,
+      "kind": "symbol",
+      "claimed": "gates_from_charter()",
+      "attribution": "validator"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
+      "line": 36,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v3.json",
+      "attribution": "joint v3 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "e88161be27ab09542e2c49b96da32781454436791666570bc6b06d3eecb51c65",
+      "attribution": "joint v3 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "line": 8,
+      "kind": "sha",
+      "claimed": "935534e2",
+      "attribution": "supersedes v2"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "line": 8,
+      "kind": "sha",
+      "claimed": "2d3fda48",
+      "attribution": "supersedes v1"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
+      "line": 34,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-13_joint_london_open_cosign_fade_flat_v4.json",
+      "attribution": "joint v4 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "e29b26931b93443d7c903ddd034dfcabbeffde8761c41ad77b70e8292700b994",
+      "attribution": "joint v4 charter"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "line": 8,
+      "kind": "sha",
+      "claimed": "e88161be",
+      "attribution": "supersedes v3"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
+      "line": 37,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "ZERO_PRIMARY_PASSERS"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json",
+      "attribution": "asia-box v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 10,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "asia-box v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 10,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "asia-box v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 35,
+      "kind": "path",
+      "claimed": "results/xau_research_costs.json",
+      "attribution": "Standard STP"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 35,
+      "kind": "sha",
+      "claimed": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+      "attribution": "xau_research_costs.json"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 38,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers=0"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 102,
+      "kind": "symbol",
+      "claimed": "--null-seed",
+      "attribution": "strict CLI"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "line": 114,
+      "kind": "path",
+      "claimed": "xauusd_data.csv",
+      "attribution": "develop H1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json",
+      "attribution": "asia-box v2"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "7cf9f46fd5ddd44c171f04260f8d4fac167cb005bf3f6d4d03c1c137c1399b7e",
+      "attribution": "supersedes v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "line": 28,
+      "kind": "path",
+      "claimed": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
+      "attribution": "v1 memo"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "line": 36,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "thin-n or zero passers"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json",
+      "attribution": "day_open v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "line": 10,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "day_open v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "line": 28,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers=0"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
+      "line": 96,
+      "kind": "symbol",
+      "claimed": "--screen-only",
+      "attribution": "develop screen"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json",
+      "attribution": "day_open v2"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "8eafe48b",
+      "attribution": "supersedes v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "line": 11,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "day_open v2"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "line": 40,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers=0"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
+      "line": 106,
+      "kind": "symbol",
+      "claimed": "--null-seed",
+      "attribution": "strict CLI"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 6,
+      "kind": "path",
+      "claimed": "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+      "attribution": "runnable charter"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 7,
+      "kind": "sha",
+      "claimed": "fee8611c",
+      "attribution": "v1 SUPERSEDED"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 7,
+      "kind": "disposition",
+      "claimed": "SUPERSEDED",
+      "attribution": "early_server v1"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 11,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "early_server"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "server_hour v2"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 14,
+      "kind": "disposition",
+      "claimed": "PROTOCOL_NULL_INVALID",
+      "attribution": "TOD"
+    },
+    {
+      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
+      "line": 38,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "soft passers=0"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 5,
+      "kind": "path",
+      "claimed": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "attribution": "parent protocol"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 20,
+      "kind": "disposition",
+      "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 20,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 20,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 22,
+      "kind": "disposition",
+      "claimed": "SCREEN_FAIL",
+      "attribution": "joint_london_open_cosign_fade_flat v4"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 4,
+      "kind": "sha",
+      "claimed": "a492f2c",
+      "attribution": "main@ branch base"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 11,
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportInstrumentHistory.mq5",
+      "attribution": "export"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 12,
+      "kind": "path",
+      "claimed": "scripts/export-instruments-from-wine-mt5.sh",
+      "attribution": "driver"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 13,
+      "kind": "path",
+      "claimed": "scripts/build_multi_instrument_data_readiness.py",
+      "attribution": "DQ/package"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 14,
+      "kind": "path",
+      "claimed": "tests/test_multi_instrument_data_readiness.py",
+      "attribution": "tests"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/instrument_data_packages/README.md",
+      "attribution": "package schema"
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md",
+      "line": 5,
+      "kind": "metric",
+      "claimed": "2026-01-01",
+      "attribution": "holdout server clock"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 13,
+      "kind": "link",
+      "claimed": "TRADE-JOURNAL.md",
+      "attribution": "docs/TRADE-JOURNAL.md"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 34,
+      "kind": "link",
+      "claimed": "../results/xau_holdout_lock.json",
+      "attribution": "results/xau_holdout_lock.json"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 58,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "holdout_lock default"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 94,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "RESEARCH_ONLY standing"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 95,
+      "kind": "link",
+      "claimed": "../results/xau_loop_status.md",
+      "attribution": "results/xau_loop_status.md"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 103,
+      "kind": "path",
+      "claimed": "scripts/verify_article_intake.py",
+      "attribution": "verifier"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 104,
+      "kind": "path",
+      "claimed": "scripts/xau_charter_protocol.py",
+      "attribution": "charter validation"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 105,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "--charter refuse"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 105,
+      "kind": "symbol",
+      "claimed": "--charter",
+      "attribution": "backtest.py"
+    },
+    {
+      "file": "docs/ARTICLE-INTAKE.md",
+      "line": 126,
+      "kind": "link",
+      "claimed": "CHARTER-RESEARCH-LAYER.md",
+      "attribution": "docs/CHARTER-RESEARCH-LAYER.md"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 3,
+      "kind": "path",
+      "claimed": "MQL5/Indicators/ForexHtfPivotsFib.mq5",
+      "attribution": "indicator"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 418,
+      "kind": "path",
+      "claimed": "mql5/Experts/ForexHtfFibTester.mq5",
+      "attribution": "tester EA"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 439,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "headless tester"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 451,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "offline HTF Fib"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 451,
+      "kind": "path",
+      "claimed": "results/htf_fib_offline_lock.json",
+      "attribution": "lock"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 457,
+      "kind": "symbol",
+      "claimed": "--unbounded",
+      "attribution": "htf_fib_offline_backtest.py"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 457,
+      "kind": "metric",
+      "claimed": "2026-01-01",
+      "attribution": "XAU holdout refuse"
+    },
+    {
+      "file": "docs/HOWTO-HTF-FIB.md",
+      "line": 471,
+      "kind": "symbol",
+      "claimed": "--no-rsi-ma-filter",
+      "attribution": "htf_fib_offline_backtest.py"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 5,
+      "kind": "link",
+      "claimed": "HOWTO-HTF-FIB.md",
+      "attribution": "docs/HOWTO-HTF-FIB.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 5,
+      "kind": "link",
+      "claimed": "HOWTO-US-INDEX-SCALP.md",
+      "attribution": "docs/HOWTO-US-INDEX-SCALP.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 50,
+      "kind": "link",
+      "claimed": "HOWTO-MT5-AI-MCP.md",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 150,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "journal markers"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 156,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "US-index/HTF offline"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 156,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_offline_backtest.py",
+      "attribution": "not MT5 capability"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 158,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "live_trader.py"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "line": 13,
+      "kind": "disposition",
+      "claimed": "promote=no",
+      "attribution": "US30/US100 overlay"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "line": 36,
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md",
+      "attribution": "docs/MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/FOREX-MT5-ROADMAP.md",
+      "line": 42,
+      "kind": "link",
+      "claimed": "../mql5/README.md",
+      "attribution": "mql5/README.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 186,
+      "kind": "link",
+      "claimed": "ARTICLE-INTAKE.md",
+      "attribution": "docs/ARTICLE-INTAKE.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 190,
+      "kind": "link",
+      "claimed": "MT5-INTEGRATION-CAPABILITIES.md",
+      "attribution": "docs/MT5-INTEGRATION-CAPABILITIES.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 191,
+      "kind": "link",
+      "claimed": "ARCHITECTURE.md",
+      "attribution": "docs/ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 192,
+      "kind": "link",
+      "claimed": "TROUBLESHOOTING.md",
+      "attribution": "docs/TROUBLESHOOTING.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 193,
+      "kind": "link",
+      "claimed": "research/ZACKS-MCP-OVERLAY-LANE.md",
+      "attribution": "docs/research/ZACKS-MCP-OVERLAY-LANE.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 147,
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp",
+      "attribution": "Route C"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 184,
+      "kind": "symbol",
+      "claimed": "--live",
+      "attribution": "forbidden"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 13,
+      "kind": "link",
+      "claimed": "../../AGENTS.md",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 42,
+      "kind": "symbol",
+      "claimed": "--json",
+      "attribution": "mt5-arch CLI"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 461,
+      "kind": "link",
+      "claimed": "../FOREX-MT5-ROADMAP.md",
+      "attribution": "docs/FOREX-MT5-ROADMAP.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 571,
+      "kind": "link",
+      "claimed": "../../AGENTS.md",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 572,
+      "kind": "link",
+      "claimed": "../../README.md",
+      "attribution": "README.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 573,
+      "kind": "link",
+      "claimed": "../ARCHITECTURE.md",
+      "attribution": "docs/ARCHITECTURE.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 576,
+      "kind": "link",
+      "claimed": "../../mql5/README.md",
+      "attribution": "mql5/README.md"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 577,
+      "kind": "link",
+      "claimed": "../../mql5/Mt5ArchBridge.mq5",
+      "attribution": "mql5/Mt5ArchBridge.mq5"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 578,
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/cli.py",
+      "attribution": "src/mt5_arch/cli.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 579,
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/client.py",
+      "attribution": "src/mt5_arch/client.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 580,
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/file_bridge.py",
+      "attribution": "src/mt5_arch/file_bridge.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 581,
+      "kind": "link",
+      "claimed": "../../src/mt5_arch/models.py",
+      "attribution": "src/mt5_arch/models.py"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 585,
+      "kind": "link",
+      "claimed": "../../scripts/18-install-forex-indicator.sh",
+      "attribution": "scripts/18-install-forex-indicator.sh"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 14,
+      "kind": "link",
+      "claimed": "BTC-INDICATOR-DESIGN.md",
+      "attribution": "docs/research/BTC-INDICATOR-DESIGN.md"
+    },
+    {
+      "file": "docs/research/PHASE0-DISCOVERY.md",
+      "line": 7,
+      "kind": "link",
+      "claimed": "phase0/",
+      "attribution": "docs/research/phase0/"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "line": 187,
+      "kind": "path",
+      "claimed": "mql5/Indicators/BtcTrendPullback.mq5",
+      "attribution": "file"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "line": 679,
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh",
+      "attribution": "install"
+    },
+    {
+      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
+      "line": 680,
+      "kind": "path",
+      "claimed": "mql5/Mt5ArchBridge.mq5",
+      "attribution": "bridge"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "line": 102,
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportHtfFibParityFixture.mq5",
+      "attribution": "export"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "line": 103,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py",
+      "attribution": "pivots/ATR"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "line": 104,
+      "kind": "path",
+      "claimed": "scripts/verify_mql5_python_parity.py",
+      "attribution": "compare"
+    },
+    {
+      "file": "docs/MQL5-PYTHON-PARITY.md",
+      "line": 105,
+      "kind": "path",
+      "claimed": "tests/test_mql5_python_parity.py",
+      "attribution": "tests"
+    },
+    {
+      "file": "docs/SYMBOL-REGISTRY.md",
+      "line": 58,
+      "kind": "path",
+      "claimed": "config/symbols/registry.json",
+      "attribution": "SoT"
+    },
+    {
+      "file": "docs/SYMBOL-REGISTRY.md",
+      "line": 59,
+      "kind": "path",
+      "claimed": "src/mt5_arch/symbol_registry.py",
+      "attribution": "platform"
+    },
+    {
+      "file": "docs/SYMBOL-SYNC-AUDIT.md",
+      "line": 46,
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportSymbolSyncAudit.mq5",
+      "attribution": "dump"
+    },
+    {
+      "file": "docs/SYMBOL-SYNC-AUDIT.md",
+      "line": 47,
+      "kind": "path",
+      "claimed": "src/mt5_arch/symbol_sync_audit.py",
+      "attribution": "verifier"
+    },
+    {
+      "file": "docs/TRADE-JOURNAL.md",
+      "line": 60,
+      "kind": "path",
+      "claimed": "mql5/Experts/TradeTransactionJournal.mq5",
+      "attribution": "EA"
+    },
+    {
+      "file": "docs/TRADE-JOURNAL.md",
+      "line": 61,
+      "kind": "path",
+      "claimed": "src/mt5_arch/trade_journal.py",
+      "attribution": "platform"
+    },
+    {
+      "file": "docs/MULTI-BROKER-MT5.md",
+      "line": 44,
+      "kind": "path",
+      "claimed": "config/brokers/wsf.env",
+      "attribution": "profiles"
+    },
+    {
+      "file": "docs/MULTI-BROKER-MT5.md",
+      "line": 45,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "switcher"
+    },
+    {
+      "file": "docs/TROUBLESHOOTING.md",
+      "line": 174,
+      "kind": "link",
+      "claimed": "MULTI-BROKER-MT5.md",
+      "attribution": "docs/MULTI-BROKER-MT5.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 5,
+      "kind": "path",
+      "claimed": "AGENTS.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "symbol",
+      "claimed": "mt5-arch",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "path",
+      "claimed": "README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "path",
+      "claimed": "docs/HOWTO-MT5-AI-MCP.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 31,
+      "kind": "path",
+      "claimed": "AGENTS.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "path",
+      "claimed": "src/mt5_arch/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "config.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "file_bridge.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "models.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "cli.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "hypr_geometry.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "window_ops.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 34,
+      "kind": "path",
+      "claimed": "scripts/lib.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 35,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "src/mt5_arch",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 48,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 60,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 67,
+      "kind": "path",
+      "claimed": "mql5/README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 67,
+      "kind": "path",
+      "claimed": "docs/HOWTO-HTF-FIB.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 73,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 74,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 75,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 77,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 77,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 79,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportXauHistory.mq5",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "scripts/export-xau-from-wine-mt5.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 87,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 3,
+      "kind": "path",
+      "claimed": "CLAUDE.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "path",
+      "claimed": "src/mt5_arch/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "config.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "file_bridge.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "models.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "cli.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "mcp_server.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "window_ops.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 12,
+      "kind": "path",
+      "claimed": "scripts/lib.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 13,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "src/mt5_arch",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 44,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 56,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 63,
+      "kind": "path",
+      "claimed": "mql5/README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 63,
+      "kind": "path",
+      "claimed": "docs/HOWTO-HTF-FIB.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 65,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 70,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 71,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 72,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 72,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 73,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 73,
+      "kind": "symbol",
+      "claimed": "test_xau_pipeline.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 74,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 88,
+      "kind": "path",
+      "claimed": "scripts/08-status.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 98,
+      "kind": "path",
+      "claimed": "tests/test_us_index_session_v5.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 98,
+      "kind": "path",
+      "claimed": "tests/test_us_index_session_v8.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 100,
+      "kind": "path",
+      "claimed": "config/symbols/registry.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 165,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 190,
+      "kind": "path",
+      "claimed": "scripts/07-restart-terminal.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 190,
+      "kind": "path",
+      "claimed": "scripts/08-status.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "mql5/README.md",
+      "line": 26,
+      "kind": "path",
+      "claimed": "config/symbols/registry.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "mql5/README.md",
+      "line": 108,
+      "kind": "path",
+      "claimed": "scripts/tpl_to_sr_levels.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "scripts/19-run-htf-fib-backtest.sh",
+      "line": 1,
+      "kind": "consistency",
+      "claimed": "broker_roster_coverage",
+      "attribution": "config/brokers/*.env",
+      "site": "scripts/19-run-htf-fib-backtest.sh",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "generic_ok": false
+    },
+    {
+      "file": "fetch_data.py",
+      "line": 1,
+      "kind": "consistency",
+      "claimed": "broker_roster_coverage",
+      "attribution": "config/brokers/*.env",
+      "site": "fetch_data.py",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "generic_ok": false
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 52,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "attribution": "config/brokers/*.env",
+      "prefix_broker": "exness",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ]
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 48,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "attribution": "config/brokers/*.env",
+      "prefix_broker": "exness",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ]
+    },
+    {
+      "file": "src/mt5_arch/file_bridge.py",
+      "line": 23,
+      "kind": "consistency",
+      "claimed": "generic_bridge_default_exempt",
+      "attribution": "MT5_BRIDGE_DIR overridable",
+      "site": "src/mt5_arch/file_bridge.py",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "generic_ok": true
+    }
+  ],
+  "corpus": {
+    "docs/README.md": 44,
+    "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 7,
+    "docs/CHARTER-RESEARCH-LAYER.md": 18,
+    "docs/research/BACKTEST-RECORD.md": 48,
+    "docs/research/HOWTO-BACKTEST-PATHS.md": 31,
+    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 21,
+    "docs/research/SIGNAL-EDGE-TRIAGE.md": 40,
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 8,
+    "docs/HOWTO-US-INDEX-SCALP.md": 26,
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md": 22,
+    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 16,
+    "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md": 12,
+    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 11,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 12,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md": 4,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md": 5,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md": 4,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md": 8,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md": 4,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md": 4,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 5,
+    "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 7,
+    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 6,
+    "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md": 6,
+    "docs/ARTICLE-INTAKE.md": 10,
+    "docs/HOWTO-HTF-FIB.md": 8,
+    "docs/MT5-INTEGRATION-CAPABILITIES.md": 7,
+    "docs/FOREX-MT5-ROADMAP.md": 3,
+    "docs/HOWTO-MT5-AI-MCP.md": 7,
+    "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md": 13,
+    "docs/research/WAVE-B-OBSERVE.md": 1,
+    "docs/research/PHASE0-DISCOVERY.md": 1,
+    "docs/research/BTC-INDICATOR-DESIGN.md": 3,
+    "docs/MQL5-PYTHON-PARITY.md": 4,
+    "docs/SYMBOL-REGISTRY.md": 2,
+    "docs/SYMBOL-SYNC-AUDIT.md": 2,
+    "docs/TRADE-JOURNAL.md": 2,
+    "docs/MULTI-BROKER-MT5.md": 2,
+    "docs/TROUBLESHOOTING.md": 1,
+    "CLAUDE.md": 47,
+    "AGENTS.md": 40,
+    "README.md": 4,
+    "mql5/README.md": 2,
+    "scripts/19-run-htf-fib-backtest.sh": 1,
+    "fetch_data.py": 1,
+    "src/mt5_arch/file_bridge.py": 1
+  },
+  "n_instruction_claims": 93,
+  "instruction_files": [
+    "CLAUDE.md",
+    "AGENTS.md",
+    "README.md",
+    "mql5/README.md"
+  ]
+}

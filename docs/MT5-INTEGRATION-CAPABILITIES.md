@@ -153,7 +153,7 @@ Frozen chart family: **NY cash ORB + VWAP + EMA 9/21** (`UsIndexSessionScalp` v1
 
 ## 8. Not on the chart (Python-only)
 
-US-index v1–v8 screens, flatten replay, `us_index_session_core.py`, and `scripts/htf_fib_offline_backtest.py` read exported CSV / cache. They are **not** `InpFamily` modes and are **not** MT5 capabilities. Standing disposition: **promote=no**. Do not claim 1%/20% or a live-go.
+US-index v1–v8 screens, flatten replay, `us_index_session_core.py`, and `scripts/htf_fib_offline_backtest.py` read exported CSV / cache. They are **not** `InpFamily` modes and are **not** MT5 capabilities. The 1%/20% index goal is **archived** (`results/us_index_session_goal_archived.md`). Overlay stays observe-only. **promote=no**. No live-go.
 
 `src/mt5_arch` must not import that research layer. `live_trader.py` is dry unless you pass `--live` (never from this observe path).
 

@@ -1,0 +1,227 @@
+{
+  "ok": true,
+  "all_red": true,
+  "n_controls": 15,
+  "n_red": 15,
+  "controls": [
+    {
+      "name": "missing_path_non_secrets",
+      "claim": {
+        "file": "docs/README.md",
+        "line": 40,
+        "kind": "path",
+        "claimed": "scripts/__negctrl_missing_path_does_not_exist__.sh",
+        "attribution": "broker switch"
+      },
+      "status": "drift",
+      "actual": "missing:scripts/__negctrl_missing_path_does_not_exist__.sh",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "secrets_context_not_gitignored",
+      "claim": {
+        "file": "docs/README.md",
+        "line": 69,
+        "kind": "path",
+        "claimed": "scripts/__negctrl_secrets_ctx_not_ignored__.py",
+        "attribution": "never-commit instruction context"
+      },
+      "status": "drift",
+      "actual": "missing:scripts/__negctrl_secrets_ctx_not_ignored__.py",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "standalone_KEEP",
+      "claim": {
+        "file": "docs/research/BACKTEST-RECORD.md",
+        "line": 1,
+        "kind": "disposition",
+        "claimed": "KEEP",
+        "attribution": "asia_box_london_sweep_fade_flat standalone KEEP assertion"
+      },
+      "status": "drift",
+      "actual": "asia_box_london_sweep_fade_flat:SCREEN_FAIL",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "KEEP_vs_SCREEN_FAIL_family",
+      "claim": {
+        "file": "docs/research/BACKTEST-RECORD.md",
+        "line": 20,
+        "kind": "disposition",
+        "claimed": "KEEP",
+        "attribution": "asia_box_london_sweep_fade_flat"
+      },
+      "status": "drift",
+      "actual": "asia_box_london_sweep_fade_flat:SCREEN_FAIL",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "metric_disagrees_named_writeup",
+      "claim": {
+        "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+        "line": 92,
+        "kind": "metric",
+        "claimed": "PF 9.99",
+        "attribution": "US100 all"
+      },
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']; n_searched=1",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "named_writeup_omits_figure",
+      "claim": {
+        "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+        "line": 92,
+        "kind": "metric",
+        "claimed": "n=424242",
+        "attribution": "US100 all"
+      },
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']; n_searched=1",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "genuine_self_referential",
+      "claim": {
+        "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+        "line": 50,
+        "kind": "metric",
+        "claimed": "+70.19",
+        "attribution": "exog_london_fx_cosign_xau_follow_flat"
+      },
+      "status": "self_referential",
+      "actual": "claiming_file_only n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "csv_substring_not_resolution",
+      "claim": {
+        "claimed": "1.20",
+        "paths": [
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/eurusd_h1.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv",
+          "xauusd_data.csv"
+        ],
+        "resolve_status": "self_referential"
+      },
+      "status": "drift",
+      "actual": "csv_hit=False; resolve=self_referential:claiming_file_only n_searched=0; scope_results=184; sample=[]",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "precision_disagreement_not_rounded_away",
+      "claim": {
+        "file": "docs/README.md",
+        "line": 1,
+        "kind": "metric",
+        "claimed": "pooled PF 0.913",
+        "attribution": "exog_london_fx_cosign_xau_follow_flat"
+      },
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.913'",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "cross_family_numeric_collision",
+      "claim": {
+        "claimed": "pooled PF 0.903",
+        "attribution": "asia_box_london_sweep_fade_flat"
+      },
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=5; scope_results=184; sample=['results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json', 'results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md', 'results/xau_loop_status.md']; claimed='pooled PF 0.903'",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "untracked_results_not_oracle",
+      "claim": {
+        "claimed": "pooled PF 0.777",
+        "probe": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/research-claim-audit/results/_audit_untracked_probe.json"
+      },
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.777'",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "instruction_contradicts_target",
+      "claim": {
+        "file": "CLAUDE.md",
+        "line": 67,
+        "kind": "disposition",
+        "claimed": "HTF Fib docs disagree on signal index",
+        "attribution": "mql5/README.md + docs/HOWTO-HTF-FIB.md"
+      },
+      "status": "drift",
+      "actual": "stale instruction claim; mql5/README.md + HOWTO-HTF-FIB.md both document HTF Fib signal buffer 8",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "roster_broker_missing_from_site",
+      "claim": {
+        "file": "fetch_data.py",
+        "line": 1,
+        "kind": "consistency",
+        "claimed": "broker_roster_coverage",
+        "attribution": "config/brokers/*.env",
+        "site": "fetch_data.py",
+        "roster": [
+          "fpmarkets",
+          "vantage",
+          "wsf"
+        ],
+        "generic_ok": false
+      },
+      "status": "drift",
+      "actual": "site=fetch_data.py missing roster brokers ['fpmarkets', 'wsf']; roster=['fpmarkets', 'vantage', 'wsf']",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "instruction_not_metric_oracle",
+      "claim": {
+        "file": "CLAUDE.md",
+        "claimed": "PF 0.903"
+      },
+      "status": "unresolvable",
+      "actual": "instruction_file_not_metric_oracle",
+      "must_be_red": true,
+      "is_red": true
+    },
+    {
+      "name": "generic_bridge_not_false_positive",
+      "claim": {
+        "file": "src/mt5_arch/file_bridge.py",
+        "line": 23,
+        "kind": "consistency",
+        "claimed": "generic_bridge_default_exempt",
+        "attribution": "MT5_BRIDGE_DIR overridable",
+        "site": "src/mt5_arch/file_bridge.py",
+        "roster": [
+          "fpmarkets",
+          "vantage",
+          "wsf"
+        ],
+        "generic_ok": true
+      },
+      "status": "ok",
+      "actual": "default_bridge_dir overridable via MT5_BRIDGE_DIR (exempt)",
+      "must_be_red": true,
+      "is_red": true
+    }
+  ],
+  "evidence": "missing_path_non_secrets=drift:RED; secrets_context_not_gitignored=drift:RED; standalone_KEEP=drift:RED; KEEP_vs_SCREEN_FAIL_family=drift:RED; metric_disagrees_named_writeup=drift:RED; named_writeup_omits_figure=drift:RED; genuine_self_referential=self_referential:RED; csv_substring_not_resolution=drift:RED; precision_disagreement_not_rounded_away=drift:RED; cross_family_numeric_collision=drift:RED; untracked_results_not_oracle=drift:RED; instruction_contradicts_target=drift:RED; roster_broker_missing_from_site=drift:RED; instruction_not_metric_oracle=unresolvable:RED; generic_bridge_not_false_positive=ok:RED"
+}

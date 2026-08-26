@@ -1,0 +1,107 @@
+{
+  "ok": true,
+  "mutant_caught": true,
+  "gate_can_fail": true,
+  "n_seeded": 8,
+  "n_caught": 8,
+  "evidence": "gate_can_fail=True (broken verifier caught 0/8); dead_path: orig='scripts/16-use-broker.sh'->'scripts/__mutant_dead_path_does_not_exist__.sh' status=drift caught=True | sha_one_char: orig='11099b2a'->'11099b20' status=drift caught=True | metric_digit: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_md_writeup: orig='PF 0.80'->'PF 0.89' status=drift caught=True | metric_nested_json: orig='pooled PF 0.903'->'pooled PF 0.909' status=drift caught=True | inverted_disposition: orig='promote=no'->'promote=true' status=drift caught=True | instruction_stale: orig='scripts/lib.sh'->'scripts/__mutant_instruction_stale_missing__.sh' status=drift caught=True | consistency_broker: orig='broker_roster_coverage'->'broker_roster_coverage' status=drift caught=True",
+  "per_seed": [
+    {
+      "seed_kind": "dead_path",
+      "kind": "path",
+      "file": "docs/README.md",
+      "line": 40,
+      "orig_claimed": "scripts/16-use-broker.sh",
+      "mutant_claimed": "scripts/__mutant_dead_path_does_not_exist__.sh",
+      "attribution": "broker switch",
+      "status": "drift",
+      "actual": "missing:scripts/__mutant_dead_path_does_not_exist__.sh",
+      "caught": true
+    },
+    {
+      "seed_kind": "sha_one_char",
+      "kind": "sha",
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 15,
+      "orig_claimed": "11099b2a",
+      "mutant_claimed": "11099b20",
+      "attribution": "early_server_range_break_flat_v2.json",
+      "status": "drift",
+      "actual": "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json:11099b2a7aa0221187c94462361d53070daecfdc7df0be80f82df5ae1954475a",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_digit",
+      "kind": "metric",
+      "file": "docs/HOWTO-US-INDEX-SCALP.md",
+      "line": 76,
+      "orig_claimed": "PF 0.80",
+      "mutant_claimed": "PF 0.89",
+      "attribution": "flatten US100",
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=33; scope_results=184; sample=['results/eurusd_ny_scalp_lock.json', 'results/us_index_session_autoresearch.json', 'results/us_index_session_develop_lock.json', 'results/us_index_session_playbook_v2.json', 'results/us_index_session_playbook_v2_lock.json']; claimed='PF 0.89'",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_md_writeup",
+      "kind": "metric",
+      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
+      "line": 92,
+      "orig_claimed": "PF 0.80",
+      "mutant_claimed": "PF 0.89",
+      "attribution": "US100 all",
+      "status": "drift",
+      "actual": "named_writeup_miss:results/us_index_session_scalp_backtest.md; checked=['results/us_index_session_scalp_backtest.md']; n_searched=1",
+      "caught": true
+    },
+    {
+      "seed_kind": "metric_nested_json",
+      "kind": "metric",
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 95,
+      "orig_claimed": "pooled PF 0.903",
+      "mutant_claimed": "pooled PF 0.909",
+      "attribution": "exog_london_fx_cosign_xau_follow_flat",
+      "status": "drift",
+      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.909'",
+      "caught": true
+    },
+    {
+      "seed_kind": "inverted_disposition",
+      "kind": "disposition",
+      "file": "docs/README.md",
+      "line": 18,
+      "orig_claimed": "promote=no",
+      "mutant_claimed": "promote=true",
+      "attribution": "offline backtest paths",
+      "status": "drift",
+      "actual": "standing promote='no'",
+      "caught": true
+    },
+    {
+      "seed_kind": "instruction_stale",
+      "kind": "path",
+      "file": "CLAUDE.md",
+      "line": 34,
+      "orig_claimed": "scripts/lib.sh",
+      "mutant_claimed": "scripts/__mutant_instruction_stale_missing__.sh",
+      "attribution": "instruction",
+      "status": "drift",
+      "actual": "missing:scripts/__mutant_instruction_stale_missing__.sh",
+      "caught": true
+    },
+    {
+      "seed_kind": "consistency_broker",
+      "kind": "consistency",
+      "file": "scripts/19-run-htf-fib-backtest.sh",
+      "line": 1,
+      "orig_claimed": "broker_roster_coverage",
+      "mutant_claimed": "broker_roster_coverage",
+      "attribution": "config/brokers/*.env",
+      "status": "drift",
+      "actual": "site=scripts/19-run-htf-fib-backtest.sh missing roster brokers ['fpmarkets']; roster=['fpmarkets', 'vantage', 'wsf']",
+      "caught": true
+    }
+  ],
+  "broken_caught": 0
+}
