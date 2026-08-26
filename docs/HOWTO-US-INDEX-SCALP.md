@@ -9,9 +9,11 @@ Design freeze: [US-INDEX-SESSION-SCALP-DESIGN.md](research/US-INDEX-SESSION-SCAL
 
 ## 1. Disposition
 
+**2026-08-20:** the 1% / 20% retail-index goal is **archived as falsified** on this book. Formal note: [results/us_index_session_goal_archived.md](../results/us_index_session_goal_archived.md). Active strategy research moved to XAUUSD (`multi_day_variance_expansion_flat` freeze — no backtest yet). `UsIndexSessionScalp` v1.40 stays **observe-only**.
+
 Every screen **missed** median **trade-day** ≥ 1% and median **trade-month** ≥ 20% on the locked book. There is no promote path. Sequential peek is real: eight families in one day; later ones were designed after earlier holdout writes. July–August is a cleaner window, **not virgin**.
 
-> This US-index research lane is **not** XAU Phase E and does **not** authorize or substitute for it. Do **not** edit `results/xau_loop_status.md` from this lane; see that file for current XAU disposition (`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`). Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. This is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`.
+> This US-index research lane is **not** XAU Phase E and does **not** authorize or substitute for it. XAU disposition lives in `results/xau_loop_status.md`. Do **not** revive `AWAIT_PHASE_E_SCREEN_AUTHORIZATION`. This is not the sealed XAU London-FX family and not `xau_sealed_family_cycle`.
 
 ---
 
