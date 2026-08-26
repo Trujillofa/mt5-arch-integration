@@ -18,6 +18,12 @@
 | `2026-08-10_server_hour_window_flat_v1.json` | `server_hour_window_flat` | SUPERSEDED (SHA `6b5811ee…`) |
 | `2026-08-10_server_hour_window_flat_v2.json` | `server_hour_window_flat` | **SCREEN_FAIL** ZERO_PRIMARY_PASSERS (SHA `26ff7532…`) · r1 **not** burned |
 
+## 2026-08-20 freeze (closed)
+
+| Path | Family | Registry disposition |
+|------|--------|----------------------|
+| `2026-08-20_multi_day_variance_expansion_flat_v1.json` | `multi_day_variance_expansion_flat` | **SCREEN_FAIL** ZERO_PRIMARY_PASSERS (SHA `36829e92…`) · r1 **not** burned |
+
 ## Next family (when ready)
 
 1. **New `family_id`** — do not reuse/rename server-hour or TOD rules.  

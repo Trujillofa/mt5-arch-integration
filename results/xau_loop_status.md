@@ -1,5 +1,28 @@
 # XAU offline loop status
 
+## 2026-08-21 — Develop screen · `multi_day_variance_expansion_flat` **SCREEN_FAIL** (deterministic)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `multi_day_variance_expansion_flat` |
+| **charter v1 (operative)** | `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json` · SHA `36829e926f42c1f555d0a0d85941cdaf9c629937b4d65c08f63911e9f0b5faea` (knobs unchanged) |
+| **screen** | `--strict-charter --screen-only` · develop 25,582 H1 bars · 2021-09-03 → 2025-12-31 · holdout **untouched** |
+| **result** | n **206** · PF **0.921** · NP **−505.68** · DD **14.89%** · WR **46.6%** · primary passers **0** (classic 0 / soft 0) |
+| **disposition** | **SCREEN_FAIL — ZERO_PRIMARY_PASSERS** · terminal · null **skipped** (`p_n_passers=1.0` trivially for any n_null) · `r1_burned=false` (screen-only, nonterminal machinery; deterministic fail) |
+| **artifact** | `results/xau_multi_day_variance_expansion_flat_null_maxstat.{json,md}` · provenance `tree_clean=true` · fixtures @ `d55064c` |
+| **falsifier confirmed** | memo falsifier #1 (fade after expansion pays spread; NP≤0 / PF<1.2) — n=206 is not thin-n; DD 14.89% clears ≤15%; PF 0.921 and NP −505.68 fail. Every slippage row worse (0.921 → 0.803 at 20 pt) |
+| **multiplicity** | look consumed · **K_prior=11 for the next family** · dead-lines list gains this family |
+| **null / paper / live** | **forbidden** — family closed; sealed r1 **not run** |
+| **do not** | retune 5/20/1.5 / SL / TP / flatten hour · ride the expansion · revive or rename · peek holdout |
+
+Thesis dead as frozen: fading last daily close-to-close after 5d/20d variance expansion has **negative** develop edge after Standard STP costs (PF 0.921, n=206). Expansion days are frequent enough; the fade loses. Standing: 11 dead families. Next research needs a genuinely new `family_id` + freeze-before-peek.
+
+---
+
 ## 2026-08-21 — Consolidation · `BACKTEST-RECORD`
 
 | Field | Value |
@@ -11,6 +34,62 @@
 | **do not** | subset MR signals · invert ANTI · retune closed books · screen without paper clearance |
 
 Intraday indicator-on-own-price class falsified under friction on hand. Next thesis must change horizon/structure, not revive a closed family.
+
+---
+
+## 2026-08-20 — IMPLEMENT FIXTURES · `multi_day_variance_expansion_flat` v1 (no develop screen)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`AWAIT_REVIEW_THEN_DEVELOP_SCREEN`** (`--strict-charter --screen-only` only if authorized) |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `multi_day_variance_expansion_flat` |
+| **implement** | **authorized (fixtures done)** — `scripts/xau_family_multi_day_variance_expansion_flat.py` + synthetic pytest |
+| **charter** | `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json` · SHA `36829e92…` · runnable |
+| **thesis memo** | `docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md` |
+| **n_free_knobs** | **0** · search_cardinality **1** · null `within_day_ohlc_increment_rotate_v1` · planned **999** · seed **20260820** |
+| **K_prior / K** | **10 / 11** (asia-box look consumed) |
+| **soft primary** | n≥40 · PF≥1.2 · NP>0 · DD≤15% |
+| **holdout** | `2026-01-01` sealed · never for selection |
+| **kill** | `KILL_MULTI_DAY_VARIANCE_EXPANSION_FLAT` |
+| **develop metrics** | **not inspected** — develop screen **has not run** |
+| **null / sealed r1 / paper / live** | **not authorized** |
+| **rejected sister** | Asia-box vs London displacement = `asia_box_london_sweep_fade_flat` — **do not implement** |
+| **US-index** | 1%/20% goal **archived** (`results/us_index_session_goal_archived.md`); overlay observe-only |
+| **branch** | `research/xau-multi-day-variance-expansion-flat` from `origin/main` |
+| **do not** | peek develop / run `xau_sealed_family_cycle` · paper/live · revive dead lines · ride the expansion |
+
+Closed freezes remain closed (10 scored families). Fixtures only — do **not** claim a develop screen.
+
+---
+
+## 2026-08-20 — NEW THESIS FREEZE · `multi_day_variance_expansion_flat` v1 (no implement / no develop peek)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | was `AWAIT_ADVERSARIAL_FREEZE_REVIEW` — fixtures now implemented (see section above) |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `multi_day_variance_expansion_flat` |
+| **charter** | `results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json` · SHA `36829e92…` |
+| **thesis memo** | `docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md` |
+| **n_free_knobs** | **0** · search_cardinality **1** · null `within_day_ohlc_increment_rotate_v1` · planned **999** · seed **20260820** |
+| **K_prior / K** | **10 / 11** (asia-box look consumed) |
+| **soft primary** | n≥40 · PF≥1.2 · NP>0 · DD≤15% |
+| **holdout** | `2026-01-01` sealed · never for selection |
+| **kill** | `KILL_MULTI_DAY_VARIANCE_EXPANSION_FLAT` |
+| **develop metrics** | **not inspected** (freeze-before-peek) |
+| **implement / sealed r1** | fixtures authorized after freeze review; develop/sealed **still not authorized** |
+| **rejected sister** | Asia-box vs London displacement = `asia_box_london_sweep_fade_flat` — **do not implement** |
+| **US-index** | 1%/20% goal **archived** (`results/us_index_session_goal_archived.md`); overlay observe-only |
+| **branch** | `research/xau-multi-day-variance-expansion-flat` from `origin/main` |
+| **do not** | peek develop · paper/live · revive dead lines · ride the expansion |
+
+Closed freezes remain closed (10 scored families). This freeze was design-only until fixtures.
+
 
 ---
 
