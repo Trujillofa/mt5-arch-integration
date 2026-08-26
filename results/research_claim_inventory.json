@@ -11,15 +11,18 @@
     "mql5/README.md"
   ],
   "counts": {
-    "path": 520,
+    "consistency": 5,
+    "disposition": 302,
     "link": 139,
     "metric": 221,
-    "symbol": 109,
-    "disposition": 302,
+    "path": 520,
     "sha": 44,
-    "consistency": 5
+    "symbol": 109
   },
   "corpus": {
+    "AGENTS.md": 40,
+    "CLAUDE.md": 47,
+    "README.md": 4,
     "docs/ARCHITECTURE.md": 2,
     "docs/ARTICLE-INTAKE.md": 27,
     "docs/CHARTER-RESEARCH-LAYER.md": 60,
@@ -67,12 +70,9 @@
     "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 18,
     "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md": 20,
     "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 9,
-    "CLAUDE.md": 47,
-    "AGENTS.md": 40,
-    "README.md": 4,
+    "fetch_data.py": 1,
     "mql5/README.md": 2,
     "scripts/19-run-htf-fib-backtest.sh": 1,
-    "fetch_data.py": 1,
     "src/mt5_arch/file_bridge.py": 1
   },
   "n_stopped_emitting": 59,
@@ -501,6 +501,655 @@
     }
   ],
   "claims": [
+    {
+      "file": "AGENTS.md",
+      "line": 3,
+      "kind": "path",
+      "claimed": "CLAUDE.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "path",
+      "claimed": "src/mt5_arch/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "cli.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "config.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "file_bridge.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "mcp_server.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "models.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 11,
+      "kind": "symbol",
+      "claimed": "window_ops.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 12,
+      "kind": "path",
+      "claimed": "scripts/lib.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 13,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 15,
+      "kind": "path",
+      "claimed": "src/mt5_arch",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 44,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 48,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "attribution": "config/brokers/*.env",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "prefix_broker": "exness"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 56,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 63,
+      "kind": "path",
+      "claimed": "docs/HOWTO-HTF-FIB.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 63,
+      "kind": "path",
+      "claimed": "mql5/README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 65,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 70,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 71,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 72,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 72,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 73,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 73,
+      "kind": "symbol",
+      "claimed": "test_xau_pipeline.py",
+      "attribution": "AGENTS.md"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 74,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 88,
+      "kind": "path",
+      "claimed": "scripts/08-status.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 96,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 98,
+      "kind": "path",
+      "claimed": "tests/test_us_index_session_v5.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "AGENTS.md",
+      "line": 98,
+      "kind": "path",
+      "claimed": "tests/test_us_index_session_v8.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 5,
+      "kind": "path",
+      "claimed": "AGENTS.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "path",
+      "claimed": "README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "path",
+      "claimed": "docs/HOWTO-MT5-AI-MCP.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 20,
+      "kind": "symbol",
+      "claimed": "mt5-arch",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 22,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 31,
+      "kind": "path",
+      "claimed": "AGENTS.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "path",
+      "claimed": "src/mt5_arch/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "cli.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "config.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "file_bridge.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "hypr_geometry.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "models.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 33,
+      "kind": "symbol",
+      "claimed": "window_ops.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 34,
+      "kind": "path",
+      "claimed": "scripts/lib.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 35,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 37,
+      "kind": "path",
+      "claimed": "src/mt5_arch",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 48,
+      "kind": "symbol",
+      "claimed": "client.py",
+      "attribution": "CLAUDE.md"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 52,
+      "kind": "consistency",
+      "claimed": "instruction_prefix_in_roster",
+      "attribution": "config/brokers/*.env",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "prefix_broker": "exness"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "config/broker_install_dirs.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 54,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 60,
+      "kind": "path",
+      "claimed": "mql5/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 67,
+      "kind": "path",
+      "claimed": "docs/HOWTO-HTF-FIB.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 67,
+      "kind": "path",
+      "claimed": "mql5/README.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 69,
+      "kind": "path",
+      "claimed": "scripts/19-run-htf-fib-backtest.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 73,
+      "kind": "path",
+      "claimed": "scripts/htf_fib_core.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 74,
+      "kind": "path",
+      "claimed": "results/xau_loop_status.md",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 75,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "backtest.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "results/xau_holdout_lock.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 77,
+      "kind": "path",
+      "claimed": "results/",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 77,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "strategy_params.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 78,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 79,
+      "kind": "path",
+      "claimed": "live_trader.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "fetch_data.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "mql5/Scripts/ExportXauHistory.mq5",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "scripts/export-xau-from-wine-mt5.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 83,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "CLAUDE.md",
+      "line": 87,
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 100,
+      "kind": "path",
+      "claimed": "config/symbols/registry.json",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 165,
+      "kind": "path",
+      "claimed": "tests/test_xau_pipeline.py",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 190,
+      "kind": "path",
+      "claimed": "scripts/07-restart-terminal.sh",
+      "attribution": "instruction"
+    },
+    {
+      "file": "README.md",
+      "line": 190,
+      "kind": "path",
+      "claimed": "scripts/08-status.sh",
+      "attribution": "instruction"
+    },
     {
       "file": "docs/ARCHITECTURE.md",
       "line": 40,
@@ -9210,627 +9859,18 @@
       "attribution": "later KEEP path requirements"
     },
     {
-      "file": "CLAUDE.md",
-      "line": 5,
-      "kind": "path",
-      "claimed": "AGENTS.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 20,
-      "kind": "symbol",
-      "claimed": "mt5-arch",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 20,
-      "kind": "path",
-      "claimed": "README.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 20,
-      "kind": "path",
-      "claimed": "docs/HOWTO-MT5-AI-MCP.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 22,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 22,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 22,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 31,
-      "kind": "path",
-      "claimed": "AGENTS.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "path",
-      "claimed": "src/mt5_arch/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "config.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "client.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "file_bridge.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "models.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "cli.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "hypr_geometry.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 33,
-      "kind": "symbol",
-      "claimed": "window_ops.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 34,
-      "kind": "path",
-      "claimed": "scripts/lib.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 35,
-      "kind": "path",
-      "claimed": "mql5/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "results/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "src/mt5_arch",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 48,
-      "kind": "symbol",
-      "claimed": "client.py",
-      "attribution": "CLAUDE.md"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 54,
-      "kind": "path",
-      "claimed": "config/broker_install_dirs.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 54,
-      "kind": "path",
-      "claimed": "scripts/19-run-htf-fib-backtest.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 54,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 60,
-      "kind": "path",
-      "claimed": "mql5/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 67,
-      "kind": "path",
-      "claimed": "mql5/README.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 67,
-      "kind": "path",
-      "claimed": "docs/HOWTO-HTF-FIB.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 69,
-      "kind": "path",
-      "claimed": "scripts/19-run-htf-fib-backtest.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 73,
-      "kind": "path",
-      "claimed": "scripts/htf_fib_core.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 74,
-      "kind": "path",
-      "claimed": "results/xau_loop_status.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 75,
-      "kind": "path",
-      "claimed": "strategy_params.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 76,
-      "kind": "path",
-      "claimed": "results/xau_holdout_lock.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 76,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 77,
-      "kind": "path",
-      "claimed": "results/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 77,
-      "kind": "path",
-      "claimed": "strategy_params.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 78,
-      "kind": "path",
-      "claimed": "strategy_params.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 78,
-      "kind": "path",
-      "claimed": "tests/test_xau_pipeline.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 79,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 83,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 83,
-      "kind": "path",
-      "claimed": "mql5/Scripts/ExportXauHistory.mq5",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 83,
-      "kind": "path",
-      "claimed": "scripts/export-xau-from-wine-mt5.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 83,
-      "kind": "path",
-      "claimed": "tests/test_xau_pipeline.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 87,
-      "kind": "path",
-      "claimed": "config/local.paths",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 3,
-      "kind": "path",
-      "claimed": "CLAUDE.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "path",
-      "claimed": "src/mt5_arch/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "config.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "client.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "file_bridge.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "models.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "cli.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "mcp_server.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 11,
-      "kind": "symbol",
-      "claimed": "window_ops.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 12,
-      "kind": "path",
-      "claimed": "scripts/lib.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 13,
-      "kind": "path",
-      "claimed": "mql5/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 15,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 15,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 15,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 15,
-      "kind": "path",
-      "claimed": "results/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 15,
-      "kind": "path",
-      "claimed": "src/mt5_arch",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 37,
-      "kind": "path",
-      "claimed": "tests/test_xau_pipeline.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 44,
-      "kind": "symbol",
-      "claimed": "client.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 50,
-      "kind": "path",
-      "claimed": "config/broker_install_dirs.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 50,
-      "kind": "path",
-      "claimed": "scripts/19-run-htf-fib-backtest.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 50,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 56,
-      "kind": "path",
-      "claimed": "mql5/",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 63,
-      "kind": "path",
-      "claimed": "mql5/README.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 63,
-      "kind": "path",
-      "claimed": "docs/HOWTO-HTF-FIB.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 65,
-      "kind": "path",
-      "claimed": "scripts/19-run-htf-fib-backtest.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 69,
-      "kind": "path",
-      "claimed": "scripts/htf_fib_core.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 70,
-      "kind": "path",
-      "claimed": "results/xau_loop_status.md",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 71,
-      "kind": "path",
-      "claimed": "strategy_params.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 72,
-      "kind": "path",
-      "claimed": "results/xau_holdout_lock.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 72,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 73,
-      "kind": "path",
-      "claimed": "strategy_params.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 73,
-      "kind": "symbol",
-      "claimed": "test_xau_pipeline.py",
-      "attribution": "AGENTS.md"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 74,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 78,
-      "kind": "path",
-      "claimed": "config/local.paths",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 88,
-      "kind": "path",
-      "claimed": "scripts/08-status.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 96,
-      "kind": "path",
-      "claimed": "backtest.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 96,
-      "kind": "path",
-      "claimed": "live_trader.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 98,
-      "kind": "path",
-      "claimed": "tests/test_us_index_session_v5.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 98,
-      "kind": "path",
-      "claimed": "tests/test_us_index_session_v8.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "README.md",
-      "line": 100,
-      "kind": "path",
-      "claimed": "config/symbols/registry.json",
-      "attribution": "instruction"
-    },
-    {
-      "file": "README.md",
-      "line": 165,
-      "kind": "path",
-      "claimed": "tests/test_xau_pipeline.py",
-      "attribution": "instruction"
-    },
-    {
-      "file": "README.md",
-      "line": 190,
-      "kind": "path",
-      "claimed": "scripts/07-restart-terminal.sh",
-      "attribution": "instruction"
-    },
-    {
-      "file": "README.md",
-      "line": 190,
-      "kind": "path",
-      "claimed": "scripts/08-status.sh",
-      "attribution": "instruction"
+      "file": "fetch_data.py",
+      "line": 1,
+      "kind": "consistency",
+      "claimed": "broker_roster_coverage",
+      "attribution": "config/brokers/*.env",
+      "site": "fetch_data.py",
+      "roster": [
+        "fpmarkets",
+        "vantage",
+        "wsf"
+      ],
+      "generic_ok": false
     },
     {
       "file": "mql5/README.md",
@@ -9859,46 +9899,6 @@
         "wsf"
       ],
       "generic_ok": false
-    },
-    {
-      "file": "fetch_data.py",
-      "line": 1,
-      "kind": "consistency",
-      "claimed": "broker_roster_coverage",
-      "attribution": "config/brokers/*.env",
-      "site": "fetch_data.py",
-      "roster": [
-        "fpmarkets",
-        "vantage",
-        "wsf"
-      ],
-      "generic_ok": false
-    },
-    {
-      "file": "CLAUDE.md",
-      "line": 52,
-      "kind": "consistency",
-      "claimed": "instruction_prefix_in_roster",
-      "attribution": "config/brokers/*.env",
-      "prefix_broker": "exness",
-      "roster": [
-        "fpmarkets",
-        "vantage",
-        "wsf"
-      ]
-    },
-    {
-      "file": "AGENTS.md",
-      "line": 48,
-      "kind": "consistency",
-      "claimed": "instruction_prefix_in_roster",
-      "attribution": "config/brokers/*.env",
-      "prefix_broker": "exness",
-      "roster": [
-        "fpmarkets",
-        "vantage",
-        "wsf"
-      ]
     },
     {
       "file": "src/mt5_arch/file_bridge.py",
