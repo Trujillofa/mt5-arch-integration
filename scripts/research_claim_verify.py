@@ -1330,12 +1330,18 @@ def verify_claims(claims: list[dict], tracked: set[str] | None = None) -> dict:
     }
 
 
-def verify_all(inventory_path: Path | None = None, *, refresh_instruction: bool = True) -> dict:
+def verify_all(
+    inventory_path: Path | None = None,
+    *,
+    refresh_instruction: bool = True,
+    write_inventory: bool = True,
+) -> dict:
     inv_path = inventory_path or INV
     data = json.loads(inv_path.read_text())
     if refresh_instruction:
         data = merge_instruction_into_inventory(ROOT, data)
-        inv_path.write_text(json.dumps(data, indent=2) + "\n")
+        if write_inventory:
+            inv_path.write_text(json.dumps(data, indent=2) + "\n")
     report = verify_claims(data["claims"])
     report["n_instruction_claims"] = data.get("n_instruction_claims", 0)
     report["corpus"] = data.get("corpus", {})
@@ -1676,6 +1682,15 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="run anti-overcorrection negative controls only",
     )
+    p.add_argument(
+        "--fail-on-drift",
+        action="store_true",
+        help=(
+            "exit non-zero when n_drift>0 or n_sha_unresolvable>0 or "
+            "n_selfref_unallowlisted>0 (CI opt-in). Does not change report['ok'] "
+            "semantics (checker-completed). Implies read-only inventory (no write)."
+        ),
+    )
     args = p.parse_args(argv)
 
     out_path = args.out
@@ -1690,7 +1705,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["all_red"] else 1
 
     inv_path = args.inventory if args.inventory.is_absolute() else ROOT / args.inventory
-    report = verify_all(inv_path)
+    report = verify_all(
+        inv_path,
+        refresh_instruction=True,
+        write_inventory=not args.fail_on_drift,
+    )
     out_path.write_text(json.dumps(report, indent=2) + "\n")
     try:
         out_disp = str(out_path.resolve().relative_to(ROOT.resolve()))
@@ -1718,6 +1737,13 @@ def main(argv: list[str] | None = None) -> int:
     print("---EXEMPT_SECRETS---")
     for d in report["exempt_secrets"]:
         print(f"{d['file']}|{d['line']}|{d['kind']}|{d['claimed']}|{d['actual']}")
+    if args.fail_on_drift:
+        audit_fail = (
+            int(report.get("n_drift") or 0) > 0
+            or int(report.get("n_sha_unresolvable") or 0) > 0
+            or int(report.get("n_selfref_unallowlisted") or 0) > 0
+        )
+        return 1 if audit_fail else 0
     return 0 if report["ok"] else 1
 
 
