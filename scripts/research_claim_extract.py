@@ -181,13 +181,34 @@ def _resolve_link_target(src: str, href: str, root: Path) -> str:
         return unquote(href)
 
 
+_MQL_INSTALL_PREFIXES = (
+    "Indicators/",
+    "Include/",
+    "Experts/",
+    "Scripts/",
+    "Files/",
+)
+
+
 def _is_path_token(tok: str) -> bool:
     tok = tok.strip().strip("'\"")
-    if not tok or tok.startswith(("http://", "https://", "mailto:")):
+    if not tok or tok.startswith(("http://", "https://", "mailto:", "file://")):
+        return False
+    if tok.startswith("gitignored:") or "__mutant_" in tok:
         return False
     if tok.startswith("--") or "<" in tok or ">" in tok or " " in tok:
         return False
-    if tok.startswith("~"):
+    if tok.startswith("~") or tok.startswith("…") or tok.startswith("..."):
+        return False
+    # Line/member anchors (docs/README.md:21, script.py:build_inventory) — not paths.
+    if re.search(r":\d+$", tok) or (
+        tok.count(":") == 1
+        and not tok.startswith(("MQL5/", "mql5/"))
+        and re.search(r"\.(?:md|py|sh|json|mq5|mqh):\w+$", tok)
+    ):
+        return False
+    # Unexpanded brace globs are not concrete paths (expand separately).
+    if "{" in tok or "}" in tok:
         return False
     # allow results/xau_charters/* style; reject other globs
     if (
@@ -200,10 +221,15 @@ def _is_path_token(tok: str) -> bool:
         return False
     if "::" in tok:
         return False
+    # Absolute / sibling-repo paths are out of inventory scope.
+    if tok.startswith("/") or tok.startswith("../"):
+        return False
     norm = tok[2:] if tok.startswith("./") else tok
     if norm in _PATH_FILES:
         return True
-    if norm.startswith(_PATH_PREFIXES):
+    if norm.startswith(_PATH_PREFIXES) or norm.startswith(_MQL_INSTALL_PREFIXES):
+        return True
+    if norm.startswith("phase0/"):
         return True
     return any(norm.endswith(ext) for ext in _PATH_EXTS) and (
         "/" in norm or norm in _PATH_FILES
@@ -214,7 +240,22 @@ def _norm_path(tok: str) -> str:
     tok = tok.strip().strip("'\"")
     if tok.startswith("./"):
         tok = tok[2:]
+    # Wine install-tree shorthand → repo mql5/ sources.
+    for pref in _MQL_INSTALL_PREFIXES:
+        if tok.startswith(pref):
+            return "mql5/" + tok
+    if tok.startswith("phase0/"):
+        return "docs/research/" + tok
     return tok
+
+
+def _expand_brace_paths(tok: str) -> list[str]:
+    """Expand a single `{a,b}` alternative in a path token."""
+    m = re.fullmatch(r"([^{}]*)\{([^{}]+)\}([^{}]*)", tok.strip().strip("'\""))
+    if not m:
+        return []
+    pre, alts, post = m.group(1), m.group(2), m.group(3)
+    return [f"{pre}{a.strip()}{post}" for a in alts.split(",") if a.strip()]
 
 
 def _family_tokens(text: str) -> list[str]:
@@ -311,6 +352,11 @@ def _extract_paths(rel: str, line_no: int, line: str) -> list[dict]:
         # Strip qualified MQL/Python member: path.py::symbol
         if "::" in raw:
             raw = raw.split("::", 1)[0]
+        # Expand simple brace alternatives into concrete path claims.
+        if "{" in raw and "}" in raw:
+            for alt in _expand_brace_paths(raw):
+                add(alt)
+            return
         if not _is_path_token(raw):
             return
         claimed = _norm_path(raw)
@@ -325,10 +371,10 @@ def _extract_paths(rel: str, line_no: int, line: str) -> list[dict]:
         if re.search(r"\bno\b\s*$", pre) or "there is no" in pre:
             continue
         add(raw)
-        # Embedded repo paths inside command backticks
-        if " " in raw or raw.startswith("python3"):
+        # Embedded repo paths inside command backticks (optional ./ prefix)
+        if " " in raw or raw.startswith(("python3", "./", "uv ")):
             for pm in re.finditer(
-                r"(?:^|\s)((?:scripts|src|docs|mql5|MQL5|config|results|tests)/[\w./-]+)",
+                r"(?:^|\s)\.?/?((?:scripts|src|docs|mql5|MQL5|config|results|tests)/[\w./-]+)",
                 raw,
             ):
                 add(pm.group(1))
@@ -446,6 +492,10 @@ def _extract_symbols(rel: str, line_no: int, line: str) -> list[dict]:
     ):
         add(m.group(1), "scripts/signal_edge_diagnostic.py")
 
+    # Bare / fenced CLI (not always backtick-wrapped): `uv run mt5-arch mcp`
+    if re.search(r"(?<![\w-])mt5-arch\s+mcp(?![\w-])", line) and "mt5-arch mcp" not in seen:
+        add("mt5-arch mcp", _symbol_attr("mt5-arch mcp", line))
+
     return out
 
 
@@ -461,6 +511,10 @@ def _extract_metrics(rel: str, line_no: int, line: str) -> list[dict]:
         out.append(_claim(rel, line_no, "metric", claimed, attr or attr_base))
 
     for m in re.finditer(r"\b(0\s*/\s*\d+)\b", line):
+        # Skip mutant/score fractions like broken_caught=0 (0/8)
+        window = line[max(0, m.start() - 32) : m.end() + 16]
+        if re.search(r"caught|mutant|gate_can_fail|broken_caught", window, re.I):
+            continue
         norm = re.sub(r"\s*/\s*", " / ", m.group(1).strip())
         add(norm)
 
@@ -477,6 +531,10 @@ def _extract_metrics(rel: str, line_no: int, line: str) -> list[dict]:
     ):
         prefix = (m.group(1) or "").strip()
         num = m.group(2).strip()
+        # Skip scoring-pin prose ("finite PF 3") — not an oracle figure.
+        pre = line[max(0, m.start() - 16) : m.start()]
+        if re.search(r"finite\s*$", pre, re.I) and "." not in num:
+            continue
         if ("~" in m.group(0) or "≈" in m.group(0)) and ("–" in num or "-" in num[1:]):
             add(f"PF ~{num}")
         else:
@@ -494,16 +552,35 @@ def _extract_metrics(rel: str, line_no: int, line: str) -> list[dict]:
     for m in re.finditer(r"\bn\s*<\s*(\d+)\b", line, re.I):
         add(f"n < {m.group(1)}")
 
-    # Triage / record tables: family in backticks + bare n in a column → n=N
-    if "|" in line and _family_tokens(line):
-        cells = [c.strip() for c in line.strip().strip("|").split("|")]
+    # Triage tables: family id in col0/col1 + bare n count column → n=N.
+    # Do not treat audit drift tables (| # | file | line | …) as n=line.
+    if "|" in line:
+        cells = [c.strip().strip("`") for c in line.strip().strip("|").split("|")]
         if len(cells) >= 3 and re.fullmatch(r"\d+", cells[2] or ""):
-            add(f"n={cells[2]}")
+            fam_cell = ""
+            if not re.fullmatch(r"\d+", cells[0] or "") and re.fullmatch(
+                r"[a-z][a-z0-9_]{2,}", cells[0] or ""
+            ):
+                fam_cell = cells[0]
+            elif len(cells) > 1 and re.fullmatch(r"[a-z][a-z0-9_]{4,}", cells[1] or ""):
+                fam_cell = cells[1]
+            if fam_cell:
+                add(f"n={cells[2]}")
 
-    for m in re.finditer(r"t\s*(?:≈|~|stat)?[^\d+\-−]{0,12}([+\-−]?\d+\.\d+)", line, re.I):
-        add(f"t {m.group(1)}")
+    # Word-boundary t / t-stat only — do not match http://127.0, "to 3.0", wine 11.13.
+    for m in re.finditer(
+        r"(?<![\w.])\bt(?:-?stat)?\b\s*(?:≈|~)?\s*\**([+\-−]?\d+\.\d+)\**",
+        line,
+        re.I,
+    ):
+        num = m.group(1)
+        # Reject IP/version-shaped fragments (127.0 from 127.0.0.1, 192.168, …).
+        after = line[m.end() : m.end() + 4]
+        if re.match(r"\.\d", after):
+            continue
+        add(f"t {num}")
     # "t-stats: **2.44** … and **2.24**"
-    if re.search(r"t-?stats?", line, re.I):
+    if re.search(r"\bt-?stats?\b", line, re.I):
         for m in re.finditer(r"\*\*([+\-−]?\d+\.\d+)\*\*", line):
             add(f"t {m.group(1)}")
 
@@ -555,12 +632,12 @@ def _extract_dispositions(rel: str, line_no: int, line: str) -> list[dict]:
         seen.add(key)
         out.append(_claim(rel, line_no, "disposition", claimed, attr))
 
-    # Normalized promote/live_go from table cells: **no / false** / **false / false**
+    # Normalized promote/live_go from table cells: **false / false** or bare false / false
     if re.search(r"promote\s*/\s*live_go", line, re.I) or (
         "promote" in line.lower() and "live_go" in line.lower() and "/" in line
     ):
         m = re.search(
-            r"\*\*\s*(no|false|true)\s*/\s*(false|no|true)(?:\s*/\s*(?:no|false|true))?\s*\*\*",
+            r"\*{0,2}\s*(no|false|true)\s*/\s*(false|no|true)(?:\s*/\s*(?:no|false|true))?\s*\*{0,2}",
             line,
             re.I,
         )
@@ -576,9 +653,18 @@ def _extract_dispositions(rel: str, line_no: int, line: str) -> list[dict]:
             else:
                 add(f"live_go={lg}", attr)
 
-    # Direct promote=/live_go=
+    # Direct promote=/live_go= (forbidden-doc / mutant-seed context → documented-forbidden)
     for m in re.finditer(r"\b(promote=(?:no|false|true)|live_go=(?:false|true))\b", line):
-        add(m.group(1), _attr_from_line(line, "standing"))
+        tok = m.group(1)
+        attr = _attr_from_line(line, "standing")
+        if tok in ("promote=true", "live_go=true") and re.search(
+            r"forbidden|do not|don't|never|must not|mutant|inverted_disposition|"
+            r"set\s+`?(?:promote|live_go)=true",
+            line,
+            re.I,
+        ):
+            attr = f"forbidden {attr}"
+        add(tok, attr)
 
     # Field-name-only mentions (do not flip promote / live_go / next_step)
     if (
@@ -628,6 +714,39 @@ def _extract_dispositions(rel: str, line_no: int, line: str) -> list[dict]:
             cand = "FAIL → stop"
         if cand not in _DISPOSITION_EXACT and cand != "SCREEN_FAIL ZERO_PRIMARY_PASSERS":
             continue
+        # promote=/live_go= already handled above (with forbidden-doc marking).
+        if cand.startswith(("promote=", "live_go=")):
+            continue
+        # SUPERSEDED referring to a *prior* charter/version on this line, not self.
+        if cand == "SUPERSEDED":
+            stem_v = re.search(r"_v(\d+)$", Path(rel).stem)
+            vers = re.findall(r"\bv(\d+)\b", line, re.I)
+            other_ver = bool(stem_v and any(v != stem_v.group(1) for v in vers))
+            if re.search(r"\bsupersedes?\b\s*:", line, re.I) and (
+                other_ver or re.search(r"registry\s+\*\*SUPERSEDED\*\*", line, re.I)
+            ):
+                continue
+            # Prose like "while v2 was SUPERSEDED" / "v1 remains … SUPERSEDED"
+            # inside a different version's memo.
+            if other_ver and re.search(
+                r"\bv\d+\b.*\bSUPERSEDED\b|\bSUPERSEDED\b.*\bv\d+\b|"
+                r"remains?\s+byte-immutable\s+under\s+SUPERSEDED|"
+                r"while\s+v\d+\s+was\s+SUPERSEDED",
+                line,
+                re.I,
+            ):
+                continue
+        # Conditional / rule prose ("soft passers = 0 → SCREEN_FAIL") is not a
+        # claim that *this* charter's registry disposition is SCREEN_FAIL.
+        if cand in ("SCREEN_FAIL", "ZERO_PRIMARY_PASSERS", "PROTOCOL_NULL_INVALID") and re.search(
+            r"(?:→|->)\s*\**(?:SCREEN_FAIL|ZERO_PRIMARY_PASSERS)|"
+            r"by design|soft passers\s*=\s*0|zero (?:soft )?(?:joint )?passers|"
+            r"thin-n|closed freezes stay closed|nulls? not run|r1 unburned",
+            line,
+            re.I,
+        ):
+            add(cand, "screen_rule")
+            continue
         if cand == "SCREEN_FAIL" and len(fams) > 1:
             for fam in fams:
                 add(cand, fam)
@@ -637,7 +756,13 @@ def _extract_dispositions(rel: str, line_no: int, line: str) -> list[dict]:
             if "later KEEP" in line or "KEEP path" in line:
                 attr = "later KEEP path requirements"
             elif cand == "KEEP":
-                attr = "Zacks overlay"
+                # "BLOCKED for KEEP" / "not a scalp KEEP" — not a current KEEP claim.
+                if re.search(r"\bKEEP\b", line) and re.search(
+                    r"blocked for KEEP|not .*KEEP|treat .* as .*KEEP", line, re.I
+                ):
+                    attr = "later KEEP path requirements"
+                else:
+                    attr = "Zacks overlay"
             elif cand == "SCHEMA_PASS":
                 attr = "Zacks MCP overlay lane"
             else:

@@ -2,7 +2,7 @@
   "schema": "research_claim_inventory/v1",
   "method": "scripts/research_claim_extract.py:build_inventory",
   "scope": "docs/**/*.md + instruction files CLAUDE.md,AGENTS.md,README.md,mql5/README.md + consistency(broker_roster)",
-  "n_claims": 1711,
+  "n_claims": 1413,
   "n_instruction_claims": 93,
   "instruction_files": [
     "CLAUDE.md",
@@ -12,64 +12,63 @@
   ],
   "counts": {
     "consistency": 5,
-    "disposition": 350,
-    "link": 138,
-    "metric": 525,
-    "path": 541,
-    "sha": 45,
-    "symbol": 107
+    "disposition": 309,
+    "link": 139,
+    "metric": 287,
+    "path": 520,
+    "sha": 44,
+    "symbol": 109
   },
   "corpus": {
     "AGENTS.md": 40,
     "CLAUDE.md": 47,
     "README.md": 4,
-    "docs/ARCH-SETUP.md": 6,
     "docs/ARCHITECTURE.md": 2,
-    "docs/ARTICLE-INTAKE.md": 28,
-    "docs/CHARTER-RESEARCH-LAYER.md": 65,
-    "docs/CHARTS-AND-STABILITY.md": 8,
-    "docs/FOREX-MT5-ROADMAP.md": 4,
-    "docs/HOWTO-HTF-FIB.md": 32,
-    "docs/HOWTO-MT5-AI-MCP.md": 23,
-    "docs/HOWTO-US-INDEX-SCALP.md": 56,
+    "docs/ARTICLE-INTAKE.md": 27,
+    "docs/CHARTER-RESEARCH-LAYER.md": 60,
+    "docs/CHARTS-AND-STABILITY.md": 10,
+    "docs/FOREX-MT5-ROADMAP.md": 3,
+    "docs/HOWTO-HTF-FIB.md": 20,
+    "docs/HOWTO-MT5-AI-MCP.md": 18,
+    "docs/HOWTO-US-INDEX-SCALP.md": 45,
     "docs/INSTALL-LINUX-ARCH.md": 4,
-    "docs/MQL5-PYTHON-PARITY.md": 29,
-    "docs/MT5-INTEGRATION-CAPABILITIES.md": 24,
-    "docs/MULTI-BROKER-MT5.md": 7,
-    "docs/README.md": 44,
-    "docs/SYMBOL-REGISTRY.md": 16,
-    "docs/SYMBOL-SYNC-AUDIT.md": 11,
+    "docs/MQL5-PYTHON-PARITY.md": 21,
+    "docs/MT5-INTEGRATION-CAPABILITIES.md": 23,
+    "docs/MULTI-BROKER-MT5.md": 6,
+    "docs/README.md": 47,
+    "docs/SYMBOL-REGISTRY.md": 17,
+    "docs/SYMBOL-SYNC-AUDIT.md": 12,
     "docs/TESTER-PROVENANCE.md": 8,
-    "docs/TRADE-JOURNAL.md": 9,
-    "docs/TROUBLESHOOTING.md": 25,
-    "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md": 87,
-    "docs/research/BACKTEST-RECORD.md": 94,
-    "docs/research/BTC-INDICATOR-DESIGN.md": 40,
-    "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md": 20,
-    "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md": 32,
-    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 49,
-    "docs/research/HOWTO-BACKTEST-PATHS.md": 50,
+    "docs/TRADE-JOURNAL.md": 10,
+    "docs/TROUBLESHOOTING.md": 17,
+    "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md": 61,
+    "docs/research/BACKTEST-RECORD.md": 83,
+    "docs/research/BTC-INDICATOR-DESIGN.md": 20,
+    "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md": 17,
+    "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md": 26,
+    "docs/research/EURUSD-NY-SCALP-DESIGN.md": 34,
+    "docs/research/HOWTO-BACKTEST-PATHS.md": 45,
     "docs/research/MULTI-INSTRUMENT-DATA-PHASE0.md": 7,
-    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 33,
-    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 31,
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 30,
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md": 9,
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md": 9,
-    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md": 9,
-    "docs/research/PHASE0-DISCOVERY.md": 28,
-    "docs/research/RESEARCH-CLAIM-AUDIT.md": 121,
-    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 57,
-    "docs/research/SIGNAL-EDGE-TRIAGE.md": 215,
-    "docs/research/SIMULATOR-CONFORMANCE.md": 15,
-    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md": 99,
-    "docs/research/WAVE-B-OBSERVE.md": 3,
-    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 45,
-    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md": 20,
+    "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md": 14,
+    "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md": 26,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md": 21,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md": 6,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md": 6,
+    "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md": 5,
+    "docs/research/PHASE0-DISCOVERY.md": 22,
+    "docs/research/RESEARCH-CLAIM-AUDIT.md": 92,
+    "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md": 40,
+    "docs/research/SIGNAL-EDGE-TRIAGE.md": 209,
+    "docs/research/SIMULATOR-CONFORMANCE.md": 9,
+    "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md": 76,
+    "docs/research/WAVE-B-OBSERVE.md": 8,
+    "docs/research/XAU-FAMILY-PROTOCOL-V2.md": 35,
+    "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md": 17,
     "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md": 6,
-    "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md": 21,
-    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 27,
-    "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 25,
-    "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md": 23,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md": 15,
+    "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md": 19,
+    "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md": 18,
+    "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md": 21,
     "docs/research/ZACKS-MCP-OVERLAY-LANE.md": 9,
     "fetch_data.py": 1,
     "mql5/README.md": 2,
@@ -727,48 +726,6 @@
       "attribution": "instruction"
     },
     {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 21,
-      "kind": "metric",
-      "claimed": "t 3.11",
-      "attribution": "ARCH-SETUP"
-    },
-    {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 21,
-      "kind": "metric",
-      "claimed": "t 3.14",
-      "attribution": "ARCH-SETUP"
-    },
-    {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 22,
-      "kind": "metric",
-      "claimed": "t 3.12",
-      "attribution": "ARCH-SETUP"
-    },
-    {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 75,
-      "kind": "metric",
-      "claimed": "t 3.14",
-      "attribution": "mt5linux"
-    },
-    {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 78,
-      "kind": "metric",
-      "claimed": "t 3.12",
-      "attribution": "ARCH-SETUP"
-    },
-    {
-      "file": "docs/ARCH-SETUP.md",
-      "line": 79,
-      "kind": "metric",
-      "claimed": "t 3.12",
-      "attribution": "ARCH-SETUP"
-    },
-    {
       "file": "docs/ARCHITECTURE.md",
       "line": 40,
       "kind": "path",
@@ -858,13 +815,6 @@
       "kind": "metric",
       "claimed": "2026-01-01",
       "attribution": "holdout lock"
-    },
-    {
-      "file": "docs/ARTICLE-INTAKE.md",
-      "line": 94,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "ARTICLE-INTAKE"
     },
     {
       "file": "docs/ARTICLE-INTAKE.md",
@@ -990,21 +940,7 @@
       "line": 6,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "CHARTER-RESEARCH-LAYER"
-    },
-    {
-      "file": "docs/CHARTER-RESEARCH-LAYER.md",
-      "line": 6,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/CHARTER-RESEARCH-LAYER.md",
-      "line": 6,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "CHARTER-RESEARCH-LAYER"
     },
     {
       "file": "docs/CHARTER-RESEARCH-LAYER.md",
@@ -1102,21 +1038,7 @@
       "line": 22,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "CHARTER-RESEARCH-LAYER"
-    },
-    {
-      "file": "docs/CHARTER-RESEARCH-LAYER.md",
-      "line": 22,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/CHARTER-RESEARCH-LAYER.md",
-      "line": 22,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "CHARTER-RESEARCH-LAYER"
     },
     {
       "file": "docs/CHARTER-RESEARCH-LAYER.md",
@@ -1222,13 +1144,6 @@
       "kind": "path",
       "claimed": "AGENTS.md",
       "attribution": "doc path"
-    },
-    {
-      "file": "docs/CHARTER-RESEARCH-LAYER.md",
-      "line": 54,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "CHARTER-RESEARCH-LAYER"
     },
     {
       "file": "docs/CHARTER-RESEARCH-LAYER.md",
@@ -1456,9 +1371,23 @@
     },
     {
       "file": "docs/CHARTS-AND-STABILITY.md",
+      "line": 155,
+      "kind": "path",
+      "claimed": "scripts/11-clipboard-bridge.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/CHARTS-AND-STABILITY.md",
       "line": 157,
       "kind": "path",
       "claimed": "scripts/07-restart-terminal.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/CHARTS-AND-STABILITY.md",
+      "line": 159,
+      "kind": "path",
+      "claimed": "scripts/10-recover-terminal.sh",
       "attribution": "script"
     },
     {
@@ -1494,13 +1423,6 @@
       "line": 13,
       "kind": "disposition",
       "claimed": "promote=no",
-      "attribution": "FOREX-MT5-ROADMAP"
-    },
-    {
-      "file": "docs/FOREX-MT5-ROADMAP.md",
-      "line": 13,
-      "kind": "disposition",
-      "claimed": "promote=no",
       "attribution": "standing"
     },
     {
@@ -1528,43 +1450,15 @@
       "file": "docs/HOWTO-HTF-FIB.md",
       "line": 38,
       "kind": "path",
-      "claimed": "Indicators/ForexHtfPivotsFib.mq5",
-      "attribution": "doc path"
+      "claimed": "mql5/Indicators/ForexHtfPivotsFib.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
       "line": 42,
       "kind": "path",
-      "claimed": "Include/ForexUtils.mqh",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 72,
-      "kind": "metric",
-      "claimed": "t 1.42",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 133,
-      "kind": "metric",
-      "claimed": "t 61.8",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 189,
-      "kind": "metric",
-      "claimed": "t 61.8",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 237,
-      "kind": "metric",
-      "claimed": "t 61.8",
-      "attribution": "HOWTO-HTF-FIB"
+      "claimed": "mql5/Include/ForexUtils.mqh",
+      "attribution": "mql5"
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
@@ -1582,13 +1476,6 @@
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 381,
-      "kind": "metric",
-      "claimed": "t 1.42",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
       "line": 418,
       "kind": "path",
       "claimed": "mql5/Experts/ForexHtfFibTester.mq5",
@@ -1596,38 +1483,10 @@
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 420,
-      "kind": "metric",
-      "claimed": "t 0.10",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 421,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 421,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
       "line": 424,
       "kind": "path",
-      "claimed": "Experts/ForexHtfFibTester.mq5",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 432,
-      "kind": "metric",
-      "claimed": "t 2024.06",
-      "attribution": "HOWTO-HTF-FIB"
+      "claimed": "mql5/Experts/ForexHtfFibTester.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
@@ -1656,13 +1515,6 @@
       "kind": "metric",
       "claimed": "2026-01-01",
       "attribution": "holdout lock"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 457,
-      "kind": "metric",
-      "claimed": "t 0.10",
-      "attribution": "HOWTO-HTF-FIB"
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
@@ -1701,13 +1553,6 @@
     },
     {
       "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 473,
-      "kind": "metric",
-      "claimed": "t 0.1",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-HTF-FIB.md",
       "line": 475,
       "kind": "metric",
       "claimed": "PF 0.57",
@@ -1735,20 +1580,6 @@
       "attribution": "mql5/README.md"
     },
     {
-      "file": "docs/HOWTO-HTF-FIB.md",
-      "line": 498,
-      "kind": "metric",
-      "claimed": "t 1.31",
-      "attribution": "HOWTO-HTF-FIB"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 21,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
       "line": 35,
       "kind": "symbol",
@@ -1764,45 +1595,10 @@
     },
     {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 66,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 84,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
       "line": 90,
       "kind": "path",
       "claimed": ".cursor/mcp.local.json",
       "attribution": "doc path"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 98,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 111,
-      "kind": "metric",
-      "claimed": "t 11.15",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 114,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
     },
     {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
@@ -1813,13 +1609,6 @@
     },
     {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
-      "line": 123,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "HOWTO-MT5-AI-MCP"
-    },
-    {
-      "file": "docs/HOWTO-MT5-AI-MCP.md",
       "line": 132,
       "kind": "path",
       "claimed": ".cursor/mcp.local.json",
@@ -1827,7 +1616,21 @@
     },
     {
       "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 135,
+      "kind": "path",
+      "claimed": "scripts/21-official-mcp-status.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
       "line": 139,
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/HOWTO-MT5-AI-MCP.md",
+      "line": 147,
       "kind": "symbol",
       "claimed": "mt5-arch mcp",
       "attribution": "docs/HOWTO-MT5-AI-MCP.md"
@@ -1907,21 +1710,7 @@
       "line": 3,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 3,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 3,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "HOWTO-US-INDEX-SCALP"
     },
     {
       "file": "docs/HOWTO-US-INDEX-SCALP.md",
@@ -1981,41 +1770,6 @@
     },
     {
       "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 0.20",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 34,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 34,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
       "line": 42,
       "kind": "metric",
       "claimed": "2026-06-01",
@@ -2059,27 +1813,6 @@
     {
       "file": "docs/HOWTO-US-INDEX-SCALP.md",
       "line": 70,
-      "kind": "metric",
-      "claimed": "PF 3",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "t 0.0",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "t 3.0",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 70,
       "kind": "symbol",
       "claimed": "score_row",
       "attribution": "us_index_session_core"
@@ -2110,13 +1843,6 @@
       "line": 78,
       "kind": "metric",
       "claimed": "holdout 0.96",
-      "attribution": "HOWTO-US-INDEX-SCALP"
-    },
-    {
-      "file": "docs/HOWTO-US-INDEX-SCALP.md",
-      "line": 78,
-      "kind": "metric",
-      "claimed": "t 0.96",
       "attribution": "HOWTO-US-INDEX-SCALP"
     },
     {
@@ -2338,52 +2064,10 @@
     },
     {
       "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 18,
-      "kind": "metric",
-      "claimed": "t 61.8",
-      "attribution": "htf_fib_core"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 36,
-      "kind": "metric",
-      "claimed": "t 1.44",
-      "attribution": "MQL5-PYTHON-PARITY"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "t 1.44",
-      "attribution": "MQL5-PYTHON-PARITY"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "t 1.45",
-      "attribution": "MQL5-PYTHON-PARITY"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
       "line": 75,
       "kind": "path",
       "claimed": "mt5_arch/parity/_failed/manifest.json",
       "attribution": "doc path"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 79,
-      "kind": "metric",
-      "claimed": "t 1.45",
-      "attribution": "MQL5-PYTHON-PARITY"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 95,
-      "kind": "metric",
-      "claimed": "t 1.40",
-      "attribution": "MQL5-PYTHON-PARITY"
     },
     {
       "file": "docs/MQL5-PYTHON-PARITY.md",
@@ -2431,29 +2115,15 @@
       "file": "docs/MQL5-PYTHON-PARITY.md",
       "line": 137,
       "kind": "path",
-      "claimed": "Indicators/ForexHtfPivotsFib.mq5",
-      "attribution": "doc path"
+      "claimed": "mql5/Indicators/ForexHtfPivotsFib.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/MQL5-PYTHON-PARITY.md",
       "line": 138,
       "kind": "path",
-      "claimed": "Scripts/ExportHtfFibParityFixture.mq5",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 161,
-      "kind": "metric",
-      "claimed": "t 1.45",
-      "attribution": "MQL5-PYTHON-PARITY"
-    },
-    {
-      "file": "docs/MQL5-PYTHON-PARITY.md",
-      "line": 173,
-      "kind": "metric",
-      "claimed": "t 1.44",
-      "attribution": "MQL5-PYTHON-PARITY"
+      "claimed": "mql5/Scripts/ExportHtfFibParityFixture.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/MQL5-PYTHON-PARITY.md",
@@ -2548,6 +2218,13 @@
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 37,
+      "kind": "symbol",
+      "claimed": "mt5-arch mcp",
+      "attribution": "docs/HOWTO-MT5-AI-MCP.md"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
       "line": 50,
       "kind": "link",
       "claimed": "HOWTO-MT5-AI-MCP.md",
@@ -2562,17 +2239,24 @@
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
-      "line": 83,
-      "kind": "metric",
-      "claimed": "t 61.8",
-      "attribution": "MT5-INTEGRATION-CAPABILITIES"
+      "line": 62,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
-      "line": 107,
-      "kind": "metric",
-      "claimed": "t 1.40",
-      "attribution": "MT5-INTEGRATION-CAPABILITIES"
+      "line": 63,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
+      "line": 64,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
@@ -2587,13 +2271,6 @@
       "kind": "path",
       "claimed": "scripts/19-run-htf-fib-backtest.sh",
       "attribution": "script"
-    },
-    {
-      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
-      "line": 150,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "MT5-INTEGRATION-CAPABILITIES"
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
@@ -2646,20 +2323,6 @@
     },
     {
       "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
-      "line": 189,
-      "kind": "metric",
-      "claimed": "t 1.20",
-      "attribution": "MT5-INTEGRATION-CAPABILITIES"
-    },
-    {
-      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
-      "line": 189,
-      "kind": "metric",
-      "claimed": "t 1.40",
-      "attribution": "MT5-INTEGRATION-CAPABILITIES"
-    },
-    {
-      "file": "docs/MT5-INTEGRATION-CAPABILITIES.md",
       "line": 200,
       "kind": "link",
       "claimed": "MULTI-BROKER-MT5.md",
@@ -2692,13 +2355,6 @@
       "kind": "link",
       "claimed": "FOREX-MT5-ROADMAP.md",
       "attribution": "docs/FOREX-MT5-ROADMAP.md"
-    },
-    {
-      "file": "docs/MULTI-BROKER-MT5.md",
-      "line": 13,
-      "kind": "metric",
-      "claimed": "t 11.13",
-      "attribution": "MULTI-BROKER-MT5"
     },
     {
       "file": "docs/MULTI-BROKER-MT5.md",
@@ -2940,6 +2596,13 @@
     },
     {
       "file": "docs/README.md",
+      "line": 40,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/README.md",
       "line": 41,
       "kind": "path",
       "claimed": "config/brokers/vantage.env",
@@ -2947,10 +2610,24 @@
     },
     {
       "file": "docs/README.md",
+      "line": 41,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/README.md",
       "line": 42,
       "kind": "path",
       "claimed": "config/brokers/fpmarkets.env",
       "attribution": "config"
+    },
+    {
+      "file": "docs/README.md",
+      "line": 42,
+      "kind": "path",
+      "claimed": "scripts/16-use-broker.sh",
+      "attribution": "script"
     },
     {
       "file": "docs/README.md",
@@ -3136,6 +2813,13 @@
     },
     {
       "file": "docs/SYMBOL-REGISTRY.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/SYMBOL-REGISTRY.md",
       "line": 79,
       "kind": "path",
       "claimed": "scripts/verify_symbol_registry.py",
@@ -3210,6 +2894,13 @@
       "kind": "path",
       "claimed": "tests/fixtures/symbol_sync_audit/",
       "attribution": "doc path"
+    },
+    {
+      "file": "docs/SYMBOL-SYNC-AUDIT.md",
+      "line": 62,
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh",
+      "attribution": "script"
     },
     {
       "file": "docs/SYMBOL-SYNC-AUDIT.md",
@@ -3339,10 +3030,17 @@
     },
     {
       "file": "docs/TRADE-JOURNAL.md",
+      "line": 75,
+      "kind": "path",
+      "claimed": "scripts/18-install-forex-indicator.sh",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/TRADE-JOURNAL.md",
       "line": 76,
       "kind": "path",
-      "claimed": "Experts/TradeTransactionJournal.mq5",
-      "attribution": "doc path"
+      "claimed": "mql5/Experts/TradeTransactionJournal.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/TRADE-JOURNAL.md",
@@ -3381,31 +3079,10 @@
     },
     {
       "file": "docs/TROUBLESHOOTING.md",
-      "line": 80,
-      "kind": "metric",
-      "claimed": "t 172.17",
-      "attribution": "terminal64"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
       "line": 83,
       "kind": "path",
       "claimed": "scripts/wine-net/force_src_bind.so",
       "attribution": "script"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 84,
-      "kind": "metric",
-      "claimed": "t 1.1",
-      "attribution": "TROUBLESHOOTING"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 91,
-      "kind": "metric",
-      "claimed": "t 192.168",
-      "attribution": "TROUBLESHOOTING"
     },
     {
       "file": "docs/TROUBLESHOOTING.md",
@@ -3441,13 +3118,6 @@
       "kind": "path",
       "claimed": "scripts/13-force-login-bridge.sh",
       "attribution": "script"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 139,
-      "kind": "metric",
-      "claimed": "t 11.13",
-      "attribution": "TROUBLESHOOTING"
     },
     {
       "file": "docs/TROUBLESHOOTING.md",
@@ -3506,34 +3176,6 @@
       "attribution": "--json"
     },
     {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 291,
-      "kind": "metric",
-      "claimed": "t 3.14",
-      "attribution": "TROUBLESHOOTING"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 294,
-      "kind": "metric",
-      "claimed": "t 3.12",
-      "attribution": "TROUBLESHOOTING"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 295,
-      "kind": "metric",
-      "claimed": "t 3.12",
-      "attribution": "TROUBLESHOOTING"
-    },
-    {
-      "file": "docs/TROUBLESHOOTING.md",
-      "line": 311,
-      "kind": "metric",
-      "claimed": "t 127.0",
-      "attribution": "mt5server"
-    },
-    {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
       "line": 13,
       "kind": "link",
@@ -3570,13 +3212,6 @@
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 45,
-      "kind": "path",
-      "claimed": "MQL5/Files/mt5_arch/{account,terminal,symbols,candles_{SYM}_{TF},positions}.json",
-      "attribution": "mql5"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
       "line": 49,
       "kind": "path",
       "claimed": "scripts/18-install-forex-indicator.sh",
@@ -3586,7 +3221,21 @@
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
       "line": 50,
       "kind": "path",
-      "claimed": "config/brokers/{wsf,vantage,fpmarkets}.env",
+      "claimed": "config/brokers/fpmarkets.env",
+      "attribution": "config"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "config/brokers/vantage.env",
+      "attribution": "config"
+    },
+    {
+      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
+      "line": 50,
+      "kind": "path",
+      "claimed": "config/brokers/wsf.env",
       "attribution": "config"
     },
     {
@@ -3661,66 +3310,10 @@
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 111,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 113,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 147,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 165,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
       "line": 169,
       "kind": "symbol",
       "claimed": "--json",
       "attribution": "--json"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 196,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 196,
-      "kind": "metric",
-      "claimed": "t 1.00",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 213,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 222,
-      "kind": "metric",
-      "claimed": "t 2.5",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
@@ -3731,17 +3324,10 @@
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 284,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 285,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
+      "line": 300,
+      "kind": "path",
+      "claimed": "mql5/Files/forex_signals/",
+      "attribution": "mql5"
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
@@ -3780,20 +3366,6 @@
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 492,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 492,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
       "line": 526,
       "kind": "symbol",
       "claimed": "--json",
@@ -3819,13 +3391,6 @@
       "kind": "path",
       "claimed": "MQL5/Files/forex_signals/",
       "attribution": "mql5"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 536,
-      "kind": "metric",
-      "claimed": "t 2.5",
-      "attribution": "ALGO-TRADING-BTC-GOLD-FOREX"
     },
     {
       "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
@@ -4038,111 +3603,6 @@
       "attribution": "script"
     },
     {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 586,
-      "kind": "path",
-      "claimed": "../mt5-trading-agent/docs/plans/mt5-trading-agent.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 587,
-      "kind": "path",
-      "claimed": "../mt5-trading-agent/src/execution/mt5_client.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 588,
-      "kind": "path",
-      "claimed": "../mt5-trading-agent/src/execution/executor.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 590,
-      "kind": "path",
-      "claimed": "../ctrader-trading-agent/docs/ARCHITECTURE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 598,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/docs/ARCHITECTURE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 599,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/docs/FOREX-MT5-ROADMAP.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 600,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/mql5/Mt5ArchBridge.mq5",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 601,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/mql5/Include/ForexUtils.mqh",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 602,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/mql5/Indicators/ForexHtfPivotsFib.mq5",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 603,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/mql5/README.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 604,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-arch-integration/src/mt5_arch/file_bridge.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 605,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-trading-agent/docs/plans/mt5-trading-agent.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 606,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-trading-agent/src/execution/lot_sizing.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 607,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/mt5-trading-agent/src/execution/mt5_client.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/ALGO-TRADING-BTC-GOLD-FOREX.md",
-      "line": 608,
-      "kind": "path",
-      "claimed": "file:///home/yderf/Projects/trading/ctrader-trading-agent/docs/ARCHITECTURE.md",
-      "attribution": "doc path"
-    },
-    {
       "file": "docs/research/BACKTEST-RECORD.md",
       "line": 6,
       "kind": "disposition",
@@ -4154,21 +3614,7 @@
       "line": 6,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 6,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 6,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "BACKTEST-RECORD"
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
@@ -4187,23 +3633,9 @@
     {
       "file": "docs/research/BACKTEST-RECORD.md",
       "line": 28,
-      "kind": "metric",
-      "claimed": "t 5.0",
-      "attribution": "eurusd_ny_scalp_lock.json"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 28,
       "kind": "path",
       "claimed": "results/eurusd_ny_scalp_lock.json",
       "attribution": "results artifact"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 30,
-      "kind": "metric",
-      "claimed": "t 11.7",
-      "attribution": "BACKTEST-RECORD"
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
@@ -4389,30 +3821,9 @@
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "t 2.44",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
       "line": 56,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 57,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 57,
-      "kind": "metric",
-      "claimed": "t 0.02",
       "attribution": "BACKTEST-RECORD"
     },
     {
@@ -4428,13 +3839,6 @@
       "kind": "metric",
       "claimed": "0 / 192",
       "attribution": "eurusd_ny_scalp_develop_v1"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 68,
-      "kind": "metric",
-      "claimed": "t 0.075",
-      "attribution": "max_null_best"
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
@@ -4475,15 +3879,15 @@
       "file": "docs/research/BACKTEST-RECORD.md",
       "line": 74,
       "kind": "path",
-      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.{json,md}",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 78,
-      "kind": "metric",
-      "claimed": "t 11.52",
-      "attribution": "BACKTEST-RECORD"
+      "line": 74,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.md",
+      "attribution": "results artifact"
     },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
@@ -4496,21 +3900,7 @@
       "file": "docs/research/BACKTEST-RECORD.md",
       "line": 80,
       "kind": "metric",
-      "claimed": "t 11.00",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 80,
-      "kind": "metric",
       "claimed": "\u22124.00",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 81,
-      "kind": "metric",
-      "claimed": "t 0.985",
       "attribution": "BACKTEST-RECORD"
     },
     {
@@ -4553,13 +3943,6 @@
       "line": 93,
       "kind": "metric",
       "claimed": "n=7",
-      "attribution": "BACKTEST-RECORD"
-    },
-    {
-      "file": "docs/research/BACKTEST-RECORD.md",
-      "line": 93,
-      "kind": "metric",
-      "claimed": "t 1.837",
       "attribution": "BACKTEST-RECORD"
     },
     {
@@ -4823,76 +4206,6 @@
     },
     {
       "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 373,
-      "kind": "metric",
-      "claimed": "t 0.08",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 388,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 389,
-      "kind": "metric",
-      "claimed": "t 0.015",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 404,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 405,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 409,
-      "kind": "metric",
-      "claimed": "t 0.015",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 410,
-      "kind": "metric",
-      "claimed": "t 0.03",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 414,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 424,
-      "kind": "metric",
-      "claimed": "t 0.08",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 459,
-      "kind": "metric",
-      "claimed": "t 2.5",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
       "line": 492,
       "kind": "path",
       "claimed": "mql5/",
@@ -4902,8 +4215,8 @@
       "file": "docs/research/BTC-INDICATOR-DESIGN.md",
       "line": 496,
       "kind": "path",
-      "claimed": "Indicators/BtcTrendPullback.mq5",
-      "attribution": "doc path"
+      "claimed": "mql5/Indicators/BtcTrendPullback.mq5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/research/BTC-INDICATOR-DESIGN.md",
@@ -4932,76 +4245,6 @@
       "kind": "symbol",
       "claimed": "--json",
       "attribution": "--json"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 642,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "BTC-INDICATOR-DESIGN"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 655,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/src/strategy/trend_pullback.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 656,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/src/features/technical.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 657,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/docs/INDICATORS.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 658,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/research/DECISION_ABANDON_BTC_REGIME.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 659,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/research/RESEARCH_FINDINGS.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 661,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/docs/MTF_STRATEGY_GUIDE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 662,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/src/strategy/volatility_squeeze.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 663,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/src/strategy/panic_block_ma.py",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/BTC-INDICATOR-DESIGN.md",
-      "line": 664,
-      "kind": "path",
-      "claimed": "/home/yderf/Projects/trading/crypto-agent/README.md",
-      "attribution": "doc path"
     },
     {
       "file": "docs/research/BTC-INDICATOR-DESIGN.md",
@@ -5103,13 +4346,6 @@
     },
     {
       "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 13,
-      "kind": "metric",
-      "claimed": "t 11.7",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
       "line": 14,
       "kind": "metric",
       "claimed": "pooled PF 0.90",
@@ -5128,27 +4364,6 @@
       "kind": "metric",
       "claimed": "2026-01-01",
       "attribution": "holdout lock"
-    },
-    {
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 54,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 80,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
     },
     {
       "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
@@ -5189,22 +4404,15 @@
       "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
       "line": 104,
       "kind": "path",
-      "claimed": "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.{json,md}",
+      "claimed": "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 109,
-      "kind": "metric",
-      "claimed": "t 36.93",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
-      "line": 110,
-      "kind": "metric",
-      "claimed": "t 0.395",
-      "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
+      "line": 104,
+      "kind": "path",
+      "claimed": "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.md",
+      "attribution": "results artifact"
     },
     {
       "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
@@ -5219,6 +4427,20 @@
       "kind": "metric",
       "claimed": "+10.99",
       "attribution": "EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1"
+    },
+    {
+      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
+      "line": 115,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
+    },
+    {
+      "file": "docs/research/EURUSD-GBP-DAILY-COSIGN-XAU-NEXTDAY-PAPER-GATE-v1.md",
+      "line": 115,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "standing"
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
@@ -5292,13 +4514,6 @@
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 17,
-      "kind": "metric",
-      "claimed": "t 11.7",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
       "line": 19,
       "kind": "disposition",
       "claimed": "ANTI",
@@ -5341,20 +4556,6 @@
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 75,
-      "kind": "metric",
-      "claimed": "t 0.70",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 78,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
       "line": 79,
       "kind": "disposition",
       "claimed": "ANTI",
@@ -5378,35 +4579,21 @@
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
       "line": 95,
       "kind": "path",
-      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.{json,md}",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 101,
-      "kind": "metric",
-      "claimed": "t 0.985",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "t 11.52",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
+      "line": 95,
+      "kind": "path",
+      "claimed": "results/eurusd_ny_mr_limit_fill_paper_gate_v1.md",
+      "attribution": "results artifact"
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
       "line": 103,
       "kind": "metric",
       "claimed": "t 4.03",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 104,
-      "kind": "metric",
-      "claimed": "t \u22120.01",
       "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
     },
     {
@@ -5420,29 +4607,22 @@
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
       "line": 105,
       "kind": "metric",
-      "claimed": "t \u22124.00",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
-    },
-    {
-      "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 105,
-      "kind": "metric",
       "claimed": "\u22124.00",
       "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 108,
-      "kind": "metric",
-      "claimed": "t 11.7",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
+      "line": 106,
+      "kind": "disposition",
+      "claimed": "live_go=false",
+      "attribution": "standing"
     },
     {
       "file": "docs/research/EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1.md",
-      "line": 108,
-      "kind": "metric",
-      "claimed": "t 98.5",
-      "attribution": "EURUSD-MR-LIMIT-FILL-PAPER-GATE-v1"
+      "line": 106,
+      "kind": "disposition",
+      "claimed": "promote=false",
+      "attribution": "standing"
     },
     {
       "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
@@ -5502,13 +4682,6 @@
     },
     {
       "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 22,
-      "kind": "metric",
-      "claimed": "t 0.2",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
       "line": 27,
       "kind": "metric",
       "claimed": "0 / 32",
@@ -5530,13 +4703,6 @@
     },
     {
       "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 41,
-      "kind": "metric",
-      "claimed": "t 1.32",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
       "line": 43,
       "kind": "metric",
       "claimed": "2026-06-01",
@@ -5547,83 +4713,6 @@
       "line": 45,
       "kind": "metric",
       "claimed": "0 / 32",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 101,
-      "kind": "metric",
-      "claimed": "t 1.00",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 103,
-      "kind": "metric",
-      "claimed": "t 1.25",
-      "attribution": "lot_cap"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 103,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "lot_cap"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 104,
-      "kind": "metric",
-      "claimed": "t 1.00",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 108,
-      "kind": "metric",
-      "claimed": "t 0.50",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 109,
-      "kind": "metric",
-      "claimed": "t 0.19",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 110,
-      "kind": "metric",
-      "claimed": "t 1.00",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 117,
-      "kind": "metric",
-      "claimed": "t 0.2",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 122,
-      "kind": "metric",
-      "claimed": "t 0.3",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 123,
-      "kind": "metric",
-      "claimed": "t 1.2",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 123,
-      "kind": "metric",
-      "claimed": "t 111.74",
       "attribution": "EURUSD-NY-SCALP-DESIGN"
     },
     {
@@ -5701,21 +4790,7 @@
       "line": 160,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 160,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
-      "line": 160,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "EURUSD-NY-SCALP-DESIGN"
     },
     {
       "file": "docs/research/EURUSD-NY-SCALP-DESIGN.md",
@@ -5792,21 +4867,7 @@
       "line": 4,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "HOWTO-BACKTEST-PATHS"
-    },
-    {
-      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
-      "line": 4,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
-      "line": 4,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "HOWTO-BACKTEST-PATHS"
     },
     {
       "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
@@ -5841,13 +4902,6 @@
       "line": 15,
       "kind": "metric",
       "claimed": "2026-01-01",
-      "attribution": "xau_holdout_lock.json"
-    },
-    {
-      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
-      "line": 15,
-      "kind": "metric",
-      "claimed": "t 0.01",
       "attribution": "xau_holdout_lock.json"
     },
     {
@@ -5979,13 +5033,6 @@
     {
       "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
       "line": 17,
-      "kind": "metric",
-      "claimed": "t 0.10",
-      "attribution": "htf_fib_offline_lock.json"
-    },
-    {
-      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
-      "line": 17,
       "kind": "path",
       "claimed": "results/htf_fib_offline_lock.json",
       "attribution": "results artifact"
@@ -6038,13 +5085,6 @@
       "kind": "metric",
       "claimed": "2026-07-01",
       "attribution": "holdout lock"
-    },
-    {
-      "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
-      "line": 18,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "HOWTO-BACKTEST-PATHS"
     },
     {
       "file": "docs/research/HOWTO-BACKTEST-PATHS.md",
@@ -6196,13 +5236,6 @@
     {
       "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
       "line": 6,
-      "kind": "metric",
-      "claimed": "t 2.2",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 6,
       "kind": "path",
       "claimed": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
       "attribution": "docs"
@@ -6237,101 +5270,10 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 46,
-      "kind": "metric",
-      "claimed": "t 2.2",
-      "attribution": "multi_instrument_joint_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 48,
-      "kind": "metric",
-      "claimed": "t 5.8",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 149,
-      "kind": "metric",
-      "claimed": "t 5.4",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 158,
-      "kind": "metric",
-      "claimed": "t 4.1",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 196,
-      "kind": "metric",
-      "claimed": "t 5.8",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 223,
-      "kind": "metric",
-      "claimed": "t 5.4",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 224,
-      "kind": "metric",
-      "claimed": "t 5.6",
-      "attribution": "lot_step"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 238,
-      "kind": "metric",
-      "claimed": "t 4.2",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 278,
-      "kind": "metric",
-      "claimed": "t 5.3",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 278,
-      "kind": "metric",
-      "claimed": "t 5.5",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 300,
-      "kind": "metric",
-      "claimed": "t 5.5",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 300,
-      "kind": "metric",
-      "claimed": "t 8.3",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 318,
-      "kind": "metric",
-      "claimed": "t 5.6",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
       "line": 369,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
@@ -6370,44 +5312,9 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 427,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 430,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
       "line": 458,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 471,
-      "kind": "metric",
-      "claimed": "t 5.5",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 473,
-      "kind": "metric",
-      "claimed": "t 5.5",
-      "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
-      "line": 475,
-      "kind": "metric",
-      "claimed": "t 8.3",
       "attribution": "MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1"
     },
     {
@@ -6490,23 +5397,9 @@
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
       "line": 23,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "joint_london_open_cosign_fade_flat"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 23,
       "kind": "path",
       "claimed": "results/xau_runs/2026-08-14_joint_london_open_cosign_fade_flat_screen_r1/",
       "attribution": "results artifact"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 49,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
@@ -6569,7 +5462,7 @@
       "line": 70,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
@@ -6583,49 +5476,28 @@
       "line": 89,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
       "line": 101,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "n_trades_min"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 101,
-      "kind": "disposition",
-      "claimed": "SCREEN_FAIL",
-      "attribution": "xau_not_cosign_at_tstar"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
       "line": 110,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
       "line": 112,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 129,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
-      "line": 129,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
@@ -6671,41 +5543,6 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 50,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 50,
-      "kind": "metric",
-      "claimed": "t 0.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 52,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "spread"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
       "line": 52,
       "kind": "path",
       "claimed": "results/xau_research_costs.json",
@@ -6720,38 +5557,10 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 64,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 66,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 78,
-      "kind": "metric",
-      "claimed": "t 1.1",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
-      "line": 90,
-      "kind": "metric",
-      "claimed": "t 1.1",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
       "line": 94,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "primary_n_passers"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
@@ -6779,14 +5588,14 @@
       "line": 124,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
       "line": 124,
       "kind": "disposition",
       "claimed": "ZERO_PRIMARY_PASSERS",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
@@ -6861,13 +5670,6 @@
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
       "line": 7,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
-      "line": 7,
       "kind": "sha",
       "claimed": "2d3fda48",
       "attribution": "digest"
@@ -6881,31 +5683,17 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
-      "line": 15,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
       "line": 36,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2.md",
       "line": 36,
       "kind": "disposition",
       "claimed": "ZERO_PRIMARY_PASSERS",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v2"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
@@ -6924,13 +5712,6 @@
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
       "line": 8,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
-      "line": 8,
       "kind": "sha",
       "claimed": "2d3fda48",
       "attribution": "digest"
@@ -6944,31 +5725,17 @@
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
-      "line": 25,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
-      "line": 25,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
       "line": 34,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3.md",
       "line": 34,
       "kind": "disposition",
       "claimed": "ZERO_PRIMARY_PASSERS",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v3"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
@@ -6987,58 +5754,23 @@
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
       "line": 8,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
-      "line": 8,
       "kind": "sha",
       "claimed": "e88161be",
       "attribution": "digest"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
-      "line": 14,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
-      "line": 24,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
-      "line": 24,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
-    },
-    {
-      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
       "line": 37,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4.md",
       "line": 37,
       "kind": "disposition",
       "claimed": "ZERO_PRIMARY_PASSERS",
-      "attribution": "MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v4"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 5,
-      "kind": "metric",
-      "claimed": "t 1.04",
-      "attribution": "PHASE0-DISCOVERY"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
@@ -7070,27 +5802,6 @@
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "PHASE0-DISCOVERY"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 56,
-      "kind": "metric",
-      "claimed": "t 64003.55",
-      "attribution": "PHASE0-DISCOVERY"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 106,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "PHASE0-DISCOVERY"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 117,
       "kind": "path",
       "claimed": "config/brokers/vantage.env",
@@ -7100,22 +5811,8 @@
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 118,
       "kind": "path",
-      "claimed": "phase0/vantage-live-SUMMARY.json",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 143,
-      "kind": "metric",
-      "claimed": "t 1.03",
-      "attribution": "PHASE0-DISCOVERY"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 182,
-      "kind": "metric",
-      "claimed": "t 1.04",
-      "attribution": "PHASE0-DISCOVERY"
+      "claimed": "docs/research/phase0/vantage-live-SUMMARY.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
@@ -7149,82 +5846,82 @@
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 211,
       "kind": "path",
-      "claimed": "docs/research/phase0/fpmarkets-symbols-btc-xau.json",
+      "claimed": "docs/research/phase0/",
       "attribution": "docs"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 249,
-      "kind": "metric",
-      "claimed": "t 1.04",
-      "attribution": "PHASE0-DISCOVERY"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 270,
-      "kind": "path",
-      "claimed": "phase0/fpmarkets-ping.json",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 271,
-      "kind": "path",
-      "claimed": "phase0/fpmarkets-account.json",
-      "attribution": "doc path"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 272,
       "kind": "path",
-      "claimed": "phase0/fpmarkets-symbols-majors.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/fpmarkets-ping.json",
+      "attribution": "docs"
+    },
+    {
+      "file": "docs/research/PHASE0-DISCOVERY.md",
+      "line": 273,
+      "kind": "path",
+      "claimed": "docs/research/phase0/fpmarkets-account.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 274,
       "kind": "path",
-      "claimed": "phase0/fpmarkets-positions.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/fpmarkets-symbols-majors.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
-      "line": 275,
+      "line": 276,
       "kind": "path",
-      "claimed": "phase0/fpmarkets-config.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/fpmarkets-positions.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 277,
       "kind": "path",
-      "claimed": "phase0/vantage-stale-snapshot.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/fpmarkets-config.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 278,
       "kind": "path",
-      "claimed": "phase0/vantage-ping.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/fpmarkets-journal-20260804.txt",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 279,
       "kind": "path",
-      "claimed": "phase0/vantage-live-SUMMARY.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/vantage-stale-snapshot.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 280,
       "kind": "path",
-      "claimed": "phase0/vantage-positions.json",
-      "attribution": "doc path"
+      "claimed": "docs/research/phase0/vantage-ping.json",
+      "attribution": "docs"
     },
     {
       "file": "docs/research/PHASE0-DISCOVERY.md",
       "line": 281,
+      "kind": "path",
+      "claimed": "docs/research/phase0/vantage-live-SUMMARY.json",
+      "attribution": "docs"
+    },
+    {
+      "file": "docs/research/PHASE0-DISCOVERY.md",
+      "line": 282,
+      "kind": "path",
+      "claimed": "docs/research/phase0/vantage-positions.json",
+      "attribution": "docs"
+    },
+    {
+      "file": "docs/research/PHASE0-DISCOVERY.md",
+      "line": 283,
       "kind": "path",
       "claimed": "mql5/Mt5ArchBridge.mq5",
       "attribution": "mql5"
@@ -7232,307 +5929,314 @@
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
       "line": 5,
-      "kind": "sha",
-      "claimed": "52c6baf",
-      "attribution": "digest"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
-      "kind": "link",
-      "claimed": "../../.grok/workflows/research-claim-audit.rhai",
-      "attribution": ".grok/workflows/research-claim-audit.rhai"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
       "kind": "link",
       "claimed": "../../scripts/research_claim_extract.py",
       "attribution": "scripts/research_claim_extract.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
       "kind": "link",
       "claimed": "../../scripts/research_claim_instruction.py",
       "attribution": "scripts/research_claim_instruction.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
       "kind": "link",
       "claimed": "../../scripts/research_claim_mutant.py",
       "attribution": "scripts/research_claim_mutant.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
+      "kind": "link",
+      "claimed": "../../scripts/research_claim_selfref_rebuild.py",
+      "attribution": "scripts/research_claim_selfref_rebuild.py"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 5,
       "kind": "link",
       "claimed": "../../scripts/research_claim_verify.py",
       "attribution": "scripts/research_claim_verify.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
       "kind": "path",
       "claimed": "scripts/research_claim_extract.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
       "kind": "path",
       "claimed": "scripts/research_claim_instruction.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
       "kind": "path",
       "claimed": "scripts/research_claim_mutant.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 6,
+      "line": 5,
+      "kind": "path",
+      "claimed": "scripts/research_claim_selfref_rebuild.py",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 5,
       "kind": "path",
       "claimed": "scripts/research_claim_verify.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 7,
+      "line": 6,
       "kind": "link",
       "claimed": "../../results/research_claim_inventory.json",
       "attribution": "results/research_claim_inventory.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 7,
+      "line": 6,
       "kind": "path",
       "claimed": "results/research_claim_inventory.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 8,
+      "line": 7,
       "kind": "link",
       "claimed": "../../results/research_claim_verify_result.json",
       "attribution": "results/research_claim_verify_result.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 8,
+      "line": 7,
       "kind": "path",
       "claimed": "results/research_claim_verify_result.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 9,
+      "line": 8,
       "kind": "link",
       "claimed": "../../results/research_claim_negative_controls.json",
       "attribution": "results/research_claim_negative_controls.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 9,
+      "line": 8,
       "kind": "path",
       "claimed": "results/research_claim_negative_controls.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 10,
+      "line": 9,
       "kind": "link",
       "claimed": "../../results/research_claim_mutant_result.json",
       "attribution": "results/research_claim_mutant_result.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 10,
+      "line": 9,
       "kind": "path",
       "claimed": "results/research_claim_mutant_result.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 11,
+      "line": 10,
       "kind": "link",
       "claimed": "../../results/research_claim_selfref_allow.json",
       "attribution": "results/research_claim_selfref_allow.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 11,
+      "line": 10,
       "kind": "path",
       "claimed": "results/research_claim_selfref_allow.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 12,
-      "kind": "disposition",
-      "claimed": "New edge",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 14,
+      "line": 13,
       "kind": "path",
       "claimed": "strategy_params.json",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 14,
+      "line": 13,
       "kind": "symbol",
       "claimed": "--live",
       "attribution": "strategy_params.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 18,
+      "line": 17,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "main base commit"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 20,
+      "line": 19,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "main base commit"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 22,
+      "line": 21,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "unresolvable"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 24,
+      "line": 23,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "digest"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 31,
+      "line": 30,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "unresolvable"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
+      "line": 50,
       "kind": "link",
       "claimed": "../../scripts/research_claim_extract.py",
       "attribution": "scripts/research_claim_extract.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
+      "line": 50,
       "kind": "link",
       "claimed": "../../scripts/research_claim_instruction.py",
       "attribution": "scripts/research_claim_instruction.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
+      "line": 50,
       "kind": "path",
       "claimed": "docs/**/*.md",
       "attribution": "docs"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
+      "line": 50,
       "kind": "path",
       "claimed": "scripts/research_claim_extract.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
-      "kind": "path",
-      "claimed": "scripts/research_claim_extract.py:build_inventory",
-      "attribution": "script"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 51,
+      "line": 50,
       "kind": "path",
       "claimed": "scripts/research_claim_instruction.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 78,
+      "line": 76,
+      "kind": "link",
+      "claimed": "../../results/research_claim_selfref_allow.json",
+      "attribution": "results/research_claim_selfref_allow.json"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 76,
       "kind": "path",
       "claimed": "AGENTS.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 78,
+      "line": 76,
       "kind": "path",
       "claimed": "CLAUDE.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 78,
+      "line": 76,
       "kind": "path",
       "claimed": "README.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 78,
+      "line": 76,
       "kind": "path",
-      "claimed": "docs/**",
+      "claimed": "docs/**/*.md",
       "attribution": "docs"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 78,
+      "line": 76,
       "kind": "path",
       "claimed": "mql5/README.md",
       "attribution": "mql5"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 82,
+      "line": 76,
+      "kind": "path",
+      "claimed": "results/research_claim_selfref_allow.json",
+      "attribution": "results artifact"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 76,
+      "kind": "path",
+      "claimed": "scripts/research_claim_selfref_rebuild.py",
+      "attribution": "script"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 80,
       "kind": "path",
       "claimed": "config/brokers/*.env",
       "attribution": "config"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 83,
+      "line": 81,
       "kind": "path",
       "claimed": "fetch_data.py",
       "attribution": "fetch_data.py"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 83,
+      "line": 81,
       "kind": "path",
       "claimed": "scripts/19-run-htf-fib-backtest.sh",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 84,
+      "line": 82,
       "kind": "path",
       "claimed": "src/mt5_arch/file_bridge.py",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 90,
+      "line": 88,
       "kind": "path",
       "claimed": "results/research_claim_verify_result.json",
       "attribution": "results artifact"
@@ -7541,43 +6245,29 @@
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
       "line": 107,
       "kind": "disposition",
-      "claimed": "New edge",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
+      "claimed": "SCREEN_FAIL",
+      "attribution": "fpmarkets-symbols-btc-xau.json"
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 107,
+      "kind": "disposition",
+      "claimed": "promote=true",
+      "attribution": "forbidden fpmarkets-symbols-btc-xau.json"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
       "line": 107,
       "kind": "path",
-      "claimed": "docs/README.md:21",
-      "attribution": "docs"
+      "claimed": "MQL5/Files/",
+      "attribution": "mql5"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
       "line": 113,
-      "kind": "disposition",
-      "claimed": "BLOCKED",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 113,
-      "kind": "disposition",
-      "claimed": "KEEP",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 113,
-      "kind": "disposition",
-      "claimed": "New edge",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 113,
-      "kind": "disposition",
-      "claimed": "SCHEMA_PASS",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
+      "kind": "path",
+      "claimed": "config/local.paths",
+      "attribution": "config"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
@@ -7597,8 +6287,8 @@
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
       "line": 114,
       "kind": "path",
-      "claimed": "mql5/README.md",
-      "attribution": "mql5"
+      "claimed": "config/local.paths",
+      "attribution": "config"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
@@ -7609,469 +6299,273 @@
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 116,
-      "kind": "metric",
-      "claimed": "n=1",
-      "attribution": "broker_roster_coverage"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 116,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "fetch_data.py"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 117,
-      "kind": "metric",
-      "claimed": "n=52",
-      "attribution": "instruction_prefix_in_roster"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 117,
-      "kind": "path",
-      "claimed": "CLAUDE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 117,
-      "kind": "path",
-      "claimed": "config/brokers/",
-      "attribution": "config"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 118,
-      "kind": "metric",
-      "claimed": "n=48",
-      "attribution": "instruction_prefix_in_roster"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 118,
-      "kind": "path",
-      "claimed": "AGENTS.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 122,
-      "kind": "path",
-      "claimed": "docs/README.md",
-      "attribution": "docs"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 123,
-      "kind": "path",
-      "claimed": "AGENTS.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 123,
-      "kind": "path",
-      "claimed": "CLAUDE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 123,
-      "kind": "path",
-      "claimed": "fetch_data.py",
-      "attribution": "fetch_data.py"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 129,
+      "line": 115,
       "kind": "path",
       "claimed": "config/local.paths",
       "attribution": "config"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 129,
-      "kind": "path",
-      "claimed": "docs/README.md",
-      "attribution": "docs"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 129,
-      "kind": "path",
-      "claimed": "gitignored:config/local.paths",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 130,
-      "kind": "path",
-      "claimed": "CLAUDE.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 130,
-      "kind": "path",
-      "claimed": "config/local.paths",
-      "attribution": "config"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 130,
-      "kind": "path",
-      "claimed": "gitignored:config/local.paths",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 131,
-      "kind": "path",
-      "claimed": "AGENTS.md",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 131,
-      "kind": "path",
-      "claimed": "config/local.paths",
-      "attribution": "config"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 131,
-      "kind": "path",
-      "claimed": "gitignored:config/local.paths",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 135,
+      "line": 119,
       "kind": "disposition",
       "claimed": "BLOCKED",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 135,
+      "line": 119,
       "kind": "disposition",
       "claimed": "KEEP",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 137,
+      "line": 121,
       "kind": "disposition",
       "claimed": "BLOCKED",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 137,
+      "line": 121,
       "kind": "disposition",
       "claimed": "KEEP",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 137,
+      "line": 121,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 143,
+      "line": 127,
       "kind": "path",
       "claimed": "results/research_claim_negative_controls.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 151,
+      "line": 135,
       "kind": "disposition",
       "claimed": "BLOCKED",
       "attribution": "drift"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 151,
+      "line": 135,
       "kind": "disposition",
       "claimed": "KEEP",
       "attribution": "drift"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 152,
+      "line": 136,
       "kind": "disposition",
       "claimed": "KEEP",
       "attribution": "drift"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 152,
+      "line": 136,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
       "attribution": "drift"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 162,
+      "line": 146,
       "kind": "path",
       "claimed": "results/research_claim_mutant_result.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 176,
-      "kind": "path",
-      "claimed": "scripts/__mutant_dead_path_does_not_exist__.sh",
-      "attribution": "script"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 177,
+      "line": 161,
       "kind": "sha",
       "claimed": "11099b20",
       "attribution": "digest"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 177,
+      "line": 161,
       "kind": "sha",
       "claimed": "11099b2a",
       "attribution": "digest"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 178,
+      "line": 162,
       "kind": "metric",
       "claimed": "PF 0.80",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 178,
+      "line": 162,
       "kind": "metric",
       "claimed": "PF 0.89",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 178,
-      "kind": "metric",
-      "claimed": "t 0.89",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 179,
+      "line": 163,
       "kind": "metric",
       "claimed": "PF 0.80",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 179,
+      "line": 163,
       "kind": "metric",
       "claimed": "PF 0.89",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 179,
-      "kind": "metric",
-      "claimed": "t 0.89",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 180,
+      "line": 164,
       "kind": "metric",
       "claimed": "pooled PF 0.909",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 181,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 181,
+      "line": 165,
       "kind": "disposition",
       "claimed": "promote=no",
       "attribution": "standing"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 181,
+      "line": 165,
       "kind": "disposition",
       "claimed": "promote=true",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
+      "attribution": "forbidden standing"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 181,
-      "kind": "disposition",
-      "claimed": "promote=true",
-      "attribution": "standing"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 182,
+      "line": 166,
       "kind": "path",
       "claimed": "CLAUDE.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 185,
-      "kind": "metric",
-      "claimed": "0 / 8",
-      "attribution": "gate_can_fail"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 187,
+      "line": 171,
       "kind": "sha",
       "claimed": "7ac2233",
       "attribution": "main base commit"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 193,
+      "line": 177,
       "kind": "path",
       "claimed": "scripts/research_claim_extract.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 193,
+      "line": 177,
       "kind": "path",
       "claimed": "scripts/research_claim_instruction.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 193,
+      "line": 177,
       "kind": "path",
       "claimed": "scripts/research_claim_mutant.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 193,
+      "line": 177,
       "kind": "path",
       "claimed": "scripts/research_claim_verify.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 194,
+      "line": 178,
       "kind": "path",
       "claimed": "results/*.json",
       "attribution": "results artifact"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 195,
+      "line": 179,
       "kind": "path",
       "claimed": "scripts/research_claim_extract.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 195,
+      "line": 179,
       "kind": "path",
       "claimed": "scripts/research_claim_instruction.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 195,
+      "line": 179,
       "kind": "path",
       "claimed": "scripts/research_claim_mutant.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 195,
+      "line": 179,
       "kind": "path",
       "claimed": "scripts/research_claim_verify.py",
       "attribution": "script"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 201,
+      "line": 185,
       "kind": "disposition",
       "claimed": "RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 201,
-      "kind": "disposition",
-      "claimed": "live_go=false",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 201,
+      "line": 185,
       "kind": "disposition",
       "claimed": "live_go=false",
       "attribution": "standing"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 201,
-      "kind": "disposition",
-      "claimed": "promote=no",
-      "attribution": "RESEARCH-CLAIM-AUDIT"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 201,
+      "line": 185,
       "kind": "disposition",
       "claimed": "promote=no",
       "attribution": "standing"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 205,
+      "line": 189,
       "kind": "disposition",
       "claimed": "New edge",
       "attribution": "RESEARCH-CLAIM-AUDIT"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 205,
-      "kind": "path",
-      "claimed": "docs/README.md:21",
-      "attribution": "docs"
-    },
-    {
-      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 206,
+      "line": 190,
       "kind": "path",
       "claimed": "AGENTS.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 206,
+      "line": 190,
       "kind": "path",
       "claimed": "CLAUDE.md",
       "attribution": "doc path"
     },
     {
       "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
-      "line": 206,
+      "line": 190,
       "kind": "path",
       "claimed": "docs/README.md",
       "attribution": "docs"
@@ -8095,21 +6589,7 @@
       "line": 8,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 8,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 8,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
@@ -8138,69 +6618,6 @@
       "kind": "metric",
       "claimed": "t 2.44",
       "attribution": "ny_cash_liquidity_sweep"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 0.02",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 0.80",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 38.83",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 26,
-      "kind": "metric",
-      "claimed": "t 48.5",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 0.20",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 0.80",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 32,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
@@ -8358,34 +6775,6 @@
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 83,
-      "kind": "metric",
-      "claimed": "t 0.02",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 84,
-      "kind": "metric",
-      "claimed": "t 1.60",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 86,
-      "kind": "metric",
-      "claimed": "t 48.5",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 88,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
       "line": 100,
       "kind": "disposition",
       "claimed": "CLEARS-FRICTION",
@@ -8403,21 +6792,7 @@
       "line": 105,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 105,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 105,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE-SKEPTIC"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
@@ -8501,21 +6876,7 @@
       "line": 9,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 9,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 9,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
@@ -8540,13 +6901,6 @@
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 33,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 34,
       "kind": "disposition",
       "claimed": "ANTI",
@@ -8564,13 +6918,6 @@
       "line": 35,
       "kind": "disposition",
       "claimed": "ANTI",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 35,
-      "kind": "metric",
-      "claimed": "t \u22122.0",
       "attribution": "SIGNAL-EDGE-TRIAGE"
     },
     {
@@ -9081,6 +7428,13 @@
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 64,
       "kind": "metric",
+      "claimed": "n=19",
+      "attribution": "SIGNAL-EDGE-TRIAGE"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 64,
+      "kind": "metric",
       "claimed": "\u22121.04",
       "attribution": "SIGNAL-EDGE-TRIAGE"
     },
@@ -9096,6 +7450,13 @@
       "line": 65,
       "kind": "disposition",
       "claimed": "EMPTY",
+      "attribution": "SIGNAL-EDGE-TRIAGE"
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 65,
+      "kind": "metric",
+      "claimed": "n=0",
       "attribution": "SIGNAL-EDGE-TRIAGE"
     },
     {
@@ -9516,28 +7877,14 @@
       "line": 112,
       "kind": "disposition",
       "claimed": "live_go=true",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 112,
-      "kind": "disposition",
-      "claimed": "live_go=true",
-      "attribution": "standing"
+      "attribution": "forbidden standing"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
       "line": 112,
       "kind": "disposition",
       "claimed": "promote=true",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 112,
-      "kind": "disposition",
-      "claimed": "promote=true",
-      "attribution": "standing"
+      "attribution": "forbidden standing"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
@@ -9565,21 +7912,7 @@
       "line": 120,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 120,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 120,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIGNAL-EDGE-TRIAGE"
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
@@ -9999,21 +8332,7 @@
       "line": 8,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIMULATOR-CONFORMANCE"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 8,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 8,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIMULATOR-CONFORMANCE"
     },
     {
       "file": "docs/research/SIMULATOR-CONFORMANCE.md",
@@ -10038,20 +8357,6 @@
     },
     {
       "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 52,
-      "kind": "metric",
-      "claimed": "t 0.18",
-      "attribution": "SIMULATOR-CONFORMANCE"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "t 1.09450",
-      "attribution": "SIMULATOR-CONFORMANCE"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
       "line": 59,
       "kind": "path",
       "claimed": "docs/research/BACKTEST-RECORD.md",
@@ -10062,21 +8367,7 @@
       "line": 71,
       "kind": "disposition",
       "claimed": "live_go=false",
-      "attribution": "SIMULATOR-CONFORMANCE"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 71,
-      "kind": "disposition",
-      "claimed": "live_go=false",
       "attribution": "standing"
-    },
-    {
-      "file": "docs/research/SIMULATOR-CONFORMANCE.md",
-      "line": 71,
-      "kind": "disposition",
-      "claimed": "promote=false",
-      "attribution": "SIMULATOR-CONFORMANCE"
     },
     {
       "file": "docs/research/SIMULATOR-CONFORMANCE.md",
@@ -10227,20 +8518,6 @@
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 92,
-      "kind": "metric",
-      "claimed": "t 0.50",
-      "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 92,
-      "kind": "metric",
-      "claimed": "t 1.20",
-      "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 96,
       "kind": "metric",
       "claimed": "2026-08-18",
@@ -10285,50 +8562,8 @@
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 100,
       "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 100,
-      "kind": "metric",
-      "claimed": "t \u22120.28",
-      "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 100,
-      "kind": "metric",
       "claimed": "\u22120.28",
       "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "PF 3",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "t 0.20",
-      "attribution": "score_row"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "t 3.0",
-      "attribution": "score_row"
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
@@ -10374,20 +8609,6 @@
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 110,
-      "kind": "metric",
-      "claimed": "t 0.72",
-      "attribution": "ny_cash_vwap_bounce_rsi"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 110,
-      "kind": "metric",
-      "claimed": "t 0.81",
-      "attribution": "ny_cash_vwap_bounce_rsi"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 116,
       "kind": "path",
       "claimed": "results/us_index_session_structure_v3.md",
@@ -10406,13 +8627,6 @@
       "kind": "path",
       "claimed": "scripts/us_index_session_autoresearch_v3.py",
       "attribution": "script"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 118,
-      "kind": "metric",
-      "claimed": "t \u22120.45",
-      "attribution": "ny_cash_liquidity_sweep"
     },
     {
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
@@ -10460,20 +8674,6 @@
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 124,
       "kind": "metric",
-      "claimed": "t 0.31",
-      "attribution": "vol_regime_orb"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 124,
-      "kind": "metric",
-      "claimed": "t \u22120.40",
-      "attribution": "vol_regime_orb"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 124,
-      "kind": "metric",
       "claimed": "\u22120.40",
       "attribution": "vol_regime_orb"
     },
@@ -10503,13 +8703,6 @@
       "line": 144,
       "kind": "metric",
       "claimed": "0 / 5",
-      "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 144,
-      "kind": "metric",
-      "claimed": "t 0.3",
       "attribution": "US-INDEX-SESSION-SCALP-DESIGN"
     },
     {
@@ -10545,20 +8738,6 @@
       "line": 150,
       "kind": "metric",
       "claimed": "2026-07-01",
-      "attribution": "ny_cash_gap_fade_adr"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 150,
-      "kind": "metric",
-      "claimed": "t 0.40",
-      "attribution": "ny_cash_gap_fade_adr"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 150,
-      "kind": "metric",
-      "claimed": "t \u22120.46",
       "attribution": "ny_cash_gap_fade_adr"
     },
     {
@@ -10608,20 +8787,6 @@
       "line": 156,
       "kind": "metric",
       "claimed": "2026-07-01",
-      "attribution": "daily_regime_switch"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 156,
-      "kind": "metric",
-      "claimed": "t \u22120.038",
-      "attribution": "daily_regime_switch"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 156,
-      "kind": "metric",
-      "claimed": "t \u22120.19",
       "attribution": "daily_regime_switch"
     },
     {
@@ -10691,27 +8856,6 @@
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 162,
       "kind": "metric",
-      "claimed": "t +0.17",
-      "attribution": "ib_false_breakout_fade"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 162,
-      "kind": "metric",
-      "claimed": "t 1.0",
-      "attribution": "ib_false_breakout_fade"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 162,
-      "kind": "metric",
-      "claimed": "t \u22120.28",
-      "attribution": "ib_false_breakout_fade"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 162,
-      "kind": "metric",
       "claimed": "\u22120.28",
       "attribution": "ib_false_breakout_fade"
     },
@@ -10754,20 +8898,6 @@
       "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
       "line": 168,
       "kind": "metric",
-      "claimed": "t \u22121.09",
-      "attribution": "read_mt5_hc"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 168,
-      "kind": "metric",
-      "claimed": "t \u22121.19",
-      "attribution": "read_mt5_hc"
-    },
-    {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 168,
-      "kind": "metric",
       "claimed": "\u22121.09",
       "attribution": "read_mt5_hc"
     },
@@ -10777,6 +8907,41 @@
       "kind": "metric",
       "claimed": "\u22121.19",
       "attribution": "read_mt5_hc"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 8,
+      "kind": "path",
+      "claimed": "mql5/Indicators/ForexHtfPivotsFib.ex5",
+      "attribution": "mql5"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 9,
+      "kind": "path",
+      "claimed": "mql5/Indicators/BtcTrendPullback.ex5",
+      "attribution": "mql5"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 10,
+      "kind": "path",
+      "claimed": "mql5/Indicators/ForexIndicatorTemplate.ex5",
+      "attribution": "mql5"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 11,
+      "kind": "path",
+      "claimed": "mql5/Experts/ForexSignalLogger.ex5",
+      "attribution": "mql5"
+    },
+    {
+      "file": "docs/research/WAVE-B-OBSERVE.md",
+      "line": 12,
+      "kind": "path",
+      "claimed": "mql5/Experts/Mt5ArchBridge.ex5",
+      "attribution": "mql5"
     },
     {
       "file": "docs/research/WAVE-B-OBSERVE.md",
@@ -10798,13 +8963,6 @@
       "kind": "symbol",
       "claimed": "--json",
       "attribution": "--json"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 1,
-      "kind": "metric",
-      "claimed": "t 2.2",
-      "attribution": "XAU-FAMILY-PROTOCOL-V2"
     },
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
@@ -10844,13 +9002,6 @@
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
       "line": 15,
-      "kind": "path",
-      "claimed": "\u2026/early_server_range_break_flat_v2.json",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 15,
       "kind": "sha",
       "claimed": "11099b2a",
       "attribution": "y_server_range_break_flat_v2.json"
@@ -10861,13 +9012,6 @@
       "kind": "disposition",
       "claimed": "SUPERSEDED",
       "attribution": "early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 16,
-      "kind": "path",
-      "claimed": "\u2026/early_server_range_break_flat_v1.json",
-      "attribution": "doc path"
     },
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
@@ -10893,13 +9037,6 @@
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
       "line": 17,
-      "kind": "path",
-      "claimed": "\u2026/server_hour_window_flat_v2.json",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 17,
       "kind": "sha",
       "claimed": "26ff7532",
       "attribution": "server_hour_window_flat_v2.json"
@@ -10910,13 +9047,6 @@
       "kind": "disposition",
       "claimed": "SUPERSEDED",
       "attribution": "server_hour_window_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 18,
-      "kind": "path",
-      "claimed": "\u2026/server_hour_window_flat_v1.json",
-      "attribution": "doc path"
     },
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
@@ -10935,13 +9065,6 @@
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
       "line": 19,
-      "kind": "path",
-      "claimed": "\u2026/tod_london_ny_flat_v1.json",
-      "attribution": "doc path"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 19,
       "kind": "sha",
       "claimed": "e7cd953f",
       "attribution": "tod_london_ny_flat_v1.json"
@@ -10951,13 +9074,6 @@
       "line": 23,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-FAMILY-PROTOCOL-V2"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 27,
-      "kind": "metric",
-      "claimed": "t 1.0",
       "attribution": "XAU-FAMILY-PROTOCOL-V2"
     },
     {
@@ -10980,20 +9096,6 @@
       "kind": "disposition",
       "claimed": "ZERO_PRIMARY_PASSERS",
       "attribution": "XAU-FAMILY-PROTOCOL-V2"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 83,
-      "kind": "metric",
-      "claimed": "t 2.2",
-      "attribution": "day_block_shuffle"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 89,
-      "kind": "metric",
-      "claimed": "t 2.2",
-      "attribution": "within_day_ohlc_increment_rotate_v1"
     },
     {
       "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
@@ -11021,13 +9123,6 @@
       "line": 99,
       "kind": "disposition",
       "claimed": "FAIL \u2192 stop",
-      "attribution": "XAU-FAMILY-PROTOCOL-V2"
-    },
-    {
-      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
-      "line": 102,
-      "kind": "metric",
-      "claimed": "t 0.70",
       "attribution": "XAU-FAMILY-PROTOCOL-V2"
     },
     {
@@ -11159,13 +9254,6 @@
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
       "line": 35,
-      "kind": "metric",
-      "claimed": "t 0.0",
-      "attribution": "xau_research_costs.json"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
-      "line": 35,
       "kind": "path",
       "claimed": "results/xau_research_costs.json",
       "attribution": "results artifact"
@@ -11189,35 +9277,21 @@
       "line": 38,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
       "line": 43,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "n_trades_min"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "t 1.1",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
       "line": 49,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
-      "line": 80,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v1.md",
@@ -11252,7 +9326,7 @@
       "line": 125,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
@@ -11273,7 +9347,7 @@
       "line": 21,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "within_day_ohlc_increment_rotate_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
@@ -11294,7 +9368,7 @@
       "line": 36,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-asia_box_london_sweep_fade_flat_v2"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
@@ -11343,49 +9417,7 @@
       "line": 28,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 36,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 58,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 59,
-      "kind": "metric",
-      "claimed": "t 0.5",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
-      "line": 71,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v1.md",
@@ -11441,7 +9473,7 @@
       "line": 97,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
@@ -11456,13 +9488,6 @@
       "kind": "path",
       "claimed": "results/xau_charters/2026-08-11_day_open_reclaim_flat_v2.json",
       "attribution": "results artifact"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 7,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
     },
     {
       "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
@@ -11504,55 +9529,13 @@
       "line": 40,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
       "line": 46,
       "kind": "metric",
       "claimed": "n < 20",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 48,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 70,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 71,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 71,
-      "kind": "metric",
-      "claimed": "t 0.5",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 85,
-      "kind": "metric",
-      "claimed": "t 0.01",
       "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
     },
     {
@@ -11623,14 +9606,7 @@
       "line": 123,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-day_open_reclaim_flat_v2.md",
-      "line": 133,
-      "kind": "disposition",
-      "claimed": "SUPERSEDED",
-      "attribution": "XAU-THESIS-day_open_reclaim_flat_v2"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
@@ -11686,14 +9662,14 @@
       "line": 14,
       "kind": "disposition",
       "claimed": "PROTOCOL_NULL_INVALID",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
       "line": 14,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
@@ -11704,59 +9680,10 @@
     },
     {
       "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 29,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
       "line": 38,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 39,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 62,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 74,
-      "kind": "metric",
-      "claimed": "t 1.5",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 74,
-      "kind": "metric",
-      "claimed": "t 2.0",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 75,
-      "kind": "metric",
-      "claimed": "t 0.01",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
-      "line": 75,
-      "kind": "metric",
-      "claimed": "t 0.5",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-early_server_range_break_flat_v1.md",
@@ -11805,7 +9732,7 @@
       "line": 99,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-early_server_range_break_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md",
@@ -11938,7 +9865,7 @@
       "line": 39,
       "kind": "disposition",
       "claimed": "SCREEN_FAIL",
-      "attribution": "XAU-THESIS-multi_day_variance_expansion_flat_v1"
+      "attribution": "screen_rule"
     },
     {
       "file": "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md",
@@ -11952,20 +9879,6 @@
       "line": 45,
       "kind": "metric",
       "claimed": "n < 40",
-      "attribution": "XAU-THESIS-multi_day_variance_expansion_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md",
-      "line": 47,
-      "kind": "metric",
-      "claimed": "t 0.05",
-      "attribution": "XAU-THESIS-multi_day_variance_expansion_flat_v1"
-    },
-    {
-      "file": "docs/research/XAU-THESIS-multi_day_variance_expansion_flat_v1.md",
-      "line": 67,
-      "kind": "metric",
-      "claimed": "t 1.5",
       "attribution": "XAU-THESIS-multi_day_variance_expansion_flat_v1"
     },
     {
@@ -12008,7 +9921,7 @@
       "line": 43,
       "kind": "disposition",
       "claimed": "KEEP",
-      "attribution": "Zacks overlay"
+      "attribution": "later KEEP path requirements"
     },
     {
       "file": "docs/research/ZACKS-MCP-OVERLAY-LANE.md",

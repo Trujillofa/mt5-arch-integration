@@ -98,7 +98,7 @@
         "attribution": "exog_london_fx_cosign_xau_follow_flat"
       },
       "status": "self_referential",
-      "actual": "claiming_file_only n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']",
+      "actual": "claiming_file_only n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']",
       "must_be_red": true,
       "is_red": true
     },
@@ -107,15 +107,15 @@
       "claim": {
         "claimed": "1.20",
         "paths": [
-          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
           "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/eurusd_h1.csv",
-          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv",
-          "xauusd_data.csv"
+          "xauusd_data.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv"
         ],
         "resolve_status": "self_referential"
       },
       "status": "drift",
-      "actual": "csv_hit=False; resolve=self_referential:claiming_file_only n_searched=0; scope_results=184; sample=[]",
+      "actual": "csv_hit=False; resolve=self_referential:claiming_file_only n_searched=0; scope_results=190; sample=[]",
       "must_be_red": true,
       "is_red": true
     },
@@ -129,7 +129,7 @@
         "attribution": "exog_london_fx_cosign_xau_follow_flat"
       },
       "status": "drift",
-      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.913'",
+      "actual": "results_oracle_miss n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']; claimed='pooled PF 0.913'",
       "must_be_red": true,
       "is_red": true
     },
@@ -140,7 +140,7 @@
         "attribution": "asia_box_london_sweep_fade_flat"
       },
       "status": "drift",
-      "actual": "results_oracle_miss n_searched=5; scope_results=184; sample=['results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json', 'results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md', 'results/xau_loop_status.md']; claimed='pooled PF 0.903'",
+      "actual": "results_oracle_miss n_searched=6; scope_results=190; sample=['results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v1.json', 'results/xau_charters/2026-08-19_asia_box_london_sweep_fade_flat_v2.json', 'results/xau_charters/2026-08-20_multi_day_variance_expansion_flat_v1.json', 'results/xau_asia_box_london_sweep_fade_flat_null_maxstat.md']; claimed='pooled PF 0.903'",
       "must_be_red": true,
       "is_red": true
     },
@@ -148,10 +148,10 @@
       "name": "untracked_results_not_oracle",
       "claim": {
         "claimed": "pooled PF 0.777",
-        "probe": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/research-claim-audit/results/_audit_untracked_probe.json"
+        "probe": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/claim-extractor/results/_audit_untracked_probe.json"
       },
       "status": "drift",
-      "actual": "results_oracle_miss n_searched=17; scope_results=184; sample=['results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json']; claimed='pooled PF 0.777'",
+      "actual": "results_oracle_miss n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']; claimed='pooled PF 0.777'",
       "must_be_red": true,
       "is_red": true
     },
@@ -172,12 +172,13 @@
     {
       "name": "roster_broker_missing_from_site",
       "claim": {
-        "file": "fetch_data.py",
+        "file": "scripts/19-run-htf-fib-backtest.sh",
         "line": 1,
         "kind": "consistency",
         "claimed": "broker_roster_coverage",
         "attribution": "config/brokers/*.env",
-        "site": "fetch_data.py",
+        "site": "scripts/19-run-htf-fib-backtest.sh",
+        "site_path": "/tmp/claim_neg_roster_8brgh6uc/site_no_wsf.sh",
         "roster": [
           "fpmarkets",
           "vantage",
@@ -186,7 +187,7 @@
         "generic_ok": false
       },
       "status": "drift",
-      "actual": "site=fetch_data.py missing roster brokers ['fpmarkets', 'wsf']; roster=['fpmarkets', 'vantage', 'wsf']",
+      "actual": "site=scripts/19-run-htf-fib-backtest.sh missing roster brokers ['wsf']; roster=['fpmarkets', 'vantage', 'wsf']",
       "must_be_red": true,
       "is_red": true
     },

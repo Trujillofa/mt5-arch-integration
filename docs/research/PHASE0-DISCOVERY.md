@@ -208,7 +208,9 @@ uv run mt5-arch candles BTCUSD --tf H1 --count 5 --json
 uv run mt5-arch candles XAUUSD.r --tf H1 --count 5 --json
 ```
 
-5. Append results into `docs/research/phase0/fpmarkets-symbols-btc-xau.json`.
+5. Append results into the phase0 dumps under `docs/research/phase0/` (existing:
+   `fpmarkets-symbols-majors.json`, `fpmarkets-symbols-xauusd.json` — the once-planned
+   `fpmarkets-symbols-btc-xau.json` was never written).
 
 ---
 
