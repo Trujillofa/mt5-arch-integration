@@ -107,10 +107,10 @@
       "claim": {
         "claimed": "1.20",
         "paths": [
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv",
           "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/eurusd_h1.csv",
           "xauusd_data.csv",
-          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv",
-          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/gbpusd_h1.csv"
+          "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data/xauusd_h1.csv"
         ],
         "resolve_status": "self_referential"
       },
@@ -148,7 +148,7 @@
       "name": "untracked_results_not_oracle",
       "claim": {
         "claimed": "pooled PF 0.777",
-        "probe": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/claim-extractor/results/_audit_untracked_probe.json"
+        "probe": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/claim-extractor-precision/results/_audit_untracked_probe.json"
       },
       "status": "drift",
       "actual": "results_oracle_miss n_searched=20; scope_results=190; sample=['results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json', 'results/us_index_session_v5_lock.json', 'results/us_index_session_v6_lock.json', 'results/us_index_session_v7_lock.json', 'results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json']; claimed='pooled PF 0.777'",
@@ -178,7 +178,7 @@
         "claimed": "broker_roster_coverage",
         "attribution": "config/brokers/*.env",
         "site": "scripts/19-run-htf-fib-backtest.sh",
-        "site_path": "/tmp/claim_neg_roster_8brgh6uc/site_no_wsf.sh",
+        "site_path": "/tmp/claim_neg_roster_8n81q12d/site_no_wsf.sh",
         "roster": [
           "fpmarkets",
           "vantage",
