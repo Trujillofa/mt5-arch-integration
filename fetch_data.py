@@ -14,6 +14,7 @@ Re-export from Wine (recommended when terminal is authenticated):
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 from datetime import UTC, datetime, timedelta
@@ -25,15 +26,72 @@ import pandas as pd
 OUT_CSV = Path(__file__).resolve().parent / "xauusd_data.csv"
 SYMBOL = "XAUUSD"
 MONTHS = 24
+REPO_ROOT = Path(__file__).resolve().parent
+BROKER_INSTALL_DIRS_JSON = REPO_ROOT / "config" / "broker_install_dirs.json"
 
 WINEPREFIX = Path(os.environ.get("WINEPREFIX", Path.home() / ".mt5-vantage"))
-WINE_MT5_EXPORT = (
-    WINEPREFIX
-    / "drive_c/Program Files/Vantage International MT5/MQL5/Files/xauusd_mt5_export.csv"
-)
 DUKAS_H1 = Path(
     "/home/yderf/Projects/trading/ctrader-trading-agent/data/dukascopy/"
     "xauusd_h1_2022-01-01_2026-03-01.csv"
+)
+
+
+def _broker_install_dirs() -> list[str]:
+    """Install directory names under Program Files from config/broker_install_dirs.json."""
+    try:
+        data = json.loads(BROKER_INSTALL_DIRS_JSON.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return [
+            "Vantage International MT5",
+            "MetaTrader 5",
+            "FP Markets MT5 Terminal",
+            "WSFmarkets MT5 Terminal",
+        ]
+    dirs: list[str] = []
+    for key, val in data.items():
+        if key.startswith("_") and key != "_generic":
+            continue
+        if isinstance(val, str) and val.strip():
+            dirs.append(val.strip())
+    # Prefer known working brands first, generic last
+    preferred = ["Vantage International MT5", "FP Markets MT5 Terminal", "WSFmarkets MT5 Terminal"]
+    ordered = [d for d in preferred if d in dirs]
+    ordered.extend(d for d in dirs if d not in ordered)
+    return ordered or preferred
+
+
+def _wine_program_files(wineprefix: Path) -> Path:
+    return wineprefix / "drive_c" / "Program Files"
+
+
+def resolve_wine_export_csv(wineprefix: Path | None = None) -> Path | None:
+    """First existing ExportXauHistory CSV under any known brand install dir."""
+    prefix = wineprefix or WINEPREFIX
+    pf = _wine_program_files(prefix)
+    for install_dir in _broker_install_dirs():
+        cand = pf / install_dir / "MQL5" / "Files" / "xauusd_mt5_export.csv"
+        if cand.is_file():
+            return cand
+    return None
+
+
+def resolve_wine_terminal64(wineprefix: Path | None = None) -> Path | None:
+    """First existing terminal64.exe under any known brand install dir."""
+    prefix = wineprefix or WINEPREFIX
+    pf = _wine_program_files(prefix)
+    for install_dir in _broker_install_dirs():
+        cand = pf / install_dir / "terminal64.exe"
+        if cand.is_file():
+            return cand
+    return None
+
+
+# Backward-compatible default path (first JSON entry / Vantage); resolve_* searches all.
+WINE_MT5_EXPORT = (
+    WINEPREFIX
+    / "drive_c/Program Files"
+    / _broker_install_dirs()[0]
+    / "MQL5/Files/xauusd_mt5_export.csv"
 )
 
 
@@ -117,8 +175,10 @@ def fetch_via_bridge_history(path: Path = BRIDGE_HISTORY) -> pd.DataFrame:
     return df
 
 
-def fetch_via_wine_export(path: Path = WINE_MT5_EXPORT) -> pd.DataFrame:
-    """Load CSV written by ExportXauHistory.mq5 under Wine Vantage terminal."""
+def fetch_via_wine_export(path: Path | None = None) -> pd.DataFrame:
+    """Load CSV written by ExportXauHistory.mq5 under a Wine MT5 brand install."""
+    if path is None:
+        path = resolve_wine_export_csv() or WINE_MT5_EXPORT
     if not path.is_file():
         raise FileNotFoundError(f"Wine export missing: {path}")
     df = pd.read_csv(path)
@@ -149,10 +209,15 @@ def fetch_via_mt5linux() -> pd.DataFrame:
 
     host = os.environ.get("MT5_RPYC_HOST", "127.0.0.1")
     port = int(os.environ.get("MT5_RPYC_PORT", "18812"))
-    path = os.environ.get(
-        "MT5_TERMINAL_PATH",
-        r"C:\Program Files\Vantage International MT5\terminal64.exe",
-    )
+    default_term = resolve_wine_terminal64()
+    if default_term is not None:
+        # Wine path → Windows-style for mt5linux initialize
+        default_win = (
+            f"C:\\Program Files\\{default_term.parent.name}\\terminal64.exe"
+        )
+    else:
+        default_win = r"C:\Program Files\Vantage International MT5\terminal64.exe"
+    path = os.environ.get("MT5_TERMINAL_PATH", default_win)
     mt5 = MetaTrader5(host=host, port=port)
     if not mt5.initialize(path=path):
         if not mt5.initialize():
@@ -271,11 +336,12 @@ def main() -> int:
         except Exception as e:
             print(f"Bridge history path failed: {e}")
 
-    # 1) Wine MT5 script export (real broker OHLC under Wine)
-    if df is None and prefer in ("auto", "wine") and WINE_MT5_EXPORT.is_file():
+    # 1) Wine MT5 script export (real broker OHLC under Wine — any brand install dir)
+    wine_export = resolve_wine_export_csv()
+    if df is None and prefer in ("auto", "wine") and wine_export is not None:
         try:
-            df = fetch_via_wine_export()
-            source = f"wine_export:{WINE_MT5_EXPORT}"
+            df = fetch_via_wine_export(wine_export)
+            source = f"wine_export:{wine_export}"
         except Exception as e:
             print(f"Wine export path failed: {e}")
 

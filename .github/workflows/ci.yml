@@ -1,0 +1,94 @@
+# Offline CI — lint, claim audit, unit tests.
+# Never runs screens, backtests, fetch_data, live_trader, Strategy Tester, or Wine.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package + extras
+        run: uv sync --all-extras
+      - name: Ruff (platform)
+        run: uv run ruff check src tests
+      - name: Ruff (claim auditor)
+        run: >
+          uv run ruff check
+          scripts/research_claim_verify.py
+          scripts/research_claim_mutant.py
+          scripts/research_claim_instruction.py
+
+  claim-audit:
+    name: claim-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # Stdlib-only verifier — no uv sync, no numpy/pandas.
+      - name: Research claim audit (fail on drift)
+        run: >
+          python3 scripts/research_claim_verify.py
+          --fail-on-drift
+          --out "${RUNNER_TEMP}/claim.json"
+      - name: Confirm repo tree clean
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "claim-audit wrote to the working tree:" >&2
+            git status --porcelain >&2
+            exit 1
+          fi
+      - name: Upload claim audit JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claim-audit-result
+          path: ${{ runner.temp }}/claim.json
+          if-no-files-found: warn
+
+  tests:
+    name: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install package + extras
+        run: uv sync --all-extras
+      # numpy/pandas deliberately absent from pyproject.toml (platform/research layering).
+      # Install them only in this job — do not add them to the manifest.
+      # Host-subprocess freeze tests probe /usr/bin/python3 (PATH strips .venv); that
+      # interpreter also needs numpy/pandas so SCREEN_FAIL assertions still run in CI.
+      # ubuntu-latest pip.conf already enables break-system-packages; no CLI flag needed.
+      - name: Install research test deps (numpy, pandas)
+        run: |
+          uv pip install numpy pandas
+          /usr/bin/python3 -m pip install numpy pandas
+      - name: Offline unit tests
+        env:
+          MT5_LIVE_SMOKE: ""
+        run: uv run pytest -q -m "not live"
