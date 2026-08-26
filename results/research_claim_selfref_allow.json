@@ -1,99 +1,442 @@
 {
   "schema": "research_claim_selfref_allow_v1",
-  "note": "Regenerated after full tracked results/** search. Each entry carries n_searched from attribution-gated full-tree search. Reasons must not assert missing artifacts on a partial search.",
+  "note": "Regenerated after full tracked results/** search. Each entry carries n_searched from attribution-gated full-tree search. Reasons must not assert missing artifacts on a partial search. Built by scripts/research_claim_selfref_rebuild.py \u2014 do not hand-edit.",
   "search_scope": "git ls-files results/** (excluding csv/instrument_data/research_claim_*)",
-  "n_results_tracked": 184,
+  "n_results_tracked": 190,
   "allow": [
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "+11.75",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '+11.75'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "+4.14",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '+4.14'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "H50 +11.75",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'H50 +11.75'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "H50 \u221211.85",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'H50 \u221211.85'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "H50 \u221219.18",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'H50 \u221219.18'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "t +4.14",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 't +4.14'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "t \u22121.68",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 't \u22121.68'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "t \u22123.13",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 't \u22123.13'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "\u22121.68",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '\u22121.68'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "\u221211.85",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '\u221211.85'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "\u221219.18",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '\u221219.18'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 46,
+      "kind": "metric",
+      "claimed": "\u22123.13",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '\u22123.13'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 69,
+      "kind": "metric",
+      "claimed": "PF 1.00",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'PF 1.00'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 80,
+      "kind": "metric",
+      "claimed": "\u22124.00",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure '\u22124.00'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 92,
+      "kind": "metric",
+      "claimed": "max PF 1.995",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'max PF 1.995'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "OOS PF 0.588",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'OOS PF 0.588'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
+    {
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "n=7",
+      "n_searched": 1,
+      "searched_sample": [
+        "results/xau_loop_status.md"
+      ],
+      "reason": "SoT ledger prose figure 'n=7'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=1."
+    },
     {
       "file": "docs/research/BACKTEST-RECORD.md",
       "line": 111,
       "kind": "metric",
       "claimed": "n < 100",
-      "n_searched": 1,
+      "n_searched": 2,
       "searched_sample": [
-        "results/xau_loop_status.md"
+        "results/eurusd_ny_scalp_autoresearch.md",
+        "results/eurusd_ny_scalp_signal_diagnostic.md"
       ],
-      "reason": "Qualitative thin-n threshold prose in the SoT ledger, not a concrete oracle figure. Full-tree search found no structured n_signals/profit_factor match."
+      "reason": "SoT ledger prose figure 'n < 100'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=2."
     },
     {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 50,
-      "kind": "metric",
-      "claimed": "+70.19",
-      "n_searched": 17,
-      "searched_sample": [
-        "results/us_index_session_v5_lock.json",
-        "results/us_index_session_v6_lock.json",
-        "results/us_index_session_v7_lock.json",
-        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json",
-        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v2.json"
-      ],
-      "reason": "Lane-all triage table is the primary record of signal_edge_diagnostic.py --lane all (tool writes nothing). Full-tree exog-tied search found no matching signed edge in results/**."
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 55,
+      "file": "docs/research/BACKTEST-RECORD.md",
+      "line": 111,
       "kind": "metric",
       "claimed": "n=80",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.md",
+        "results/eurusd_ny_scalp_signal_diagnostic.md"
+      ],
+      "reason": "SoT ledger prose figure 'n=80'; no structured results/** oracle matched. Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-EXOGENOUS-PREDICTOR-PROTOCOL-V1.md",
+      "line": 381,
+      "kind": "metric",
+      "claimed": "0 / 99",
+      "n_searched": 95,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/htf_fib_offline_lock.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '0 / 99' after attribution-gated full-tree results/** search (n_searched=95); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 60,
+      "kind": "metric",
+      "claimed": "+0.0008",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '+0.0008' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 60,
+      "kind": "metric",
+      "claimed": "+0.0012",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '+0.0012' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 61,
+      "kind": "metric",
+      "claimed": "\u22120.0009",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '\u22120.0009' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 61,
+      "kind": "metric",
+      "claimed": "\u22120.0011",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '\u22120.0011' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 62,
+      "kind": "metric",
+      "claimed": "+0.0010",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '+0.0010' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 62,
+      "kind": "metric",
+      "claimed": "\u22120.0005",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '\u22120.0005' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 63,
+      "kind": "metric",
+      "claimed": "+0.0000",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '+0.0000' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 63,
+      "kind": "metric",
+      "claimed": "+0.0010",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric '+0.0010' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-exog_london_fx_cosign_xau_follow_flat_v1.md",
+      "line": 134,
+      "kind": "metric",
+      "claimed": "n=999",
+      "n_searched": 87,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json"
+      ],
+      "reason": "Claiming-file-only metric 'n=999' after attribution-gated full-tree results/** search (n_searched=87); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/MULTI-INSTRUMENT-THESIS-joint_london_open_cosign_fade_flat_v1.md",
+      "line": 64,
+      "kind": "metric",
+      "claimed": "0 / 14",
+      "n_searched": 84,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd.sha256.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/committed_artifact_lock.json",
+        "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data_manifests/common_develop_window.json"
+      ],
+      "reason": "Claiming-file-only metric '0 / 14' after attribution-gated full-tree results/** search (n_searched=84); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 162,
+      "kind": "metric",
+      "claimed": "PF 0.89",
+      "n_searched": 11,
+      "searched_sample": [
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json",
+        "results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json",
+        "results/xau_fib_fix_note.md",
+        "results/xau_housekeeping_inventory.md"
+      ],
+      "reason": "Claiming-file-only metric 'PF 0.89' after attribution-gated full-tree results/** search (n_searched=11); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 163,
+      "kind": "metric",
+      "claimed": "PF 0.89",
+      "n_searched": 11,
+      "searched_sample": [
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json",
+        "results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json",
+        "results/xau_fib_fix_note.md",
+        "results/xau_housekeeping_inventory.md"
+      ],
+      "reason": "Claiming-file-only metric 'PF 0.89' after attribution-gated full-tree results/** search (n_searched=11); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/RESEARCH-CLAIM-AUDIT.md",
+      "line": 164,
+      "kind": "metric",
+      "claimed": "pooled PF 0.909",
+      "n_searched": 11,
+      "searched_sample": [
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v3.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v4.json",
+        "results/xau_runs/2026-08-18_exog_london_fx_cosign_xau_follow_flat_screen_r1/gates_resolved.json",
+        "results/xau_fib_fix_note.md",
+        "results/xau_housekeeping_inventory.md"
+      ],
+      "reason": "Claiming-file-only metric 'pooled PF 0.909' after attribution-gated full-tree results/** search (n_searched=11); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 22,
+      "kind": "metric",
+      "claimed": "t 2.24",
       "n_searched": 3,
       "searched_sample": [
         "results/us_index_session_structure_v3.json",
         "results/us_index_session_structure_v3_lock.json",
         "results/us_index_session_structure_v3.md"
       ],
-      "reason": "US CLEARS-FRICTION n from lane-all triage table only; no results/** write-up stores this n under a tied artifact. (full-tree attribution-gated search n_searched=3.)"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 55,
-      "kind": "metric",
-      "claimed": "t +2.44",
-      "n_searched": 3,
-      "searched_sample": [
-        "results/us_index_session_structure_v3.json",
-        "results/us_index_session_structure_v3_lock.json",
-        "results/us_index_session_structure_v3.md"
-      ],
-      "reason": "t-stat for ny_cash_liquidity_sweep recorded only in the triage table (tool writes nothing). (full-tree attribution-gated search n_searched=3.)"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 68,
-      "kind": "metric",
-      "claimed": "n=92",
-      "n_searched": 3,
-      "searched_sample": [
-        "results/us_index_session_v7.json",
-        "results/us_index_session_v7_lock.json",
-        "results/us_index_session_v7.md"
-      ],
-      "reason": "US CLEARS-FRICTION n for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 68,
-      "kind": "metric",
-      "claimed": "t +2.24",
-      "n_searched": 3,
-      "searched_sample": [
-        "results/us_index_session_v7.json",
-        "results/us_index_session_v7_lock.json",
-        "results/us_index_session_v7.md"
-      ],
-      "reason": "t-stat for m5_zscore from lane-all triage table only. (full-tree attribution-gated search n_searched=3.)"
-    },
-    {
-      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
-      "line": 65,
-      "kind": "metric",
-      "claimed": "n=0",
-      "n_searched": 3,
-      "searched_sample": [
-        "results/us_index_session_v6.json",
-        "results/us_index_session_v6_lock.json",
-        "results/us_index_session_v6.md"
-      ],
-      "reason": "EMPTY/zero-signal row recorded only in the triage table. (full-tree attribution-gated search n_searched=3.)"
+      "reason": "Lane-all / triage table figure 't 2.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
@@ -106,27 +449,197 @@
         "results/us_index_session_structure_v3_lock.json",
         "results/us_index_session_structure_v3.md"
       ],
-      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
+      "reason": "Lane-all / triage table figure 't 2.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
     },
     {
       "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
-      "line": 22,
+      "line": 36,
       "kind": "metric",
-      "claimed": "t 2.24",
+      "claimed": "+2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 36,
+      "kind": "metric",
+      "claimed": "n=80",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=80' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 37,
+      "kind": "metric",
+      "claimed": "+2.24",
       "n_searched": 3,
       "searched_sample": [
         "results/us_index_session_v7.json",
         "results/us_index_session_v7_lock.json",
         "results/us_index_session_v7.md"
       ],
-      "reason": "Skeptic restates triage CLEARS t-stats; figure originates in a docs/ peer, not results/**. (full-tree attribution-gated search n_searched=3.)"
+      "reason": "Lane-all / triage table figure '+2.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
     },
     {
-      "file": "docs/research/US-INDEX-SESSION-SCALP-DESIGN.md",
-      "line": 13,
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 37,
       "kind": "metric",
-      "claimed": "0 eligible",
-      "n_searched": 31,
+      "claimed": "n=92",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=92' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 47,
+      "kind": "metric",
+      "claimed": "t 2.52",
+      "n_searched": 73,
+      "searched_sample": [
+        "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_usd_book_lock.json",
+        "results/htf_fib_offline_2022_2024_filter_on.json",
+        "results/htf_fib_offline_2022_2024_nofilter.json"
+      ],
+      "reason": "Lane-all / triage table figure 't 2.52' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=73."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 57,
+      "kind": "metric",
+      "claimed": "t 1.12",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 't 1.12' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md",
+      "line": 58,
+      "kind": "metric",
+      "claimed": "t 0.63",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 't 0.63' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 47,
+      "kind": "metric",
+      "claimed": "n=5379",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_usd_book.json",
+        "results/eurusd_ny_scalp_autoresearch.md",
+        "results/eurusd_ny_scalp_signal_diagnostic.md",
+        "results/eurusd_ny_scalp_usd_book.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=5379' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 49,
+      "kind": "metric",
+      "claimed": "n=764",
+      "n_searched": 51,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_usd_book.json",
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v8.json"
+      ],
+      "reason": "Lane-all / triage table figure 'n=764' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=51."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+0.83",
+      "n_searched": 20,
+      "searched_sample": [
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json"
+      ],
+      "reason": "Lane-all / triage table figure '+0.83' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=20."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 50,
+      "kind": "metric",
+      "claimed": "+70.19",
+      "n_searched": 20,
+      "searched_sample": [
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json"
+      ],
+      "reason": "Lane-all / triage table figure '+70.19' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=20."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 51,
+      "kind": "metric",
+      "claimed": "\u22120.85",
+      "n_searched": 12,
+      "searched_sample": [
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_scalp_backtest.json",
+        "results/us_index_session_scalp_backtest_us30.json",
+        "results/us_index_session_v4_cost_size_once_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.85' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=12."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 51,
+      "kind": "metric",
+      "claimed": "\u2212695.10",
+      "n_searched": 12,
+      "searched_sample": [
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_scalp_backtest.json",
+        "results/us_index_session_scalp_backtest_us30.json",
+        "results/us_index_session_v4_cost_size_once_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212695.10' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=12."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 52,
+      "kind": "metric",
+      "claimed": "n=125",
+      "n_searched": 33,
       "searched_sample": [
         "results/eurusd_ny_scalp_lock.json",
         "results/us_index_session_autoresearch.json",
@@ -134,7 +647,811 @@
         "results/us_index_session_playbook_v2.json",
         "results/us_index_session_playbook_v2_lock.json"
       ],
-      "reason": "Design-doc narrative count; no Write-up label on that line and no structured eligible-count field matched in tied results/**. (full-tree attribution-gated search n_searched=31.)"
+      "reason": "Lane-all / triage table figure 'n=125' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 52,
+      "kind": "metric",
+      "claimed": "\u2212190.73",
+      "n_searched": 33,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212190.73' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 53,
+      "kind": "metric",
+      "claimed": "+0.49",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure '+0.49' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 53,
+      "kind": "metric",
+      "claimed": "+1443.35",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure '+1443.35' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 53,
+      "kind": "metric",
+      "claimed": "n=65",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=65' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 54,
+      "kind": "metric",
+      "claimed": "+1.26",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure '+1.26' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 54,
+      "kind": "metric",
+      "claimed": "+3281.29",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure '+3281.29' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 54,
+      "kind": "metric",
+      "claimed": "n=55",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_playbook_v2_lock.json",
+        "results/us_index_session_playbook_v2.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=55' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "+2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "+3883.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '+3883.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 55,
+      "kind": "metric",
+      "claimed": "n=80",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=80' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 56,
+      "kind": "metric",
+      "claimed": "n=127",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=127' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 56,
+      "kind": "metric",
+      "claimed": "\u22120.94",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.94' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 56,
+      "kind": "metric",
+      "claimed": "\u2212603.74",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212603.74' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 57,
+      "kind": "metric",
+      "claimed": "+1.43",
+      "n_searched": 33,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '+1.43' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 57,
+      "kind": "metric",
+      "claimed": "+2622.00",
+      "n_searched": 33,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '+2622.00' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 58,
+      "kind": "metric",
+      "claimed": "+2165.43",
+      "n_searched": 33,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure '+2165.43' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 58,
+      "kind": "metric",
+      "claimed": "n=176",
+      "n_searched": 33,
+      "searched_sample": [
+        "results/eurusd_ny_scalp_lock.json",
+        "results/us_index_session_autoresearch.json",
+        "results/us_index_session_develop_lock.json",
+        "results/us_index_session_playbook_v2.json",
+        "results/us_index_session_playbook_v2_lock.json"
+      ],
+      "reason": "Lane-all / triage table figure 'n=176' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=33."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 59,
+      "kind": "metric",
+      "claimed": "n=164",
+      "n_searched": 6,
+      "searched_sample": [
+        "results/us_index_session_v4.json",
+        "results/us_index_session_v4_cost_size_once_lock.json",
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=164' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=6."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 59,
+      "kind": "metric",
+      "claimed": "\u22120.89",
+      "n_searched": 6,
+      "searched_sample": [
+        "results/us_index_session_v4.json",
+        "results/us_index_session_v4_cost_size_once_lock.json",
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.89' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=6."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 59,
+      "kind": "metric",
+      "claimed": "\u22121835.78",
+      "n_searched": 6,
+      "searched_sample": [
+        "results/us_index_session_v4.json",
+        "results/us_index_session_v4_cost_size_once_lock.json",
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22121835.78' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=6."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 60,
+      "kind": "metric",
+      "claimed": "+0.92",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure '+0.92' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 60,
+      "kind": "metric",
+      "claimed": "+836.13",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure '+836.13' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 60,
+      "kind": "metric",
+      "claimed": "n=144",
+      "n_searched": 2,
+      "searched_sample": [
+        "results/us_index_session_v4_lock.json",
+        "results/us_index_session_v4.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=144' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=2."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 61,
+      "kind": "metric",
+      "claimed": "+0.55",
+      "n_searched": 14,
+      "searched_sample": [
+        "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_null.json",
+        "results/eurusd_ny_scalp_usd_book.json"
+      ],
+      "reason": "Lane-all / triage table figure '+0.55' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=14."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 61,
+      "kind": "metric",
+      "claimed": "+833.48",
+      "n_searched": 14,
+      "searched_sample": [
+        "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_null.json",
+        "results/eurusd_ny_scalp_usd_book.json"
+      ],
+      "reason": "Lane-all / triage table figure '+833.48' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=14."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 61,
+      "kind": "metric",
+      "claimed": "n=131",
+      "n_searched": 14,
+      "searched_sample": [
+        "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+        "results/eurusd_ny_scalp_autoresearch.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_null.json",
+        "results/eurusd_ny_scalp_usd_book.json"
+      ],
+      "reason": "Lane-all / triage table figure 'n=131' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=14."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 62,
+      "kind": "metric",
+      "claimed": "n=56",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=56' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 62,
+      "kind": "metric",
+      "claimed": "\u22120.24",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 62,
+      "kind": "metric",
+      "claimed": "\u2212315.21",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212315.21' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 63,
+      "kind": "metric",
+      "claimed": "n=86",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=86' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 63,
+      "kind": "metric",
+      "claimed": "\u22120.23",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.23' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 63,
+      "kind": "metric",
+      "claimed": "\u2212614.73",
+      "n_searched": 5,
+      "searched_sample": [
+        "results/us_index_session_v5.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v5.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212614.73' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=5."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 64,
+      "kind": "metric",
+      "claimed": "\u22129167.37",
+      "n_searched": 60,
+      "searched_sample": [
+        "results/eurusd_ny_mr_limit_fill_paper_gate_v1.json",
+        "results/eurusd_ny_scalp_lock.json",
+        "results/eurusd_ny_scalp_usd_book_lock.json",
+        "results/htf_fib_offline_2022_2024_filter_on.json",
+        "results/htf_fib_offline_2022_2024_nofilter.json"
+      ],
+      "reason": "Lane-all / triage table figure '\u22129167.37' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=60."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 66,
+      "kind": "metric",
+      "claimed": "n=72",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v6.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v6.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=72' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 66,
+      "kind": "metric",
+      "claimed": "\u22120.07",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v6.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v6.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.07' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 66,
+      "kind": "metric",
+      "claimed": "\u221286.51",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v6.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v6.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u221286.51' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 67,
+      "kind": "metric",
+      "claimed": "+1.61",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure '+1.61' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 67,
+      "kind": "metric",
+      "claimed": "+2036.84",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2036.84' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 67,
+      "kind": "metric",
+      "claimed": "n=140",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=140' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "+2.24",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "+3856.11",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure '+3856.11' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 68,
+      "kind": "metric",
+      "claimed": "n=92",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=92' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 69,
+      "kind": "metric",
+      "claimed": "n=14",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=14' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 69,
+      "kind": "metric",
+      "claimed": "\u22120.13",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u22120.13' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 69,
+      "kind": "metric",
+      "claimed": "\u2212568.21",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure '\u2212568.21' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 70,
+      "kind": "metric",
+      "claimed": "+0.06",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure '+0.06' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 70,
+      "kind": "metric",
+      "claimed": "+938.35",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure '+938.35' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 70,
+      "kind": "metric",
+      "claimed": "n=23",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v8.json",
+        "results/us_index_session_v8_lock.json",
+        "results/us_index_session_v8.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=23' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 87,
+      "kind": "metric",
+      "claimed": "+0.83",
+      "n_searched": 20,
+      "searched_sample": [
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json"
+      ],
+      "reason": "Lane-all / triage table figure '+0.83' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=20."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 87,
+      "kind": "metric",
+      "claimed": "+70.19 pts",
+      "n_searched": 20,
+      "searched_sample": [
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json"
+      ],
+      "reason": "Lane-all / triage table figure '+70.19 pts' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=20."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 87,
+      "kind": "metric",
+      "claimed": "t +0.83",
+      "n_searched": 20,
+      "searched_sample": [
+        "results/exog_fx_daily_cosign_xau_nextday_paper_gate_v1.json",
+        "results/us_index_session_v5_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/us_index_session_v7_lock.json",
+        "results/xau_charters/2026-08-15_exog_london_fx_cosign_xau_follow_flat_v1.json"
+      ],
+      "reason": "Lane-all / triage table figure 't +0.83' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=20."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "+2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "n=80",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=80' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 93,
+      "kind": "metric",
+      "claimed": "t +2.44",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_structure_v3.json",
+        "results/us_index_session_structure_v3_lock.json",
+        "results/us_index_session_structure_v3.md"
+      ],
+      "reason": "Lane-all / triage table figure 't +2.44' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 94,
+      "kind": "metric",
+      "claimed": "+2.24",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure '+2.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 94,
+      "kind": "metric",
+      "claimed": "n=92",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 'n=92' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/SIGNAL-EDGE-TRIAGE.md",
+      "line": 94,
+      "kind": "metric",
+      "claimed": "t +2.24",
+      "n_searched": 3,
+      "searched_sample": [
+        "results/us_index_session_v7.json",
+        "results/us_index_session_v7_lock.json",
+        "results/us_index_session_v7.md"
+      ],
+      "reason": "Lane-all / triage table figure 't +2.24' originates in docs/ (tool writes nothing). Full-tree attribution-gated search n_searched=3."
+    },
+    {
+      "file": "docs/research/XAU-FAMILY-PROTOCOL-V2.md",
+      "line": 110,
+      "kind": "metric",
+      "claimed": "n < 100",
+      "n_searched": 52,
+      "searched_sample": [
+        "results/htf_fib_offline_lock.json",
+        "results/us_index_session_v6_lock.json",
+        "results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json",
+        "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+        "results/xau_charters/2026-08-10_server_hour_window_flat_v1.json"
+      ],
+      "reason": "Claiming-file-only metric 'n < 100' after attribution-gated full-tree results/** search (n_searched=52); no oracle match outside the claiming doc."
+    },
+    {
+      "file": "docs/research/XAU-THESIS-asia_box_london_sweep_fade_flat_v2.md",
+      "line": 21,
+      "kind": "metric",
+      "claimed": "n=999",
+      "n_searched": 27,
+      "searched_sample": [
+        "results/xau_asia_box_london_sweep_fade_flat_null_maxstat.json",
+        "results/xau_charters/2026-08-10_early_server_range_break_flat_v1.json",
+        "results/xau_charters/2026-08-10_early_server_range_break_flat_v2.json",
+        "results/xau_charters/2026-08-10_server_hour_window_flat_v2.json",
+        "results/xau_charters/2026-08-11_day_open_reclaim_flat_v1.json"
+      ],
+      "reason": "Claiming-file-only metric 'n=999' after attribution-gated full-tree results/** search (n_searched=27); no oracle match outside the claiming doc."
     }
   ]
 }

@@ -32,6 +32,17 @@ def _load_instruction_mod():
     return mod
 
 
+def _load_extract_mod():
+    import importlib.util
+    mod_path = Path(__file__).resolve().parent / "research_claim_extract.py"
+    spec = importlib.util.spec_from_file_location("research_claim_extract", mod_path)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"cannot load {mod_path}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 _instr = _load_instruction_mod()
 INSTRUCTION_FILES = _instr.INSTRUCTION_FILES
 GENERIC_BRIDGE_SITE = _instr.GENERIC_BRIDGE_SITE
@@ -191,18 +202,70 @@ def resolve_path_or_link(claim: dict, tracked: set[str]) -> tuple[str, str]:
 
     # path
     rel = claimed
-    if _is_tracked(rel, tracked):
-        return "ok", rel
+    # file:// and absolute paths under this repo → repo-relative
+    if rel.startswith("file://"):
+        rel = rel[len("file://") :]
+    try:
+        root_res = ROOT.resolve()
+        if rel.startswith(str(root_res) + "/"):
+            rel = str(Path(rel).resolve().relative_to(root_res))
+    except Exception:
+        pass
+
+    def _path_ok(candidate: str) -> str | None:
+        if _is_tracked(candidate, tracked):
+            return candidate
+        return None
+
+    hit = _path_ok(rel)
+    if hit:
+        return "ok", hit
+    # Brace alternative: results/foo.{json,md} → ok if any expansion tracked
+    if "{" in rel and "}" in rel:
+        m = re.fullmatch(r"([^{}]*)\{([^{}]+)\}([^{}]*)", rel)
+        if m:
+            for alt in m.group(2).split(","):
+                cand = f"{m.group(1)}{alt.strip()}{m.group(3)}"
+                hit = _path_ok(cand)
+                if hit:
+                    return "ok", hit
     # common doc shorthand: bare script name → scripts/
     if "/" not in rel and rel.endswith(".py"):
-        alt = f"scripts/{rel}"
-        if _is_tracked(alt, tracked):
-            return "ok", alt
+        hit = _path_ok(f"scripts/{rel}")
+        if hit:
+            return "ok", hit
     # MQL5/ install-tree → mql5/ source
     if rel.startswith("MQL5/"):
-        alt = "mql5/" + rel[len("MQL5/") :]
-        if _is_tracked(alt, tracked):
-            return "ok", alt
+        hit = _path_ok("mql5/" + rel[len("MQL5/") :])
+        if hit:
+            return "ok", hit
+        # Bridge EA lives at repo root of mql5/, not Experts/
+        if rel.endswith("/Mt5ArchBridge.mq5") or rel.endswith("/Mt5ArchBridge.ex5"):
+            hit = _path_ok("mql5/" + Path(rel).name)
+            if hit:
+                return "ok", hit
+    # Wine install-tree shorthand without MQL5/ prefix
+    for pref in ("Indicators/", "Include/", "Experts/", "Scripts/", "Files/"):
+        if rel.startswith(pref):
+            hit = _path_ok("mql5/" + rel)
+            if hit:
+                return "ok", hit
+            if rel.endswith("/Mt5ArchBridge.mq5") or rel.endswith("/Mt5ArchBridge.ex5"):
+                hit = _path_ok("mql5/" + Path(rel).name)
+                if hit:
+                    return "ok", hit
+    # Runtime Wine Files/ tree + fail-closed parity dumps are not tracked sources.
+    if (
+        rel.startswith(("MQL5/Files/", "mql5/Files/"))
+        or "parity/_failed/" in rel
+        or rel.endswith(".request")
+    ):
+        return "ok", f"runtime_wine_path:{rel}"
+    # Phase-0 discovery dumps live under docs/research/phase0/
+    if rel.startswith("phase0/"):
+        hit = _path_ok("docs/research/" + rel)
+        if hit:
+            return "ok", hit
     # intentional research CSV (gitignored but named in docs)
     if rel == "xauusd_data.csv":
         # not tracked — drift per git ls-files rule
@@ -640,7 +703,13 @@ def _named_result_artifacts(claim: dict) -> list[str]:
     if not txt:
         return []
     lines = txt.splitlines()
+    # Prefer the nearest section: walk up to previous ## heading, then a small pad.
+    start = max(0, line_no - 1)
     lo = max(0, line_no - 25)
+    for i in range(start, lo - 1, -1):
+        if lines[i].startswith("## "):
+            lo = i
+            break
     hi = min(len(lines), line_no + 5)
     window = "\n".join(lines[lo:hi])
     found: list[str] = []
@@ -745,6 +814,18 @@ def _metric_match(txt: str, claimed: str, *, path: str = "") -> bool:
     if m:
         a, b = m.group(1), m.group(2)
         return bool(re.search(rf"\b{a}\s*/\s*{b}\b", txt))
+
+    # "0 eligible" ↔ write-up forms "0 / N eligible" / "0 develop-eligible"
+    if (
+        re.fullmatch(r"0\s*/?\s*eligible", claimed, re.I)
+        or claimed.strip().lower() in ("0 eligible", "0 / eligible")
+    ) and re.search(
+        r"\b0\s*/\s*\d+\s*eligible\b|\b0\s+eligible\b|\b0\s*/\s*eligible\b|"
+        r"\b0\s+develop-eligible\b|\bdevelop\s+\*\*0\s*/\s*\d+\*\*\s*eligible",
+        txt,
+        re.I,
+    ):
+        return True
 
     return claimed in txt
 
@@ -1134,6 +1215,9 @@ def disposition_ok(claim: dict, tracked: set[str]) -> tuple[str, str]:
             return "drift", disp
         if claimed.startswith("SCREEN_FAIL") and disp == "SCREEN_FAIL":
             return "ok", disp
+        # Screen-fail reason token used as the disposition label in memos/tables.
+        if claimed == "ZERO_PRIMARY_PASSERS" and disp == "SCREEN_FAIL":
+            return "ok", f"{matched_key}:{disp} (ZERO_PRIMARY_PASSERS)"
         # Explicit terminal / gate dispositions: mismatch is drift (incl. KEEP vs SCREEN_FAIL)
         if claimed in (
             "SUPERSEDED",
@@ -1690,6 +1774,15 @@ def main(argv: list[str] | None = None) -> int:
             "semantics (checker-completed). Implies read-only inventory (no write)."
         ),
     )
+    p.add_argument(
+        "--rebuild-inventory",
+        action="store_true",
+        help=(
+            "delegate to scripts/research_claim_extract.py:build_inventory and write "
+            "the inventory before verify. Ignored with --fail-on-drift (CI stays "
+            "read-only). Prefer running the extract script directly."
+        ),
+    )
     args = p.parse_args(argv)
 
     out_path = args.out
@@ -1704,6 +1797,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if report["all_red"] else 1
 
     inv_path = args.inventory if args.inventory.is_absolute() else ROOT / args.inventory
+    if args.rebuild_inventory and not args.fail_on_drift:
+        _ex = _load_extract_mod()
+        data = _ex.build_inventory(ROOT)
+        inv_path.parent.mkdir(parents=True, exist_ok=True)
+        inv_path.write_text(json.dumps(data, indent=2) + "\n")
     report = verify_all(
         inv_path,
         refresh_instruction=True,

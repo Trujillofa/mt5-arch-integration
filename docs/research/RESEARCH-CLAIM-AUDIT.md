@@ -1,15 +1,14 @@
 # RESEARCH-CLAIM-AUDIT
 
-**Date:** 2026-08-25 (instruction corpus + consistency / research-claim-audit closeout)  
-**Branch:** `research/research-claim-audit`  
-**Tip base:** `52c6baf`  
-**Auditor:** [`scripts/research_claim_verify.py`](../../scripts/research_claim_verify.py) + [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py) + [`scripts/research_claim_mutant.py`](../../scripts/research_claim_mutant.py) + [`.grok/workflows/research-claim-audit.rhai`](../../.grok/workflows/research-claim-audit.rhai)  
-**Inventory:** [`results/research_claim_inventory.json`](../../results/research_claim_inventory.json)  
+**Date:** 2026-08-26 (extractor scope + selfref re-derive closeout)  
+**Branch:** `feat/research-claim-extractor`  
+**Auditor:** [`scripts/research_claim_verify.py`](../../scripts/research_claim_verify.py) + [`scripts/research_claim_extract.py`](../../scripts/research_claim_extract.py) + [`scripts/research_claim_selfref_rebuild.py`](../../scripts/research_claim_selfref_rebuild.py) + [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py) + [`scripts/research_claim_mutant.py`](../../scripts/research_claim_mutant.py)  
+**Inventory:** [`results/research_claim_inventory.json`](../../results/research_claim_inventory.json) (built by the extract script, not agent prose)  
 **Verify:** [`results/research_claim_verify_result.json`](../../results/research_claim_verify_result.json)  
 **Negative controls:** [`results/research_claim_negative_controls.json`](../../results/research_claim_negative_controls.json)  
 **Mutant:** [`results/research_claim_mutant_result.json`](../../results/research_claim_mutant_result.json)  
-**Allowlist:** [`results/research_claim_selfref_allow.json`](../../results/research_claim_selfref_allow.json)  
-**Outcome:** **FAIL** — `n_drift=6` (1 expected residual Zacks `New edge` + 5 instruction/consistency findings reported, never repaired)
+**Allowlist:** [`results/research_claim_selfref_allow.json`](../../results/research_claim_selfref_allow.json) (re-derived; do not hand-edit)  
+**Outcome:** **PASS** — extractor inventory `n_claims=1413` (research-doc ≥ frozen 435), `n_drift=0`, `n_selfref_unallowlisted=0`, mutant 8/8, negative controls all red
 
 Auditor only. No charter/lock/`xau_loop_status.md`/`strategy_params.json`/`*.sha256` edits. No doc edits to chase green. No retunes, no holdout access, no `--live`, no `OrderSend`, no `src/mt5_arch` edits. Instruction files are **read-only sources of claims**.
 
@@ -46,24 +45,35 @@ git diff --exit-code CLAUDE.md AGENTS.md  → exit 0 (byte-identical to pre-run 
 
 ---
 
-## Extract — per-kind counts
+## Extract — deterministic code
 
-From `results/research_claim_inventory.json` (`n_claims=532`):
+**Extractor:** [`scripts/research_claim_extract.py`](../../scripts/research_claim_extract.py) (`build_inventory`). Stdlib-only. Scope: tracked `docs/**/*.md`, then merges `extract_instruction_claims()` + `build_consistency_claims()` from [`scripts/research_claim_instruction.py`](../../scripts/research_claim_instruction.py). Sort key `(file, line, kind, claimed, attribution)`. Inventory `method` is `scripts/research_claim_extract.py:build_inventory` (not agent prose).
+
+```bash
+python3 scripts/research_claim_extract.py              # writes results/research_claim_inventory.json
+python3 scripts/research_claim_extract.py --dry-run     # summary only; no write
+python3 scripts/research_claim_selfref_rebuild.py      # re-derive selfref allowlist after scope change
+python3 scripts/research_claim_verify.py --rebuild-inventory   # optional thin delegate (not used under --fail-on-drift)
+```
+
+CI `claim-audit` runs `research_claim_verify.py --fail-on-drift` and **never** rebuilds/writes the inventory (tree stays clean).
+
+### Per-kind counts (live extractor inventory)
 
 | Kind | Count |
 |------|------:|
-| path | 192 |
-| disposition | 133 |
-| link | 71 |
-| symbol | 53 |
-| metric | 53 |
-| sha | 25 |
+| path | 520 |
+| disposition | 309 |
+| link | 139 |
+| symbol | 109 |
+| metric | 287 |
+| sha | 44 |
 | consistency | 5 |
-| **n_claims** | **532** |
+| **n_claims** | **1413** |
 | **n_instruction_claims** | **93** |
-| **n_results_tracked** | **184** |
+| **n_results_tracked** | **190** |
 
-Corpus includes `docs/**` plus instruction files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `mql5/README.md`) and consistency(broker_roster) claims. Instruction files are **not** metric oracles.
+Corpus includes tracked `docs/**/*.md` plus instruction files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `mql5/README.md`) and consistency(broker_roster) claims. Instruction files are **not** metric oracles. A research-doc set smaller than the frozen **435** is a regression. After any scope change, re-derive [`results/research_claim_selfref_allow.json`](../../results/research_claim_selfref_allow.json) via `scripts/research_claim_selfref_rebuild.py` (records `n_searched` + `searched_sample` per entry).
 
 ### Consistency kind
 
@@ -75,40 +85,26 @@ Corpus includes `docs/**` plus instruction files (`CLAUDE.md`, `AGENTS.md`, `REA
 
 ## Verify — totals
 
-From `results/research_claim_verify_result.json`:
+From `results/research_claim_verify_result.json` (post extractor + selfref re-derive):
 
 | Metric | Value |
 |--------|------:|
-| n_ok | 506 |
-| n_drift | **6** |
-| n_unresolvable | 0 |
+| n_ok | 1226 |
+| n_drift | **0** |
+| n_unresolvable | 8 |
 | n_sha_unresolvable | **0** |
-| n_exempt_secrets | **3** |
-| n_self_referential | 10 (all allowlisted; `n_selfref_unallowlisted=0`) |
-| n_skipped_dates | 10 |
-| n_results_tracked | **184** |
+| n_exempt_secrets | **21** |
+| n_self_referential | 108 (all allowlisted; `n_selfref_unallowlisted=0`) |
+| n_skipped_dates | 71 |
+| n_results_tracked | **190** |
 | n_instruction_claims | **93** |
-| n_claims | 532 |
+| n_claims | 1413 |
 
-Verification completed with `ok=true` (no sha-unresolvable / no unallowlisted selfref). **Run status is still FAIL because `n_drift > 0`.**
-
-**Faithful residual note:** on the docs-only tree the **expected residual drift == 1** (Zacks `New edge` in `docs/README.md:21`). This run reports **`n_drift=6`** because instruction + consistency claims are now in corpus — five additional findings are **reported, never repaired**. `n_drift == 0` would still mean checker regression on the Zacks residual.
+Verification completed with `ok=true` (no sha-unresolvable / no unallowlisted selfref / no drift).
 
 ### Drift table (`drift[]`)
 
-| # | File | Line | Kind | Claimed | Actual |
-|---|------|-----:|------|---------|--------|
-| 1 | `docs/README.md` | 21 | disposition | `New edge` | Zacks status=`SCHEMA_PASS` / overlay **BLOCKED** for KEEP (BLOCKED/SCHEMA_PASS, not New edge) |
-| 2 | `CLAUDE.md` | 67 | disposition | `HTF Fib docs disagree on signal index` | stale instruction claim; `mql5/README.md` + `HOWTO-HTF-FIB.md` both document HTF Fib signal buffer **8** |
-| 3 | `AGENTS.md` | 63 | disposition | `HTF Fib docs disagree on signal index` | (same as #2) |
-| 4 | `fetch_data.py` | 1 | consistency | `broker_roster_coverage` | site missing roster brokers `['fpmarkets', 'wsf']`; roster=`['fpmarkets', 'vantage', 'wsf']` |
-| 5 | `CLAUDE.md` | 52 | consistency | `instruction_prefix_in_roster` | instruction names `~/.mt5-exness` but `config/brokers/` has no `exness.env` |
-| 6 | `AGENTS.md` | 48 | consistency | `instruction_prefix_in_roster` | (same as #5) |
-
-**Per-kind drift counts:** disposition=3, consistency=3.
-
-- **#1** = expected residual (Zacks lane / `docs/README.md` ownership — auditor does **not** edit that doc or the Zacks lane doc).
-- **#2–#6** = instruction/consistency disagreements for a human to resolve; this workflow does **not** edit `CLAUDE.md` / `AGENTS.md` / `fetch_data.py` to clear them.
+Empty on this tree (`n_drift=0`). Newly covered docs that initially surfaced path/disposition noise were handled by extractor/verifier fixes (Wine install-tree aliases, runtime `MQL5/Files/` placeholders, conditional SCREEN_FAIL attribution, forbidden `promote=true` context) plus one honest doc fix in `PHASE0-DISCOVERY.md` (planned `fpmarkets-symbols-btc-xau.json` never written). Scope was **not** narrowed to silence drift.
 
 ### Exempt secrets (`exempt_secrets[]`) — Fix B
 
@@ -178,9 +174,9 @@ Supersedes the STALE `mutant_caught` claim from commit **`7ac2233`**.
 
 ## Reproducibility
 
-- Tracked auditor: `scripts/research_claim_verify.py`, `scripts/research_claim_mutant.py`, `.grok/workflows/research-claim-audit.rhai`, this report, inventory, and verify/mutant/negcontrol JSON results.
+- Tracked auditor: `scripts/research_claim_extract.py`, `scripts/research_claim_verify.py`, `scripts/research_claim_instruction.py`, `scripts/research_claim_mutant.py`, `.grok/workflows/research-claim-audit.rhai`, this report, inventory, and verify/mutant/negcontrol JSON results.
 - Phase handoff via `results/*.json` only — no `/tmp` dependency for audit evidence.
-- Lint: `uv run ruff check src tests` and `uv run ruff check scripts/research_claim_verify.py scripts/research_claim_mutant.py`.
+- Lint: `uv run ruff check src tests` and `uv run ruff check scripts/research_claim_extract.py scripts/research_claim_verify.py scripts/research_claim_mutant.py scripts/research_claim_instruction.py`.
 
 ---
 

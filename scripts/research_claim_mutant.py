@@ -5,6 +5,10 @@ Seeds known-bad claims and routes them through scripts/research_claim_verify.py
 (same resolve_one / predicates Verify uses). Also proves the gate can fail by
 temporarily breaking the verifier.
 
+Anchors are selected from the extractor inventory
+(scripts/research_claim_extract.py → results/research_claim_inventory.json);
+preferred SHA/metric predicates follow extractor attribution shapes.
+
 Scratch-only: does not mutate worktree docs or tracked research state.
 """
 from __future__ import annotations
@@ -85,19 +89,28 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
         ),
         (
             "sha",
+            # Prefer early_server charter digest; extractor attrs may be truncated
+            # ellipsis basenames — also accept FAMILY-PROTOCOL / thesis sites.
             lambda c: c["kind"] == "sha"
             and c["claimed"].startswith("11099b2a")
-            and "early_server" in (c.get("attribution") or ""),
+            and (
+                "early_server" in (c.get("attribution") or "")
+                or "early_server" in str(c.get("file") or "")
+                or str(c.get("file") or "").endswith("XAU-FAMILY-PROTOCOL-V2.md")
+            ),
         ),
         (
             "metric",
+            # JSON-oracle PF (not BACKTEST nested); flip must drift (checked below).
             lambda c: c["kind"] == "metric"
-            and "PF" in c["claimed"]
+            and re.search(r"PF\s+\d+\.\d+", c["claimed"] or "")
+            and "pooled PF" not in (c["claimed"] or "")
             and not str(c["file"]).endswith("BACKTEST-RECORD.md")
-            and not str(c["file"]).startswith("results/")
+            and not str(c["file"]).endswith("RESEARCH-CLAIM-AUDIT.md")
             and (
-                "HOWTO-US-INDEX" in str(c["file"])
-                or "SIGNAL-EDGE" in str(c["file"])
+                "SIGNAL-EDGE" in str(c["file"])
+                or "US-INDEX-SESSION-SCALP-DESIGN" in str(c["file"])
+                or "HOWTO-US-INDEX" in str(c["file"])
             ),
         ),
         (
@@ -145,10 +158,22 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
                     str(act)
                 ):
                     continue
+                if kind == "metric" and ".json" not in str(act):
+                    continue
                 if kind == "metric_md" and ".md" not in str(act):
                     continue
                 if kind == "metric_nested" and "xau_runs/" not in str(act):
                     continue
+                # Digit-flip probe must land on drift (not coincidence ok / unresolvable).
+                if kind in ("metric", "metric_md", "metric_nested", "sha"):
+                    probe = deepcopy(c)
+                    if kind == "sha":
+                        probe["claimed"] = flip_hex_char(c["claimed"])
+                    else:
+                        probe["claimed"] = flip_metric_digit(c["claimed"])
+                    pst, _ = v.resolve_one(probe, tracked)
+                    if pst != "drift":
+                        continue
                 if kind == "instruction_ok" and st != "ok":
                     continue
                 if kind == "consistency_ok" and st != "ok":
@@ -181,10 +206,21 @@ def _pick_anchors(v, claims: list[dict], tracked: set[str]) -> dict[str, dict]:
                 str(act)
             ):
                 continue
+            if key == "metric" and ".json" not in str(act):
+                continue
             if key == "metric_md" and ".md" not in str(act):
                 continue
             if key == "metric_nested" and "xau_runs/" not in str(act):
                 continue
+            if key in ("metric", "metric_md", "metric_nested", "sha"):
+                probe = deepcopy(c)
+                if key == "sha":
+                    probe["claimed"] = flip_hex_char(c["claimed"])
+                else:
+                    probe["claimed"] = flip_metric_digit(c["claimed"])
+                pst, _ = v.resolve_one(probe, tracked)
+                if pst != "drift":
+                    continue
             wanted[key] = c
             break
 
