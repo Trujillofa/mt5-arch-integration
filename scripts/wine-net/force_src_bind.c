@@ -20,9 +20,12 @@ static in_addr_t preferred_src(void) {
 
 static int is_dockerish(in_addr_t a) {
   unsigned char *b = (unsigned char *)&a;
-  /* 172.16/12, 10/8, 100.64/10 (CGNAT/tailscale-ish), 127/8 */
+  /* 172.16/12, 10/8, 100.64/10 (CGNAT/tailscale-ish).
+     Do not treat 127/8 as dockerish: bind() rewrite of loopback remaps
+     official MT5 MCP (127.0.0.1:22346) onto the LAN NIC, so Cursor's
+     localhost client gets Connection refused. Outbound connect() still
+     forces LAN source below. */
   if (b[0] == 10) return 1;
-  if (b[0] == 127) return 1;
   if (b[0] == 172 && b[1] >= 16 && b[1] <= 31) return 1;
   if (b[0] == 100 && b[1] >= 64 && b[1] <= 127) return 1;
   return 0;

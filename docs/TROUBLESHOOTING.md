@@ -82,6 +82,12 @@ or Tailscale with **Send-Q > 0** and no Journal `Network` lines, Wine is
 picking a bad source address. `13-force-login-bridge.sh` auto-loads
 `scripts/wine-net/force_src_bind.so` (LD_PRELOAD) to bind outbound sockets to
 the LAN IP (`MT5_FORCE_SRC_IP`, default from `ip route get 1.1.1.1`).
+It must **not** rewrite `127.0.0.1` listens — that remaps official MT5 MCP
+off localhost (`ss` shows `192.168.0.144:22346`, Cursor's
+`http://127.0.0.1:22346/mcp` gets Connection refused). After rebuilding the
+`.so`, restart that prefix's `wineserver` (not only `terminal64.exe`);
+`/proc/<pid>/maps` showing `force_src_bind.so (deleted)` means the old
+inode is still loaded.
 
 ```bash
 # rebuild helper if needed

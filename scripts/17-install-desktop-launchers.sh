@@ -28,7 +28,15 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 script_dir = Path(sys.argv[1]).resolve()
+force_src = script_dir / "wine-net" / "force_src_bind.c"
 force_so = script_dir / "wine-net" / "force_src_bind.so"
+if force_src.is_file() and (
+    not force_so.is_file() or force_src.stat().st_mtime > force_so.stat().st_mtime
+):
+    subprocess.run(
+        ["gcc", "-shared", "-fPIC", "-O2", "-o", str(force_so), str(force_src), "-ldl"],
+        check=True,
+    )
 
 BRANDS = {
     "exness": {
@@ -121,8 +129,15 @@ for key, b in BRANDS.items():
 
     launcher = bin_dir / f"mt5-{key}"
     preload = ""
-    if force_so.is_file():
+    if force_src.is_file() or force_so.is_file():
         preload = (
+            f'SRC="{force_src}"\n'
+            f'SO="{force_so}"\n'
+            'if [[ -f "$SRC" ]] && { [[ ! -f "$SO" ]] || [[ "$SRC" -nt "$SO" ]]; }; then\n'
+            '  if command -v gcc >/dev/null 2>&1; then\n'
+            '    gcc -shared -fPIC -O2 -o "$SO" "$SRC" -ldl\n'
+            "  fi\n"
+            "fi\n"
             f'export LD_PRELOAD="{force_so}${{LD_PRELOAD:+:$LD_PRELOAD}}"\n'
             'export MT5_FORCE_SRC_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | '
             "awk '{for(i=1;i<=NF;i++) if($i==\"src\"){print $(i+1); exit}}' || true)\"\n"

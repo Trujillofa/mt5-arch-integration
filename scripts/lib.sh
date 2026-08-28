@@ -41,6 +41,25 @@ export_wine_env() {
   export WINEDEBUG="${WINEDEBUG:--all}"
 }
 
+# Rebuild force_src_bind.so when the .c is newer. Loopback listens must stay
+# on 127.0.0.1 (official MCP); a stale .so remaps them onto the LAN NIC.
+ensure_force_src_bind_so() {
+  local src="$REPO_ROOT/scripts/wine-net/force_src_bind.c"
+  local so="$REPO_ROOT/scripts/wine-net/force_src_bind.so"
+  if [[ ! -f "$src" ]]; then
+    return 0
+  fi
+  if [[ -f "$so" && ! "$src" -nt "$so" ]]; then
+    return 0
+  fi
+  if ! command -v gcc >/dev/null 2>&1; then
+    warn "gcc missing; cannot rebuild $so"
+    return 0
+  fi
+  gcc -shared -fPIC -O2 -o "$so" "$src" -ldl
+  info "rebuilt $so"
+}
+
 # Ensure Wayland clipboard is visible to Wine/XWayland (Ctrl+V paste).
 # Safe to call often; starts bridge if missing and does a one-shot sync.
 ensure_clipboard_bridge() {
