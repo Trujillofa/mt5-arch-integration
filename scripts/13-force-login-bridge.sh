@@ -80,7 +80,9 @@ wine reg add 'HKLM\System\CurrentControlSet\Services\Tcpip6\Parameters' \
   /v DisabledComponents /t REG_DWORD /d 255 /f >/dev/null 2>&1 || true
 
 # Optional: force LAN source IP so Wine does not bind Docker bridge addresses
-# (see scripts/wine-net/force_src_bind.c). Safe no-op if .so missing.
+# (see scripts/wine-net/force_src_bind.c). Rebuild if .c is newer; loopback
+# listens must stay on 127.0.0.1. Safe no-op if .so still missing.
+ensure_force_src_bind_so
 FORCE_SO="$REPO_ROOT/scripts/wine-net/force_src_bind.so"
 if [[ -f "$FORCE_SO" ]]; then
   LAN_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if($i=="src"){print $(i+1); exit}}' || true)"

@@ -11,11 +11,12 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.23"
+#property version   "1.24"
 #property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
 #property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
 #property description "v1.21: per-bar spread in candles + one-shot deep history dump"
 #property description "v1.23: explicit symbol registry — set InpBroker"
+#property description "v1.24: request-gated deal dump (dump_deals.request → deals_export.csv)"
 
 #include <FxSymbolRegistry.mqh>
 
@@ -105,6 +106,8 @@ void OnTimer()
    // Refresh lock heartbeat
    TouchWriterLock();
    WriteAll();
+   // After heartbeat — HistorySelect can block on a fresh reconnect.
+   DumpDealsIfRequested();
   }
 
 //+------------------------------------------------------------------+
@@ -484,6 +487,103 @@ void DumpHistoryOnce()
    Put(marker, "dumped=" + IntegerToString(total) +
        " symbol=" + sym + " at=" + TimeToString(TimeLocal(), TIME_DATE|TIME_SECONDS));
    Print("DumpHistory done rows=", total, " -> Files/", rel);
+  }
+
+//+------------------------------------------------------------------+
+string DealTypeName(const long t)
+  {
+   if(t == DEAL_TYPE_BUY) return "buy";
+   if(t == DEAL_TYPE_SELL) return "sell";
+   if(t == DEAL_TYPE_BALANCE) return "balance";
+   if(t == DEAL_TYPE_CREDIT) return "credit";
+   if(t == DEAL_TYPE_CHARGE) return "charge";
+   if(t == DEAL_TYPE_CORRECTION) return "correction";
+   if(t == DEAL_TYPE_BONUS) return "bonus";
+   if(t == DEAL_TYPE_COMMISSION) return "commission";
+   return IntegerToString(t);
+  }
+
+//+------------------------------------------------------------------+
+string DealEntryName(const long e)
+  {
+   if(e == DEAL_ENTRY_IN) return "in";
+   if(e == DEAL_ENTRY_OUT) return "out";
+   if(e == DEAL_ENTRY_INOUT) return "inout";
+   if(e == DEAL_ENTRY_OUT_BY) return "out_by";
+   return IntegerToString(e);
+  }
+
+//+------------------------------------------------------------------+
+//| Request-gated deal dump for weekly account reports.               |
+//| Touch Files/mt5_arch/dump_deals.request — next timer writes       |
+//| deals_export.csv (14 days) and dump_deals.done. Does not trade.   |
+//+------------------------------------------------------------------+
+void DumpDealsIfRequested()
+  {
+   string req = g_dir + "\\dump_deals.request";
+   if(!FileIsExist(req, 0))
+      return;
+   if(TimeCurrent() < D'2020.01.01')
+     {
+      Print("DumpDeals: skipped, trade server time not ready");
+      return;
+     }
+
+   datetime to = TimeCurrent();
+   datetime from = to - (datetime)(14L * 24L * 3600L);
+   ResetLastError();
+   if(!HistorySelect(from, to))
+     {
+      Print("DumpDeals: HistorySelect failed err=", GetLastError());
+      return;
+     }
+
+   string rel = g_dir + "\\deals_export.csv";
+   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ);
+   if(h == INVALID_HANDLE)
+     {
+      Print("DumpDeals: FileOpen failed err=", GetLastError());
+      return;
+     }
+   FileWriteString(h, "time,deal_id,order_id,position_id,symbol,type,entry,volume,price,profit,swap,commission,fee,reason,magic,comment\n");
+
+   int n = HistoryDealsTotal();
+   int wrote = 0;
+   for(int i = 0; i < n; i++)
+     {
+      ulong ticket = HistoryDealGetTicket(i);
+      if(ticket == 0)
+         continue;
+      string cmt = HistoryDealGetString(ticket, DEAL_COMMENT);
+      StringReplace(cmt, ",", ";");
+      StringReplace(cmt, "\n", " ");
+      string line = TimeToString((datetime)HistoryDealGetInteger(ticket, DEAL_TIME), TIME_DATE|TIME_SECONDS);
+      line += "," + IntegerToString((long)ticket);
+      line += "," + IntegerToString((long)HistoryDealGetInteger(ticket, DEAL_ORDER));
+      line += "," + IntegerToString((long)HistoryDealGetInteger(ticket, DEAL_POSITION_ID));
+      line += "," + HistoryDealGetString(ticket, DEAL_SYMBOL);
+      line += "," + DealTypeName(HistoryDealGetInteger(ticket, DEAL_TYPE));
+      line += "," + DealEntryName(HistoryDealGetInteger(ticket, DEAL_ENTRY));
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_VOLUME), 4);
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_PRICE), 8);
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_PROFIT), 2);
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_SWAP), 2);
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_COMMISSION), 2);
+      line += "," + DoubleToString(HistoryDealGetDouble(ticket, DEAL_FEE), 2);
+      line += "," + IntegerToString((long)HistoryDealGetInteger(ticket, DEAL_REASON));
+      line += "," + IntegerToString((long)HistoryDealGetInteger(ticket, DEAL_MAGIC));
+      line += "," + cmt;
+      FileWriteString(h, line + "\n");
+      wrote++;
+     }
+   FileClose(h);
+   FileDelete(req);
+   Put(g_dir + "\\dump_deals.done",
+       "rows=" + IntegerToString(wrote) +
+       " from=" + TimeToString(from, TIME_DATE|TIME_SECONDS) +
+       " to=" + TimeToString(to, TIME_DATE|TIME_SECONDS) +
+       " at=" + TimeToString(TimeLocal(), TIME_DATE|TIME_SECONDS));
+   Print("DumpDeals done rows=", wrote, " -> Files/", rel);
   }
 
 //+------------------------------------------------------------------+
