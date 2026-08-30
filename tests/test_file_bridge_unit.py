@@ -2,12 +2,20 @@
 
 from __future__ import annotations
 
+import os
+import time
 from pathlib import Path
 
 import pytest
 from bridge_fixtures import write_bridge_fixture
 
-from mt5_arch.file_bridge import FileBridgeClient, FileBridgeError, default_bridge_dir
+from mt5_arch.config import Settings
+from mt5_arch.file_bridge import (
+    DEFAULT_MAX_AGE_SECONDS,
+    FileBridgeClient,
+    FileBridgeError,
+    default_bridge_dir,
+)
 
 
 def test_default_bridge_dir_under_wineprefix(tmp_path: Path) -> None:
@@ -50,6 +58,14 @@ def test_ping_account_symbols_candles_from_fixture(tmp_path: Path) -> None:
     assert "T" in rates.candles[0].time
 
 
+def test_default_max_age_matches_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MT5_BRIDGE_MAX_AGE", raising=False)
+    assert DEFAULT_MAX_AGE_SECONDS == 15.0
+    client = FileBridgeClient(Path("/unused"))
+    assert client.max_age_seconds == DEFAULT_MAX_AGE_SECONDS
+    assert Settings(_env_file=None).mt5_bridge_max_age == DEFAULT_MAX_AGE_SECONDS
+
+
 def test_missing_account_raises(tmp_path: Path) -> None:
     bridge = tmp_path / "empty"
     bridge.mkdir()
@@ -58,12 +74,42 @@ def test_missing_account_raises(tmp_path: Path) -> None:
         client.account_info()
 
 
+def test_missing_heartbeat_raises_even_if_account_is_fresh(tmp_path: Path) -> None:
+    """Detached EA / missing heartbeat must not inherit account.json mtime."""
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "heartbeat.txt").unlink()
+    now = time.time()
+    os.utime(bridge / "account.json", (now, now))
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="heartbeat"):
+        client.ping()
+
+
 def test_stale_bridge_raises(tmp_path: Path) -> None:
     bridge = tmp_path / "stale"
     write_bridge_fixture(bridge, age_seconds=120.0)
     client = FileBridgeClient(bridge, max_age_seconds=10.0)
     with pytest.raises(FileBridgeError, match="stale"):
         client.ping()
+
+
+def test_corrupt_account_json_is_file_bridge_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "account.json").write_text("{not-json", encoding="utf-8")
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="Corrupt account.json"):
+        client.account_info()
+
+
+def test_corrupt_candles_json_is_file_bridge_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "candles_EURUSD_H1.json").write_text("[", encoding="utf-8")
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="Corrupt candles_EURUSD_H1.json"):
+        client.copy_rates("EURUSD", timeframe="H1")
 
 
 def test_unknown_symbol_raises(tmp_path: Path) -> None:
