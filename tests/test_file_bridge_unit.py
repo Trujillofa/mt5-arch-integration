@@ -213,3 +213,33 @@ def test_candle_non_numeric_ohlc_is_file_bridge_error(tmp_path: Path) -> None:
     client = FileBridgeClient(bridge, max_age_seconds=30.0)
     with pytest.raises(FileBridgeError, match="bad candle 0"):
         client.copy_rates("EURUSD", timeframe="H1")
+
+
+def test_non_ascii_account_json_does_not_leak_unicode_error(tmp_path: Path) -> None:
+    """EA writes JSON with FILE_ANSI too: a broker company name can be cp1252.
+
+    UnicodeDecodeError is a ValueError - account_info() must not raise it raw.
+    """
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    account = bridge / "account.json"
+    raw = json.loads(account.read_text(encoding="utf-8"))
+    raw["company"] = "CAFE_MARKER"
+    account.write_bytes(
+        json.dumps(raw).encode("ascii").replace(b"CAFE_MARKER", b"Caf\xe9 Markets")
+    )
+    info = FileBridgeClient(bridge, max_age_seconds=30.0).account_info()
+    assert info.company == "Caf\u00e9 Markets"
+
+
+def test_non_ascii_symbol_json_does_not_leak_unicode_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    symbols = bridge / "symbols.json"
+    rows = json.loads(symbols.read_text(encoding="utf-8"))
+    rows[0]["description"] = "DESC_MARKER"
+    symbols.write_bytes(
+        json.dumps(rows).encode("ascii").replace(b"DESC_MARKER", b"Euro vs Dollar \xe9")
+    )
+    spec = FileBridgeClient(bridge, max_age_seconds=30.0).symbol_info(rows[0]["symbol"])
+    assert spec.symbol == rows[0]["symbol"]
