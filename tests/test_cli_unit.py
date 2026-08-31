@@ -18,6 +18,22 @@ def test_parser_candles() -> None:
     assert args.count == 5
 
 
+def test_parser_deals_defaults() -> None:
+    args = build_parser().parse_args(["deals"])
+    assert args.command == "deals"
+    assert args.request is False
+    assert args.timeout == 30.0
+    assert args.json is False
+
+
+def test_parser_deals_request_timeout_json() -> None:
+    args = build_parser().parse_args(["deals", "--request", "--timeout", "5", "--json"])
+    assert args.command == "deals"
+    assert args.request is True
+    assert args.timeout == 5.0
+    assert args.json is True
+
+
 def test_config_command_exits_zero(capsys, monkeypatch) -> None:
     monkeypatch.setenv("MT5_BACKEND", "file")
     monkeypatch.delenv("MT5_PASSWORD", raising=False)

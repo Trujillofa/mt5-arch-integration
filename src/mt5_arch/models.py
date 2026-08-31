@@ -68,3 +68,29 @@ class TerminalInfo:
     build: int
     trade_allowed: bool
     tradeapi_disabled: bool
+
+
+@dataclass(frozen=True, slots=True)
+class Deal:
+    """One closed deal from Mt5ArchBridge deals_export.csv (14-day window).
+
+    ``time`` is trade-server time as ``YYYY.MM.DD HH:MM:SS`` (TimeToString
+    DEAL_TIME), not UTC. Do not stamp +00:00 / Z.
+    """
+
+    time: str
+    deal_id: int
+    order_id: int
+    position_id: int
+    symbol: str
+    type: str
+    entry: str
+    volume: float
+    price: float
+    profit: float
+    swap: float
+    commission: float
+    fee: float
+    reason: int
+    magic: int
+    comment: str

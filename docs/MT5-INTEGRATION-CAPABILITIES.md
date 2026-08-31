@@ -31,6 +31,8 @@ uv run mt5-arch ping
 uv run mt5-arch account
 uv run mt5-arch symbols EURUSD XAUUSD
 uv run mt5-arch candles EURUSD --tf H1 --count 10
+uv run mt5-arch deals                  # read existing deals_export.csv (needs dump_deals.done)
+# uv run mt5-arch deals --request      # opt-in: touches dump_deals.request in the live prefix
 uv run mt5-arch brokers
 uv run mt5-arch resolve fpmarkets XAUUSD
 uv run mt5-arch config                  # redacted; no password
@@ -45,11 +47,12 @@ uv run mt5-arch mcp                     # read-only MCP stdio (AI agents; no ord
 | `account` | Login, balance, equity, margin, server, company |
 | `symbols` | Lots / digits / tick — **only names in the EA `InpSymbols` export** |
 | `candles` | Last N OHLCV from `candles_<brokerSymbol>_<TF>.json` |
+| `deals` | Closed deals from `deals_export.csv` (EA v1.24, 14-day window). Completeness is `dump_deals.done` **only** — a fresh `heartbeat.txt` does not mean the CSV is finished. `time` is **trade-server** `YYYY.MM.DD HH:MM:SS`, not UTC. `--request` touches `dump_deals.request` in the live prefix and waits (bounded `--timeout`, default 30s, fail closed). Default is read-only. File-bridge only |
 | `brokers` / `resolve` | Profiles + canonical ↔ broker map. No MT5 connection |
 | `config` | Redacted settings |
 | `mcp` | Read-only MCP stdio server — same data as the rows above. No positions/orders. See [HOWTO-MT5-AI-MCP.md](HOWTO-MT5-AI-MCP.md) |
 
-`--json` and `-v` / `-vv` work on all of the above. There is **no** `positions` / order CLI. The EA writes `positions.json`; Python does not expose it.
+`--json` and `-v` / `-vv` work on all of the above. There is **no** `positions` / order CLI. The EA writes `positions.json`; Python does not expose it. `deals` never sends orders.
 
 ---
 
@@ -101,7 +104,7 @@ Fib modes: **INTRADAY** = EMA 20/50 + bias 200, London/NY, 4H pivots. **SWING** 
 
 | EA | Orders? | Role |
 |----|---------|------|
-| `Mt5ArchBridge` v1.23 source | Never | File bridge. **One chart only.** `InpBroker` required (`vantage\|fpmarkets\|exness\|wsf`). Timer writes, not OnTick |
+| `Mt5ArchBridge` v1.24 source | Never | File bridge. **One chart only.** `InpBroker` required (`vantage\|fpmarkets\|exness\|wsf`). Timer writes, not OnTick. Request-gated 14-day deal dump: touch `dump_deals.request` → `deals_export.csv` + `dump_deals.done` |
 | `ForexSignalLogger` | **Never** (`OrderSend` absent) | `iCustom` → Experts print + `MQL5/Files/forex_signals/<SYM>_<TF>.csv` |
 | `TradeTransactionJournal` | Never | Read-only trade-id journal → `mt5_arch/journal/<session_id>/`. Live attach **not claimed** |
 | `ForexHtfFibTester` v1.40 | **Yes in Strategy Tester** (`CTrade`) | EA-native Fib + ATR SL/TP. **Not** iCustom buffer 8. Default `InpAllowLiveTrading=false` |

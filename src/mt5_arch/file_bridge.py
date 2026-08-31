@@ -6,17 +6,50 @@ with (-10005, 'IPC timeout').
 
 from __future__ import annotations
 
+import csv
+import io
 import json
+import re
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from mt5_arch.models import AccountInfo, Candle, CandlesResult, SymbolInfo, TerminalInfo
+from mt5_arch.models import AccountInfo, Candle, CandlesResult, Deal, SymbolInfo, TerminalInfo
 from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 
 # Must match Settings.mt5_bridge_max_age (MT5_BRIDGE_MAX_AGE) and AGENTS.md.
 DEFAULT_MAX_AGE_SECONDS = 15.0
+
+# Exact header written by Mt5ArchBridge.mq5 DumpDealsIfRequested().
+DEAL_CSV_COLUMNS = (
+    "time",
+    "deal_id",
+    "order_id",
+    "position_id",
+    "symbol",
+    "type",
+    "entry",
+    "volume",
+    "price",
+    "profit",
+    "swap",
+    "commission",
+    "fee",
+    "reason",
+    "magic",
+    "comment",
+)
+
+# dump_deals.done body: rows=<N> from=<ts> to=<ts> at=<ts>
+_DUMP_DEALS_DONE_RE = re.compile(
+    r"^rows=(?P<rows>\d+)\s+"
+    r"from=(?P<from>\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+"
+    r"to=(?P<to>\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s+"
+    r"at=(?P<at>\d{4}\.\d{2}\.\d{2} \d{2}:\d{2}:\d{2})\s*$"
+)
+
+DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS = 30.0
 
 
 class FileBridgeError(Exception):
@@ -194,3 +227,180 @@ class FileBridgeClient:
             except (KeyError, TypeError, ValueError) as exc:
                 raise FileBridgeError(f"{path.name}: bad candle {i}: {exc}") from exc
         return CandlesResult(symbol=symbol, timeframe=tf, candles=candles)
+
+    def deals(self) -> list[Deal]:
+        """Read deals_export.csv. Completeness is dump_deals.done only — not heartbeat.
+
+        WriteAll() writes heartbeat.txt last, then OnTimer calls DumpDealsIfRequested()
+        *after* WriteAll(). A fresh heartbeat therefore does not mean the CSV is
+        complete. Put() is a truncate-write with no temp+rename, so a torn CSV or
+        torn .done raises FileBridgeError.
+        """
+        done_path = self.bridge_dir / "dump_deals.done"
+        csv_path = self.bridge_dir / "deals_export.csv"
+        if not done_path.exists():
+            raise FileBridgeError(
+                f"Missing dump_deals.done in {self.bridge_dir}. "
+                "A fresh heartbeat does not mean deals_export.csv is complete "
+                "(the EA writes heartbeat.txt in WriteAll() before the dump). "
+                "Use mt5-arch deals --request to touch dump_deals.request and wait."
+            )
+        done_text = _read_bridge_text(done_path, label="dump_deals.done")
+        expected_rows = _parse_dump_deals_done(done_text)
+        if not csv_path.exists():
+            raise FileBridgeError(f"Missing deals_export.csv in {self.bridge_dir}")
+        csv_text = _read_bridge_text(csv_path, label="deals_export.csv")
+        rows = _parse_deals_csv(csv_text)
+        if len(rows) != expected_rows:
+            raise FileBridgeError(
+                f"deals_export.csv row count {len(rows)} != dump_deals.done rows={expected_rows}"
+            )
+        return rows
+
+    def request_deals(
+        self,
+        *,
+        timeout: float = DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS,
+        poll_interval: float = 0.05,
+    ) -> list[Deal]:
+        """Touch dump_deals.request, wait for a *fresh* dump_deals.done, then read.
+
+        A stale .done from a previous dump is not completion. Fail closed on timeout.
+        Writes into the live Wine prefix — callers must opt in (CLI --request).
+
+        Requires a live EA: ensure_alive() first, so a detached EA reports "bridge
+        down" now instead of after the whole timeout. Reading (deals()) deliberately
+        does not, so a dump stays readable post-mortem.
+
+        On timeout the request file is left in place on purpose — the EA picks it up
+        whenever it next runs, and a later plain ``deals()`` reads the result.
+        """
+        self.ensure_alive()
+        done_path = self.bridge_dir / "dump_deals.done"
+        req_path = self.bridge_dir / "dump_deals.request"
+        prev_mtime_ns = done_path.stat().st_mtime_ns if done_path.exists() else -1
+        prev_content = done_path.read_bytes() if done_path.exists() else b""
+        req_path.write_text("", encoding="utf-8")
+        req_mtime_ns = req_path.stat().st_mtime_ns
+        deadline = time.monotonic() + timeout
+        while True:
+            if _fresh_deal_dump_ready(
+                req_path,
+                done_path,
+                req_mtime_ns=req_mtime_ns,
+                prev_mtime_ns=prev_mtime_ns,
+                prev_content=prev_content,
+            ):
+                return self.deals()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise FileBridgeError(
+                    f"Timed out after {timeout}s waiting for dump_deals.done newer than "
+                    f"dump_deals.request in {self.bridge_dir}. The request file is left "
+                    "in place: the EA dumps on its next timer tick, so re-run "
+                    "'mt5-arch deals' (without --request) to read it."
+                )
+            time.sleep(min(poll_interval, remaining))
+
+
+def _read_bridge_text(path: Path, *, label: str) -> str:
+    """Read a file the EA wrote with FILE_TXT|FILE_ANSI.
+
+    ANSI is the Wine host codepage, not UTF-8, so a broker-set deal comment or a
+    non-ASCII symbol name is not valid UTF-8. Decode strict UTF-8 first (correct if
+    the EA ever switches), fall back to cp1252 so one accented byte does not cost the
+    whole dump. Never let UnicodeDecodeError — a ValueError — escape as a raw error.
+    """
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise FileBridgeError(f"Cannot read {label}: {exc}") from exc
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("cp1252", errors="replace")
+
+
+def _parse_dump_deals_done(text: str) -> int:
+    match = _DUMP_DEALS_DONE_RE.match(text.strip())
+    if not match:
+        raise FileBridgeError(f"Corrupt dump_deals.done: {text!r}")
+    return int(match.group("rows"))
+
+
+def _fresh_deal_dump_ready(
+    req_path: Path,
+    done_path: Path,
+    *,
+    req_mtime_ns: int,
+    prev_mtime_ns: int,
+    prev_content: bytes,
+) -> bool:
+    if req_path.exists():
+        return False
+    if not done_path.exists():
+        return False
+    try:
+        st = done_path.stat()
+        content = done_path.read_bytes()
+    except OSError:
+        return False
+    # Spec: do not accept a .done *older* than the request. Equal mtime is ok
+    # if the EA also deleted the request file (it deletes request, then Put .done).
+    if st.st_mtime_ns < req_mtime_ns:
+        return False
+    stale_previous = (
+        prev_mtime_ns >= 0
+        and st.st_mtime_ns <= prev_mtime_ns
+        and content == prev_content
+    )
+    return not stale_previous
+
+
+def _parse_deals_csv(text: str) -> list[Deal]:
+    try:
+        raw_rows = list(csv.reader(io.StringIO(text)))
+    except csv.Error as exc:
+        raise FileBridgeError(f"Corrupt deals_export.csv: {exc}") from exc
+    if not raw_rows:
+        raise FileBridgeError("deals_export.csv is empty (missing header)")
+    header = tuple(raw_rows[0])
+    if header != DEAL_CSV_COLUMNS:
+        raise FileBridgeError(
+            f"deals_export.csv header {list(header)!r} does not match {list(DEAL_CSV_COLUMNS)!r}"
+        )
+    deals: list[Deal] = []
+    for i, row in enumerate(raw_rows[1:]):
+        if not row or (len(row) == 1 and row[0] == ""):
+            continue
+        if len(row) != len(DEAL_CSV_COLUMNS):
+            raise FileBridgeError(
+                f"deals_export.csv: torn/truncated row {i} "
+                f"({len(row)} columns, expected {len(DEAL_CSV_COLUMNS)})"
+            )
+        try:
+            deals.append(_deal_from_row(row))
+        except (TypeError, ValueError) as exc:
+            raise FileBridgeError(f"deals_export.csv: bad deal {i}: {exc}") from exc
+    return deals
+
+
+def _deal_from_row(row: list[str]) -> Deal:
+    return Deal(
+        time=row[0],
+        deal_id=int(row[1]),
+        order_id=int(row[2]),
+        position_id=int(row[3]),
+        symbol=row[4],
+        type=row[5],
+        entry=row[6],
+        volume=float(row[7]),
+        price=float(row[8]),
+        profit=float(row[9]),
+        swap=float(row[10]),
+        commission=float(row[11]),
+        fee=float(row[12]),
+        reason=int(row[13]),
+        magic=int(row[14]),
+        comment=row[15],
+    )
