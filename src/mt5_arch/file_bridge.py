@@ -15,6 +15,9 @@ from typing import Any
 from mt5_arch.models import AccountInfo, Candle, CandlesResult, SymbolInfo, TerminalInfo
 from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 
+# Must match Settings.mt5_bridge_max_age (MT5_BRIDGE_MAX_AGE) and AGENTS.md.
+DEFAULT_MAX_AGE_SECONDS = 15.0
+
 
 class FileBridgeError(Exception):
     """Raised when the EA file bridge is unavailable or stale."""
@@ -41,7 +44,7 @@ class FileBridgeClient:
         self,
         bridge_dir: Path | None = None,
         *,
-        max_age_seconds: float = 10.0,
+        max_age_seconds: float = DEFAULT_MAX_AGE_SECONDS,
         wineprefix: Path | None = None,
         broker: str | None = None,
     ) -> None:
@@ -68,9 +71,12 @@ class FileBridgeClient:
                 f"No account.json in {self.bridge_dir}. "
                 "Attach Mt5ArchBridge EA to a chart and enable Algo Trading (green)."
             )
-        # Prefer heartbeat; fall back to account mtime
-        path = hb if hb.exists() else account
-        age = time.time() - path.stat().st_mtime
+        if not hb.exists():
+            raise FileBridgeError(
+                f"No heartbeat.txt in {self.bridge_dir}. "
+                "Attach Mt5ArchBridge EA to a chart and enable Algo Trading (green)."
+            )
+        age = time.time() - hb.stat().st_mtime
         if age > self.max_age_seconds:
             raise FileBridgeError(
                 f"Bridge data is stale ({age:.0f}s old). "
@@ -81,7 +87,10 @@ class FileBridgeClient:
         path = self.bridge_dir / name
         if not path.exists():
             raise FileBridgeError(f"Missing {path}")
-        return json.loads(path.read_text(encoding="utf-8"))
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise FileBridgeError(f"Corrupt {path.name}: {exc}") from exc
 
     def ping(self) -> TerminalInfo:
         self.ensure_alive()
@@ -149,7 +158,9 @@ class FileBridgeClient:
             raise FileBridgeError(
                 f"Missing {path.name}. Available: {[p.name for p in matches[:10]]}"
             )
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = self._read_json(path.name)
+        if not isinstance(data, dict):
+            raise FileBridgeError(f"{path.name} is not an object")
         candles_raw = data.get("candles", [])
         if count and len(candles_raw) > count:
             candles_raw = candles_raw[-count:]

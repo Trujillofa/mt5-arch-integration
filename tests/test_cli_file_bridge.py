@@ -66,6 +66,21 @@ def test_cli_symbols_and_candles(bridge_env: Path, capsys: pytest.CaptureFixture
     assert "open" in bars["candles"][0]
 
 
+def test_cli_missing_heartbeat_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bridge = tmp_path / "no-hb"
+    write_bridge_fixture(bridge)
+    (bridge / "heartbeat.txt").unlink()
+    monkeypatch.setenv("MT5_BACKEND", "file")
+    monkeypatch.setenv("MT5_BRIDGE_DIR", str(bridge))
+    monkeypatch.setenv("MT5_BRIDGE_MAX_AGE", "60")
+    code = main(["ping", "--json"])
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "heartbeat" in err.lower()
+
+
 def test_cli_stale_bridge_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     bridge = tmp_path / "old"
     write_bridge_fixture(bridge, age_seconds=200)
