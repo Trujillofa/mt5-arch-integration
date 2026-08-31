@@ -120,8 +120,11 @@ class FileBridgeClient:
         path = self.bridge_dir / name
         if not path.exists():
             raise FileBridgeError(f"Missing {path}")
+        # Same FILE_ANSI decode as the deal dump: a broker company/server name with
+        # an accented byte is not valid UTF-8, and UnicodeDecodeError is a ValueError.
+        text = _read_bridge_text(path, label=path.name)
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
+            return json.loads(text)
         except json.JSONDecodeError as exc:
             raise FileBridgeError(f"Corrupt {path.name}: {exc}") from exc
 
@@ -306,10 +309,13 @@ class FileBridgeClient:
 def _read_bridge_text(path: Path, *, label: str) -> str:
     """Read a file the EA wrote with FILE_TXT|FILE_ANSI.
 
-    ANSI is the Wine host codepage, not UTF-8, so a broker-set deal comment or a
-    non-ASCII symbol name is not valid UTF-8. Decode strict UTF-8 first (correct if
-    the EA ever switches), fall back to cp1252 so one accented byte does not cost the
-    whole dump. Never let UnicodeDecodeError — a ValueError — escape as a raw error.
+    ANSI is the Wine host codepage, not UTF-8, so a broker-set deal comment, a
+    broker company/server name, or a non-ASCII symbol name is not valid UTF-8.
+    Decode strict UTF-8 first (correct if the EA ever switches), fall back to cp1252
+    so one accented byte does not cost the whole file. Never let UnicodeDecodeError —
+    a ValueError — escape as a raw error.
+
+    Used for every file the EA writes: the JSON snapshots and the deal dump.
     """
     try:
         raw = path.read_bytes()
