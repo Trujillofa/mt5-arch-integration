@@ -62,10 +62,20 @@ echo
 echo "==> Bridge files"
 if [[ -d "$BRIDGE" ]]; then
   now="$(date +%s)"
-  if [[ -f "$BRIDGE/account.json" ]]; then
-    mtime="$(stat -c %Y "$BRIDGE/account.json")"
-    age=$((now - mtime))
-    echo "  account.json age: ${age}s"
+  # Liveness comes from heartbeat.txt only — same rule as FileBridgeClient.ensure_alive.
+  # account.json mtime is shown for context but never decides fresh/stale: a leftover
+  # snapshot from a detached EA keeps its mtime and would read as alive.
+  max_age="${MT5_BRIDGE_MAX_AGE:-15}"
+  if [[ ! -f "$BRIDGE/account.json" ]]; then
+    warn "no account.json yet — attach Mt5ArchBridge EA to a chart"
+  elif [[ ! -f "$BRIDGE/heartbeat.txt" ]]; then
+    warn "no heartbeat.txt — bridge is down (EA detached or Algo Trading off); 'mt5-arch ping' fails closed"
+  else
+    hb_mtime="$(stat -c %Y "$BRIDGE/heartbeat.txt")"
+    age=$((now - hb_mtime))
+    acct_mtime="$(stat -c %Y "$BRIDGE/account.json")"
+    echo "  heartbeat.txt age: ${age}s (MT5_BRIDGE_MAX_AGE=${max_age}s)"
+    echo "  account.json age:  $((now - acct_mtime))s"
     python3 -c "
 import json
 from pathlib import Path
@@ -74,13 +84,11 @@ d = json.loads(p.read_text())
 print(f\"  login={d.get('login')} server={d.get('server')!r} balance={d.get('balance')} equity={d.get('equity')} currency={d.get('currency')!r}\")
 print(f\"  trade_allowed={d.get('trade_allowed')} algo_allowed={d.get('algo_allowed')}\")
 " 2>/dev/null || cat "$BRIDGE/account.json"
-    if [[ "$age" -gt 60 ]]; then
-      warn "bridge looks stale (>60s). Is Mt5ArchBridge still on a chart?"
+    if awk -v a="$age" -v m="$max_age" 'BEGIN { exit !(a > m) }'; then
+      warn "bridge is stale (>${max_age}s) — 'mt5-arch ping' fails closed. Is Mt5ArchBridge still on a chart?"
     else
       info "bridge is fresh"
     fi
-  else
-    warn "no account.json yet — attach Mt5ArchBridge EA to a chart"
   fi
   n_candles="$(find "$BRIDGE" -maxdepth 1 -name 'candles_*.json' 2>/dev/null | wc -l)"
   echo "  candle files: $n_candles"

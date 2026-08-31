@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import time
 from pathlib import Path
@@ -153,3 +154,62 @@ def test_copy_rates_available_glob_uses_mapped_name(tmp_path: Path) -> None:
     with pytest.raises(FileBridgeError, match="candles_XAUUSD.r_M15") as exc:
         client.copy_rates("XAUUSD", timeframe="H1")
     assert "candles_XAUUSD.r_M15.json" in str(exc.value)
+
+
+def _rewrite_candles(bridge: Path, payload: object) -> None:
+    (bridge / "candles_EURUSD_H1.json").write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_candles_not_a_list_is_file_bridge_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    _rewrite_candles(bridge, {"symbol": "EURUSD", "candles": {"open": 1.0}})
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="'candles' is not a list"):
+        client.copy_rates("EURUSD", timeframe="H1")
+
+
+def test_candle_row_not_an_object_is_file_bridge_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    _rewrite_candles(bridge, {"symbol": "EURUSD", "candles": ["1.16"]})
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="candle 0 is not an object"):
+        client.copy_rates("EURUSD", timeframe="H1")
+
+
+def test_candle_missing_ohlc_field_is_file_bridge_error(tmp_path: Path) -> None:
+    """Valid JSON with a truncated row must not surface a raw KeyError."""
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    _rewrite_candles(
+        bridge,
+        {"symbol": "EURUSD", "candles": [{"time": "2026.07.31 11:00:00", "open": 1.16}]},
+    )
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="bad candle 0"):
+        client.copy_rates("EURUSD", timeframe="H1")
+
+
+def test_candle_non_numeric_ohlc_is_file_bridge_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    _rewrite_candles(
+        bridge,
+        {
+            "symbol": "EURUSD",
+            "candles": [
+                {
+                    "time": "2026.07.31 11:00:00",
+                    "open": "nan-ish",
+                    "high": 1.17,
+                    "low": 1.15,
+                    "close": 1.165,
+                    "volume": 10,
+                }
+            ],
+        },
+    )
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="bad candle 0"):
+        client.copy_rates("EURUSD", timeframe="H1")

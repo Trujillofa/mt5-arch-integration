@@ -162,10 +162,14 @@ class FileBridgeClient:
         if not isinstance(data, dict):
             raise FileBridgeError(f"{path.name} is not an object")
         candles_raw = data.get("candles", [])
+        if not isinstance(candles_raw, list):
+            raise FileBridgeError(f"{path.name}: 'candles' is not a list")
         if count and len(candles_raw) > count:
             candles_raw = candles_raw[-count:]
         candles: list[Candle] = []
-        for c in candles_raw:
+        for i, c in enumerate(candles_raw):
+            if not isinstance(c, dict):
+                raise FileBridgeError(f"{path.name}: candle {i} is not an object")
             t = str(c.get("time", ""))
             # normalize to ISO-ish
             if t and "T" not in t:
@@ -174,14 +178,19 @@ class FileBridgeClient:
                     t = dt.isoformat()
                 except ValueError:
                     pass
-            candles.append(
-                Candle(
-                    time=t,
-                    open=float(c["open"]),
-                    high=float(c["high"]),
-                    low=float(c["low"]),
-                    close=float(c["close"]),
-                    volume=float(c.get("volume", 0)),
+            # A torn or truncated EA write can still parse as JSON; a missing or
+            # non-numeric OHLC field is bridge data being unusable, not a bug here.
+            try:
+                candles.append(
+                    Candle(
+                        time=t,
+                        open=float(c["open"]),
+                        high=float(c["high"]),
+                        low=float(c["low"]),
+                        close=float(c["close"]),
+                        volume=float(c.get("volume", 0)),
+                    )
                 )
-            )
+            except (KeyError, TypeError, ValueError) as exc:
+                raise FileBridgeError(f"{path.name}: bad candle {i}: {exc}") from exc
         return CandlesResult(symbol=symbol, timeframe=tf, candles=candles)
