@@ -57,11 +57,23 @@ uv run mt5-arch deals --request --timeout 30 --json
 
 That touches `dump_deals.request`. The next timer tick writes the CSV, deletes
 the request file, then writes `dump_deals.done`. A leftover `.done` from an
-earlier dump is ignored until its mtime is not older than the request. Timeout
-fails closed; the request file is left in place if the EA skipped (trade-server
-time before 2020-01-01, `HistorySelect` failed, or FileOpen failed).
+earlier dump is ignored until its mtime is not older than the request.
+
+`--request` needs a live EA, so it checks the heartbeat first and reports
+`No heartbeat.txt` / stale immediately rather than burning the whole timeout.
+Plain `deals` does not, so a finished dump stays readable after the EA is gone.
+
+On timeout the request file is **left in place on purpose** — the EA dumps on its
+next timer tick, so re-run `mt5-arch deals` (no `--request`) to read the result.
+The EA also leaves it when it skips: trade-server time before 2020-01-01,
+`HistorySelect` failed, or FileOpen failed.
 
 Default `mt5-arch deals` never creates `dump_deals.request`.
+
+The EA writes both files with `FILE_TXT|FILE_ANSI` — the Wine host codepage, not
+UTF-8. A broker-set comment with an accented character is therefore not valid
+UTF-8; the reader decodes UTF-8 first and falls back to cp1252, so one such byte
+does not cost the whole dump.
 
 1. `./scripts/06-install-file-bridge.sh`
 2. In MetaEditor: open `MQL5/Experts/Mt5ArchBridge.mq5` → **Compile (F7)** → must produce `.ex5`

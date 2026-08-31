@@ -157,6 +157,7 @@ def test_malformed_csv_raises_file_bridge_error_not_csv_error(tmp_path: Path) ->
 
 def test_request_times_out_when_done_older_than_request(tmp_path: Path) -> None:
     bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
     write_deal_dump_fixture(bridge, done_age_seconds=60.0)
     client = _client(bridge)
     with pytest.raises(FileBridgeError, match="dump_deals.done"):
@@ -166,7 +167,7 @@ def test_request_times_out_when_done_older_than_request(tmp_path: Path) -> None:
 
 def test_request_times_out_when_done_missing(tmp_path: Path) -> None:
     bridge = tmp_path / "mt5_arch"
-    bridge.mkdir()
+    write_bridge_fixture(bridge)
     client = _client(bridge)
     with pytest.raises(FileBridgeError, match="dump_deals.done"):
         client.request_deals(timeout=0.25)
@@ -176,6 +177,7 @@ def test_request_times_out_when_done_missing(tmp_path: Path) -> None:
 def test_request_waits_for_fresh_done(tmp_path: Path) -> None:
     """Simulated EA: write CSV, delete request, then rewrite .done (same order as v1.24)."""
     bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
     write_deal_dump_fixture(bridge, n_rows=1, done_age_seconds=60.0)
     ready = threading.Event()
 
@@ -200,3 +202,48 @@ def test_request_waits_for_fresh_done(tmp_path: Path) -> None:
     assert len(deals) == 2
     assert deals[1].deal_id == 1002
     assert not (bridge / "dump_deals.request").exists()
+
+
+def test_non_ascii_comment_does_not_leak_unicode_error(tmp_path: Path) -> None:
+    """EA writes FILE_ANSI: a cp1252 comment byte is not valid UTF-8.
+
+    UnicodeDecodeError is a ValueError — it must never escape as a raw error, and one
+    accented byte must not cost the whole dump.
+    """
+    bridge = tmp_path / "mt5_arch"
+    write_deal_dump_fixture(bridge, n_rows=1)
+    csv_path = bridge / "deals_export.csv"
+    raw = csv_path.read_text(encoding="utf-8").rstrip("\n")
+    csv_path.write_bytes(raw.encode("utf-8") + "caf\xe9 fill".encode("cp1252") + b"\n")
+    deals = _client(bridge).deals()
+    assert len(deals) == 1
+    assert "caf" in deals[0].comment
+
+
+def test_non_ascii_done_body_does_not_leak_unicode_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_deal_dump_fixture(bridge, n_rows=1)
+    done = bridge / "dump_deals.done"
+    done.write_bytes(done.read_bytes() + "\xe9".encode("cp1252"))
+    with pytest.raises(FileBridgeError, match="Corrupt dump_deals.done"):
+        _client(bridge).deals()
+
+
+def test_request_fails_fast_on_dead_bridge(tmp_path: Path) -> None:
+    """A detached EA must report bridge-down now, not after the whole timeout."""
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "heartbeat.txt").unlink()
+    started = time.monotonic()
+    with pytest.raises(FileBridgeError, match="heartbeat"):
+        _client(bridge).request_deals(timeout=30.0)
+    assert time.monotonic() - started < 5.0
+    assert not (bridge / "dump_deals.request").exists()
+
+
+def test_request_does_not_create_a_missing_bridge_dir(tmp_path: Path) -> None:
+    """A typo'd MT5_BRIDGE_DIR must error, not conjure a tree."""
+    bridge = tmp_path / "typo"
+    with pytest.raises(FileBridgeError):
+        _client(bridge).request_deals(timeout=0.25)
+    assert not bridge.exists()

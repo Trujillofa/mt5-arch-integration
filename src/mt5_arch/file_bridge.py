@@ -245,17 +245,11 @@ class FileBridgeClient:
                 "(the EA writes heartbeat.txt in WriteAll() before the dump). "
                 "Use mt5-arch deals --request to touch dump_deals.request and wait."
             )
-        try:
-            done_text = done_path.read_text(encoding="utf-8")
-        except OSError as exc:
-            raise FileBridgeError(f"Cannot read dump_deals.done: {exc}") from exc
+        done_text = _read_bridge_text(done_path, label="dump_deals.done")
         expected_rows = _parse_dump_deals_done(done_text)
         if not csv_path.exists():
             raise FileBridgeError(f"Missing deals_export.csv in {self.bridge_dir}")
-        try:
-            csv_text = csv_path.read_text(encoding="utf-8")
-        except OSError as exc:
-            raise FileBridgeError(f"Cannot read deals_export.csv: {exc}") from exc
+        csv_text = _read_bridge_text(csv_path, label="deals_export.csv")
         rows = _parse_deals_csv(csv_text)
         if len(rows) != expected_rows:
             raise FileBridgeError(
@@ -273,8 +267,15 @@ class FileBridgeClient:
 
         A stale .done from a previous dump is not completion. Fail closed on timeout.
         Writes into the live Wine prefix — callers must opt in (CLI --request).
+
+        Requires a live EA: ensure_alive() first, so a detached EA reports "bridge
+        down" now instead of after the whole timeout. Reading (deals()) deliberately
+        does not, so a dump stays readable post-mortem.
+
+        On timeout the request file is left in place on purpose — the EA picks it up
+        whenever it next runs, and a later plain ``deals()`` reads the result.
         """
-        self.bridge_dir.mkdir(parents=True, exist_ok=True)
+        self.ensure_alive()
         done_path = self.bridge_dir / "dump_deals.done"
         req_path = self.bridge_dir / "dump_deals.request"
         prev_mtime_ns = done_path.stat().st_mtime_ns if done_path.exists() else -1
@@ -295,9 +296,29 @@ class FileBridgeClient:
             if remaining <= 0:
                 raise FileBridgeError(
                     f"Timed out after {timeout}s waiting for dump_deals.done newer than "
-                    f"dump_deals.request in {self.bridge_dir}"
+                    f"dump_deals.request in {self.bridge_dir}. The request file is left "
+                    "in place: the EA dumps on its next timer tick, so re-run "
+                    "'mt5-arch deals' (without --request) to read it."
                 )
             time.sleep(min(poll_interval, remaining))
+
+
+def _read_bridge_text(path: Path, *, label: str) -> str:
+    """Read a file the EA wrote with FILE_TXT|FILE_ANSI.
+
+    ANSI is the Wine host codepage, not UTF-8, so a broker-set deal comment or a
+    non-ASCII symbol name is not valid UTF-8. Decode strict UTF-8 first (correct if
+    the EA ever switches), fall back to cp1252 so one accented byte does not cost the
+    whole dump. Never let UnicodeDecodeError — a ValueError — escape as a raw error.
+    """
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise FileBridgeError(f"Cannot read {label}: {exc}") from exc
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("cp1252", errors="replace")
 
 
 def _parse_dump_deals_done(text: str) -> int:
