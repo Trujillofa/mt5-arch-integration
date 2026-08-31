@@ -70,3 +70,12 @@ def test_settings_deprecated_broker_alias_still_works(monkeypatch) -> None:
     monkeypatch.setenv("BROKER", "fpmarkets")
     s = Settings(_env_file=None)
     assert s.broker == "fpmarkets"
+
+
+def test_settings_expands_home_in_wineprefix(monkeypatch, tmp_path) -> None:
+    from mt5_arch.config import Settings
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("WINEPREFIX", "${HOME}/.mt5-wsf")
+    s = Settings(_env_file=None)
+    assert s.wineprefix == (tmp_path / ".mt5-wsf").resolve()
