@@ -1,0 +1,109 @@
+# Seven Desk
+
+Browser copy-trading desk nested in **mt5-arch-integration**. WSF live fetch reads `config/brokers/wsf.env` and Mt5ArchBridge files (`account.json`, `positions.json`, `deals_export.csv`) when the Wine terminal is up. Paper adapter stays the execution path. No live orders from this UI.
+
+```bash
+cd ~/Projects/trading/mt5-arch-integration
+./scripts/20-seven-desk.sh          # or: cd apps/seven-desk && npm install && npm run dev
+# http://127.0.0.1:3847
+./scripts/16-use-broker.sh wsf      # optional: export WSF MT5 login/server into the shell
+```
+
+A browser terminal for **copy-trading across seven of your own prop-firm accounts** from one desk. This slice is paper/demo only: you can place a master trade, watch it fan out, and inspect fills, skips, and exposure without any broker credentials.
+
+This is an operations tool for accounts the operator already owns. It does not include challenge-pass flows, risk-rule spoofing, or anything meant to evade a firm’s evaluation rules.
+
+## Firms on the desk
+
+Each book ships with a seeded paper account, a typical platform, and an honest server hint:
+
+| Firm | Typical platforms | Server hint in the demo |
+| --- | --- | --- |
+| WSF (Wall Street Funded) | MT5, cTrader, Match-Trader | **`WSFmarkets-Server`** |
+| FundedNext | MT4, MT5, cTrader, Match-Trader | `FundedNext-Server` |
+| Neomaa (NEOMAAA Funded) | MT5, TradeLocker | `NEOMAAA-Live` |
+| Fortraders | MT5, TradeLocker, cTrader | `ForTraders-Server` |
+| FundingPips | MT5, cTrader, Match-Trader | `FundingPips-Server` |
+| FTMO | MT4, MT5, cTrader, DXtrade | `FTMO-Server` |
+| Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** |
+
+FTMO starts as the **master**. The others are slaves with copy rules already filled in so a first trade does something visible.
+
+## How paper copy-trading works
+
+1. You send a market ticket on the master (symbol, side, lots, optional SL/TP).
+2. The **paper adapter** fills the master against a local quote book (small fixed slip).
+3. The **copy engine** walks every other account:
+   - skip if the slave is disabled
+   - skip if the master symbol maps to a blank value
+   - skip if sized lots exceed `max lot` or fall below 0.01
+   - skip if paper slip exceeds `max slippage`
+   - error if the account is disconnected
+   - otherwise fill, optionally reversed, optionally with SL/TP
+4. Positions and floating P&amp;L update on every account. Quotes drift so P&amp;L is not frozen.
+
+Settings, blotter, and positions persist in **localStorage** (`sevendesk.v1`). **Reset demo** wipes that key and reseeds the seven books.
+
+### Seeded skip cases (so the blotter is not all greens)
+
+- **Fortraders** starts with copy **off** → `slave disabled`
+- **FundingPips** maps `NAS100` to blank → `symbol unmapped`
+- **FundingPips** `max lot` is `1.00` with `0.8×` → a `2.00` lot master → `max lot`
+- **Neomaa** maps `XAUUSD` → `GOLD` (still fills)
+
+## Run locally
+
+```bash
+npm install
+npm run dev
+```
+
+The dev script binds **0.0.0.0:3847** (not 3000). Open [http://127.0.0.1:3847](http://127.0.0.1:3847).
+
+```bash
+npm run build
+npm start
+```
+
+No API keys and no `~/.mt5-wsf` prefix are required for paper copy-trading.
+Live broker sync is **not** used for fills. WSF live fetch is optional and
+fails closed when the Wine prefix or file bridge is absent.
+
+## WSF live fetch (read-only)
+
+Select the WSF card and click **Fetch WSF**, or:
+
+- `GET /api/wsf/probe` — platform reachability + fetched books
+- `GET /api/wsf/account` — sanitized account snapshot only
+
+If `MT5_LOGIN` / `WSF_MT5_LOGIN` is set (gitignored `.env.local`, process env, or `config/brokers/wsf.env` from mt5-arch-integration), **Fetch WSF uses that operator book** and does **not** log into the public homepage demo card. Live balance/positions/deals come from the **Mt5ArchBridge** files (`account.json`, `positions.json`, `deals_export.csv`) when the Wine terminal is writing them.
+
+- MT5: operator login + `WSFmarkets-Server` when env is present; otherwise public login `4013`
+- Live balance / positions / deals need `MT5_PASSWORD` + `METAAPI_TOKEN`, or an `MT5_BACKEND=file` JSON snapshot from a logged-in terminal
+- cTrader / Match-Trader demo logins are skipped when operator MT5 env is present
+
+Passwords are never returned in the JSON or UI. Copy-trading stays on the paper adapter. No orders.
+
+Optional overrides (not committed; never put secrets in git):
+
+```
+MT5_LOGIN=
+MT5_SERVER=WSFmarkets-Server
+MT5_PASSWORD=
+MT5_BACKEND=file
+MT5_STATE_FILE=
+METAAPI_TOKEN=
+WSF_ENV_FILE=
+```
+
+## Architecture
+
+- `AccountAdapter` in `src/lib/adapters/types.ts`
+- `PaperAdapter` in `src/lib/adapters/paper.ts` — the only working path
+- `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
+
+There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.
+
+## Stack
+
+Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui.
