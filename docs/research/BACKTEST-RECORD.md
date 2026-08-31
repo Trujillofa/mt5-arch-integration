@@ -132,6 +132,8 @@ Change **horizon / structure**, not the family class:
 
 Closest *structurally different* shape already in-repo: **exogenous predictor** (`exog_london_fx_cosign_*`) — not “indicator on own price.” It still SCREEN_FAIL’d (pooled PF 0.90); any sequel needs a **new** `family_id` and freeze-before-peek, not a retune.
 
+Model-class map for that sequel (GARCH as sizing/stops, Kalman/rolling β as a **new** link family, then OU/coint spreads): [MATH-MODELS-ROADMAP.md](MATH-MODELS-ROADMAP.md). Design note only — not a screen authorization.
+
 ---
 
 ## Index of sources
@@ -139,6 +141,7 @@ Closest *structurally different* shape already in-repo: **exogenous predictor** 
 | Topic | Path |
 |-------|------|
 | How to run each path | [HOWTO-BACKTEST-PATHS.md](HOWTO-BACKTEST-PATHS.md) |
+| Math-model queue | [MATH-MODELS-ROADMAP.md](MATH-MODELS-ROADMAP.md) |
 | Loop status | `results/xau_loop_status.md` |
 | Triage | `docs/research/SIGNAL-EDGE-TRIAGE.md` |
 | CLEARS skeptic | `docs/research/SIGNAL-EDGE-TRIAGE-SKEPTIC.md` |
