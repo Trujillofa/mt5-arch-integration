@@ -65,7 +65,9 @@ npm run build
 npm start
 ```
 
-No API keys are required for paper copy-trading. Live broker sync is **not** used for fills.
+No API keys and no `~/.mt5-wsf` prefix are required for paper copy-trading.
+Live broker sync is **not** used for fills. WSF live fetch is optional and
+fails closed when the Wine prefix or file bridge is absent.
 
 ## WSF live fetch (read-only)
 

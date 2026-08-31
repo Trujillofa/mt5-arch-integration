@@ -23,4 +23,5 @@ if [[ ! -d node_modules ]]; then
 fi
 
 info "Seven Desk on http://127.0.0.1:3847 (paper execution; no live MT5 orders)"
+info "Paper desk does not need ~/.mt5-wsf. WSF live fetch is optional and fails closed without a prefix."
 exec npm run dev
