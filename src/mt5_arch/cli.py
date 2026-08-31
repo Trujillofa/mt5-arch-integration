@@ -1,4 +1,4 @@
-"""CLI entrypoint: mt5-arch ping | account | symbols | candles."""
+"""CLI entrypoint: mt5-arch ping | account | symbols | candles | deals."""
 
 from __future__ import annotations
 
@@ -14,7 +14,11 @@ from mt5_arch import __version__
 from mt5_arch.brokers import list_broker_profiles, load_broker_profile
 from mt5_arch.client import MT5ArchClient, MT5ArchError
 from mt5_arch.config import Settings
-from mt5_arch.file_bridge import FileBridgeClient, FileBridgeError
+from mt5_arch.file_bridge import (
+    DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS,
+    FileBridgeClient,
+    FileBridgeError,
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -82,6 +86,29 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=10,
         help="Number of bars (default: 10)",
+    )
+
+    p_deals = sub.add_parser(
+        "deals",
+        parents=[common],
+        help="Read closed-deal dump (file bridge; 14-day window; no orders)",
+    )
+    p_deals.add_argument(
+        "--request",
+        action="store_true",
+        help=(
+            "Touch dump_deals.request and wait for a fresh dump_deals.done "
+            "(writes into the live Wine prefix)"
+        ),
+    )
+    p_deals.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS,
+        help=(
+            "Seconds to wait for dump_deals.done when --request is set "
+            f"(default: {DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS:g})"
+        ),
     )
 
     return parser
@@ -281,6 +308,32 @@ def cmd_candles(
     return 0
 
 
+def cmd_deals(client: Any, as_json: bool, *, request: bool, timeout: float) -> int:
+    if not isinstance(client, FileBridgeClient):
+        print("error: deals is file-bridge only (set MT5_BACKEND=file)", file=sys.stderr)
+        return 1
+    rows = client.request_deals(timeout=timeout) if request else client.deals()
+    payload = {
+        "count": len(rows),
+        "time_basis": "trade_server",
+        "deals": [asdict(d) for d in rows],
+    }
+    if as_json:
+        _print_result(payload, as_json=True)
+        return 0
+    print(f"deals {len(rows)} (time_basis=trade_server)")
+    print(
+        f"{'time':<20} {'id':>8} {'symbol':<10} {'type':<6} {'entry':<6} "
+        f"{'vol':>8} {'price':>12} {'profit':>10} comment"
+    )
+    for d in rows:
+        print(
+            f"{d.time:<20} {d.deal_id:>8} {d.symbol:<10} {d.type:<6} {d.entry:<6} "
+            f"{d.volume:>8.4f} {d.price:>12.5f} {d.profit:>10.2f} {d.comment}"
+        )
+    return 0
+
+
 def _open_client(settings: Settings) -> Any:
     backend = (settings.mt5_backend or "file").strip().lower()
     if backend in {"file", "ea", "bridge"}:
@@ -370,6 +423,13 @@ def _dispatch(args: argparse.Namespace, client: Any) -> int:
             args.timeframe,
             args.count,
             args.json,
+        )
+    if args.command == "deals":
+        return cmd_deals(
+            client,
+            args.json,
+            request=args.request,
+            timeout=args.timeout,
         )
     print(f"error: unknown command {args.command!r}", file=sys.stderr)
     return 2

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from bridge_fixtures import write_bridge_fixture
+from bridge_fixtures import write_bridge_fixture, write_deal_dump_fixture
 
 from mt5_arch.cli import main
 
@@ -130,3 +130,51 @@ def test_cli_offline_cached_account_exits_2(
     assert code == 2
     err = capsys.readouterr().err
     assert "not trade-connected" in err.lower() or "connected=false" in err.lower()
+
+
+def test_cli_deals_json(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    write_deal_dump_fixture(bridge_env)
+    code = main(["deals", "--json"])
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["count"] == 2
+    assert data["time_basis"] == "trade_server"
+    assert data["deals"][0]["deal_id"] == 1001
+    assert data["deals"][0]["time"] == "2026.08.20 10:00:00"
+    assert "T" not in data["deals"][0]["time"]
+    assert data["deals"][0]["comment"] == "scale;in"
+
+
+def test_cli_deals_missing_done_exits_1(
+    bridge_env: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    write_deal_dump_fixture(bridge_env, include_done=False)
+    code = main(["deals", "--json"])
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "dump_deals.done" in err
+
+
+def test_cli_deals_request_timeout_exits_1(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    write_deal_dump_fixture(bridge, done_age_seconds=60.0)
+    monkeypatch.setenv("MT5_BACKEND", "file")
+    monkeypatch.setenv("MT5_BRIDGE_DIR", str(bridge))
+    monkeypatch.setenv("MT5_BRIDGE_MAX_AGE", "60")
+    code = main(["deals", "--request", "--timeout", "0.2", "--json"])
+    assert code == 1
+    err = capsys.readouterr().err.lower()
+    assert "dump_deals.done" in err or "timeout" in err
+    assert (bridge / "dump_deals.request").exists()
+
+
+def test_cli_deals_empty_dump(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    write_deal_dump_fixture(bridge_env, csv_text="time,deal_id,order_id,position_id,symbol,type,entry,volume,price,profit,swap,commission,fee,reason,magic,comment\n", n_rows=0)
+    code = main(["deals", "--json"])
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["count"] == 0
+    assert data["deals"] == []

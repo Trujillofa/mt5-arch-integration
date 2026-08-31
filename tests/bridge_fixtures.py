@@ -102,3 +102,76 @@ def write_bridge_fixture(bridge: Path, *, age_seconds: float = 0.0) -> None:
         for p in bridge.iterdir():
             if p.is_file():
                 os.utime(p, (past, past))
+
+
+# Mt5ArchBridge.mq5 DumpDealsIfRequested() header — 16 columns, exact.
+DEAL_CSV_COLUMNS = (
+    "time",
+    "deal_id",
+    "order_id",
+    "position_id",
+    "symbol",
+    "type",
+    "entry",
+    "volume",
+    "price",
+    "profit",
+    "swap",
+    "commission",
+    "fee",
+    "reason",
+    "magic",
+    "comment",
+)
+DEAL_CSV_HEADER = ",".join(DEAL_CSV_COLUMNS)
+
+# EA formats: volume 4dp, price 8dp, profit/swap/commission/fee 2dp.
+# comment has "," → ";" and newlines → space; other fields are unsanitised.
+_DEFAULT_DEAL_LINES = (
+    "2026.08.20 10:00:00,1001,2001,3001,EURUSD,buy,in,0.1000,1.08500000,"
+    "0.00,0.00,-0.70,0.00,0,12345,scale;in",
+    "2026.08.20 12:00:00,1002,2001,3001,EURUSD,sell,out,0.1000,1.08600000,"
+    "10.00,0.00,-0.70,0.00,0,12345,tp",
+)
+
+
+def default_deals_csv(*, n_rows: int = 2) -> str:
+    """CSV body matching the EA dump (header + n data rows, trailing newline)."""
+    lines = _DEFAULT_DEAL_LINES[:n_rows]
+    if n_rows > len(_DEFAULT_DEAL_LINES):
+        raise ValueError(f"n_rows={n_rows} exceeds fixture sample size")
+    return DEAL_CSV_HEADER + "\n" + "".join(line + "\n" for line in lines)
+
+
+def default_dump_deals_done(*, rows: int) -> str:
+    """dump_deals.done body: rows=<N> from=<ts> to=<ts> at=<ts>."""
+    return (
+        f"rows={rows} from=2026.08.17 10:00:00 to=2026.08.31 10:00:00 "
+        f"at=2026.08.31 12:00:00"
+    )
+
+
+def write_deal_dump_fixture(
+    bridge: Path,
+    *,
+    csv_text: str | None = None,
+    n_rows: int = 2,
+    done_body: str | None = None,
+    include_csv: bool = True,
+    include_done: bool = True,
+    done_age_seconds: float = 0.0,
+) -> None:
+    """Write deals_export.csv + dump_deals.done as the EA would after a dump."""
+    bridge.mkdir(parents=True, exist_ok=True)
+    if csv_text is None:
+        csv_text = default_deals_csv(n_rows=n_rows)
+    if include_csv:
+        (bridge / "deals_export.csv").write_text(csv_text, encoding="utf-8")
+    if done_body is None:
+        done_body = default_dump_deals_done(rows=n_rows)
+    if include_done:
+        done = bridge / "dump_deals.done"
+        done.write_text(done_body, encoding="utf-8")
+        if done_age_seconds > 0:
+            past = time.time() - done_age_seconds
+            os.utime(done, (past, past))

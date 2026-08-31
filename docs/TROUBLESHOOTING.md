@@ -24,13 +24,44 @@ Separate floating chart windows often paint **entirely black** under Wine. Close
 
 Default backend is `MT5_BACKEND=file` (recommended on Arch/Wine).
 
-Liveness comes from `heartbeat.txt` **only** — the EA writes it last, after every
-snapshot, so a fresh heartbeat means the rest is at least as fresh. All three
-errors mean the same thing: **the EA is not writing**. `No heartbeat.txt` in
+Liveness comes from `heartbeat.txt` **only** — the EA writes it last *inside*
+`WriteAll()`, after the JSON snapshots, so a fresh heartbeat means
+`account.json` / `symbols.json` / `candles_*.json` are at least as fresh. All
+three errors mean the same thing: **the EA is not writing**. `No heartbeat.txt` in
 particular is what a leftover or copied `account.json` looks like once the EA is
 detached (Algo Trading off, EA removed, or `OnInit` failed on an empty/wrong
 `InpBroker`). `./scripts/08-status.sh` reports the same heartbeat age the CLI
 checks, so it agrees with `mt5-arch ping`.
+
+**Exception — deal dump:** `DumpDealsIfRequested()` runs *after* `WriteAll()` on
+the timer. A fresh heartbeat does **not** mean `deals_export.csv` is complete.
+`mt5-arch deals` gates on `dump_deals.done` only. See below.
+
+## File bridge: `Missing dump_deals.done` / torn `deals_export.csv`
+
+`uv run mt5-arch deals` reads a dump the EA already finished. It does not look
+at heartbeat age. Completeness is `dump_deals.done` (body
+`rows=<N> from=<ts> to=<ts> at=<ts>`). Put() is a truncate-write (no temp+rename),
+so a torn CSV or torn `.done` fails closed as `FileBridgeError`, never a raw
+`csv.Error` / `ValueError`.
+
+Deal `time` is trade-server `YYYY.MM.DD HH:MM:SS` (`TimeToString(DEAL_TIME)`),
+not UTC — same class of clock as the heartbeat `TimeLocal()` note in
+[research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md).
+
+To ask the live EA for a new 14-day dump (writes into the Wine prefix):
+
+```bash
+uv run mt5-arch deals --request --timeout 30 --json
+```
+
+That touches `dump_deals.request`. The next timer tick writes the CSV, deletes
+the request file, then writes `dump_deals.done`. A leftover `.done` from an
+earlier dump is ignored until its mtime is not older than the request. Timeout
+fails closed; the request file is left in place if the EA skipped (trade-server
+time before 2020-01-01, `HistorySelect` failed, or FileOpen failed).
+
+Default `mt5-arch deals` never creates `dump_deals.request`.
 
 1. `./scripts/06-install-file-bridge.sh`
 2. In MetaEditor: open `MQL5/Experts/Mt5ArchBridge.mq5` → **Compile (F7)** → must produce `.ex5`
