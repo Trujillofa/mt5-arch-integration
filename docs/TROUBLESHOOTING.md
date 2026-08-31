@@ -20,9 +20,17 @@ Wine + multi-chart layout glitch. In MT5:
 
 Separate floating chart windows often paint **entirely black** under Wine. Close them. Open symbols only as **tabs inside the main terminal** (Market Watch → double-click). Prefer **bar** chart mode if candlestick bodies vanish (default bull body was black-on-black).
 
-## File bridge: `No account.json` / stale heartbeat
+## File bridge: `No account.json` / `No heartbeat.txt` / stale heartbeat
 
 Default backend is `MT5_BACKEND=file` (recommended on Arch/Wine).
+
+Liveness comes from `heartbeat.txt` **only** — the EA writes it last, after every
+snapshot, so a fresh heartbeat means the rest is at least as fresh. All three
+errors mean the same thing: **the EA is not writing**. `No heartbeat.txt` in
+particular is what a leftover or copied `account.json` looks like once the EA is
+detached (Algo Trading off, EA removed, or `OnInit` failed on an empty/wrong
+`InpBroker`). `./scripts/08-status.sh` reports the same heartbeat age the CLI
+checks, so it agrees with `mt5-arch ping`.
 
 1. `./scripts/06-install-file-bridge.sh`
 2. In MetaEditor: open `MQL5/Experts/Mt5ArchBridge.mq5` → **Compile (F7)** → must produce `.ex5`
