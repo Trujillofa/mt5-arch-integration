@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from pydantic import AliasChoices, Field, field_validator
@@ -11,7 +12,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 def _expand_path(value: str | Path | None) -> Path | None:
     if value is None or value == "":
         return None
-    return Path(str(value)).expanduser().resolve()
+    text = str(value)
+    home = os.environ.get("HOME", str(Path.home()))
+    text = text.replace("${HOME}", home).replace("$HOME", home)
+    return Path(text).expanduser().resolve()
 
 
 class Settings(BaseSettings):

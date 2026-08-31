@@ -72,7 +72,7 @@ int OnInit()
      }
 
    EventSetTimer((int)MathMax(3, InpTimerSec));
-   Print("Mt5ArchBridge WRITER v1.23 broker=", InpBroker, " ON ", _Symbol,
+   Print("Mt5ArchBridge WRITER v1.24 broker=", InpBroker, " ON ", _Symbol,
          " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
    DumpHistoryOnce();
