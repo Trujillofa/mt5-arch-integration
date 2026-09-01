@@ -91,7 +91,8 @@ export function TradeTicket() {
           <span className="text-foreground">
             {master ? FIRM_BY_ID[master.firmId].name : "—"}
           </span>
-          , then fan out through the copy engine. No live broker keys.
+          , then fan out through the copy engine. This button never live-OrderSends.
+          WSF live scratch is a separate control on the WSF card.
         </p>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">

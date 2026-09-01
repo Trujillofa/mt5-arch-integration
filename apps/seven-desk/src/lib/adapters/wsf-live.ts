@@ -1,7 +1,7 @@
 /**
- * Read-only WSF live adapter.
- * Trading still goes through PaperAdapter. This type exists so the
- * AccountAdapter boundary has a real WSF client next to the MetaAPI stub.
+ * Read-only WSF adapter for the copy engine.
+ * Live OrderSend is not here — it is POST /api/wsf/order (WSF 149736 only).
+ * Desk copy fills still go through PaperAdapter.
  */
 import type { AccountAdapter, AdapterResult } from "@/lib/adapters/types";
 

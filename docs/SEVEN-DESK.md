@@ -4,8 +4,11 @@ Read-only multi-account paper desk with a WSF live fetch. Nested at
 [`apps/seven-desk`](../apps/seven-desk). It uses `config/brokers/wsf.env` (login/server
 only) and, when the Wine terminal + Mt5ArchBridge EA are running, the same
 `account.json` / `positions.json` / `deals_export.csv` snapshots as `mt5-arch account`.
-**Does not place live MT5 orders.** Paper desk runs without `~/.mt5-wsf`;
-WSF live fetch is optional and fails closed when the prefix or bridge is absent.
+Paper copy is the default and never live-OrderSends. WSF live fetch is optional
+and fails closed when the prefix or bridge is absent. A separate fail-closed
+path `POST /api/wsf/order` can send a min-lot scratch on WSF 149736 only when
+the body has `{ "live": true, "confirm": "WSF-149736" }`. It never talks to
+Vantage, FP, or official MCP on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

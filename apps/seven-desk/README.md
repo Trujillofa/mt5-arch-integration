@@ -1,6 +1,6 @@
 # Seven Desk
 
-Browser copy-trading desk nested in **mt5-arch-integration**. WSF live fetch reads `config/brokers/wsf.env` and Mt5ArchBridge files (`account.json`, `positions.json`, `deals_export.csv`) when the Wine terminal is up. Paper adapter stays the execution path. No live orders from this UI.
+Browser copy-trading desk nested in **mt5-arch-integration**. WSF live fetch reads `config/brokers/wsf.env` and Mt5ArchBridge files (`account.json`, `positions.json`, `deals_export.csv`) when the Wine terminal is up. Paper adapter stays the copy-execution path. Live OrderSend is WSF-only, fail-closed, and opt-in (`POST /api/wsf/order` + the WSF live scratch control).
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
@@ -82,7 +82,26 @@ If `MT5_LOGIN` / `WSF_MT5_LOGIN` is set (gitignored `.env.local`, process env, o
 - Live balance / positions / deals need `MT5_PASSWORD` + `METAAPI_TOKEN`, or an `MT5_BACKEND=file` JSON snapshot from a logged-in terminal
 - cTrader / Match-Trader demo logins are skipped when operator MT5 env is present
 
-Passwords are never returned in the JSON or UI. Copy-trading stays on the paper adapter. No orders.
+Passwords are never returned in the JSON or UI. Copy-trading stays on the paper adapter.
+
+## WSF live order (opt-in, fail-closed)
+
+Paper remains the default. A live min-lot send requires all of:
+
+1. Select the WSF card
+2. Enable **WSF live scratch** (off by default)
+3. Tick the acknowledgement
+4. Type confirm token `WSF-149736`
+5. Click the live scratch button — or `POST /api/wsf/order`
+
+```http
+POST /api/wsf/order
+{ "live": true, "confirm": "WSF-149736", "action": "scratch", "symbol": "EURUSDc", "volume_min": true }
+POST /api/wsf/order/close
+{ "live": true, "confirm": "WSF-149736" }
+```
+
+The route resolves `WINEPREFIX` to `~/.mt5-wsf` only, re-reads the file-bridge account, and refuses unless login is **149736** and the server contains **WSF**. Volume must be the symbol minimum (or `volume_min: true`). It wraps the proven WSF-prefix one-shot MQL `/config` `[StartUp]` script; the desk API is the entry point. `src/mt5_arch` CLI/MCP stays read-only. The other six paper firms cannot send live orders.
 
 Optional overrides (not committed; never put secrets in git):
 
@@ -99,7 +118,8 @@ WSF_ENV_FILE=
 ## Architecture
 
 - `AccountAdapter` in `src/lib/adapters/types.ts`
-- `PaperAdapter` in `src/lib/adapters/paper.ts` — the only working path
+- `PaperAdapter` in `src/lib/adapters/paper.ts` — the only copy-engine fill path
+- `POST /api/wsf/order` — WSF 149736 live min-lot only; not wired into copy
 - `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
 
 There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.

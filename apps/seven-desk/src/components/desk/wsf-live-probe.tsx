@@ -58,9 +58,9 @@ export function WsfLiveProbe() {
             Live WSF fetch
           </p>
           <p className="text-xs text-muted-foreground">
-            Read-only. Uses operator MT5 env when present (login/server only
-            on the server). Copy execution stays on the paper adapter. No
-            market orders.
+            Read-only snapshot. Uses operator MT5 env when present
+            (login/server only on the server). Copy execution stays paper.
+            Live min-lot send is the separate WSF live scratch control.
           </p>
         </div>
         <Button type="button" size="sm" disabled={busy} onClick={run}>
@@ -243,11 +243,13 @@ function HistoryBlock({
       </p>
       {positions.length === 0 && deals.length === 0 ? (
         <p>
-          {connectionStatus === "missing_wine"
-            ? "No live history. Password is loaded; Wine prefix / Mt5ArchBridge is still missing on this host."
-            : connectionStatus === "auth_failed"
-              ? "No live history. A terminal was present but the snapshot/auth path did not return books."
-              : "No live history. Need an MT5 password + MetaAPI token, or a file-backend snapshot from a logged-in terminal."}
+          {connectionStatus === "connected"
+            ? "No open positions or recent deals in the live snapshot."
+            : connectionStatus === "missing_wine"
+              ? "No live history. Password is loaded; Wine prefix / Mt5ArchBridge is still missing on this host."
+              : connectionStatus === "auth_failed"
+                ? "No live history. A terminal was present but the snapshot/auth path did not return books."
+                : "No live history. Need an MT5 password + MetaAPI token, or a file-backend snapshot from a logged-in terminal."}
         </p>
       ) : (
         <ul className="space-y-1">

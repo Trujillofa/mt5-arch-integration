@@ -34,11 +34,28 @@ export function probeMt5ArchCli(): Mt5ArchCliResult {
     };
   }
   try {
+    const winePrefix = process.env.WINEPREFIX || join(homedir(), ".mt5-wsf");
+    const brands = ["WSFmarkets MT5 Terminal", "MetaTrader 5"];
+    let bridgeDir = process.env.MT5_BRIDGE_DIR || "";
+    if (!bridgeDir) {
+      for (const brand of brands) {
+        const dir = join(winePrefix, "drive_c", "Program Files", brand, "MQL5", "Files", "mt5_arch");
+        if (existsSync(join(dir, "account.json"))) {
+          bridgeDir = dir;
+          break;
+        }
+      }
+    }
     const result = spawnSync(uvCommand(), ["run", "mt5-arch", "account", "--json"], {
       cwd: root,
       encoding: "utf8",
       timeout: 12000,
-      env: process.env,
+      env: {
+        ...process.env,
+        WINEPREFIX: winePrefix,
+        MT5_BACKEND: process.env.MT5_BACKEND || "file",
+        ...(bridgeDir ? { MT5_BRIDGE_DIR: bridgeDir } : {}),
+      },
     });
     const out = (result.stdout || "").trim();
     const err = (result.stderr || "").trim();

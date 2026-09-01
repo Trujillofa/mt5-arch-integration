@@ -13,7 +13,13 @@ load_dotenv() {
     while IFS= read -r line || [[ -n "$line" ]]; do
       # strip CR, skip blanks/comments
       line="${line//$'\r'/}"
-      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+      line="${line#"${line%%[![:space:]]*}"}"
+      [[ -z "$line" || "$line" =~ ^# ]] && continue
+      # Broker profiles use `export KEY=value`; strip so the key is valid.
+      if [[ "$line" == export[[:space:]]* ]]; then
+        line="${line#export}"
+        line="${line#"${line%%[![:space:]]*}"}"
+      fi
       [[ "$line" != *=* ]] && continue
       key="${line%%=*}"
       val="${line#*=}"

@@ -6,8 +6,12 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
 load_dotenv
 if [[ -f "$REPO_ROOT/config/brokers/wsf.env" ]]; then
-  # Profile has login/server only (password stays commented). Environment wins.
-  load_dotenv "$REPO_ROOT/config/brokers/wsf.env"
+  # Profile has login/server only (password stays in gitignored .env).
+  # Source so WSF prefix/login win over a leftover vantage/FP shell env.
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/config/brokers/wsf.env"
+  set +a
 fi
 
 APP_DIR="$REPO_ROOT/apps/seven-desk"
@@ -22,6 +26,6 @@ if [[ ! -d node_modules ]]; then
   npm install
 fi
 
-info "Seven Desk on http://127.0.0.1:3847 (paper execution; no live MT5 orders)"
-info "Paper desk does not need ~/.mt5-wsf. WSF live fetch is optional and fails closed without a prefix."
+info "Seven Desk on http://127.0.0.1:3847 (paper copy default; WSF live order is opt-in)"
+info "Paper desk does not need ~/.mt5-wsf. WSF live fetch/order fail closed without ~/.mt5-wsf + confirm WSF-149736."
 exec npm run dev
