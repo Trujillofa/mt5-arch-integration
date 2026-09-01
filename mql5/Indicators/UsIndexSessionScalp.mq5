@@ -7,16 +7,19 @@
 //|   Closed-bar AND confluence. Scalp only. No overnight.           |
 //|                                                                  |
 //| Draws London / NY open vlines (Tokyo off) + persistent OR levels.|
-//| Signal buffer 8 = +1 / −1 / 0. Never OrderSend.                  |
+//| v1.41: developing Asia (Tokyo) / London HIGH/LOW as labeled      |
+//| hlines. Observe only — buffer 8 frozen. Never OrderSend.         |
 //| Logger: ForexSignalLogger InpIndicatorName=UsIndexSessionScalp   |
 //|         InpSignalBuffer=8 InpMaxSpreadPips=0                     |
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
-#property version     "1.40"
-#property description "US30/US100 session scalp v1.40 — optional playbook families"
+#property version     "1.41"
+#property description "US30/US100 session scalp v1.41 — Asia/London H/L observe"
 #property description "Default family still frozen ORB. Signal buffer 8."
 #property strict
+
+#define UIS_VERSION "1.41"
 
 #property indicator_chart_window
 #property indicator_buffers 10
@@ -109,13 +112,15 @@ input double InpMaxSpreadPoints      = 0;      // 0 = auto (US100 200 / US30 80)
 
 input group "=== Session drawings ==="
 input int    InpDrawDays             = 2;      // open vlines to keep (today+yesterday)
-input bool   InpShowTokyo            = false;  // off: NY-scalp chart, Asia is noise
+input bool   InpShowTokyo            = false;  // off: NY-scalp chart, Asia vline is noise
 input bool   InpShowLondon           = true;
 input bool   InpShowNyCash           = true;
 input bool   InpShowSessionBoxes     = false;  // filled range boxes hide candles
 input bool   InpShowOrBox            = true;
 input bool   InpShowPriorDay         = true;
 input bool   InpShowFlattenLine      = true;
+input bool   InpShowAsiaLevels       = true;   // Tokyo H/L as ASIA HIGH/LOW
+input bool   InpShowLondonLevels     = true;   // London H/L as LONDON HIGH/LOW
 input color  InpColTokyo             = clrMediumPurple;
 input color  InpColLondon            = clrDodgerBlue;
 input color  InpColNy                = clrGold;
@@ -233,7 +238,7 @@ int OnInit()
       Print("UsIndexSessionScalp: '", _Symbol,
             "' does not look like US30/US100 — still running.");
 
-   Print("UsIndexSessionScalp v1.40 ", _Symbol,
+   Print("UsIndexSessionScalp v" + UIS_VERSION + " ", _Symbol,
          " offset_h=", g_offset / 3600,
          " OR=", InpOrMinutes, "m sig@8 NO ORDERS");
    return INIT_SUCCEEDED;
@@ -391,6 +396,40 @@ void IdxUpsertText(const string key, const datetime t, const double price,
   }
 
 //+------------------------------------------------------------------+
+//| Most recent session range as full-width S/R (ORH/PDH pattern).   |
+//| Does not change BufSignal. Tokyo vlines stay on InpShowTokyo.    |
+//+------------------------------------------------------------------+
+void IdxDrawLatestSessionHl(const string tag,
+                            const string hi_label,
+                            const string lo_label,
+                            const IdxBox &boxes[],
+                            const int n,
+                            const color col,
+                            const bool show,
+                            const datetime label_t)
+  {
+   string hk = g_pfx + tag + "H";
+   string lk = g_pfx + tag + "L";
+   string ht = g_pfx + tag + "HT";
+   string lt = g_pfx + tag + "LT";
+   if(!show || n <= 0 || boxes[n - 1].hi <= 0.0)
+     {
+      ObjectDelete(0, hk);
+      ObjectDelete(0, lk);
+      ObjectDelete(0, ht);
+      ObjectDelete(0, lt);
+      return;
+     }
+   IdxUpsertHline(hk, boxes[n - 1].hi, col, STYLE_SOLID);
+   IdxUpsertHline(lk, boxes[n - 1].lo, col, STYLE_SOLID);
+   if(label_t > 0)
+     {
+      IdxUpsertText(ht, label_t, boxes[n - 1].hi, hi_label, col);
+      IdxUpsertText(lt, label_t, boxes[n - 1].lo, lo_label, col);
+     }
+  }
+
+//+------------------------------------------------------------------+
 void IdxDrawBoxSet(const string tag, const string label,
                    const IdxBox &boxes[], const int n,
                    const color col, const bool show, const int slot)
@@ -464,6 +503,12 @@ void DrawSessionGeometry(const datetime &time[],
    IdxDrawBoxSet("TYO", "Tokyo",  tokyo,  nt, InpColTokyo,  InpShowTokyo,  0);
    IdxDrawBoxSet("LDN", "London", london, nl, InpColLondon, InpShowLondon, 1);
    IdxDrawBoxSet("NY",  "NY 09:30", ny,   nn, InpColNy,     InpShowNyCash, 2);
+
+   datetime label_t = (rates_total > 1) ? time[rates_total - 1] : 0;
+   IdxDrawLatestSessionHl("ASIA", "ASIA HIGH", "ASIA LOW",
+                          tokyo, nt, InpColTokyo, InpShowAsiaLevels, label_t);
+   IdxDrawLatestSessionHl("LDNHL", "LONDON HIGH", "LONDON LOW",
+                          london, nl, InpColLondon, InpShowLondonLevels, label_t);
 
    string ork = g_pfx + "OR";
    string ort = g_pfx + "ORT";
@@ -590,11 +635,11 @@ void DrawPanel(const double close_px,
    IdxEtOfBar(TimeCurrent(), g_offset, et_now);
    double cap = IdxEffectiveMaxSpread();
    Comment(
-      "UsIndexSessionScalp v1.40\n" +
+      "UsIndexSessionScalp v" + UIS_VERSION + "\n" +
       StringFormat("Symbol %s%s%s", _Symbol, warn, tfw) +
       StringFormat("ET     %02d:%02d   session %s   srv %+dh\n",
                    et_now.hour, et_now.min, IdxSessionName(sess), g_offset / 3600) +
-      "Lines  blue=London  gold=NY  aqua=OR  orange=FLAT\n" +
+      "Lines  purple=Asia H/L  blue=London  gold=NY  aqua=OR  orange=FLAT\n" +
       StringFormat("Family %s  window-to %02d:%02d%s\n",
                    (InpFamily == IDX_FAM_VWAP_BOUNCE ? "VWAP bounce+RSI" :
                     InpFamily == IDX_FAM_EMA_MACD ? "EMA+MACD" :

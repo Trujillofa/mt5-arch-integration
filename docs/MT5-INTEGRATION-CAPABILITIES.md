@@ -84,7 +84,7 @@ Signal buffers (do **not** use old Fib-at-7 notes):
 | Indicator | Signal | Chart | What you see |
 |-----------|-------:|-------|----------------|
 | `ForexHtfPivotsFib` | **8** | FX / gold **H1 or M15** | 4H/D pivots, Fib 61.8–78.6, EMA cloud, RSI+MA, lime/red markers |
-| `UsIndexSessionScalp` | **8** | **US100 / US30 M5** (M1/M15 OK) | Session vlines, NY 15m OR, VWAP, EMA 9/21, flatten 15:45 ET |
+| `UsIndexSessionScalp` | **8** | **US100 / US30 M5** (M1/M15 OK) | Session vlines, **Asia/London H/L**, NY 15m OR, VWAP, EMA 9/21, flatten 15:45 ET |
 | `BtcTrendPullback` | **7** | **BTCUSD H1** | H4 EMA bias, H1 reclaim, ATR guides |
 | `ForexIndicatorTemplate` | **9** | Optional FX | EMA cloud + prior-day H/L/O. Prefer Fib alone on the trade chart |
 
@@ -142,12 +142,12 @@ Do this on the **already-open** chart. Do not start a second terminal. Do not at
 
 ## 7. US100 / US30 session overlay
 
-Frozen chart family: **NY cash ORB + VWAP + EMA 9/21** (`UsIndexSessionScalp` v1.40). Optional `InpFamily` = VWAP bounce / EMA+MACD (observe only). Signal buffer **8**. Never `OrderSend`.
+Frozen chart family: **NY cash ORB + VWAP + EMA 9/21** (`UsIndexSessionScalp` v1.41). Observe-only Asia (Tokyo) / London HIGH/LOW hlines — **not** a signal change. Optional `InpFamily` = VWAP bounce / EMA+MACD (observe only). Signal buffer **8**. Never `OrderSend`.
 
 | Need | How |
 |------|-----|
 | See the overlay | Drag `UsIndexSessionScalp` onto US100 or US30 **M5** (M15 OK) |
-| Panel | `UsIndexSessionScalp v1.40` + ET clock + OR + last signal |
+| Panel | `UsIndexSessionScalp v1.41` + ET clock + Asia/London H/L + OR + last signal |
 | Clock wrong | Set **Server UTC offset hours** (FP often `+3`). Panel prints auto offset |
 | M5 CSV for Python | `export_us_index.request` or `ExportUsIndexM5` — not `ExportInstrumentHistory` |
 | Journal markers | Logger + preset above. **promote=no** |

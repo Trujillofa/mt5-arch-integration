@@ -10,7 +10,7 @@
 | Full trading EA | Risk, sizing, prop rules, news | High | **Later** after signals prove useful |
 | Port session-momentum z-score | Edge lives in cTrader Python today | High | Parallel track, not MT5-first |
 | Auto-trade from Fib markers | Same as full EA | High | Only after logger paper stats |
-| **US30/US100 session scalp overlay** | Cash-open ORB+VWAP+EMA observe on M5; logger buffer 8; live-safe M5 export | Medium | Overlay v1.40. Screens stay Python-only. **promote=no** |
+| **US30/US100 session scalp overlay** | Cash-open ORB+VWAP+EMA observe on M5; logger buffer 8; live-safe M5 export | Medium | Overlay v1.41 (Asia/London H/L observe). Screens stay Python-only. **promote=no** |
 
 Principle: **visual parity with TV first → observe → automate read-only → only then trade.**
 

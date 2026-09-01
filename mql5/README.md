@@ -7,7 +7,7 @@
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
-| `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** session boxes + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
+| `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** Asia/London H/L + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Presets/ForexSignalLogger-UsIndexSessionScalp.set` | Logger inputs for US100/US30 (buffer 8, max-spread pips 0) |
 | `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
@@ -75,7 +75,7 @@ MetaEditor **F7** compile order:
 | TF | **M5** (M1 / M15 OK; not H1) |
 | Indicator | **UsIndexSessionScalp** |
 | Logger | `InpIndicatorName=UsIndexSessionScalp`, buffer **8**, `InpMaxSpreadPips=0` |
-| Look for | Session boxes + NY 15m OR + VWAP + EMA 9/21 lime/red markers |
+| Look for | Asia/London H/L + NY 15m OR + VWAP + EMA 9/21 lime/red markers |
 
 Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Scripts/ExportUsIndexM5.mq5`. Do **not** run `ExportInstrumentHistory.mq5` on an open terminal — it kills that prefix. Operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md). Screen how-to (research): [docs/HOWTO-US-INDEX-SCALP.md](../docs/HOWTO-US-INDEX-SCALP.md).
 
