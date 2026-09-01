@@ -18,6 +18,11 @@
 #property description "v1.23: explicit symbol registry — set InpBroker"
 #property description "v1.24: request-gated deal dump (dump_deals.request → deals_export.csv)"
 
+// Single source for the running version. #property takes a literal, so
+// tests/test_ea_version.py asserts the two stay equal — a deployed EA that
+// misreports its version is how a stale build hides in plain sight.
+#define BRIDGE_VERSION "1.24"
+
 #include <FxSymbolRegistry.mqh>
 
 input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
@@ -72,7 +77,7 @@ int OnInit()
      }
 
    EventSetTimer((int)MathMax(3, InpTimerSec));
-   Print("Mt5ArchBridge WRITER v1.24 broker=", InpBroker, " ON ", _Symbol,
+   Print("Mt5ArchBridge WRITER v" + BRIDGE_VERSION + " broker=", InpBroker, " ON ", _Symbol,
          " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
    WriteAll();
    DumpHistoryOnce();
@@ -189,11 +194,15 @@ void WriteAll()
    WriteSymbols();
    WriteCandles();
    WritePositions();
+   // version= last: appended so any older parser reading leading fields is
+   // unaffected. It lets Python tell "EA lacks this feature" from "EA is slow"
+   // instead of blocking on a timeout that cannot succeed.
    Put(g_dir + "\\heartbeat.txt",
        IntegerToString((long)TimeLocal()) + " connected=" +
        (TerminalInfoInteger(TERMINAL_CONNECTED) ? "1" : "0") +
        " writer_chart=" + IntegerToString(ChartID()) +
-       " symbol=" + _Symbol);
+       " symbol=" + _Symbol +
+       " version=" + BRIDGE_VERSION);
   }
 
 //+------------------------------------------------------------------+
