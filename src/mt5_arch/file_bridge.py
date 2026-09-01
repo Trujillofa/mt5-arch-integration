@@ -51,6 +51,25 @@ _DUMP_DEALS_DONE_RE = re.compile(
 
 DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS = 30.0
 
+# heartbeat.txt trailer written by EA >= 1.24: "... symbol=EURUSD version=1.24".
+_HEARTBEAT_VERSION_RE = re.compile(r"(?:^|\s)version=(?P<version>\d+(?:\.\d+)*)")
+
+# EA build that first served dump_deals.request. Below this the handshake can
+# never complete, so waiting the full timeout only delays a certain failure.
+MIN_DEAL_DUMP_VERSION = (1, 24)
+
+
+def parse_bridge_version(text: str) -> tuple[int, ...] | None:
+    """Version tuple from heartbeat.txt, or None if the EA does not report one.
+
+    None means "unknown", never "too old": EAs before 1.24 wrote no version
+    field, and one of those builds (FP Markets) does serve the deal dump.
+    """
+    m = _HEARTBEAT_VERSION_RE.search(text)
+    if not m:
+        return None
+    return tuple(int(p) for p in m.group("version").split("."))
+
 
 class FileBridgeError(Exception):
     """Raised when the EA file bridge is unavailable or stale."""
@@ -115,6 +134,20 @@ class FileBridgeClient:
                 f"Bridge data is stale ({age:.0f}s old). "
                 "Is the EA running with Algo Trading enabled?"
             )
+
+    def bridge_version(self) -> tuple[int, ...] | None:
+        """Running EA version from heartbeat.txt, or None if it reports none.
+
+        Never raises: a missing or unreadable heartbeat is "unknown version", and
+        liveness is ensure_alive()'s job. Callers must treat None as unknown.
+        """
+        hb = self.bridge_dir / "heartbeat.txt"
+        if not hb.exists():
+            return None
+        try:
+            return parse_bridge_version(_read_bridge_text(hb, label="heartbeat.txt"))
+        except FileBridgeError:
+            return None
 
     def _read_json(self, name: str) -> Any:
         path = self.bridge_dir / name
@@ -279,6 +312,15 @@ class FileBridgeClient:
         whenever it next runs, and a later plain ``deals()`` reads the result.
         """
         self.ensure_alive()
+        version = self.bridge_version()
+        if version is not None and version < MIN_DEAL_DUMP_VERSION:
+            raise FileBridgeError(
+                f"EA v{'.'.join(str(p) for p in version)} in {self.bridge_dir} does not "
+                f"serve dump_deals.request (added in v"
+                f"{'.'.join(str(p) for p in MIN_DEAL_DUMP_VERSION)}). Redeploy the EA: "
+                "./scripts/06-install-file-bridge.sh, then reattach it to a chart. "
+                "No request file was written."
+            )
         done_path = self.bridge_dir / "dump_deals.done"
         req_path = self.bridge_dir / "dump_deals.request"
         prev_mtime_ns = done_path.stat().st_mtime_ns if done_path.exists() else -1
@@ -297,11 +339,19 @@ class FileBridgeClient:
                 return self.deals()
             remaining = deadline - time.monotonic()
             if remaining <= 0:
+                hint = (
+                    " The EA reports no version, so it predates v"
+                    f"{'.'.join(str(p) for p in MIN_DEAL_DUMP_VERSION)} and may not "
+                    "serve this request at all; if nothing lands, redeploy it with "
+                    "./scripts/06-install-file-bridge.sh."
+                    if version is None
+                    else ""
+                )
                 raise FileBridgeError(
                     f"Timed out after {timeout}s waiting for dump_deals.done newer than "
                     f"dump_deals.request in {self.bridge_dir}. The request file is left "
                     "in place: the EA dumps on its next timer tick, so re-run "
-                    "'mt5-arch deals' (without --request) to read it."
+                    f"'mt5-arch deals' (without --request) to read it.{hint}"
                 )
             time.sleep(min(poll_interval, remaining))
 

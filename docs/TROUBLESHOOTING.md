@@ -63,6 +63,28 @@ earlier dump is ignored until its mtime is not older than the request.
 `No heartbeat.txt` / stale immediately rather than burning the whole timeout.
 Plain `deals` does not, so a finished dump stays readable after the EA is gone.
 
+### `EA v1.23 ... does not serve dump_deals.request`
+
+The deal dump landed in EA **v1.24**. A terminal running an older build ignores
+`dump_deals.request` entirely, so waiting for `dump_deals.done` can only ever
+time out. EA ≥ 1.24 appends `version=` to `heartbeat.txt`:
+
+```
+1788251227 connected=1 writer_chart=26180515069381 symbol=EURUSD version=1.24
+```
+
+`--request` reads it and fails immediately on a known-too-old EA, without
+writing a request file the EA would never consume. Fix by redeploying:
+`./scripts/06-install-file-bridge.sh`, then reattach the EA to a chart.
+
+A heartbeat with **no** `version=` means unknown, not too old — builds before
+1.24 wrote no version field, and some of them do serve the dump. There
+`--request` still waits, and says so if it times out. The version in the Journal
+line (`Mt5ArchBridge WRITER v…`) and in the heartbeat come from one
+`BRIDGE_VERSION` define; `tests/test_ea_version.py` fails if they drift from
+`#property version`, because a build that misreports its version is exactly how
+a stale EA goes unnoticed.
+
 On timeout the request file is **left in place on purpose** — the EA dumps on its
 next timer tick, so re-run `mt5-arch deals` (no `--request`) to read the result.
 The EA also leaves it when it skips: trade-server time before 2020-01-01,
