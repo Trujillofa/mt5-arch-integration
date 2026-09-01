@@ -47,6 +47,9 @@ class ClientRef:
     size: tuple[int, int]
     floating: bool
     workspace_id: int | None = None
+    # Owning process; the only reliable way to tell one broker's terminal from
+    # another's, since every prefix runs the same class and identical geometry.
+    pid: int | None = None
 
 
 # Titles that are NOT the main trading terminal.
@@ -177,26 +180,69 @@ def parse_clients_json(payload: str | bytes | list[dict[str, Any]]) -> list[Clie
                 size=(int(size[0]), int(size[1])),
                 floating=bool(row.get("floating", False)),
                 workspace_id=int(ws["id"]) if isinstance(ws, dict) and "id" in ws else None,
+                pid=int(row["pid"]) if str(row.get("pid", "")).lstrip("-").isdigit() else None,
             )
         )
     return out
 
 
-def select_main_terminal(clients: Sequence[ClientRef]) -> ClientRef | None:
+def select_main_terminal(
+    clients: Sequence[ClientRef],
+    *,
+    wineprefix: str | None = None,
+) -> ClientRef | None:
+    """Main MT5 shell, scoped to one Wine prefix when the pids allow it.
+
+    Every broker runs the same ``terminal64.exe`` class at the same size, so the
+    largest-area heuristic alone picks an arbitrary broker once two terminals are
+    up — and window ops then act on the wrong live account. When any candidate
+    carries a pid we filter to the prefix and return None if it has no window,
+    which is what lets ghost detection see a per-broker ghost. Fixtures and older
+    Hyprland report no pid; there we cannot distinguish, so the heuristic stands.
+    """
     mains = [c for c in clients if is_main_terminal_client(c)]
     if not mains:
         return None
+    if any(c.pid is not None for c in mains):
+        prefix = wineprefix or os.environ.get("WINEPREFIX")
+        if prefix:
+            owned = set(list_terminal64_pids(wineprefix=prefix))
+            mains = [c for c in mains if c.pid in owned]
+            if not mains:
+                return None
     # Prefer largest area (main shell vs small dialogs misclassified)
     return max(mains, key=lambda c: c.size[0] * c.size[1])
 
 
-def list_terminal64_clients(clients: Sequence[ClientRef]) -> list[ClientRef]:
-    """All Hyprland clients with class terminal64.exe (main + Login + charts)."""
-    return [c for c in clients if c.class_name == "terminal64.exe"]
+def list_terminal64_clients(
+    clients: Sequence[ClientRef],
+    *,
+    wineprefix: str | None = None,
+) -> list[ClientRef]:
+    """All Hyprland clients with class terminal64.exe (main + Login + charts).
+
+    Scoped to one prefix when the pids allow it — see ``select_main_terminal``.
+    A ghost is "process alive, zero windows"; counting another broker's windows
+    here is what hides one broker's ghost behind another broker's healthy shell.
+    """
+    out = [c for c in clients if c.class_name == "terminal64.exe"]
+    if any(c.pid is not None for c in out):
+        prefix = wineprefix or os.environ.get("WINEPREFIX")
+        if prefix:
+            owned = set(list_terminal64_pids(wineprefix=prefix))
+            return [c for c in out if c.pid in owned]
+    return out
 
 
-def terminal64_process_running() -> bool:
-    """True if a Wine MetaTrader terminal64.exe process exists."""
+def terminal64_process_running(*, wineprefix: str | None = None) -> bool:
+    """True if a Wine MetaTrader terminal64.exe process exists.
+
+    With a prefix (or WINEPREFIX set) this answers for that prefix only, so
+    "is FP running?" is not satisfied by Vantage's terminal.
+    """
+    prefix = wineprefix or os.environ.get("WINEPREFIX")
+    if prefix:
+        return bool(list_terminal64_pids(wineprefix=prefix))
     for pid in os.listdir("/proc"):
         if not pid.isdigit():
             continue
