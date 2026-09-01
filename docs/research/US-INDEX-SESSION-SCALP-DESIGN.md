@@ -4,7 +4,7 @@
 |-------|--------|
 | **Date** | 2026-08-18 |
 | **Status** | Overlay shipped; **v1–v8 missed 1%/20%; goal archived 2026-08-20; promote=no** |
-| **Indicator** | `UsIndexSessionScalp` v1.40 |
+| **Indicator** | `UsIndexSessionScalp` v1.41 (signals still the v1.40 frozen combo) |
 | **Family** | `ny_cash_orb_vwap_ema_flat` (defaults frozen) |
 | **Repo boundary** | Platform / research overlay: visual + `iCustom` + logger — **no** `OrderSend` |
 | **Primary chart** | US100 / NAS100 / USTEC **M5** (US30 / DJ30.r alternate) |
@@ -42,7 +42,7 @@ No existing US30/US100 scalp indicator existed in those repos. The combo below i
 
 **`ny_cash_orb_vwap_ema_flat`** — AND, not a search:
 
-1. **Draw** London (08:00–17:00 Europe/London), NY cash (09:30–16:00 ET), plus a 15:45 ET flatten vline. Tokyo vline is off by default (overnight noise on a NY-scalp zoom).
+1. **Draw** London (08:00–17:00 Europe/London), NY cash (09:30–16:00 ET), plus a 15:45 ET flatten vline. Tokyo vline is off by default (overnight noise on a NY-scalp zoom). **v1.41:** also draw the developing Tokyo (Asia) and London session high/low as labeled hlines (`ASIA HIGH` / `LONDON LOW`). Observe only — not part of buffer 8.
 2. **Opening range** = first **15 minutes** of NY cash. Knowable on the first bar whose open ≥ 09:45 ET.
 3. **Session VWAP** from the first NY-cash bar of that ET date (typical × `tick_volume`, floor 1).
 4. **EMA 9 / 21** on the chart TF (scalp stack, not 20/50/200).
@@ -132,6 +132,8 @@ Shipped to Wine and the open FP `US100` chart:
 - `UsIndexSessionScalp` v1.40 (buffer 8) + `IndexSessionUtils` + `IndexM5Export`
 - Optional `ForexSignalLogger` (same buffer, `InpMaxSpreadPips=0`)
 - Live-safe M5 dump via `export_us_index.request` or `ExportUsIndexM5.mq5`
+
+v1.41 (later, observe only): developing Tokyo (Asia) and London HIGH/LOW as labeled hlines. Buffer 8 still the frozen ORB combo. Not a v9 screen.
 
 Not shipped to the chart: v3 sweep/FVG/div, v4 regime/proxy-CVD/POC. Those screens missed 1%/20%; putting them on the overlay would look like a promote.
 

@@ -1,7 +1,7 @@
 # How to replay: US-index session screens (offline)
 
 **Role:** Offline research for US100 / US30 session families. **`promote=no`. `live_go=false`.**
-**Not the overlay operator manual.** Chart install, buffers, logger attach, and live-safe M5 export live in [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) and [mql5/README.md](../mql5/README.md). Overlay already on main (PR #27): `UsIndexSessionScalp` **v1.40**, signal buffer **8**. v3–v8 stay Python-only.
+**Not the overlay operator manual.** Chart install, buffers, logger attach, and live-safe M5 export live in [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) and [mql5/README.md](../mql5/README.md). Overlay already on main (PR #27): `UsIndexSessionScalp` **v1.41**, signal buffer **8** (frozen). Asia/London H/L are observe-only. v3–v8 stay Python-only.
 
 Design freeze: [US-INDEX-SESSION-SCALP-DESIGN.md](research/US-INDEX-SESSION-SCALP-DESIGN.md).
 
@@ -9,7 +9,7 @@ Design freeze: [US-INDEX-SESSION-SCALP-DESIGN.md](research/US-INDEX-SESSION-SCAL
 
 ## 1. Disposition
 
-**2026-08-20:** the 1% / 20% retail-index goal is **archived as falsified** on this book. Formal note: [results/us_index_session_goal_archived.md](../results/us_index_session_goal_archived.md). Active strategy research moved to XAUUSD (`multi_day_variance_expansion_flat` freeze — no backtest yet). `UsIndexSessionScalp` v1.40 stays **observe-only**.
+**2026-08-20:** the 1% / 20% retail-index goal is **archived as falsified** on this book. Formal note: [results/us_index_session_goal_archived.md](../results/us_index_session_goal_archived.md). Active strategy research moved to XAUUSD (`multi_day_variance_expansion_flat` freeze — no backtest yet). `UsIndexSessionScalp` v1.41 stays **observe-only**.
 
 Every screen **missed** median **trade-day** ≥ 1% and median **trade-month** ≥ 20% on the locked book. There is no promote path. Sequential peek is real: eight families in one day; later ones were designed after earlier holdout writes. July–August is a cleaner window, **not virgin**.
 
