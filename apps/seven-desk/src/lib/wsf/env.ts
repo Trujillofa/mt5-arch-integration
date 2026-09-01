@@ -22,9 +22,11 @@ const DEFAULT_WSF_PREFIX = join(homedir(), ".mt5-wsf");
 /** Live OrderSend is WSF-only. Never follow a leftover Vantage/FP WINEPREFIX. */
 export const WSF_ONLY_PREFIX = DEFAULT_WSF_PREFIX;
 export const WSF_BRAND_INSTALL = "WSFmarkets MT5 Terminal";
-export const WSF_EXPECTED_LOGIN = "149736";
-export const WSF_LIVE_CONFIRM = "WSF-149736";
-export const WSF_SERVER_NEEDLE = "WSF";
+export {
+  WSF_EXPECTED_LOGIN,
+  WSF_LIVE_CONFIRM,
+  WSF_SERVER_NEEDLE,
+} from "@/lib/wsf/constants";
 
 const FILE_CANDIDATES = [
   process.env.WSF_ENV_FILE,

@@ -20,11 +20,11 @@ Each book ships with a seeded paper account, a typical platform, and an honest s
 | Firm | Typical platforms | Server hint in the demo |
 | --- | --- | --- |
 | WSF (Wall Street Funded) | MT5, cTrader, Match-Trader | **`WSFmarkets-Server`** |
-| FundedNext | MT4, MT5, cTrader, Match-Trader | `FundedNext-Server` |
+| FundedNext | MT4, MT5, cTrader, Match-Trader | **`FundedNext-Server 2`** (login `13981906`) |
 | Neomaa (NEOMAAA Funded) | MT5, TradeLocker | `NEOMAAA-Live` |
 | Fortraders | MT5, TradeLocker, cTrader | `ForTraders-Server` |
 | FundingPips | MT5, cTrader, Match-Trader | `FundingPips-Server` |
-| FTMO | MT4, MT5, cTrader, DXtrade | `FTMO-Server` |
+| FTMO | MT4, MT5, cTrader, DXtrade | **`FTMO-Server4`** (login `541163357`) |
 | Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** |
 
 FTMO starts as the **master**. The others are slaves with copy rules already filled in so a first trade does something visible.
@@ -84,6 +84,24 @@ If `MT5_LOGIN` / `WSF_MT5_LOGIN` is set (gitignored `.env.local`, process env, o
 
 Passwords are never returned in the JSON or UI. Copy-trading stays on the paper adapter.
 
+## FundedNext live fetch (read-only)
+
+Select the FundedNext card and click **Fetch FundedNext**, or:
+
+- `GET /api/fundednext/probe` — fail-closed file-bridge snapshot
+- `GET /api/fundednext/account` — sanitized account snapshot only
+
+Uses `FUNDEDNEXT_MT5_*` from the gitignored repo `.env` (login `13981906`, server `FundedNext-Server 2`, prefix `~/.mt5-fundednext`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. There is **no** `POST /api/fundednext/order`. Attaching `Mt5ArchBridge` is a FundedNext add-on risk the operator accepted for the snapshot.
+
+## FTMO live fetch (read-only)
+
+Select the FTMO card and click **Fetch FTMO**, or:
+
+- `GET /api/ftmo/probe` — fail-closed file-bridge snapshot
+- `GET /api/ftmo/account` — sanitized account snapshot only
+
+Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. There is **no** `POST /api/ftmo/order`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot.
+
 ## WSF live order (opt-in, fail-closed)
 
 Paper remains the default. A live min-lot send requires all of:
@@ -101,7 +119,9 @@ POST /api/wsf/order/close
 { "live": true, "confirm": "WSF-149736" }
 ```
 
-The route resolves `WINEPREFIX` to `~/.mt5-wsf` only, re-reads the file-bridge account, and refuses unless login is **149736** and the server contains **WSF**. Volume must be the symbol minimum (or `volume_min: true`). It wraps the proven WSF-prefix one-shot MQL `/config` `[StartUp]` script; the desk API is the entry point. `src/mt5_arch` CLI/MCP stays read-only. The other six paper firms cannot send live orders.
+Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper. If `~/.mt5-wsf` is down, the order path starts that terminal in the background and waits for a fresh snapshot.
+
+The route resolves `WINEPREFIX` to `~/.mt5-wsf` only, re-reads the file-bridge account, and refuses unless login is **149736** and the server contains **WSF**. Volume must be the symbol minimum (or `volume_min: true`). It wraps the proven WSF-prefix one-shot MQL `/config` `[StartUp]` script; the desk API is the entry point. `src/mt5_arch` CLI/MCP stays read-only. FundedNext and FTMO have no live-order API.
 
 Optional overrides (not committed; never put secrets in git):
 
@@ -118,8 +138,8 @@ WSF_ENV_FILE=
 ## Architecture
 
 - `AccountAdapter` in `src/lib/adapters/types.ts`
-- `PaperAdapter` in `src/lib/adapters/paper.ts` — the only copy-engine fill path
-- `POST /api/wsf/order` — WSF 149736 live min-lot only; not wired into copy
+- `PaperAdapter` in `src/lib/adapters/paper.ts` — copy-engine fill path for every book except armed WSF live copy
+- `POST /api/wsf/order` — WSF 149736 live min-lot (scratch or copy-open)
 - `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
 
 There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.

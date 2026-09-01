@@ -1,10 +1,12 @@
 import {
   applyQuoteMarks,
+  applyWsfLiveFill,
   closePosition,
   defaultCopySettings,
   placeMasterTrade,
   resolveQueuedCopies,
 } from "@/lib/copy-engine";
+import type { WsfLiveOrderResult } from "@/lib/wsf/types";
 import { seedDesk } from "@/lib/seed";
 import { clearDesk, loadDesk, saveDesk } from "@/lib/storage";
 import type {
@@ -166,6 +168,14 @@ export function placeTrade(input: MasterTradeInput): {
 
 export function resolveGroup(groupId: string) {
   persist(resolveQueuedCopies(desk, groupId));
+}
+
+export function setWsfLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, wsfLiveCopy: enabled }));
+}
+
+export function applyWsfLiveCopyResult(eventId: string, result: WsfLiveOrderResult) {
+  persist(applyWsfLiveFill(desk, eventId, result));
 }
 
 export function flattenPosition(positionId: string): string | null {

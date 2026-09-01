@@ -63,6 +63,8 @@ preferred = [
     "Vantage International MT5",
     "FP Markets MT5 Terminal",
     "WSFmarkets MT5 Terminal",
+    "FundedNext MT5 Terminal",
+    "FTMO Global Markets MT5 Terminal",
     "MetaTrader 5",
 ]
 dirs = []

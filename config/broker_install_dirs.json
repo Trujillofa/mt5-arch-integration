@@ -3,5 +3,7 @@
   "vantage": "Vantage International MT5",
   "fpmarkets": "FP Markets MT5 Terminal",
   "wsf": "WSFmarkets MT5 Terminal",
+  "fundednext": "FundedNext MT5 Terminal",
+  "ftmo": "FTMO Global Markets MT5 Terminal",
   "_generic": "MetaTrader 5"
 }

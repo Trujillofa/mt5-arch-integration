@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -49,6 +50,8 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert "wsf" in names, "expected config/brokers/wsf.env"
     assert "vantage" in names, "expected config/brokers/vantage.env"
     assert "fpmarkets" in names, "expected config/brokers/fpmarkets.env"
+    assert "fundednext" in names, "expected config/brokers/fundednext.env"
+    assert "ftmo" in names, "expected config/brokers/ftmo.env"
 
     wsf = load_broker_profile("wsf")
     assert wsf.login == "149736"
@@ -65,12 +68,30 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert fpm.server == "FPMarketsSC-Live"
     assert "mt5-fpmarkets" in fpm.wineprefix
 
+    fn = load_broker_profile("fundednext")
+    assert fn.login == "13981906"
+    assert fn.server == "FundedNext-Server 2"
+    assert "mt5-fundednext" in fn.wineprefix
+
+    ftmo = load_broker_profile("ftmo")
+    assert ftmo.login == "541163357"
+    assert ftmo.server == "FTMO-Server4"
+    assert "mt5-ftmo" in ftmo.wineprefix
+
     # as_exports never includes password keys; Settings reads MT5_BROKER
     exp = vant.as_exports()
     assert "MT5_PASSWORD" not in exp
     assert exp["MT5_SERVER"] == "VantageMarkets-Live 5"
     assert exp["MT5_BROKER"] == "vantage"
     assert exp["BROKER"] == "vantage"
+
+
+def test_broker_install_dirs_include_funded_brands() -> None:
+    data = json.loads((repo_root() / "config" / "broker_install_dirs.json").read_text())
+    assert data["fundednext"] == "FundedNext MT5 Terminal"
+    assert data["ftmo"] == "FTMO Global Markets MT5 Terminal"
+    assert data["wsf"] == "WSFmarkets MT5 Terminal"
+    assert data["_generic"] == "MetaTrader 5"
 
 
 def test_load_missing_profile_raises() -> None:

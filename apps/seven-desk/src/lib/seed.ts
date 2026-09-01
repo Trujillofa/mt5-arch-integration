@@ -46,14 +46,14 @@ function compact(balance: number): string {
 
 export function seedAccounts(): TradingAccount[] {
   return [
-    account(ACCOUNT_IDS.ftmo, "ftmo", "51022981", "MT5", "FTMO-Server", 100_000),
-    account(ACCOUNT_IDS.wsf, "wsf", "4013", "MT5", "WSFmarkets-Server", 50_000),
+    account(ACCOUNT_IDS.ftmo, "ftmo", "541163357", "MT5", "FTMO-Server4", 100_000),
+    account(ACCOUNT_IDS.wsf, "wsf", "149736", "MT5", "WSFmarkets-Server", 50_000),
     account(
       ACCOUNT_IDS.fundednext,
       "fundednext",
-      "15290344",
-      "Match-Trader",
-      "FundedNext-Server",
+      "13981906",
+      "MT5",
+      "FundedNext-Server 2",
       100_000
     ),
     account(ACCOUNT_IDS.neomaa, "neomaa", "6104482", "MT5", "NEOMAAA-Live", 25_000),
@@ -94,7 +94,7 @@ export function seedCopySettings(): CopySettings[] {
       maxSlippagePips: 2,
       copySlTp: true,
       reverse: false,
-      symbolMap: {},
+      symbolMap: { EURUSD: "EURUSDc" },
     },
     {
       slaveAccountId: ACCOUNT_IDS.fundednext,
@@ -159,5 +159,6 @@ export function seedDesk(): DeskState {
     positions: [],
     quotes: SEED_QUOTES.map((quote) => ({ ...quote })),
     selectedAccountId: ACCOUNT_IDS.wsf,
+    wsfLiveCopy: false,
   };
 }

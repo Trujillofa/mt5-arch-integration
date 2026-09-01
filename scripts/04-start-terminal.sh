@@ -116,15 +116,23 @@ info "Login: WSFmarkets-Server only. Charts: see docs/CHARTS-AND-STABILITY.md"
 info "Bridge EA: keep Mt5ArchBridge on one chart."
 
 DETACH=0
+BACKGROUND=0
 PORTABLE=1
 FULLSCREEN=0
+BG_WS="${MT5_BG_WORKSPACE:-11}"
 for arg in "$@"; do
   case "$arg" in
     --detach) DETACH=1 ;;
+    --background)
+      DETACH=1
+      BACKGROUND=1
+      ;;
     --no-portable) PORTABLE=0 ;;
     --fullscreen|--maximize) FULLSCREEN=1 ;;
     -h|--help)
-      echo "Usage: $0 [--detach] [--no-portable] [--fullscreen]"
+      echo "Usage: $0 [--detach] [--background] [--no-portable] [--fullscreen]"
+      echo "  --detach      start outside this shell (survives agent teardown)"
+      echo "  --background  --detach + silent workspace (no focus steal)"
       echo "  --fullscreen  after start, maximize main MT5 on active monitor"
       exit 0
       ;;
@@ -135,12 +143,21 @@ ARGS=()
 if [[ "$PORTABLE" -eq 1 ]]; then
   ARGS+=(/portable)
 fi
+if [[ "$BACKGROUND" -eq 1 && -f "$(dirname "$term")/auto_login.ini" ]]; then
+  ARGS+=(/config:auto_login.ini)
+fi
 
 if [[ "$DETACH" -eq 1 ]]; then
-  nohup wine "$term" "${ARGS[@]}" >>/tmp/mt5-terminal.log 2>&1 &
-  echo $! >/tmp/mt5-terminal.pid
-  info "Detached PID $(cat /tmp/mt5-terminal.pid); log: /tmp/mt5-terminal.log"
-  # Best-effort focus on Hyprland
+  start_terminal64_detached "$term" "${ARGS[@]}"
+  if [[ "$BACKGROUND" -eq 1 ]]; then
+    info "Parking new windows on workspace $BG_WS (no focus)"
+    for _ in 1 2 3 4 5 6; do
+      sleep 2
+      park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
+    done
+    exit 0
+  fi
+  # Interactive --detach: keep the window on the current workspace.
   if command -v hyprctl >/dev/null 2>&1; then
     sleep 3
     cur="$(hyprctl activeworkspace -j 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('id',''))" 2>/dev/null || true)"

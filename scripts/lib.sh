@@ -104,12 +104,50 @@ info() { echo "==> $*"; }
 warn() { echo "warning: $*" >&2; }
 die()  { echo "error: $*" >&2; exit 1; }
 
+branded_terminal64_dirnames() {
+  # Brand install dirs first, generic MetaTrader 5 last (JSON SoT).
+  python3 -c '
+import json, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+try:
+    data = json.loads(p.read_text(encoding="utf-8"))
+except Exception:
+    data = {}
+branded, generic = [], []
+for key, val in data.items():
+    if not isinstance(val, str) or not val.strip():
+        continue
+    name = val.strip()
+    if key.startswith("_"):
+        if key == "_generic":
+            generic.append(name)
+        continue
+    branded.append(name)
+for name in branded + generic:
+    print(name)
+' "$REPO_ROOT/config/broker_install_dirs.json"
+}
+
 find_terminal64() {
   # Always honor the active WINEPREFIX. config/local.paths and MT5_TERMINAL_PATH
   # may hardcode ~/.mt5 from an older install — only use them if they live under
   # the current prefix (never source local.paths; that used to clobber WINEPREFIX).
+  # Prefer the branded installer under this prefix; the generic MetaQuotes tree
+  # often auths in the title bar only and then shows "not connected to internet".
   local prefix="${WINEPREFIX:-$HOME/.mt5}"
-  local candidate found local_term
+  local candidate found local_term name
+
+  if [[ -f "$REPO_ROOT/config/broker_install_dirs.json" ]]; then
+    while IFS= read -r name; do
+      [[ -z "$name" ]] && continue
+      candidate="$prefix/drive_c/Program Files/$name/terminal64.exe"
+      if [[ -f "$candidate" ]]; then
+        echo "$candidate"
+        return 0
+      fi
+    done < <(branded_terminal64_dirnames)
+  fi
 
   candidate="$prefix/drive_c/Program Files/MetaTrader 5/terminal64.exe"
   if [[ -f "$candidate" ]]; then
@@ -218,11 +256,55 @@ hypr_focus_window() {
 }
 
 hypr_move_window_workspace() {
-  local sel ws
+  local sel ws follow
   sel="$(_hypr_safe_selector "${1:-}")" || return 0
   ws="${2:-}"
+  follow="${3:-true}"
   [[ -n "$ws" ]] || return 0
-  hypr_eval "hl.dispatch(hl.dsp.window.move({ window = '${sel}', workspace = ${ws}, follow = true }))"
+  case "$follow" in
+    true|false) ;;
+    *) follow=true ;;
+  esac
+  hypr_eval "hl.dispatch(hl.dsp.window.move({ window = '${sel}', workspace = ${ws}, follow = ${follow} }))"
+}
+
+# Survive agent/Cursor shell teardown. nohup from a short command still dies
+# with the process group; setsid -f starts a new session.
+start_terminal64_detached() {
+  local term="$1"
+  shift || true
+  local dir log prefix_name
+  [[ -n "$term" && -f "$term" ]] || return 1
+  dir="$(cd "$(dirname "$term")" && pwd)"
+  prefix_name="$(basename "$(realpath "${WINEPREFIX:-$HOME/.mt5}")")"
+  log="/tmp/mt5-${prefix_name}-terminal.log"
+  (
+    cd "$dir"
+    unset WAYLAND_DISPLAY || true
+    case "$(realpath "${WINEPREFIX:-}")" in
+      *mt5-vantage*) ;;
+      *) unset LD_PRELOAD || true ;;
+    esac
+    export DISPLAY="${DISPLAY:-:0}"
+    export WINEPREFIX="${WINEPREFIX}"
+    export WINEARCH="${WINEARCH:-win64}"
+    export WINEDEBUG="${WINEDEBUG:--all}"
+    export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
+    setsid -f wine ./terminal64.exe "$@" </dev/null >>"$log" 2>&1
+  )
+  info "detached $prefix_name pid-session (log $log)"
+}
+
+park_prefix_terminals_background() {
+  local prefix="${1:-${WINEPREFIX:-}}"
+  local ws="${2:-${MT5_BG_WORKSPACE:-11}}"
+  [[ -n "$prefix" ]] || return 0
+  command -v hyprctl >/dev/null 2>&1 || return 0
+  PYTHONPATH="${REPO_ROOT}/src${PYTHONPATH:+:$PYTHONPATH}" python3 -c '
+import sys
+from mt5_arch.hypr_geometry import park_prefix_terminals_silent
+park_prefix_terminals_silent(sys.argv[1], int(sys.argv[2]))
+' "$prefix" "$ws" >/dev/null 2>&1 || true
 }
 
 # --- prefix-scoped process control (PR #36 dialect) ---

@@ -10,7 +10,10 @@ import { defaultCopySettings } from "@/lib/copy-engine";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { MASTER_SYMBOLS } from "@/lib/quotes";
+import { FundedNextLiveProbe } from "@/components/desk/fundednext-live-probe";
+import { FtmoLiveProbe } from "@/components/desk/ftmo-live-probe";
 import { WsfLiveProbe } from "@/components/desk/wsf-live-probe";
+import { WsfLiveCopy } from "@/components/desk/wsf-live-copy";
 import { WsfLiveScratch } from "@/components/desk/wsf-live-scratch";
 
 export function CopyPanel() {
@@ -130,9 +133,14 @@ export function CopyPanel() {
         {account.firmId === "wsf" ? (
           <>
             <WsfLiveProbe />
+            <WsfLiveCopy />
             <WsfLiveScratch />
           </>
         ) : null}
+
+        {account.firmId === "fundednext" ? <FundedNextLiveProbe /> : null}
+
+        {account.firmId === "ftmo" ? <FtmoLiveProbe /> : null}
 
         {isMaster ? (
           <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">

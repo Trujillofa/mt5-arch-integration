@@ -306,6 +306,7 @@ function wineEnv(prefix: string): NodeJS.ProcessEnv {
   env.WINEDEBUG = "-all";
   env.DISPLAY = process.env.DISPLAY || ":0";
   delete env.WAYLAND_DISPLAY;
+  delete env.LD_PRELOAD;
   env.WINEDLLOVERRIDES = process.env.WINEDLLOVERRIDES || "d3d11=b;d3d12=b;dxgi=b";
   return env;
 }
@@ -491,14 +492,13 @@ function enrichFromJournal(
 function restoreWsfTerminal(paths: ReturnType<typeof wsfPaths>): string {
   const already = listTerminal64().some((row) => isWsfPrefixRow(row, paths.prefix));
   if (already) return "WSF brand terminal already running";
-  const child = spawn("wine", ["./terminal64.exe", "/portable"], {
-    cwd: paths.brandDir,
-    env: wineEnv(paths.prefix),
+  const helper = join(repoRoot(), "scripts/21-start-broker-background.sh");
+  const child = spawn(helper, ["wsf"], {
     detached: true,
     stdio: "ignore",
   });
   child.unref();
-  return `restored WSF brand terminal pid ${child.pid ?? "?"}`;
+  return `restored WSF brand terminal via background helper pid ${child.pid ?? "?"}`;
 }
 
 function newRequestId(): string {
@@ -563,15 +563,34 @@ export async function executeWsfLiveOrder(
 
   const hbAge = fileAgeSec(paths.heartbeat);
   const accAge = fileAgeSec(paths.accountJson);
-  const wsfRunning = listTerminal64().some((row) => isWsfPrefixRow(row, paths.prefix));
-  const fresh = (hbAge != null && hbAge < HEARTBEAT_MAX_AGE_SEC) || (accAge != null && accAge < HEARTBEAT_MAX_AGE_SEC);
+  let wsfRunning = listTerminal64().some((row) => isWsfPrefixRow(row, paths.prefix));
+  let fresh = (hbAge != null && hbAge < HEARTBEAT_MAX_AGE_SEC) || (accAge != null && accAge < HEARTBEAT_MAX_AGE_SEC);
+  if (!fresh && !wsfRunning) {
+    restoreWsfTerminal(paths);
+    const deadline = Date.now() + 35000;
+    while (Date.now() < deadline) {
+      spawnSync("sleep", ["0.5"]);
+      const next = readBridgeIdentity(paths.accountJson);
+      const nextAge = fileAgeSec(paths.accountJson);
+      const nextHb = fileAgeSec(paths.heartbeat);
+      if (
+        next.login === WSF_EXPECTED_LOGIN &&
+        ((nextAge != null && nextAge < HEARTBEAT_MAX_AGE_SEC) ||
+          (nextHb != null && nextHb < HEARTBEAT_MAX_AGE_SEC))
+      ) {
+        fresh = true;
+        wsfRunning = true;
+        break;
+      }
+    }
+  }
   if (!fresh && !wsfRunning) {
     return {
       status: 409,
       result: fail(409, "bridge", "WSF file-bridge snapshot is stale and no WSF terminal is running", {
         requestId,
         endpoint,
-        login: Number(identity.login),
+        login: identity.login ? Number(identity.login) : null,
         server: identity.server,
       }).result,
     };

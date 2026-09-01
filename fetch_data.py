@@ -54,7 +54,13 @@ def _broker_install_dirs() -> list[str]:
         if isinstance(val, str) and val.strip():
             dirs.append(val.strip())
     # Prefer known working brands first, generic last
-    preferred = ["Vantage International MT5", "FP Markets MT5 Terminal", "WSFmarkets MT5 Terminal"]
+    preferred = [
+        "Vantage International MT5",
+        "FP Markets MT5 Terminal",
+        "WSFmarkets MT5 Terminal",
+        "FundedNext MT5 Terminal",
+        "FTMO Global Markets MT5 Terminal",
+    ]
     ordered = [d for d in preferred if d in dirs]
     ordered.extend(d for d in dirs if d not in ordered)
     return ordered or preferred
