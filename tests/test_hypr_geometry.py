@@ -382,3 +382,111 @@ def test_list_terminal64_pids_refuses_without_prefix(monkeypatch) -> None:
     monkeypatch.delenv("WINEPREFIX", raising=False)
     assert list_terminal64_pids() == []
 
+
+
+# --- multi-broker window scoping -------------------------------------------
+# Two brokers run the same terminal64.exe class at identical geometry, so the
+# largest-area heuristic alone picks an arbitrary broker. Real titles from the
+# live Vantage + FP Markets prefixes.
+
+_VANTAGE_TITLE = "27496181 - VantageMarkets-Live 5 - Hedge - Vantage Markets (Pty) Ltd - [DJ30.r,M1]"
+_FP_TITLE = "84076984 - FPMarketsSC-Live - Hedge - First Prudential Markets Limited - [US500,H1]"
+
+
+def _two_broker_clients() -> list[ClientRef]:
+    return [
+        ClientRef("0xv", _VANTAGE_TITLE, "terminal64.exe", (0, 0), (1910, 1019), False, 10, 1640288),
+        ClientRef("0xf", _FP_TITLE, "terminal64.exe", (0, 0), (1910, 1019), False, 5, 2001261),
+    ]
+
+
+def test_parse_clients_json_captures_pid() -> None:
+    clients = parse_clients_json(
+        [
+            {
+                "address": "0xf",
+                "title": _FP_TITLE,
+                "class": "terminal64.exe",
+                "at": [0, 0],
+                "size": [1910, 1019],
+                "floating": False,
+                "workspace": {"id": 5},
+                "pid": 2001261,
+            }
+        ]
+    )
+    assert clients[0].pid == 2001261
+
+
+def test_parse_clients_json_pid_absent_is_none() -> None:
+    clients = parse_clients_json(
+        [
+            {
+                "address": "0xf",
+                "title": _FP_TITLE,
+                "class": "terminal64.exe",
+                "at": [0, 0],
+                "size": [1910, 1019],
+                "floating": False,
+                "workspace": {"id": 5},
+            }
+        ]
+    )
+    assert clients[0].pid is None
+
+
+def test_select_main_terminal_picks_the_requested_broker(monkeypatch) -> None:
+    """Equal-area windows: the prefix decides, not iteration order."""
+    import mt5_arch.hypr_geometry as hg
+
+    monkeypatch.setattr(hg, "list_terminal64_pids", lambda *, wineprefix=None: [2001261])
+    main = select_main_terminal(_two_broker_clients(), wineprefix="/home/u/.mt5-fpmarkets")
+    assert main is not None
+    assert main.title == _FP_TITLE, "selected the other broker's terminal"
+
+
+def test_select_main_terminal_none_when_prefix_has_no_window(monkeypatch) -> None:
+    """A prefix whose terminal has no window must report None, not a neighbour.
+
+    This is what lets is_ghost_terminal see a per-broker ghost.
+    """
+    import mt5_arch.hypr_geometry as hg
+
+    monkeypatch.setattr(hg, "list_terminal64_pids", lambda *, wineprefix=None: [999999])
+    assert select_main_terminal(_two_broker_clients(), wineprefix="/home/u/.mt5-exness") is None
+
+
+def test_list_terminal64_clients_scoped_to_prefix(monkeypatch) -> None:
+    import mt5_arch.hypr_geometry as hg
+
+    monkeypatch.setattr(hg, "list_terminal64_pids", lambda *, wineprefix=None: [1640288])
+    wins = hg.list_terminal64_clients(_two_broker_clients(), wineprefix="/home/u/.mt5-vantage")
+    assert [w.title for w in wins] == [_VANTAGE_TITLE]
+
+
+def test_ghost_visible_when_other_broker_is_healthy(monkeypatch) -> None:
+    """FP ghost (process, no window) must not be masked by Vantage's window."""
+    import mt5_arch.hypr_geometry as hg
+    from mt5_arch.hypr_geometry import is_ghost_terminal
+
+    only_vantage = [_two_broker_clients()[0]]
+    monkeypatch.setattr(hg, "list_terminal64_pids", lambda *, wineprefix=None: [2001261])
+    fp = "/home/u/.mt5-fpmarkets"
+    assert is_ghost_terminal(
+        process_running=hg.terminal64_process_running(wineprefix=fp),
+        main_window=select_main_terminal(only_vantage, wineprefix=fp),
+        any_terminal_window=hg.list_terminal64_clients(only_vantage, wineprefix=fp),
+    )
+
+
+def test_select_main_terminal_falls_back_without_pids(monkeypatch) -> None:
+    """No pid data (older Hyprland, fixtures): heuristic stands, no regression."""
+    import mt5_arch.hypr_geometry as hg
+
+    monkeypatch.setattr(hg, "list_terminal64_pids", lambda *, wineprefix=None: [])
+    clients = [
+        ClientRef("0xa", _VANTAGE_TITLE, "terminal64.exe", (0, 0), (1910, 1019), False),
+        ClientRef("0xb", "Login", "terminal64.exe", (0, 0), (400, 300), True),
+    ]
+    main = select_main_terminal(clients, wineprefix="/home/u/.mt5-vantage")
+    assert main is not None and main.address == "0xa"
