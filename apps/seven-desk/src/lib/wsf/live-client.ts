@@ -953,7 +953,9 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
     meta.note,
     openPositions.length || recentDeals.length
       ? `History fetch: ${openPositions.length} open position(s), ${recentDeals.length} recent deal(s).`
-      : operator.hasMt5Password
+      : fileSnap.book || archCli.book
+        ? "Live snapshot is present; the WSF book currently has no open positions or recent deals."
+        : operator.hasMt5Password
         ? "No live positions or deals. Password is loaded; this host has no Wine/Mt5ArchBridge snapshot and no METAAPI_TOKEN."
         : "No live positions or deals. Need MT5 password + MetaAPI, a file-backend snapshot from the logged-in terminal, or CTRADER_ACCESS_TOKEN.",
     "No orders were placed. Paper adapter remains the execution path.",
@@ -961,7 +963,12 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
 
   const winePrefixPresent = winePrefixExists(operator);
   const fileBridgePresent = Boolean(fileSnap.book && fileSnap.book.balance != null);
-  const liveBalance = books.find((book) => book.source === "mt5-env" && book.balance != null);
+  const liveBalance =
+    books.find((book) => book.source === "mt5-env" && book.balance != null) ||
+    books.find((book) => book.kind === "personal-env" && book.balance != null);
+  const snapshotLogin = liveBalance?.login || fileSnap.book?.login || archCli.book?.login || mt5Login;
+  const snapshotServer =
+    liveBalance?.broker || fileSnap.book?.broker || archCli.book?.broker || mt5Server;
   const bookHonesty = useOperator
     ? liveBalance
       ? `Operator WSF MT5 book ${mt5Login} @ ${mt5Server}. Live snapshot came from ${
@@ -1001,8 +1008,8 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
       email: email ? maskEmail(email) : null,
       nickname: ctrader.nickname,
       host: useOperator ? mt5Server : WSF_CTRADER_ID,
-      login: mt5Login,
-      server: mt5Server,
+      login: snapshotLogin,
+      server: snapshotServer,
       platform: "MT5",
       hasPassword: operator.hasMt5Password,
       credentialSource: useOperator ? "operator-env" : usedOfficialDemoCard ? "homepage-demo" : "none",
@@ -1019,8 +1026,8 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
     winePrefixPresent,
     fileBridgePresent,
     connectionStatus,
-    login: mt5Login,
-    server: mt5Server,
+    login: snapshotLogin,
+    server: snapshotServer,
     balance: liveBalance?.balance ?? null,
     equity: liveBalance?.equity ?? null,
     currency: liveBalance?.currency ?? null,

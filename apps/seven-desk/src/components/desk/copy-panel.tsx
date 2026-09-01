@@ -11,6 +11,7 @@ import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { MASTER_SYMBOLS } from "@/lib/quotes";
 import { WsfLiveProbe } from "@/components/desk/wsf-live-probe";
+import { WsfLiveScratch } from "@/components/desk/wsf-live-scratch";
 
 export function CopyPanel() {
   const {
@@ -126,7 +127,12 @@ export function CopyPanel() {
           </div>
         </section>
 
-        {account.firmId === "wsf" ? <WsfLiveProbe /> : null}
+        {account.firmId === "wsf" ? (
+          <>
+            <WsfLiveProbe />
+            <WsfLiveScratch />
+          </>
+        ) : null}
 
         {isMaster ? (
           <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">

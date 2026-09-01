@@ -87,3 +87,35 @@ export interface WsfLiveReport {
   equity: number | null;
   currency: string | null;
 }
+
+export type WsfLiveOrderAction = "scratch" | "open" | "close";
+
+export interface WsfLiveOrderResult {
+  ok: boolean;
+  source: "seven-desk";
+  endpoint: string;
+  requestId: string;
+  stage: string;
+  reason: string;
+  login: number | null;
+  server: string | null;
+  company?: string;
+  symbol?: string;
+  volume?: number;
+  side?: string;
+  order?: number;
+  position?: number;
+  dealOpen?: number;
+  dealClose?: number;
+  openPrice?: number;
+  closePrice?: number;
+  profit?: number;
+  holdMs?: number;
+  balanceAfter?: number;
+  closeRetcode?: number;
+  winePrefix: string;
+  journalOpen?: string;
+  journalClose?: string;
+  stoppedWsfPids?: number[];
+  restoreNote?: string;
+}
