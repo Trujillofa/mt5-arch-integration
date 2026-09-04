@@ -6,6 +6,10 @@
 #
 # Does not load repo .env (that pins WSF). Does not print passwords.
 # Refuses vantage / fpmarkets / exness so those live books stay put.
+# For wsf / ftmo / fundednext, writes Mt5ArchBridge onto the branded Default
+# chart (portable loads MQL5/Profiles/Charts/Default). A stale heartbeat
+# restarts only that prefix's branded terminal64 — never a generic
+# Program Files/MetaTrader 5 tree.
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib.sh
@@ -64,16 +68,14 @@ for broker in "$@"; do
       ;;
   esac
 
+  running=0
   if python3 -c '
 import os, sys
-from pathlib import Path
 sys.path.insert(0, "'"$REPO_ROOT"'/src")
 from mt5_arch.hypr_geometry import list_terminal64_pids
 raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) else 1)
 ' >/dev/null 2>&1; then
-    info "$broker already running — parking on workspace $BG_WS"
-    park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
-    continue
+    running=1
   fi
 
   term="$(find_terminal64)" || die "terminal64.exe not found under $WINEPREFIX"
@@ -81,6 +83,29 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
     wsf|ftmo|fundednext)
       if [[ "$term" == *"/Program Files/MetaTrader 5/terminal64.exe" ]]; then
         die "$broker generic MetaQuotes tree is not the live book — start the branded terminal64.exe"
+      fi
+      term_dir="$(cd "$(dirname "$term")" && pwd)"
+      python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+        --broker "$broker" --term-dir "$term_dir" \
+        || die "failed to inject Mt5ArchBridge on $broker Default chart"
+      if [[ "$running" -eq 1 ]]; then
+        if python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+          --broker "$broker" --term-dir "$term_dir" --fresh; then
+          info "$broker already running with a fresh bridge — parking on workspace $BG_WS"
+          park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
+          continue
+        fi
+        info "$broker branded terminal is up but Mt5ArchBridge heartbeat is stale — restarting that book only"
+        python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+          --broker "$broker" --term-dir "$term_dir" --stop-branded \
+          || die "failed to stop stale $broker branded terminal"
+      fi
+      ;;
+    *)
+      if [[ "$running" -eq 1 ]]; then
+        info "$broker already running — parking on workspace $BG_WS"
+        park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
+        continue
       fi
       ;;
   esac
