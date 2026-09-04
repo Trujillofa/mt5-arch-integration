@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   applyQuoteMarks,
+  flattenAllTargets,
   liveCloseAlreadyFlat,
   liveGroupPositions,
   pendingLiveSlaveEvents,
@@ -67,6 +68,7 @@ interface DeskApi {
   setSymbolMap: (slaveAccountId: string, masterSymbol: string, mapped: string) => void;
   placeTrade: (input: MasterTradeInput) => string | null;
   flatten: (positionId: string) => string | null;
+  flattenAll: () => string | null;
   actionError: string | null;
   resetDemo: () => void;
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
@@ -95,6 +97,36 @@ function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
   if (reason === WSF_LIVE_PENDING) return "wsf";
   if (reason === FUNDEDNEXT_LIVE_PENDING) return "fundednext";
   return null;
+}
+
+type ConfirmRefs = { wsf: string; ftmo: string; fn: string };
+
+async function closeLiveGroup(
+  positionId: string,
+  refs: ConfirmRefs,
+  failures: string[]
+): Promise<void> {
+  const snapshot = getDeskSnapshot();
+  const targets = liveGroupPositions(snapshot, positionId);
+  for (const row of targets) {
+    if (!row.liveBroker) continue;
+    const symbol =
+      row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+    const payload = await postLiveOrder(
+      row.liveBroker,
+      "close",
+      confirmFor(row.liveBroker, refs),
+      symbol,
+      row.side
+    );
+    if (liveCloseAlreadyFlat(payload)) {
+      flattenPosition(row.id);
+    } else {
+      const reason = payload.reason || `${row.liveBroker} live close failed`;
+      markLiveCloseFailed(row.id, `${reason} — desk row kept`);
+      failures.push(`${row.liveBroker}: ${reason}`);
+    }
+  }
 }
 
 async function postLiveOrder(
@@ -347,30 +379,47 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       ftmo: ftmoConfirm.current,
       fn: fnConfirm.current,
     };
-    const targets = liveGroupPositions(snapshot, positionId);
     setActionError(null);
     setBusy(true);
     void (async () => {
       const failures: string[] = [];
       try {
-        for (const row of targets) {
-          if (!row.liveBroker) continue;
-          const symbol =
-            row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
-          const payload = await postLiveOrder(
-            row.liveBroker,
-            "close",
-            confirmFor(row.liveBroker, refs),
-            symbol,
-            row.side
-          );
-          if (liveCloseAlreadyFlat(payload)) {
-            flattenPosition(row.id);
-          } else {
-            const reason = payload.reason || `${row.liveBroker} live close failed`;
-            markLiveCloseFailed(row.id, `${reason} — desk row kept`);
-            failures.push(`${row.liveBroker}: ${reason}`);
-          }
+        await closeLiveGroup(positionId, refs, failures);
+      } finally {
+        setActionError(failures.length ? failures.join(" · ") : null);
+        setBusy(false);
+      }
+    })();
+    return null;
+  }, []);
+
+  const flattenAll = useCallback(() => {
+    const snapshot = getDeskSnapshot();
+    const { liveRepIds, paperIds } = flattenAllTargets(snapshot);
+    if (liveRepIds.length === 0 && paperIds.length === 0) {
+      return "No open positions.";
+    }
+    const refs = {
+      wsf: wsfConfirm.current,
+      ftmo: ftmoConfirm.current,
+      fn: fnConfirm.current,
+    };
+    setActionError(null);
+    if (liveRepIds.length === 0) {
+      for (const id of paperIds) flattenPosition(id);
+      return null;
+    }
+    setBusy(true);
+    void (async () => {
+      const failures: string[] = [];
+      try {
+        for (const id of liveRepIds) {
+          const still = getDeskSnapshot().positions.some((row) => row.id === id);
+          if (!still) continue;
+          await closeLiveGroup(id, refs, failures);
+        }
+        for (const row of getDeskSnapshot().positions) {
+          if (!row.liveBroker) flattenPosition(row.id);
         }
       } finally {
         setActionError(failures.length ? failures.join(" · ") : null);
@@ -410,6 +459,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setSymbolMap,
       placeTrade,
       flatten,
+      flattenAll,
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,
@@ -428,6 +478,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setSymbolMap,
       placeTrade,
       flatten,
+      flattenAll,
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,

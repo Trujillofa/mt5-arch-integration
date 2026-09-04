@@ -15,7 +15,6 @@ export const WSF_LIVE_MAGIC = 20263847;
 const ALLOWED_SYMBOLS = new Set(["EURUSDc", "EURUSD"]);
 const FORBIDDEN_PREFIX_MARKERS = [".mt5-vantage", ".mt5-fpmarkets", ".mt5-exness"];
 const CONSERVATIVE_FX_MIN = 0.01;
-const HEARTBEAT_MAX_AGE_SEC = 90;
 const SCRIPT_NAME = "WsfDeskLiveOrder";
 
 export interface WsfLiveOrderInput {
@@ -173,20 +172,11 @@ function wsfPaths() {
     scriptEx5: join(brandDir, "MQL5", "Scripts", `${SCRIPT_NAME}.ex5`),
     bridgeDir,
     accountJson: join(bridgeDir, "account.json"),
-    heartbeat: join(bridgeDir, "heartbeat.txt"),
     requestFile: join(bridgeDir, "wsf_desk_order_request.txt"),
     resultFile: join(bridgeDir, "wsf_desk_order_result.json"),
     configIni: join(brandDir, "wsf_desk_order.ini"),
     logsDir: join(brandDir, "logs"),
   };
-}
-
-function fileAgeSec(path: string): number | null {
-  try {
-    return (Date.now() - statSync(path).mtimeMs) / 1000;
-  } catch {
-    return null;
-  }
 }
 
 function readBridgeIdentity(accountJson: string): {
@@ -268,7 +258,9 @@ function isWsfPrefixRow(row: ProcRow, prefix: string): boolean {
   const blob = `${row.prefix} ${row.cwd} ${row.cmd}`;
   if (blob.includes("Vantage") || blob.includes("FP Markets")) return false;
   if (FORBIDDEN_PREFIX_MARKERS.some((marker) => blob.includes(marker))) return false;
-  return row.prefix === prefix;
+  if (row.prefix === prefix) return true;
+  // Wine children sometimes omit WINEPREFIX; branded cwd is enough.
+  return row.cwd.includes(".mt5-wsf") && row.cwd.includes("WSFmarkets MT5 Terminal");
 }
 
 function stopWsfBrandTerminals(prefix: string): number[] {
@@ -584,40 +576,9 @@ export async function executeWsfLiveOrder(
     };
   }
 
-  const hbAge = fileAgeSec(paths.heartbeat);
-  const accAge = fileAgeSec(paths.accountJson);
-  let wsfRunning = listTerminal64().some((row) => isWsfPrefixRow(row, paths.prefix));
-  let fresh = (hbAge != null && hbAge < HEARTBEAT_MAX_AGE_SEC) || (accAge != null && accAge < HEARTBEAT_MAX_AGE_SEC);
-  if (!fresh && !wsfRunning) {
-    restoreWsfTerminal(paths);
-    const deadline = Date.now() + 35000;
-    while (Date.now() < deadline) {
-      spawnSync("sleep", ["0.5"]);
-      const next = readBridgeIdentity(paths.accountJson);
-      const nextAge = fileAgeSec(paths.accountJson);
-      const nextHb = fileAgeSec(paths.heartbeat);
-      if (
-        next.login === WSF_EXPECTED_LOGIN &&
-        ((nextAge != null && nextAge < HEARTBEAT_MAX_AGE_SEC) ||
-          (nextHb != null && nextHb < HEARTBEAT_MAX_AGE_SEC))
-      ) {
-        fresh = true;
-        wsfRunning = true;
-        break;
-      }
-    }
-  }
-  if (!fresh && !wsfRunning) {
-    return {
-      status: 409,
-      result: fail(409, "bridge", "WSF file-bridge snapshot is stale and no WSF terminal is running", {
-        requestId,
-        endpoint,
-        login: identity.login ? Number(identity.login) : null,
-        server: identity.server,
-      }).result,
-    };
-  }
+  // One-shot logs in via wsf_desk_order.ini. A stale Mt5ArchBridge heartbeat
+  // must not block — restore terminals often never rewrite the snapshot.
+  // Identity above already pinned login 149736 @ WSFmarkets-Server.
 
   const compileError = compileScript(paths);
   if (compileError) {

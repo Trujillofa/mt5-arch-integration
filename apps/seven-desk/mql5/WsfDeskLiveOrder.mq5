@@ -390,7 +390,7 @@ void OnStart()
       position_ticket = FindPositionTicket(symbol);
       if(position_ticket == 0 || !PositionSelectByTicket(position_ticket))
         {
-         WriteResult(FailJson("close", "no open WSF desk position to close",
+         WriteResult(FailJson("close", "no open desk position to close",
                               login, server, 0, symbol));
          return;
         }
