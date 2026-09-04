@@ -81,7 +81,7 @@ def test_load_and_list_shipped_broker_profiles() -> None:
 
     acg = load_broker_profile("alphacapital")
     assert acg.login == "2765247"
-    assert acg.server == "ACGMarkets"
+    assert acg.server == "ACGMarkets-Main"
     assert "mt5-alphacapital" in acg.wineprefix
 
     # as_exports never includes password keys; Settings reads MT5_BROKER
