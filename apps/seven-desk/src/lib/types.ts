@@ -76,6 +76,8 @@ export interface Position {
   /** Set when the fill was a real OrderSend, not paper. */
   liveBroker?: "wsf" | "ftmo" | "fundednext";
   liveOrder?: number;
+  /** Copy-group id so flatten can close sibling live books. */
+  groupId?: string;
 }
 
 export interface BlotterEvent {

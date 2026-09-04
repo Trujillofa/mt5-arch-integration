@@ -12,12 +12,9 @@ export {
   FUNDEDNEXT_SERVER_NEEDLE,
 } from "@/lib/fundednext/types";
 
-/** Official brand first; generic MetaQuotes install is fallback only. */
-export const FUNDEDNEXT_BRAND_INSTALLS = [
-  "FundedNext MT5 Terminal",
-  "MetaTrader 5",
-] as const;
-export const FUNDEDNEXT_BRAND_INSTALL = FUNDEDNEXT_BRAND_INSTALLS[0];
+/** Official FundedNext tree only. Never the generic MetaQuotes folder in this prefix. */
+export const FUNDEDNEXT_BRAND_INSTALL = "FundedNext MT5 Terminal";
+export const FUNDEDNEXT_BRAND_INSTALLS = [FUNDEDNEXT_BRAND_INSTALL] as const;
 export const FUNDEDNEXT_ONLY_PREFIX = join(homedir(), ".mt5-fundednext");
 
 export interface FundedNextOperatorEnv {
@@ -101,17 +98,11 @@ export function readFundedNextEnv(): FundedNextOperatorEnv {
 }
 
 export function fundednextBrandTerminalDir(prefix = FUNDEDNEXT_ONLY_PREFIX): string {
-  for (const brand of FUNDEDNEXT_BRAND_INSTALLS) {
-    const dir = join(prefix, "drive_c", "Program Files", brand);
-    if (existsSync(join(dir, "terminal64.exe"))) return dir;
-  }
   return join(prefix, "drive_c", "Program Files", FUNDEDNEXT_BRAND_INSTALL);
 }
 
 export function fundednextBridgeCandidates(prefix = FUNDEDNEXT_ONLY_PREFIX): string[] {
-  return FUNDEDNEXT_BRAND_INSTALLS.map((brand) =>
-    join(prefix, "drive_c", "Program Files", brand, "MQL5", "Files", "mt5_arch"),
-  );
+  return [join(fundednextBrandTerminalDir(prefix), "MQL5", "Files", "mt5_arch")];
 }
 
 export function fundednextBridgeDir(prefix = FUNDEDNEXT_ONLY_PREFIX): string {

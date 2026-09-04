@@ -147,6 +147,7 @@ export function placeMasterTrade(
     openedAt: fill.fill.at,
     mark: fill.fill.price,
     pnl: 0,
+    groupId,
   };
 
   const masterEvent: BlotterEvent = {
@@ -409,6 +410,7 @@ function resolveOneSlave(
     openedAt: result.fill.at,
     mark: result.fill.price,
     pnl: 0,
+    groupId: master.groupId,
   };
 
   return {
@@ -488,6 +490,52 @@ export function closePosition(
   return { state: applyQuoteMarks(next) };
 }
 
+export function liveGroupPositions(state: DeskState, positionId: string): Position[] {
+  const target = state.positions.find((row) => row.id === positionId);
+  if (!target) return [];
+  if (!target.liveBroker) return [target];
+  if (!target.groupId) return [target];
+  return state.positions.filter(
+    (row) => row.liveBroker && row.groupId === target.groupId
+  );
+}
+
+export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
+  if (result.ok) return true;
+  const reason = (result.reason ?? "").toLowerCase();
+  return (
+    reason.includes("no open desk position") ||
+    reason.includes("position vanished")
+  );
+}
+
+export function markLiveCloseError(
+  state: DeskState,
+  positionId: string,
+  reason: string
+): DeskState {
+  const position = state.positions.find((row) => row.id === positionId);
+  if (!position) return state;
+  const now = Date.now();
+  const event: BlotterEvent = {
+    id: uid("blt"),
+    groupId: position.groupId ?? uid("cls"),
+    accountId: position.accountId,
+    role: "slave",
+    symbol: position.symbol,
+    side: position.side,
+    lots: position.lots,
+    requestedPrice: position.mark,
+    sl: position.sl,
+    tp: position.tp,
+    status: "error",
+    reason: reason || "live close failed — desk row kept",
+    createdAt: now,
+    updatedAt: now,
+  };
+  return { ...state, blotter: pushBlotter(state.blotter, event) };
+}
+
 export function pendingWsfLiveEvents(state: DeskState, groupId: string): BlotterEvent[] {
   return pendingLiveSlaveEvents(state, groupId).filter((event) => event.reason === WSF_LIVE_PENDING);
 }
@@ -550,6 +598,7 @@ export function applyLiveFill(
     pnl: 0,
     liveBroker: broker,
     liveOrder: result.order,
+    groupId: event.groupId,
   };
   const blotter = state.blotter.map((row) =>
     row.id === eventId
@@ -628,6 +677,7 @@ export function placeLiveMasterFill(
     pnl: 0,
     liveBroker: broker,
     liveOrder: result.order,
+    groupId,
   };
   const masterEvent: BlotterEvent = {
     id: uid("blt"),

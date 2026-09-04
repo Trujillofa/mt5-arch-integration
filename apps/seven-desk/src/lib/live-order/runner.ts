@@ -191,11 +191,23 @@ function assertAllowedPrefix(prefix: string, expected: string): string | null {
 }
 
 function brandDir(firm: FirmSpec): string {
-  for (const brand of firm.brands) {
-    const dir = join(firm.prefix, "drive_c", "Program Files", brand);
-    if (existsSync(join(dir, "terminal64.exe"))) return dir;
-  }
   return join(firm.prefix, "drive_c", "Program Files", firm.brands[0]);
+}
+
+function terminalCwd(pid: number): string {
+  try {
+    return spawnSync("readlink", ["-f", `/proc/${pid}/cwd`], { encoding: "utf8" }).stdout.trim();
+  } catch {
+    return "";
+  }
+}
+
+function isGenericTree(cwd: string): boolean {
+  return /\/Program Files\/MetaTrader 5\/?$/.test(cwd);
+}
+
+function isBrandedTree(cwd: string, brands: readonly string[]): boolean {
+  return brands.some((brand) => brand !== "MetaTrader 5" && cwd.includes(brand));
 }
 
 function pathsFor(firm: FirmSpec) {
@@ -289,14 +301,35 @@ function stopPrefix(prefix: string): number[] {
   return stopped;
 }
 
+function stopGenericPrefixPids(prefix: string): number[] {
+  const stopped: number[] = [];
+  for (const pid of listPrefixPids(prefix)) {
+    if (!isGenericTree(terminalCwd(pid))) continue;
+    try {
+      process.kill(pid, "SIGTERM");
+      stopped.push(pid);
+    } catch {
+      // gone
+    }
+  }
+  return stopped;
+}
+
 function restoreTerminal(firm: FirmSpec): string {
-  if (listPrefixPids(firm.prefix).length > 0) {
-    return `${firm.id} terminal already running`;
+  const leftover = stopGenericPrefixPids(firm.prefix);
+  const branded = listPrefixPids(firm.prefix).filter((pid) =>
+    isBrandedTree(terminalCwd(pid), firm.brands)
+  );
+  if (branded.length > 0) {
+    return leftover.length
+      ? `${firm.id} branded already running; stopped generic leftover ${leftover.join(",")}`
+      : `${firm.id} terminal already running`;
   }
   const helper = join(repoRoot(), "scripts/21-start-broker-background.sh");
   const child = spawn(helper, [firm.restoreArg], { detached: true, stdio: "ignore" });
   child.unref();
-  return `restored ${firm.id} via background helper pid ${child.pid ?? "?"}`;
+  const extra = leftover.length ? `; stopped generic leftover ${leftover.join(",")}` : "";
+  return `restored ${firm.id} via background helper pid ${child.pid ?? "?"}${extra}`;
 }
 
 function compileScript(firm: FirmSpec, paths: ReturnType<typeof pathsFor>): string | null {

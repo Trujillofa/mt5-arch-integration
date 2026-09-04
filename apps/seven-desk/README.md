@@ -1,6 +1,6 @@
 # Seven Desk
 
-Browser copy-trading desk nested in **mt5-arch-integration**. WSF live fetch reads `config/brokers/wsf.env` and Mt5ArchBridge files (`account.json`, `positions.json`, `deals_export.csv`) when the Wine terminal is up. Paper adapter stays the copy-execution path. Live OrderSend is WSF-only, fail-closed, and opt-in (`POST /api/wsf/order` + the WSF live scratch control).
+Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads each firm’s file-bridge snapshots when that Wine terminal is up. Paper adapter stays the default copy path. Live OrderSend is fail-closed and opt-in on **FTMO 541163357** (master), **WSF 149736**, and **FundedNext 13981906** only — branded `terminal64.exe` trees, never Vantage/FP or a generic `MetaTrader 5` folder inside those prefixes.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
@@ -138,8 +138,8 @@ WSF_ENV_FILE=
 ## Architecture
 
 - `AccountAdapter` in `src/lib/adapters/types.ts`
-- `PaperAdapter` in `src/lib/adapters/paper.ts` — copy-engine fill path for every book except armed WSF live copy
-- `POST /api/wsf/order` — WSF 149736 live min-lot (scratch or copy-open)
+- `PaperAdapter` in `src/lib/adapters/paper.ts` — copy-engine fill path unless that book’s live switch is armed
+- `POST /api/ftmo/order`, `/api/wsf/order`, `/api/fundednext/order` — branded-prefix min-lot (scratch, master, or copy-open)
 - `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
 
 There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.

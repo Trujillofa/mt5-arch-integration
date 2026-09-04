@@ -16,6 +16,39 @@ Wine + multi-chart layout glitch. In MT5:
 - Or close floating chart windows and re-open one chart full size
 - Avoid maximizing across mixed DPI monitors when possible
 
+## Generic MetaTrader 5 window is 4K / leftover login
+
+Wine often saves `Config/terminal.ini` `[Window]` as the dual-monitor desktop
+(`Right=3840` `Bottom=2160`) while the real panel is 1920×1080. A **generic**
+tree (`Program Files/MetaTrader 5`) inside another broker’s prefix can also keep
+a leftover `Config/common.ini` `Login=` / `Server=` from a previous company
+(title bar looks logged in; Journal `Network` after restart is 0).
+
+**Never** create a Wine virtual desktop (`explorer /desktop=…`) — it breaks
+mouse under Hyprland. **Never** `wineserver -k` to “fix” this window (that
+kills every terminal in the prefix). `LogPixels` is prefix-wide; do not change
+it while branded books share the prefix.
+
+1. Stop **only** the generic pid (`cwd` ends with `Program Files/MetaTrader 5`).
+   Leave branded folders (FTMO / Vantage / FP / WSF / FundedNext) running.
+2. Do not use that generic tree for Seven Desk live orders or probes. Live
+   paths require the branded `terminal64.exe` (`FTMO Global Markets MT5
+   Terminal`, `WSFmarkets MT5 Terminal`, `FundedNext MT5 Terminal`).
+3. Point `Config/common.ini` `[Common]` `Login=` / `Server=` at **this
+   prefix’s** broker. Do not add `Password=` here. Password stays in
+   `auto_login.ini` (chmod 600); never log it.
+
+Trade-auth is **not** the window title. Require non-empty `currency` **and**
+`leverage > 0` from the **branded** `account.json`, plus a Journal `Network`
+`authorized` line for that login. Official MCP bind `10048` on
+`127.0.0.1:22346` is expected when another prefix (often Vantage) already owns
+the port — ignore it.
+
+On this host the generic MetaQuotes tree is often **title-only** even after a
+clean portable start ([MULTI-BROKER-MT5.md](MULTI-BROKER-MT5.md) silent
+`Network=0`). Prefer the branded folder. Evidence:
+`.net-fix-evidence/GENERIC-SCALE-CONNECT.md`.
+
 ## Black undocked chart window (`EURUSD, Euro vs US Dollar`)
 
 Separate floating chart windows often paint **entirely black** under Wine. Close them. Open symbols only as **tabs inside the main terminal** (Market Watch → double-click). Prefer **bar** chart mode if candlestick bodies vanish (default bull body was black-on-black).

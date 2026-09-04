@@ -9,12 +9,9 @@ export {
   FTMO_SERVER_NEEDLE,
 } from "@/lib/ftmo/types";
 
-/** Official brand first; generic MetaQuotes install is fallback only. */
-export const FTMO_BRAND_INSTALLS = [
-  "FTMO Global Markets MT5 Terminal",
-  "MetaTrader 5",
-] as const;
-export const FTMO_BRAND_INSTALL = FTMO_BRAND_INSTALLS[0];
+/** Official FTMO tree only. Never the generic MetaQuotes folder in this prefix. */
+export const FTMO_BRAND_INSTALL = "FTMO Global Markets MT5 Terminal";
+export const FTMO_BRAND_INSTALLS = [FTMO_BRAND_INSTALL] as const;
 export const FTMO_ONLY_PREFIX = join(homedir(), ".mt5-ftmo");
 
 export interface FtmoOperatorEnv {
@@ -98,17 +95,11 @@ export function readFtmoEnv(): FtmoOperatorEnv {
 }
 
 export function ftmoBrandTerminalDir(prefix = FTMO_ONLY_PREFIX): string {
-  for (const brand of FTMO_BRAND_INSTALLS) {
-    const dir = join(prefix, "drive_c", "Program Files", brand);
-    if (existsSync(join(dir, "terminal64.exe"))) return dir;
-  }
   return join(prefix, "drive_c", "Program Files", FTMO_BRAND_INSTALL);
 }
 
 export function ftmoBridgeCandidates(prefix = FTMO_ONLY_PREFIX): string[] {
-  return FTMO_BRAND_INSTALLS.map((brand) =>
-    join(prefix, "drive_c", "Program Files", brand, "MQL5", "Files", "mt5_arch"),
-  );
+  return [join(ftmoBrandTerminalDir(prefix), "MQL5", "Files", "mt5_arch")];
 }
 
 export function ftmoBridgeDir(prefix = FTMO_ONLY_PREFIX): string {

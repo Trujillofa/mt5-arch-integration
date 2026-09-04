@@ -41,11 +41,14 @@ export function WsfLiveProbe() {
   }
 
   useEffect(() => {
-    if (lastReport) {
-      applyToDesk(lastReport, updateAccount);
-      return;
-    }
-    void run();
+    const handle = window.setTimeout(() => {
+      if (lastReport) {
+        applyToDesk(lastReport, updateAccount);
+        return;
+      }
+      void run();
+    }, 0);
+    return () => window.clearTimeout(handle);
     // One auto-fetch on mount so the WSF card picks up operator env.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -60,7 +63,7 @@ export function WsfLiveProbe() {
           <p className="text-xs text-muted-foreground">
             Read-only snapshot. Uses operator MT5 env when present
             (login/server only on the server). Copy execution stays paper.
-            Live min-lot send is the separate WSF live scratch control.
+            Live min-lot send is WSF live copy on this card (or the scratch control).
           </p>
         </div>
         <Button type="button" size="sm" disabled={busy} onClick={run}>

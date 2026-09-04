@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { AccountStrip } from "@/components/desk/account-strip";
 import { BlotterTable } from "@/components/desk/blotter-table";
 import { CopyPanel } from "@/components/desk/copy-panel";
@@ -18,8 +19,25 @@ import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { formatMoney } from "@/lib/format";
 
+let clientReady = false;
+const readyListeners = new Set<() => void>();
+
+function subscribeReady(listener: () => void) {
+  readyListeners.add(listener);
+  queueMicrotask(() => {
+    if (!clientReady) {
+      clientReady = true;
+    }
+    listener();
+  });
+  return () => {
+    readyListeners.delete(listener);
+  };
+}
+
 export function Terminal() {
-  const { hydration, hydrateError, state, setMaster, resetDemo } = useDesk();
+  const { hydration, hydrateError, actionError, state, setMaster, resetDemo } = useDesk();
+  const mounted = useSyncExternalStore(subscribeReady, () => clientReady, () => false);
   const master = state.accounts.find((account) => account.id === state.masterId);
   const paperBooks = state.accounts.filter(
     (account) => account.status === "connected"
@@ -58,25 +76,33 @@ export function Terminal() {
               <span className="text-[11px] tracking-wide text-muted-foreground uppercase">
                 Master
               </span>
-              <Select
-                value={state.masterId}
-                onValueChange={(value) => setMaster(String(value))}
-              >
-                <SelectTrigger className="h-8 min-w-[180px]" size="sm">
-                  <SelectValue>
-                    {master
-                      ? `${FIRM_BY_ID[master.firmId].name} · ${master.login}`
-                      : "Select master"}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {state.accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.id}>
-                      {FIRM_BY_ID[account.firmId].name} · {account.login}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {mounted ? (
+                <Select
+                  value={state.masterId}
+                  onValueChange={(value) => setMaster(String(value))}
+                >
+                  <SelectTrigger className="h-8 min-w-[180px]" size="sm">
+                    <SelectValue>
+                      {master
+                        ? `${FIRM_BY_ID[master.firmId].name} · ${master.login}`
+                        : "Select master"}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {state.accounts.map((account) => (
+                      <SelectItem key={account.id} value={account.id}>
+                        {FIRM_BY_ID[account.firmId].name} · {account.login}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <span className="inline-flex h-8 min-w-[180px] items-center rounded-md border border-input px-2.5 font-mono text-xs">
+                  {master
+                    ? `${FIRM_BY_ID[master.firmId].name} · ${master.login}`
+                    : "Select master"}
+                </span>
+              )}
             </div>
             <Button type="button" variant="outline" size="sm" onClick={resetDemo}>
               Reset demo
@@ -89,6 +115,12 @@ export function Terminal() {
         {hydrateError ? (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
             {hydrateError}
+          </div>
+        ) : null}
+
+        {actionError ? (
+          <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+            {actionError}
           </div>
         ) : null}
 
