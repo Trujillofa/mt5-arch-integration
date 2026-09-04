@@ -356,7 +356,7 @@ function resolveOneSlave(
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
-          reason: "symbol not on Alpha Capital live path (EURUSD only)",
+          reason: "symbol not on Alpha Capital live path (EURUSD/BTCUSD only)",
         },
       };
     }

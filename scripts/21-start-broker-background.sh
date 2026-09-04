@@ -94,7 +94,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" --no-expert --allow-missing-ex5 \
           || die "failed to write quotes-first Default chart for $broker"
-        info "$broker has no EURUSD history yet — starting without Mt5ArchBridge so the symbol can sync"
+        info "$broker has no quotes/history yet — starting without Mt5ArchBridge so BTC/FX can sync"
       else
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" \
@@ -129,7 +129,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
   start_terminal64_detached "$term" /portable "${extra[@]}"
   if [[ "$broker" == "alphacapital" && "${quotes_first:-0}" -eq 1 ]]; then
     term_dir="$(cd "$(dirname "$term")" && pwd)"
-    info "waiting up to 90s for ACG EURUSD history before attaching Mt5ArchBridge"
+    info "waiting up to 90s for ACG BTC/FX history before attaching Mt5ArchBridge"
     quotes_ok=0
     for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
       sleep 5
@@ -140,7 +140,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
       fi
     done
     if [[ "$quotes_ok" -eq 1 ]]; then
-      info "ACG EURUSD history is present — attaching Mt5ArchBridge and restarting that book only"
+      info "ACG quotes/history is present — attaching Mt5ArchBridge and restarting that book only"
       python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
         --broker alphacapital --term-dir "$term_dir" \
         || die "failed to inject Mt5ArchBridge after quotes"
@@ -153,7 +153,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
       fi
       start_terminal64_detached "$term" /portable "${extra[@]}"
     else
-      warn "ACG EURUSD still has no history — left running without the EA. Wait for a live bid/ask, then re-run $0 alphacapital"
+      warn "ACG still has no BTC/FX history — left running without the EA. Wait for a live bid/ask, then re-run $0 alphacapital"
     fi
   fi
 done

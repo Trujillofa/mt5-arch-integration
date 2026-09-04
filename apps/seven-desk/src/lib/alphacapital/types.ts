@@ -4,7 +4,7 @@ export const ALPHACAPITAL_EXPECTED_SERVER = "ACGMarkets";
 export const ALPHACAPITAL_SERVER_NEEDLE = "ACG";
 export const ALPHACAPITAL_LIVE_CONFIRM = "ACG-2765247";
 export const ALPHACAPITAL_LIVE_PENDING = "alphacapital-live-pending";
-export const ALPHACAPITAL_LIVE_SYMBOLS = ["EURUSD"] as const;
+export const ALPHACAPITAL_LIVE_SYMBOLS = ["EURUSD", "BTCUSD", "BTCUSDc", "BTCUSD.r"] as const;
 
 export type AlphaCapitalConnectionStatus =
   | "connected"
