@@ -161,11 +161,20 @@ string FailJson(const string stage, const string reason,
       "}\n";
   }
 
+bool SymbolAllowed(const string symbol)
+  {
+   if(symbol == "EURUSD" || symbol == "EURUSDc")
+      return true;
+   if(StringFind(symbol, "BTCUSD") == 0)
+      return true;
+   return false;
+  }
+
 bool ResolveSymbol(string &symbol, const long login, const string server)
   {
-   if(symbol != "EURUSDc" && symbol != "EURUSD")
+   if(!SymbolAllowed(symbol))
      {
-      WriteResult(FailJson("symbol", "symbol not allowed — EURUSDc/EURUSD only",
+      WriteResult(FailJson("symbol", "symbol not allowed — EURUSDc/EURUSD or BTCUSD*",
                            login, server, 0, symbol));
       return false;
      }

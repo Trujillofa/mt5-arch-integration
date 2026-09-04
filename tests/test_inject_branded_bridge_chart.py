@@ -45,16 +45,16 @@ def test_inject_alphacapital_writes_inpbroker(tmp_path: Path) -> None:
     written = inject.inject_charts("alphacapital", term_dir)
     text = _chart_text(written[0])
     assert "InpBroker=alphacapital" in text
-    assert "symbol=EURUSD" in text
+    assert "symbol=BTCUSD" in text
     assert "InpDumpHistory=false" in text
-    assert "InpSymbols=EURUSD" in text
+    assert "InpSymbols=BTCUSD,BTCUSDc,BTCUSD.r,EURUSD" in text
 
 
 def test_inject_alphacapital_quotes_first_omits_expert(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
     written = inject.inject_charts("alphacapital", term_dir, with_expert=False)
     text = _chart_text(written[0])
-    assert "symbol=EURUSD" in text
+    assert "symbol=BTCUSD" in text
     assert "Mt5ArchBridge" not in text
     assert "<expert>" not in text
 
@@ -66,6 +66,16 @@ def test_quotes_ready_sees_history_hcc(tmp_path: Path) -> None:
     hcc.parent.mkdir(parents=True, exist_ok=True)
     hcc.write_bytes(b"hcc")
     assert inject.quotes_ready(term_dir, "EURUSD") is True
+
+
+def test_quotes_ready_btc_counts_for_alphacapital(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    assert inject.quotes_ready(term_dir, "EURUSD") is False
+    hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "BTCUSD" / "2026.hcc"
+    hcc.parent.mkdir(parents=True, exist_ok=True)
+    hcc.write_bytes(b"hcc")
+    assert inject.quotes_ready(term_dir, "BTCUSD") is True
+    assert any(inject.quotes_ready(term_dir, symbol) for symbol in inject.ALPHA_QUOTE_SYMBOLS)
 
 
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:

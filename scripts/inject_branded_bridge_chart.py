@@ -21,8 +21,10 @@ SYMBOL = {
     "wsf": "EURUSDc",
     "ftmo": "EURUSD",
     "fundednext": "EURUSD",
-    "alphacapital": "EURUSD",
+    "alphacapital": "BTCUSD",
 }
+# Alpha quotes-first: FX is often dead on weekends; BTC ticks are enough.
+ALPHA_QUOTE_SYMBOLS = ("BTCUSD", "BTCUSDc", "BTCUSD.r", "EURUSD")
 DEFAULT_FRESH_SEC = 60
 
 
@@ -66,7 +68,11 @@ def chart_bytes(broker: str, *, with_expert: bool = True) -> bytes:
     # ACG build 6180 times out EA/script init (~5 min) if the chart symbol
     # has no quotes yet. Alpha starts quotes-first; skip the XAU dump.
     dump_history = "false" if broker == "alphacapital" else "true"
-    symbols = "EURUSD" if broker == "alphacapital" else "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD"
+    symbols = (
+        "BTCUSD,BTCUSDc,BTCUSD.r,EURUSD"
+        if broker == "alphacapital"
+        else "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD"
+    )
     expert = ""
     if with_expert:
         expert = f"""
@@ -231,6 +237,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.fresh:
             return 0 if heartbeat_is_fresh(term_dir, args.max_age) else 1
         if args.quotes_ready:
+            if args.broker == "alphacapital":
+                ready = any(quotes_ready(term_dir, symbol) for symbol in ALPHA_QUOTE_SYMBOLS)
+                return 0 if ready else 1
             symbol = SYMBOL.get(args.broker, "EURUSD")
             return 0 if quotes_ready(term_dir, symbol) else 1
         if args.stop_branded:

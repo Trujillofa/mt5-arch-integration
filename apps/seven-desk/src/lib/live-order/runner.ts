@@ -27,8 +27,17 @@ import type { LiveBroker, LiveOrderAction, LiveOrderInput, LiveOrderResult } fro
 
 const SCRIPT_NAME = "DeskLiveOrder";
 const FORBIDDEN = [".mt5-vantage", ".mt5-fpmarkets", ".mt5-exness"] as const;
-const ALLOWED_SYMBOLS = new Set(["EURUSD", "EURUSDc"]);
+const FX_LIVE_SYMBOLS = new Set(["EURUSD", "EURUSDc"]);
+/** ACG weekend/crypto path only. Other desk firms stay FX. */
+const ALPHA_BTC_SYMBOLS = new Set(["BTCUSD", "BTCUSDc", "BTCUSD.r"]);
 const MIN_LOT = 0.01;
+
+function allowedSymbols(firm: FirmSpec): Set<string> {
+  if (firm.id === "alphacapital") {
+    return new Set([...FX_LIVE_SYMBOLS, ...ALPHA_BTC_SYMBOLS]);
+  }
+  return FX_LIVE_SYMBOLS;
+}
 
 export type DeskLiveFirm = Exclude<LiveBroker, "wsf">;
 
@@ -164,8 +173,12 @@ function validateBody(firm: FirmSpec, body: LiveOrderInput): GuardOk | GuardFail
     return fail(firm, 400, "action", "action must be scratch, open, or close");
   }
   const symbol = asString(body.symbol) || firm.defaultSymbol;
-  if (!ALLOWED_SYMBOLS.has(symbol)) {
-    return fail(firm, 400, "symbol", "symbol not allowed — EURUSD/EURUSDc only");
+  if (!allowedSymbols(firm).has(symbol)) {
+    const hint =
+      firm.id === "alphacapital"
+        ? "EURUSD/EURUSDc or BTCUSD/BTCUSDc/BTCUSD.r"
+        : "EURUSD/EURUSDc only";
+    return fail(firm, 400, "symbol", `symbol not allowed — ${hint}`);
   }
   const sideRaw = asString(body.side).toLowerCase() || "buy";
   if (sideRaw !== "buy" && sideRaw !== "sell") {
@@ -670,10 +683,11 @@ export async function executeDeskLiveOrder(
 
   if (firm.id === "alphacapital" && !quotesReady(paths.brandDir, parsed.symbol)) {
     const ready = waitQuotesOrFresh(firm, paths, parsed.symbol, 90000);
-    if (!ready) {
+    const btc = parsed.symbol.toUpperCase().startsWith("BTC");
+    if (!ready && !btc) {
       return {
         status: 409,
-        result: fail(firm, 409, "symbol", "EURUSD not synchronized — no history/ticks yet; not sending OrderSend", {
+        result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
           requestId,
           endpoint,
           login: identity.login ? Number(identity.login) : null,
