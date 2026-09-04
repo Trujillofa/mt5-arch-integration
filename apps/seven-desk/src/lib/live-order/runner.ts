@@ -206,10 +206,6 @@ function isGenericTree(cwd: string): boolean {
   return /\/Program Files\/MetaTrader 5\/?$/.test(cwd);
 }
 
-function isBrandedTree(cwd: string, brands: readonly string[]): boolean {
-  return brands.some((brand) => brand !== "MetaTrader 5" && cwd.includes(brand));
-}
-
 function pathsFor(firm: FirmSpec) {
   const prefixError = assertAllowedPrefix(firm.prefix, firm.prefix);
   const brand = brandDir(firm);
@@ -317,14 +313,6 @@ function stopGenericPrefixPids(prefix: string): number[] {
 
 function restoreTerminal(firm: FirmSpec): string {
   const leftover = stopGenericPrefixPids(firm.prefix);
-  const branded = listPrefixPids(firm.prefix).filter((pid) =>
-    isBrandedTree(terminalCwd(pid), firm.brands)
-  );
-  if (branded.length > 0) {
-    return leftover.length
-      ? `${firm.id} branded already running; stopped generic leftover ${leftover.join(",")}`
-      : `${firm.id} terminal already running`;
-  }
   const helper = join(repoRoot(), "scripts/21-start-broker-background.sh");
   const child = spawn(helper, [firm.restoreArg], { detached: true, stdio: "ignore" });
   child.unref();

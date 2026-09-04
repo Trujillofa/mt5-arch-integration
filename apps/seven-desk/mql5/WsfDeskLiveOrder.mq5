@@ -156,37 +156,60 @@ ulong FindPositionTicket(const string symbol)
   }
 
 void FillDealsFromHistory(const ulong position_ticket, const ulong order_ticket,
+                          const ulong close_order, const bool need_close,
                           ulong &deal_open, ulong &deal_close,
                           double &open_price, double &close_price,
                           double &profit, double &swap, double &commission)
   {
-   HistorySelect(TimeCurrent() - 86400, TimeCurrent() + 5);
-   for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+   const int max_attempts = need_close ? 8 : 1;
+   for(int attempt = 0; attempt < max_attempts; attempt++)
      {
-      ulong d = HistoryDealGetTicket(i);
-      if(d == 0)
-         continue;
-      ulong pos = (ulong)HistoryDealGetInteger(d, DEAL_POSITION_ID);
-      ulong ord = (ulong)HistoryDealGetInteger(d, DEAL_ORDER);
-      if(pos != position_ticket && ord != order_ticket && pos != order_ticket)
-         continue;
-      ENUM_DEAL_ENTRY entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(d, DEAL_ENTRY);
-      double px = HistoryDealGetDouble(d, DEAL_PRICE);
-      if(entry == DEAL_ENTRY_IN)
+      bool selected = false;
+      if(position_ticket > 0)
+         selected = HistorySelectByPosition(position_ticket);
+      if(!selected)
+         selected = HistorySelect(TimeCurrent() - 86400, TimeCurrent() + 3600);
+      if(selected)
         {
-         deal_open = d;
-         if(open_price <= 0.0)
-            open_price = px;
+         profit = 0.0;
+         swap = 0.0;
+         commission = 0.0;
+         for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
+           {
+            ulong d = HistoryDealGetTicket(i);
+            if(d == 0)
+               continue;
+            ulong pos = (ulong)HistoryDealGetInteger(d, DEAL_POSITION_ID);
+            ulong ord = (ulong)HistoryDealGetInteger(d, DEAL_ORDER);
+            const bool match_pos = (position_ticket > 0 &&
+                                    (pos == position_ticket || pos == order_ticket));
+            const bool match_ord = (order_ticket > 0 && ord == order_ticket) ||
+                                   (close_order > 0 && ord == close_order);
+            if(!match_pos && !match_ord)
+               continue;
+            ENUM_DEAL_ENTRY entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(d, DEAL_ENTRY);
+            double px = HistoryDealGetDouble(d, DEAL_PRICE);
+            if(entry == DEAL_ENTRY_IN)
+              {
+               deal_open = d;
+               if(open_price <= 0.0)
+                  open_price = px;
+              }
+            else if(entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_INOUT ||
+                    entry == DEAL_ENTRY_OUT_BY)
+              {
+               deal_close = d;
+               if(close_price <= 0.0)
+                  close_price = px;
+               profit += HistoryDealGetDouble(d, DEAL_PROFIT);
+               swap += HistoryDealGetDouble(d, DEAL_SWAP);
+               commission += HistoryDealGetDouble(d, DEAL_COMMISSION);
+              }
+           }
         }
-      else if(entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_INOUT)
-        {
-         deal_close = d;
-         if(close_price <= 0.0)
-            close_price = px;
-         profit += HistoryDealGetDouble(d, DEAL_PROFIT);
-         swap += HistoryDealGetDouble(d, DEAL_SWAP);
-         commission += HistoryDealGetDouble(d, DEAL_COMMISSION);
-        }
+      if(!need_close || deal_close > 0)
+         break;
+      Sleep(250);
      }
   }
 
@@ -325,6 +348,7 @@ void OnStart()
    const string comment_close = "7desk-c-" + g_request_id;
 
    ulong order_ticket = 0;
+   ulong close_order = 0;
    ulong position_ticket = 0;
    ulong deal_open = 0;
    ulong deal_close = 0;
@@ -423,6 +447,7 @@ void OnStart()
             closed = true;
             close_price = res.price;
             deal_close = res.deal;
+            close_order = res.order;
             close_ms = GetTickCount();
             break;
            }
@@ -434,7 +459,8 @@ void OnStart()
    double profit = 0.0;
    double swap = 0.0;
    double commission = 0.0;
-   FillDealsFromHistory(position_ticket, order_ticket, deal_open, deal_close,
+   FillDealsFromHistory(position_ticket, order_ticket, close_order, want_close,
+                        deal_open, deal_close,
                         open_price, close_price, profit, swap, commission);
 
    const int hold = (open_ms > 0 && close_ms >= open_ms) ? (int)(close_ms - open_ms) : 0;
