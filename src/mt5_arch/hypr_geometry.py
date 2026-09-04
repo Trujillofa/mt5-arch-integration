@@ -300,6 +300,45 @@ def lua_move_window_workspace(window: str, workspace: int, *, follow: bool = Tru
     )
 
 
+def park_windows_silent(
+    addresses: Sequence[str],
+    workspace: int,
+    *,
+    dry_run: bool = False,
+) -> list[str]:
+    """Move windows to ``workspace`` without following focus."""
+    cmds: list[str] = []
+    for addr in addresses:
+        if not addr:
+            continue
+        sel = addr if str(addr).startswith("address:") else f"address:{addr}"
+        lua = lua_move_window_workspace(sel, workspace, follow=False)
+        cmds.append(lua)
+        if not dry_run:
+            hypr_eval(lua)
+    return cmds
+
+
+def park_prefix_terminals_silent(wineprefix: str, workspace: int) -> list[str]:
+    """Park one Wine prefix's terminal64 windows without stealing the active workspace."""
+    if not wineprefix:
+        return []
+    try:
+        clients = fetch_clients()
+    except (RuntimeError, json.JSONDecodeError, TypeError, OSError):
+        return []
+    owned = list_terminal64_clients(clients, wineprefix=wineprefix)
+    if not owned:
+        login = os.environ.get("MT5_LOGIN", "")
+        if login:
+            owned = [
+                c
+                for c in clients
+                if c.class_name == "terminal64.exe" and login in (c.title or "")
+            ]
+    return park_windows_silent([c.address for c in owned], workspace)
+
+
 def lua_move_window_monitor(window: str, monitor: str, *, follow: bool = False) -> str:
     follow_lit = "true" if follow else "false"
     return (

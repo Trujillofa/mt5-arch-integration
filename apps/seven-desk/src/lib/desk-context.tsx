@@ -10,8 +10,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { applyQuoteMarks } from "@/lib/copy-engine";
+import { applyQuoteMarks, pendingWsfLiveEvents } from "@/lib/copy-engine";
 import {
+  applyWsfLiveCopyResult,
   flattenPosition,
   getDeskSnapshot,
   getPersistError,
@@ -23,11 +24,14 @@ import {
   setConnection as setConnectionStore,
   setMaster as setMasterStore,
   setSymbolMap as setSymbolMapStore,
+  setWsfLiveCopy as setWsfLiveCopyStore,
   subscribeDesk,
   updateAccount as updateAccountStore,
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
+import { WSF_LIVE_CONFIRM } from "@/lib/wsf/constants";
+import type { WsfLiveOrderResult } from "@/lib/wsf/types";
 import { nudgeQuotes } from "@/lib/quotes";
 import type {
   ConnectionStatus,
@@ -53,6 +57,7 @@ interface DeskApi {
   placeTrade: (input: MasterTradeInput) => string | null;
   flatten: (positionId: string) => string | null;
   resetDemo: () => void;
+  setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
@@ -65,6 +70,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   );
   const [busy, setBusy] = useState(false);
   const timers = useRef<number[]>([]);
+  const wsfConfirm = useRef("");
 
   useEffect(() => {
     const tick = window.setInterval(() => {
@@ -119,13 +125,56 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const setWsfLiveCopy = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== WSF_LIVE_CONFIRM) {
+      return `Type ${WSF_LIVE_CONFIRM} to arm WSF live copy.`;
+    }
+    wsfConfirm.current = enabled ? confirm : "";
+    setWsfLiveCopyStore(enabled);
+    return null;
+  }, []);
+
   const placeTrade = useCallback((input: MasterTradeInput) => {
     const result = placeTradeStore(input);
     if (result.groupId && !result.error) {
       setBusy(true);
       const handle = window.setTimeout(() => {
-        resolveGroup(result.groupId!);
-        setBusy(false);
+        void (async () => {
+          resolveGroup(result.groupId!);
+          const pending = pendingWsfLiveEvents(getDeskSnapshot(), result.groupId!);
+          for (const event of pending) {
+            try {
+              const response = await fetch("/api/wsf/order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                cache: "no-store",
+                body: JSON.stringify({
+                  live: true,
+                  confirm: wsfConfirm.current || WSF_LIVE_CONFIRM,
+                  action: "open",
+                  symbol: event.symbol === "EURUSD" ? "EURUSDc" : event.symbol,
+                  side: event.side,
+                  volume_min: true,
+                }),
+              });
+              const payload = (await response.json()) as WsfLiveOrderResult;
+              applyWsfLiveCopyResult(event.id, payload);
+            } catch (caught) {
+              applyWsfLiveCopyResult(event.id, {
+                ok: false,
+                source: "seven-desk",
+                endpoint: "/api/wsf/order",
+                requestId: "",
+                stage: "copy",
+                reason: caught instanceof Error ? caught.message : "WSF live copy failed",
+                login: null,
+                server: null,
+                winePrefix: ".mt5-wsf",
+              });
+            }
+          }
+          setBusy(false);
+        })();
       }, 160);
       timers.current.push(handle);
     }
@@ -133,6 +182,31 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const flatten = useCallback((positionId: string) => {
+    const position = getDeskSnapshot().positions.find((row) => row.id === positionId);
+    if (position?.liveBroker === "wsf") {
+      setBusy(true);
+      void (async () => {
+        try {
+          await fetch("/api/wsf/order/close", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({
+              live: true,
+              confirm: wsfConfirm.current || WSF_LIVE_CONFIRM,
+              action: "close",
+              symbol: position.symbol,
+              side: position.side,
+              volume_min: true,
+            }),
+          });
+        } finally {
+          flattenPosition(positionId);
+          setBusy(false);
+        }
+      })();
+      return null;
+    }
     return flattenPosition(positionId);
   }, []);
 
@@ -140,6 +214,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
     setBusy(false);
+    wsfConfirm.current = "";
+    setWsfLiveCopyStore(false);
     resetDemoStore();
   }, []);
 
@@ -159,6 +235,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       placeTrade,
       flatten,
       resetDemo,
+      setWsfLiveCopy,
     }),
     [
       persistError,
@@ -173,6 +250,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       placeTrade,
       flatten,
       resetDemo,
+      setWsfLiveCopy,
     ]
   );
 

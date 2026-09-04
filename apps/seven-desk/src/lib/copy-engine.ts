@@ -10,6 +10,8 @@ import type {
   Side,
   TradingAccount,
 } from "@/lib/types";
+import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
+import type { WsfLiveOrderResult } from "@/lib/wsf/types";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -287,6 +289,36 @@ function resolveOneSlave(
   const side = applySide(master.side, settings.reverse);
   const levels = applySlTp(settings.reverse, settings.copySlTp, master.sl, master.tp);
 
+  if (state.wsfLiveCopy && account.firmId === "wsf") {
+    const liveSymbol = mapped.symbol === "EURUSD" ? "EURUSDc" : mapped.symbol;
+    if (!WSF_LIVE_SYMBOLS.includes(liveSymbol as (typeof WSF_LIVE_SYMBOLS)[number])) {
+      return {
+        event: {
+          ...patchedBase,
+          symbol: liveSymbol,
+          side,
+          lots: sized.lots,
+          sl: levels.sl,
+          tp: levels.tp,
+          status: "skipped",
+          reason: "symbol not on WSF live path (EURUSDc only)",
+        },
+      };
+    }
+    return {
+      event: {
+        ...patchedBase,
+        symbol: liveSymbol,
+        side,
+        lots: 0.01,
+        sl: levels.sl,
+        tp: levels.tp,
+        status: "queued",
+        reason: WSF_LIVE_PENDING,
+      },
+    };
+  }
+
   const result = paperAdapter.placeMarket(
     account,
     {
@@ -419,6 +451,75 @@ export function closePosition(
     blotter: pushBlotter(state.blotter, event),
   };
   return { state: applyQuoteMarks(next) };
+}
+
+export function pendingWsfLiveEvents(state: DeskState, groupId: string): BlotterEvent[] {
+  return state.blotter.filter(
+    (event) =>
+      event.groupId === groupId &&
+      event.role === "slave" &&
+      event.status === "queued" &&
+      event.reason === WSF_LIVE_PENDING
+  );
+}
+
+export function applyWsfLiveFill(
+  state: DeskState,
+  eventId: string,
+  result: WsfLiveOrderResult
+): DeskState {
+  const event = state.blotter.find((row) => row.id === eventId);
+  if (!event) return state;
+  const now = Date.now();
+  if (!result.ok) {
+    return {
+      ...state,
+      blotter: state.blotter.map((row) =>
+        row.id === eventId
+          ? {
+              ...row,
+              status: "error",
+              reason: result.reason || "WSF live copy failed",
+              updatedAt: now,
+            }
+          : row
+      ),
+    };
+  }
+  const lots = result.volume && result.volume > 0 ? result.volume : 0.01;
+  const price = result.openPrice ?? event.requestedPrice;
+  const position: Position = {
+    id: uid("pos"),
+    accountId: event.accountId,
+    symbol: result.symbol ?? event.symbol,
+    side: event.side,
+    lots,
+    entry: price,
+    sl: event.sl,
+    tp: event.tp,
+    openedAt: now,
+    mark: price,
+    pnl: 0,
+    liveBroker: "wsf",
+    liveOrder: result.order,
+  };
+  const blotter = state.blotter.map((row) =>
+    row.id === eventId
+      ? {
+          ...row,
+          status: "filled" as const,
+          fillPrice: price,
+          lots,
+          reason: `live WSF 149736 · min lot · order ${result.order ?? "—"}`,
+          updatedAt: now,
+        }
+      : row
+  );
+  return applyQuoteMarks({
+    ...state,
+    positions: [position, ...state.positions],
+    blotter,
+  });
 }
 
 export function defaultCopySettings(slaveAccountId: string): CopySettings {

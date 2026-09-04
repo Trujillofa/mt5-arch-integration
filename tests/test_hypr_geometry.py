@@ -17,6 +17,7 @@ from mt5_arch.hypr_geometry import (
     lua_fullscreen_state,
     lua_move_window_workspace,
     lua_move_window_xy,
+    park_windows_silent,
     parse_clients_json,
     parse_monitors_json,
     pick_active_monitor,
@@ -317,6 +318,14 @@ def test_lua_dispatch_builders() -> None:
     assert "window = 'class:terminal64.exe'" in move
     assert "workspace = 1" in move
     assert "follow = true" in move
+    silent = lua_move_window_workspace("address:0xabc", 11, follow=False)
+    assert "workspace = 11" in silent
+    assert "follow = false" in silent
+    parked = park_windows_silent(["0xabc", "address:0xdef"], 11, dry_run=True)
+    assert parked == [
+        lua_move_window_workspace("address:0xabc", 11, follow=False),
+        lua_move_window_workspace("address:0xdef", 11, follow=False),
+    ]
     xy = lua_move_window_xy("class:terminal64.exe", 1940, 40)
     assert "x = 1940" in xy
     assert "y = 40" in xy

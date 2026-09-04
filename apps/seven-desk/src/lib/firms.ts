@@ -8,16 +8,16 @@ export const FIRMS: FirmProfile[] = [
     platforms: ["MT5", "cTrader", "Match-Trader"],
     typicalServer: "WSFmarkets-Server",
     notes:
-      "MT5 server is WSFmarkets-Server. Fetch WSF uses operator MT5 env when present (login/server on the server only). Missing password keeps the paper adapter. Not the public homepage demo card.",
+      "MT5 149736 @ WSFmarkets-Server. Fetch is read-only. Arm WSF live copy to send the WSF slave of each master fill as a min-lot OrderSend. Scratch remains a separate control. Not Vantage/FP/MCP.",
   },
   {
     id: "fundednext",
     name: "FundedNext",
     legalName: "FundedNext",
     platforms: ["MT4", "MT5", "cTrader", "Match-Trader"],
-    typicalServer: "FundedNext-Server",
+    typicalServer: "FundedNext-Server 2",
     notes:
-      "Commonly MT5 or Match-Trader. cTrader exists on some account sizes and may carry extra platform rules.",
+      "Operator book is MT5 13981906 @ FundedNext-Server 2 (Stellar 2-Step P1 100K). Read-only file-bridge probe. No FundedNext live-order API — attaching an EA is an add-on risk the operator accepted for the snapshot.",
   },
   {
     id: "neomaa",
@@ -50,8 +50,9 @@ export const FIRMS: FirmProfile[] = [
     name: "FTMO",
     legalName: "FTMO",
     platforms: ["MT4", "MT5", "cTrader", "DXtrade"],
-    typicalServer: "FTMO-Server",
-    notes: "Typically MT5 or cTrader. DXtrade and MT4 still show up on older or specific accounts.",
+    typicalServer: "FTMO-Server4",
+    notes:
+      "Operator book is MT5 541163357 @ FTMO-Server4. Read-only file-bridge probe. No FTMO live-order API — attaching an EA is an add-on risk the operator accepted for the snapshot.",
   },
   {
     id: "alphacapital",

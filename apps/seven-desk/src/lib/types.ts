@@ -73,6 +73,9 @@ export interface Position {
   openedAt: number;
   mark: number;
   pnl: number;
+  /** Set when the fill was a real WSF OrderSend, not paper. */
+  liveBroker?: "wsf";
+  liveOrder?: number;
 }
 
 export interface BlotterEvent {
@@ -109,4 +112,6 @@ export interface DeskState {
   positions: Position[];
   quotes: PaperQuote[];
   selectedAccountId: string;
+  /** Session flag: WSF slave fills go through POST /api/wsf/order. Not persisted. */
+  wsfLiveCopy: boolean;
 }

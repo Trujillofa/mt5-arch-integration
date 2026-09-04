@@ -39,8 +39,11 @@ export function TradeTicket() {
     if (Number(lots) >= 2) {
       return "2.00 lots × FundingPips 0.8 exceeds its 1.00 max lot — expect a skip.";
     }
+    if (state.wsfLiveCopy) {
+      return `WSF live copy is armed. EURUSD → EURUSDc 0.01 on 149736. ${enabledSlaves} slaves will attempt a fill (WSF live, others paper).`;
+    }
     return `Fortraders is copy-off. ${enabledSlaves} slaves will attempt a fill.`;
-  }, [symbol, lots, enabledSlaves]);
+  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy]);
 
   function submit() {
     setFormError(null);
@@ -91,8 +94,10 @@ export function TradeTicket() {
           <span className="text-foreground">
             {master ? FIRM_BY_ID[master.firmId].name : "—"}
           </span>
-          , then fan out through the copy engine. This button never live-OrderSends.
-          WSF live scratch is a separate control on the WSF card.
+          , then fan out through the copy engine. Other slaves stay paper.
+          {state.wsfLiveCopy
+            ? " WSF live copy is armed — the WSF slave is a real min-lot OrderSend on 149736."
+            : " WSF is paper unless you arm live copy on the WSF card."}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
