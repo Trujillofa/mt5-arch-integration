@@ -26,7 +26,7 @@
 #include <FxSymbolRegistry.mqh>
 
 input int    InpTimerSec    = 5;       // Snapshot interval (seconds). Use 5+ under Wine.
-input string InpBroker      = "";      // required: vantage|fpmarkets|exness|wsf
+input string InpBroker      = "";      // required: vantage|fpmarkets|exness|wsf|alphacapital
 // Canonical names; FxResolveSymbol maps via config/symbols/registry.json
 input string InpSymbols     = "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD";
 input string InpTimeframes  = "H1,H4,D1";
@@ -64,6 +64,7 @@ int OnInit()
       return INIT_PARAMETERS_INCORRECT;
      }
    FolderCreate(g_dir);
+   FolderCreate(g_dir, FILE_COMMON);
    g_lock_rel = g_dir + "\\writer.lock";
 
    g_is_writer = ClaimWriterLock();
@@ -219,7 +220,10 @@ string Esc(const string s)
 //+------------------------------------------------------------------+
 void Put(const string rel, const string body)
   {
-   int h = FileOpen(rel, FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE);
+   int flags = FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE;
+   int h = FileOpen(rel, flags);
+   if(h == INVALID_HANDLE)
+      h = FileOpen(rel, flags|FILE_COMMON);
    if(h == INVALID_HANDLE)
      {
       static datetime s_last_err = 0;

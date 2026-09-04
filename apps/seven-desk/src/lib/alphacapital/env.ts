@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
@@ -102,8 +102,37 @@ export function alphacapitalBrandTerminalDir(prefix = ALPHACAPITAL_ONLY_PREFIX):
   return join(prefix, "drive_c", "Program Files", ALPHACAPITAL_BRAND_INSTALL);
 }
 
+function commonBridgeDirs(prefix: string): string[] {
+  const users = join(prefix, "drive_c", "users");
+  const out: string[] = [];
+  if (!existsSync(users)) return out;
+  try {
+    for (const name of readdirSync(users)) {
+      out.push(
+        join(
+          users,
+          name,
+          "AppData",
+          "Roaming",
+          "MetaQuotes",
+          "Terminal",
+          "Common",
+          "Files",
+          "mt5_arch"
+        )
+      );
+    }
+  } catch {
+    return out;
+  }
+  return out;
+}
+
 export function alphacapitalBridgeCandidates(prefix = ALPHACAPITAL_ONLY_PREFIX): string[] {
-  return [join(alphacapitalBrandTerminalDir(prefix), "MQL5", "Files", "mt5_arch")];
+  return [
+    join(alphacapitalBrandTerminalDir(prefix), "MQL5", "Files", "mt5_arch"),
+    ...commonBridgeDirs(prefix),
+  ];
 }
 
 export function alphacapitalBridgeDir(prefix = ALPHACAPITAL_ONLY_PREFIX): string {

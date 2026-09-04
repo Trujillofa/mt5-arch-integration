@@ -23,3 +23,11 @@ def test_fill_deals_from_history_is_shared() -> None:
     assert "HistorySelectByPosition" in text
     assert "DEAL_ENTRY_OUT_BY" in text
     assert "need_close" in text
+
+
+def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
+    text = DESK.read_text(encoding="utf-8")
+    assert "FolderCreate(\"mt5_arch\")" in text
+    assert "FILE_COMMON" in text
+    assert "SymbolIsSynchronized" in text
+    assert "ACCOUNT_MARGIN_MODE_RETAIL_NETTING" in text

@@ -67,6 +67,7 @@ for broker in "$@"; do
       die "refusing forbidden prefix $WINEPREFIX"
       ;;
   esac
+  quotes_first=0
 
   running=0
   if python3 -c '
@@ -85,11 +86,22 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
         die "$broker generic MetaQuotes tree is not the live book — start the branded terminal64.exe"
       fi
       term_dir="$(cd "$(dirname "$term")" && pwd)"
-      python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
-        --broker "$broker" --term-dir "$term_dir" \
-        || die "failed to inject Mt5ArchBridge on $broker Default chart"
+      quotes_first=0
+      if [[ "$broker" == "alphacapital" ]] && \
+         ! python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+           --broker "$broker" --term-dir "$term_dir" --quotes-ready; then
+        quotes_first=1
+        python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+          --broker "$broker" --term-dir "$term_dir" --no-expert --allow-missing-ex5 \
+          || die "failed to write quotes-first Default chart for $broker"
+        info "$broker has no EURUSD history yet — starting without Mt5ArchBridge so the symbol can sync"
+      else
+        python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+          --broker "$broker" --term-dir "$term_dir" \
+          || die "failed to inject Mt5ArchBridge on $broker Default chart"
+      fi
       if [[ "$running" -eq 1 ]]; then
-        if python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+        if [[ "$quotes_first" -eq 0 ]] && python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" --fresh; then
           info "$broker already running with a fresh bridge — parking on workspace $BG_WS"
           park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
@@ -115,6 +127,35 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
     extra+=(/config:auto_login.ini)
   fi
   start_terminal64_detached "$term" /portable "${extra[@]}"
+  if [[ "$broker" == "alphacapital" && "${quotes_first:-0}" -eq 1 ]]; then
+    term_dir="$(cd "$(dirname "$term")" && pwd)"
+    info "waiting up to 90s for ACG EURUSD history before attaching Mt5ArchBridge"
+    quotes_ok=0
+    for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
+      sleep 5
+      if python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+        --broker alphacapital --term-dir "$term_dir" --quotes-ready; then
+        quotes_ok=1
+        break
+      fi
+    done
+    if [[ "$quotes_ok" -eq 1 ]]; then
+      info "ACG EURUSD history is present — attaching Mt5ArchBridge and restarting that book only"
+      python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+        --broker alphacapital --term-dir "$term_dir" \
+        || die "failed to inject Mt5ArchBridge after quotes"
+      python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
+        --broker alphacapital --term-dir "$term_dir" --stop-branded \
+        || die "failed to stop ACG for post-quotes attach"
+      extra=()
+      if [[ -f "$(dirname "$term")/auto_login.ini" ]]; then
+        extra+=(/config:auto_login.ini)
+      fi
+      start_terminal64_detached "$term" /portable "${extra[@]}"
+    else
+      warn "ACG EURUSD still has no history — left running without the EA. Wait for a live bid/ask, then re-run $0 alphacapital"
+    fi
+  fi
 done
 
 if command -v hyprctl >/dev/null 2>&1; then
