@@ -30,6 +30,7 @@ import {
   resolveGroup,
   selectAccount as selectAccountStore,
   setConnection as setConnectionStore,
+  setAlphacapitalLiveCopy as setAlphacapitalLiveCopyStore,
   setFundednextLiveCopy as setFundednextLiveCopyStore,
   setFtmoLiveMaster as setFtmoLiveMasterStore,
   setMaster as setMasterStore,
@@ -40,6 +41,7 @@ import {
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
+import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
@@ -74,6 +76,7 @@ interface DeskApi {
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFtmoLiveMaster: (enabled: boolean, confirm: string) => string | null;
   setFundednextLiveCopy: (enabled: boolean, confirm: string) => string | null;
+  setAlphacapitalLiveCopy: (enabled: boolean, confirm: string) => string | null;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
@@ -81,25 +84,34 @@ const DeskContext = createContext<DeskApi | null>(null);
 function endpointFor(broker: LiveBroker, action: "open" | "close"): string {
   if (broker === "wsf") return action === "close" ? "/api/wsf/order/close" : "/api/wsf/order";
   if (broker === "ftmo") return action === "close" ? "/api/ftmo/order/close" : "/api/ftmo/order";
+  if (broker === "alphacapital") {
+    return action === "close" ? "/api/alphacapital/order/close" : "/api/alphacapital/order";
+  }
   return action === "close" ? "/api/fundednext/order/close" : "/api/fundednext/order";
 }
 
-function confirmFor(
-  broker: LiveBroker,
-  refs: { wsf: string; ftmo: string; fn: string }
-): string {
+function confirmFor(broker: LiveBroker, refs: ConfirmRefs): string {
   if (broker === "wsf") return refs.wsf || WSF_LIVE_CONFIRM;
   if (broker === "ftmo") return refs.ftmo || FTMO_LIVE_CONFIRM;
+  if (broker === "alphacapital") return refs.acg || ALPHACAPITAL_LIVE_CONFIRM;
   return refs.fn || FUNDEDNEXT_LIVE_CONFIRM;
 }
 
 function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
   if (reason === WSF_LIVE_PENDING) return "wsf";
   if (reason === FUNDEDNEXT_LIVE_PENDING) return "fundednext";
+  if (reason === ALPHACAPITAL_LIVE_PENDING) return "alphacapital";
   return null;
 }
 
-type ConfirmRefs = { wsf: string; ftmo: string; fn: string };
+function winePrefixFor(broker: LiveBroker): string {
+  if (broker === "wsf") return ".mt5-wsf";
+  if (broker === "ftmo") return ".mt5-ftmo";
+  if (broker === "alphacapital") return ".mt5-alphacapital";
+  return ".mt5-fundednext";
+}
+
+type ConfirmRefs = { wsf: string; ftmo: string; fn: string; acg: string };
 
 async function closeLiveGroup(
   positionId: string,
@@ -162,8 +174,7 @@ async function postLiveOrder(
       reason: caught instanceof Error ? caught.message : `${broker} ${action} failed`,
       login: null,
       server: null,
-      winePrefix:
-        broker === "wsf" ? ".mt5-wsf" : broker === "ftmo" ? ".mt5-ftmo" : ".mt5-fundednext",
+      winePrefix: winePrefixFor(broker),
     };
   }
 }
@@ -180,6 +191,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   const wsfConfirm = useRef("");
   const ftmoConfirm = useRef("");
   const fnConfirm = useRef("");
+  const acgConfirm = useRef("");
 
   useEffect(() => {
     const tick = window.setInterval(() => {
@@ -270,11 +282,21 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const setAlphacapitalLiveCopy = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== ALPHACAPITAL_LIVE_CONFIRM) {
+      return `Type ${ALPHACAPITAL_LIVE_CONFIRM} to arm Alpha Capital live copy.`;
+    }
+    acgConfirm.current = enabled ? confirm : "";
+    setAlphacapitalLiveCopyStore(enabled);
+    return null;
+  }, []);
+
   const fanOutLiveSlaves = useCallback(async (groupId: string) => {
     const refs = {
       wsf: wsfConfirm.current,
       ftmo: ftmoConfirm.current,
       fn: fnConfirm.current,
+      acg: acgConfirm.current,
     };
     const pending = pendingLiveSlaveEvents(getDeskSnapshot(), groupId);
     for (const event of pending) {
@@ -303,7 +325,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             reason: caught instanceof Error ? caught.message : `${broker} live copy failed`,
             login: null,
             server: null,
-            winePrefix: broker === "wsf" ? ".mt5-wsf" : broker === "ftmo" ? ".mt5-ftmo" : ".mt5-fundednext",
+            winePrefix: winePrefixFor(broker),
           },
           broker
         );
@@ -378,6 +400,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       wsf: wsfConfirm.current,
       ftmo: ftmoConfirm.current,
       fn: fnConfirm.current,
+      acg: acgConfirm.current,
     };
     setActionError(null);
     setBusy(true);
@@ -403,6 +426,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       wsf: wsfConfirm.current,
       ftmo: ftmoConfirm.current,
       fn: fnConfirm.current,
+      acg: acgConfirm.current,
     };
     setActionError(null);
     if (liveRepIds.length === 0) {
@@ -437,9 +461,11 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     wsfConfirm.current = "";
     ftmoConfirm.current = "";
     fnConfirm.current = "";
+    acgConfirm.current = "";
     setWsfLiveCopyStore(false);
     setFtmoLiveMasterStore(false);
     setFundednextLiveCopyStore(false);
+    setAlphacapitalLiveCopyStore(false);
     resetDemoStore();
   }, []);
 
@@ -464,6 +490,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setWsfLiveCopy,
       setFtmoLiveMaster,
       setFundednextLiveCopy,
+      setAlphacapitalLiveCopy,
     }),
     [
       persistError,
@@ -483,6 +510,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setWsfLiveCopy,
       setFtmoLiveMaster,
       setFundednextLiveCopy,
+      setAlphacapitalLiveCopy,
     ]
   );
 

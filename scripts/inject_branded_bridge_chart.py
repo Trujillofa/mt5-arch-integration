@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write Mt5ArchBridge onto a branded Default chart. WSF / FTMO / FundedNext only.
+"""Write Mt5ArchBridge onto a branded Default chart. WSF / FTMO / FundedNext / Alpha.
 
 Refuses a generic Program Files/MetaTrader 5 tree (FTMO's leftover can carry
 another company's account.json). Does not touch vantage / fpmarkets / exness.
@@ -16,8 +16,13 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LIVE_RESTORE = ("wsf", "ftmo", "fundednext")
-SYMBOL = {"wsf": "EURUSDc", "ftmo": "EURUSD", "fundednext": "EURUSD"}
+LIVE_RESTORE = ("wsf", "ftmo", "fundednext", "alphacapital")
+SYMBOL = {
+    "wsf": "EURUSDc",
+    "ftmo": "EURUSD",
+    "fundednext": "EURUSD",
+    "alphacapital": "EURUSD",
+}
 DEFAULT_FRESH_SEC = 60
 
 

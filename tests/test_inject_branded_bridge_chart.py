@@ -40,6 +40,14 @@ def test_inject_ftmo_writes_inpbroker_on_both_default_charts(tmp_path: Path) -> 
         assert "Mt5ArchBridge" in text
 
 
+def test_inject_alphacapital_writes_inpbroker(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    written = inject.inject_charts("alphacapital", term_dir)
+    text = _chart_text(written[0])
+    assert "InpBroker=alphacapital" in text
+    assert "symbol=EURUSD" in text
+
+
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "WSFmarkets MT5 Terminal")
     written = inject.inject_charts("wsf", term_dir)

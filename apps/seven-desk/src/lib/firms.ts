@@ -61,7 +61,7 @@ export const FIRMS: FirmProfile[] = [
     platforms: ["MT5", "cTrader", "DXtrade", "TradeLocker"],
     typicalServer: "ACGMarkets",
     notes:
-      "MT5 commonly connects to the ACGMarkets server. Other platforms vary by programme and region.",
+      "Operator book is MT5 2765247 @ ACGMarkets. Fetch is read-only. Arm Alpha Capital live copy to send the Alpha slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
   },
 ];
 

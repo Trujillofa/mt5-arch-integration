@@ -3,6 +3,13 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync,
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import {
+  ALPHACAPITAL_BRAND_INSTALLS,
+  ALPHACAPITAL_EXPECTED_LOGIN,
+  ALPHACAPITAL_ONLY_PREFIX,
+  ALPHACAPITAL_SERVER_NEEDLE,
+} from "@/lib/alphacapital/env";
+import { ALPHACAPITAL_EXPECTED_SERVER, ALPHACAPITAL_LIVE_CONFIRM } from "@/lib/alphacapital/types";
+import {
   FUNDEDNEXT_BRAND_INSTALLS,
   FUNDEDNEXT_EXPECTED_LOGIN,
   FUNDEDNEXT_ONLY_PREFIX,
@@ -62,6 +69,18 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     magic: 20263849,
     defaultSymbol: "EURUSD",
     restoreArg: "fundednext",
+  },
+  alphacapital: {
+    id: "alphacapital",
+    prefix: ALPHACAPITAL_ONLY_PREFIX,
+    brands: ALPHACAPITAL_BRAND_INSTALLS,
+    login: ALPHACAPITAL_EXPECTED_LOGIN,
+    confirm: ALPHACAPITAL_LIVE_CONFIRM,
+    needle: ALPHACAPITAL_SERVER_NEEDLE,
+    server: ALPHACAPITAL_EXPECTED_SERVER,
+    magic: 20263850,
+    defaultSymbol: "EURUSD",
+    restoreArg: "alphacapital",
   },
 };
 

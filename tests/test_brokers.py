@@ -52,6 +52,7 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert "fpmarkets" in names, "expected config/brokers/fpmarkets.env"
     assert "fundednext" in names, "expected config/brokers/fundednext.env"
     assert "ftmo" in names, "expected config/brokers/ftmo.env"
+    assert "alphacapital" in names, "expected config/brokers/alphacapital.env"
 
     wsf = load_broker_profile("wsf")
     assert wsf.login == "149736"
@@ -78,6 +79,11 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert ftmo.server == "FTMO-Server4"
     assert "mt5-ftmo" in ftmo.wineprefix
 
+    acg = load_broker_profile("alphacapital")
+    assert acg.login == "2765247"
+    assert acg.server == "ACGMarkets"
+    assert "mt5-alphacapital" in acg.wineprefix
+
     # as_exports never includes password keys; Settings reads MT5_BROKER
     exp = vant.as_exports()
     assert "MT5_PASSWORD" not in exp
@@ -90,6 +96,7 @@ def test_broker_install_dirs_include_funded_brands() -> None:
     data = json.loads((repo_root() / "config" / "broker_install_dirs.json").read_text())
     assert data["fundednext"] == "FundedNext MT5 Terminal"
     assert data["ftmo"] == "FTMO Global Markets MT5 Terminal"
+    assert data["alphacapital"] == "ACG Markets MT5 Terminal"
     assert data["wsf"] == "WSFmarkets MT5 Terminal"
     assert data["_generic"] == "MetaTrader 5"
 

@@ -10,6 +10,10 @@ import type {
   Side,
   TradingAccount,
 } from "@/lib/types";
+import {
+  ALPHACAPITAL_LIVE_PENDING,
+  ALPHACAPITAL_LIVE_SYMBOLS,
+} from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_PENDING, FUNDEDNEXT_LIVE_SYMBOLS } from "@/lib/fundednext/types";
 import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
@@ -340,6 +344,36 @@ function resolveOneSlave(
     };
   }
 
+  if (state.alphacapitalLiveCopy && account.firmId === "alphacapital") {
+    const liveSymbol = mapped.symbol === "EURUSDc" ? "EURUSD" : mapped.symbol;
+    if (!ALPHACAPITAL_LIVE_SYMBOLS.includes(liveSymbol as (typeof ALPHACAPITAL_LIVE_SYMBOLS)[number])) {
+      return {
+        event: {
+          ...patchedBase,
+          symbol: liveSymbol,
+          side,
+          lots: 0.01,
+          sl: levels.sl,
+          tp: levels.tp,
+          status: "skipped",
+          reason: "symbol not on Alpha Capital live path (EURUSD only)",
+        },
+      };
+    }
+    return {
+      event: {
+        ...patchedBase,
+        symbol: liveSymbol,
+        side,
+        lots: 0.01,
+        sl: levels.sl,
+        tp: levels.tp,
+        status: "queued",
+        reason: ALPHACAPITAL_LIVE_PENDING,
+      },
+    };
+  }
+
   const sized = sizeLots(master.lots, settings.lotMultiplier, settings.maxLot);
   if (!sized.ok) {
     return {
@@ -569,13 +603,15 @@ export function pendingLiveSlaveEvents(state: DeskState, groupId: string): Blott
       event.status === "queued" &&
       (event.reason === WSF_LIVE_PENDING ||
         event.reason === FUNDEDNEXT_LIVE_PENDING ||
-        event.reason === FTMO_LIVE_PENDING)
+        event.reason === FTMO_LIVE_PENDING ||
+        event.reason === ALPHACAPITAL_LIVE_PENDING)
   );
 }
 
 function liveFillLabel(broker: LiveBroker, result: LiveOrderResult): string {
   if (broker === "wsf") return `live WSF 149736 · min lot · order ${result.order ?? "—"}`;
   if (broker === "ftmo") return `live FTMO 541163357 · min lot · order ${result.order ?? "—"}`;
+  if (broker === "alphacapital") return `live ACG 2765247 · min lot · order ${result.order ?? "—"}`;
   return `live FN 13981906 · min lot · order ${result.order ?? "—"}`;
 }
 

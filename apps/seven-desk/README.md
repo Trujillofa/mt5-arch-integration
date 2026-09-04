@@ -1,6 +1,6 @@
 # Seven Desk
 
-Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads each firm’s file-bridge snapshots when that Wine terminal is up. Paper adapter stays the default copy path. Live OrderSend is fail-closed and opt-in on **FTMO 541163357** (master), **WSF 149736**, and **FundedNext 13981906** only — branded `terminal64.exe` trees, never Vantage/FP or a generic `MetaTrader 5` folder inside those prefixes.
+Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads each firm’s file-bridge snapshots when that Wine terminal is up. Paper adapter stays the default copy path. Live OrderSend is fail-closed and opt-in on **FTMO 541163357** (master), **WSF 149736**, **FundedNext 13981906**, and **Alpha Capital 2765247** — branded `terminal64.exe` trees, never Vantage/FP or a generic `MetaTrader 5` folder inside those prefixes.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
@@ -25,7 +25,7 @@ Each book ships with a seeded paper account, a typical platform, and an honest s
 | Fortraders | MT5, TradeLocker, cTrader | `ForTraders-Server` |
 | FundingPips | MT5, cTrader, Match-Trader | `FundingPips-Server` |
 | FTMO | MT4, MT5, cTrader, DXtrade | **`FTMO-Server4`** (login `541163357`) |
-| Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** |
+| Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** (login `2765247`) |
 
 FTMO starts as the **master**. The others are slaves with copy rules already filled in so a first trade does something visible.
 
@@ -102,6 +102,15 @@ Select the FTMO card and click **Fetch FTMO**, or:
 
 Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot. Arm **FTMO live master** on the FTMO card (`confirm: "FTMO-541163357"`) so Place master trade is a real 0.01 EURUSD `POST /api/ftmo/order`. Copies wait until that fill.
 
+## Alpha Capital live fetch (read-only)
+
+Select the Alpha Capital card and click **Fetch Alpha Capital**, or:
+
+- `GET /api/alphacapital/probe` — fail-closed file-bridge snapshot
+- `GET /api/alphacapital/account` — sanitized account snapshot only
+
+Uses `ALPHA_MT5_*` from the gitignored repo `.env` (login `2765247`, server `ACGMarkets`, prefix `~/.mt5-alphacapital`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is an Alpha Capital add-on risk the operator accepted for the snapshot. Arm **Alpha Capital live copy** on the same card to send each master fill through `POST /api/alphacapital/order` (`confirm: "ACG-2765247"`, 0.01 EURUSD).
+
 ## WSF live order (opt-in, fail-closed)
 
 Paper remains the default. A live min-lot send requires all of:
@@ -121,7 +130,7 @@ POST /api/wsf/order/close
 
 Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. A stale file-bridge heartbeat does not block the one-shot (same as FTMO/FN). After the send, the path restores the branded WSF terminal in the background and reattaches `Mt5ArchBridge` on the Default chart when the heartbeat is stale. **CLOSE positions** on the blotter bar flattens every open desk row: live groups first (fail-closed), then paper. An already-flat close (`no open … desk position` / `position vanished`) drops the desk row. Live close result JSON retries `HistorySelectByPosition` so `deal_close` is not left at 0 when the journal already has the out deal.
 
-The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO and FundedNext live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP are never used.
+The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, and Alpha Capital live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` / `~/.mt5-alphacapital` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP are never used.
 
 Optional overrides (not committed; never put secrets in git):
 
@@ -139,7 +148,7 @@ WSF_ENV_FILE=
 
 - `AccountAdapter` in `src/lib/adapters/types.ts`
 - `PaperAdapter` in `src/lib/adapters/paper.ts` — copy-engine fill path unless that book’s live switch is armed
-- `POST /api/ftmo/order`, `/api/wsf/order`, `/api/fundednext/order` — branded-prefix min-lot (scratch, master, or copy-open)
+- `POST /api/ftmo/order`, `/api/wsf/order`, `/api/fundednext/order`, `/api/alphacapital/order` — branded-prefix min-lot (scratch, master, or copy-open)
 - `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
 
 There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.

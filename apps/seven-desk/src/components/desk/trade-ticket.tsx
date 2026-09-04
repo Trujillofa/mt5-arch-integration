@@ -42,16 +42,17 @@ export function TradeTicket() {
     if (state.ftmoLiveMaster) {
       return `FTMO live master is armed. Ticket becomes 0.01 EURUSD on 541163357 before any copy. ${enabledSlaves} slaves will attempt a fill.`;
     }
-    if (state.wsfLiveCopy || state.fundednextLiveCopy) {
+    if (state.wsfLiveCopy || state.fundednextLiveCopy || state.alphacapitalLiveCopy) {
       return `Live copy armed: ${[
         state.wsfLiveCopy ? "WSF 0.01 EURUSDc" : null,
         state.fundednextLiveCopy ? "FN 0.01 EURUSD" : null,
+        state.alphacapitalLiveCopy ? "ACG 0.01 EURUSD" : null,
       ]
         .filter(Boolean)
         .join(" · ")}. ${enabledSlaves} slaves will attempt a fill.`;
     }
     return `Fortraders is copy-off. ${enabledSlaves} slaves will attempt a fill.`;
-  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy]);
+  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy]);
 
   function submit() {
     setFormError(null);
@@ -105,7 +106,11 @@ export function TradeTicket() {
           , then fan out through the copy engine.
           {state.wsfLiveCopy ? " WSF slave is live min-lot." : ""}
           {state.fundednextLiveCopy ? " FundedNext slave is live min-lot." : ""}
-          {!state.wsfLiveCopy && !state.fundednextLiveCopy && !state.ftmoLiveMaster
+          {state.alphacapitalLiveCopy ? " Alpha Capital slave is live min-lot." : ""}
+          {!state.wsfLiveCopy &&
+          !state.fundednextLiveCopy &&
+          !state.alphacapitalLiveCopy &&
+          !state.ftmoLiveMaster
             ? " Live OrderSend stays off until you arm a card."
             : ""}
         </p>
