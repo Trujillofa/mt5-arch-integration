@@ -13,7 +13,11 @@ or **FundedNext live copy** on those cards for min-lot slave opens. Arm
 before any copy. Other books stay paper. One-shots restore the branded
 terminal in the background and refuse a generic `Program Files/MetaTrader 5`
 tree inside those prefixes (that leftover can carry another company’s
-`account.json`). It never talks to Vantage, FP, or official MCP on :22346.
+`account.json`). A stale Mt5ArchBridge heartbeat does not block a live
+one-shot — login/server identity on the last branded `account.json` does.
+Fetch/probe still fail closed on a stale snapshot. **CLOSE positions** on
+the blotter bar flattens every desk row (live groups first, fail-closed;
+paper after). It never talks to Vantage, FP, or official MCP on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

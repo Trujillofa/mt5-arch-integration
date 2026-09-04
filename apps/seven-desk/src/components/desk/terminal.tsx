@@ -36,7 +36,8 @@ function subscribeReady(listener: () => void) {
 }
 
 export function Terminal() {
-  const { hydration, hydrateError, actionError, state, setMaster, resetDemo } = useDesk();
+  const { hydration, hydrateError, actionError, state, busy, setMaster, resetDemo, flattenAll } =
+    useDesk();
   const mounted = useSyncExternalStore(subscribeReady, () => clientReady, () => false);
   const master = state.accounts.find((account) => account.id === state.masterId);
   const paperBooks = state.accounts.filter(
@@ -157,6 +158,17 @@ export function Terminal() {
                 <TabsTrigger value="positions">Positions</TabsTrigger>
                 <TabsTrigger value="exposure">Exposure</TabsTrigger>
               </TabsList>
+              {state.positions.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => flattenAll()}
+                >
+                  {busy ? "Closing…" : "CLOSE positions"}
+                </Button>
+              ) : null}
             </div>
             <TabsContent value="blotter">
               <BlotterTable />

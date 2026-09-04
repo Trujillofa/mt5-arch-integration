@@ -500,6 +500,27 @@ export function liveGroupPositions(state: DeskState, positionId: string): Positi
   );
 }
 
+/** One live row per copy-group, plus every paper row. */
+export function flattenAllTargets(state: DeskState): {
+  liveRepIds: string[];
+  paperIds: string[];
+} {
+  const seen = new Set<string>();
+  const liveRepIds: string[] = [];
+  const paperIds: string[] = [];
+  for (const row of state.positions) {
+    if (row.liveBroker) {
+      const key = row.groupId ?? row.id;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      liveRepIds.push(row.id);
+    } else {
+      paperIds.push(row.id);
+    }
+  }
+  return { liveRepIds, paperIds };
+}
+
 export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
   if (result.ok) return true;
   const reason = (result.reason ?? "").toLowerCase();
