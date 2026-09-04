@@ -10,8 +10,10 @@ import type {
   Side,
   TradingAccount,
 } from "@/lib/types";
+import { FUNDEDNEXT_LIVE_PENDING, FUNDEDNEXT_LIVE_SYMBOLS } from "@/lib/fundednext/types";
+import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
+import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
-import type { WsfLiveOrderResult } from "@/lib/wsf/types";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -274,18 +276,6 @@ function resolveOneSlave(
     };
   }
 
-  const sized = sizeLots(master.lots, settings.lotMultiplier, settings.maxLot);
-  if (!sized.ok) {
-    return {
-      event: {
-        ...patchedBase,
-        symbol: mapped.symbol,
-        status: "skipped",
-        reason: sized.reason,
-      },
-    };
-  }
-
   const side = applySide(master.side, settings.reverse);
   const levels = applySlTp(settings.reverse, settings.copySlTp, master.sl, master.tp);
 
@@ -297,7 +287,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: sized.lots,
+          lots: 0.01,
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -315,6 +305,51 @@ function resolveOneSlave(
         tp: levels.tp,
         status: "queued",
         reason: WSF_LIVE_PENDING,
+      },
+    };
+  }
+
+  if (state.fundednextLiveCopy && account.firmId === "fundednext") {
+    const liveSymbol = mapped.symbol === "EURUSDc" ? "EURUSD" : mapped.symbol;
+    if (!FUNDEDNEXT_LIVE_SYMBOLS.includes(liveSymbol as (typeof FUNDEDNEXT_LIVE_SYMBOLS)[number])) {
+      return {
+        event: {
+          ...patchedBase,
+          symbol: liveSymbol,
+          side,
+          lots: 0.01,
+          sl: levels.sl,
+          tp: levels.tp,
+          status: "skipped",
+          reason: "symbol not on FundedNext live path (EURUSD only)",
+        },
+      };
+    }
+    return {
+      event: {
+        ...patchedBase,
+        symbol: liveSymbol,
+        side,
+        lots: 0.01,
+        sl: levels.sl,
+        tp: levels.tp,
+        status: "queued",
+        reason: FUNDEDNEXT_LIVE_PENDING,
+      },
+    };
+  }
+
+  const sized = sizeLots(master.lots, settings.lotMultiplier, settings.maxLot);
+  if (!sized.ok) {
+    return {
+      event: {
+        ...patchedBase,
+        symbol: mapped.symbol,
+        side,
+        sl: levels.sl,
+        tp: levels.tp,
+        status: "skipped",
+        reason: sized.reason,
       },
     };
   }
@@ -454,19 +489,32 @@ export function closePosition(
 }
 
 export function pendingWsfLiveEvents(state: DeskState, groupId: string): BlotterEvent[] {
+  return pendingLiveSlaveEvents(state, groupId).filter((event) => event.reason === WSF_LIVE_PENDING);
+}
+
+export function pendingLiveSlaveEvents(state: DeskState, groupId: string): BlotterEvent[] {
   return state.blotter.filter(
     (event) =>
       event.groupId === groupId &&
       event.role === "slave" &&
       event.status === "queued" &&
-      event.reason === WSF_LIVE_PENDING
+      (event.reason === WSF_LIVE_PENDING ||
+        event.reason === FUNDEDNEXT_LIVE_PENDING ||
+        event.reason === FTMO_LIVE_PENDING)
   );
 }
 
-export function applyWsfLiveFill(
+function liveFillLabel(broker: LiveBroker, result: LiveOrderResult): string {
+  if (broker === "wsf") return `live WSF 149736 · min lot · order ${result.order ?? "—"}`;
+  if (broker === "ftmo") return `live FTMO 541163357 · min lot · order ${result.order ?? "—"}`;
+  return `live FN 13981906 · min lot · order ${result.order ?? "—"}`;
+}
+
+export function applyLiveFill(
   state: DeskState,
   eventId: string,
-  result: WsfLiveOrderResult
+  result: LiveOrderResult,
+  broker: LiveBroker
 ): DeskState {
   const event = state.blotter.find((row) => row.id === eventId);
   if (!event) return state;
@@ -479,7 +527,7 @@ export function applyWsfLiveFill(
           ? {
               ...row,
               status: "error",
-              reason: result.reason || "WSF live copy failed",
+              reason: result.reason || `${broker} live order failed`,
               updatedAt: now,
             }
           : row
@@ -500,7 +548,7 @@ export function applyWsfLiveFill(
     openedAt: now,
     mark: price,
     pnl: 0,
-    liveBroker: "wsf",
+    liveBroker: broker,
     liveOrder: result.order,
   };
   const blotter = state.blotter.map((row) =>
@@ -510,7 +558,7 @@ export function applyWsfLiveFill(
           status: "filled" as const,
           fillPrice: price,
           lots,
-          reason: `live WSF 149736 · min lot · order ${result.order ?? "—"}`,
+          reason: liveFillLabel(broker, result),
           updatedAt: now,
         }
       : row
@@ -520,6 +568,108 @@ export function applyWsfLiveFill(
     positions: [position, ...state.positions],
     blotter,
   });
+}
+
+export function applyWsfLiveFill(
+  state: DeskState,
+  eventId: string,
+  result: LiveOrderResult
+): DeskState {
+  return applyLiveFill(state, eventId, result, "wsf");
+}
+
+export function placeLiveMasterFill(
+  state: DeskState,
+  input: MasterTradeInput,
+  result: LiveOrderResult,
+  broker: LiveBroker
+): { state: DeskState; error?: string; groupId?: string } {
+  const master = state.accounts.find((account) => account.id === state.masterId);
+  if (!master) return { state, error: "No master account selected." };
+  const groupId = uid("grp");
+  const now = Date.now();
+  const lots = result.volume && result.volume > 0 ? result.volume : 0.01;
+  const fillPrice = result.openPrice && result.openPrice > 0 ? result.openPrice : 0;
+  if (!result.ok || fillPrice <= 0) {
+    const event: BlotterEvent = {
+      id: uid("blt"),
+      groupId,
+      accountId: master.id,
+      role: "master",
+      symbol: input.symbol,
+      side: input.side,
+      lots: 0.01,
+      requestedPrice: fillPrice || 0,
+      sl: input.sl,
+      tp: input.tp,
+      status: "error",
+      reason: result.reason || "live master OrderSend failed — not copying",
+      createdAt: now,
+      updatedAt: now,
+    };
+    return {
+      state: { ...state, blotter: pushBlotter(state.blotter, event) },
+      error: `Master rejected: ${result.reason || "live OrderSend failed"}`,
+      groupId,
+    };
+  }
+
+  const masterPosition: Position = {
+    id: uid("pos"),
+    accountId: master.id,
+    symbol: result.symbol ?? input.symbol,
+    side: input.side,
+    lots,
+    entry: fillPrice,
+    sl: input.sl,
+    tp: input.tp,
+    openedAt: now,
+    mark: fillPrice,
+    pnl: 0,
+    liveBroker: broker,
+    liveOrder: result.order,
+  };
+  const masterEvent: BlotterEvent = {
+    id: uid("blt"),
+    groupId,
+    accountId: master.id,
+    role: "master",
+    symbol: result.symbol ?? input.symbol,
+    side: input.side,
+    lots,
+    requestedPrice: fillPrice,
+    fillPrice,
+    sl: input.sl,
+    tp: input.tp,
+    status: "filled",
+    reason: liveFillLabel(broker, result),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const slaveEvents: BlotterEvent[] = state.accounts
+    .filter((account) => account.id !== master.id)
+    .map((account) => ({
+      id: uid("blt"),
+      groupId,
+      accountId: account.id,
+      role: "slave" as const,
+      symbol: input.symbol,
+      side: input.side,
+      lots,
+      requestedPrice: fillPrice,
+      sl: input.sl,
+      tp: input.tp,
+      status: "queued" as const,
+      reason: "waiting on copy engine",
+      createdAt: now,
+      updatedAt: now,
+    }));
+  const next: DeskState = {
+    ...state,
+    positions: [masterPosition, ...state.positions],
+    blotter: [masterEvent, ...slaveEvents, ...state.blotter].slice(0, BLOTTER_LIMIT),
+  };
+  return { state: applyQuoteMarks(next), groupId };
 }
 
 export function defaultCopySettings(slaveAccountId: string): CopySettings {

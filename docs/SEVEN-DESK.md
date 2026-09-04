@@ -8,10 +8,10 @@ Paper copy is the default and never live-OrderSends. WSF live fetch is optional
 and fails closed when the prefix or bridge is absent. A separate fail-closed
 path `POST /api/wsf/order` can send a min-lot scratch on WSF 149736 only when
 the body has `{ "live": true, "confirm": "WSF-149736" }`. Arm **WSF live copy**
-on the WSF card to send the WSF slave of each master fill the same way
-(`action: "open"`, 0.01 lot). Other books stay paper. If the WSF terminal is
-down, the order path starts `~/.mt5-wsf` in the background and waits for a
-fresh file-bridge snapshot. It never talks to Vantage, FP, or official MCP
+or **FundedNext live copy** on those cards for min-lot slave opens. Arm
+**FTMO live master** so Place master trade is a real 0.01 EURUSD on 541163357
+before any copy. Other books stay paper. One-shots restore the branded
+terminal in the background. It never talks to Vantage, FP, or official MCP
 on :22346.
 
 ```bash

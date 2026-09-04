@@ -73,8 +73,8 @@ export interface Position {
   openedAt: number;
   mark: number;
   pnl: number;
-  /** Set when the fill was a real WSF OrderSend, not paper. */
-  liveBroker?: "wsf";
+  /** Set when the fill was a real OrderSend, not paper. */
+  liveBroker?: "wsf" | "ftmo" | "fundednext";
   liveOrder?: number;
 }
 
@@ -112,6 +112,8 @@ export interface DeskState {
   positions: Position[];
   quotes: PaperQuote[];
   selectedAccountId: string;
-  /** Session flag: WSF slave fills go through POST /api/wsf/order. Not persisted. */
+  /** Session flags. Not persisted. */
   wsfLiveCopy: boolean;
+  ftmoLiveMaster: boolean;
+  fundednextLiveCopy: boolean;
 }

@@ -1,12 +1,14 @@
 import {
+  applyLiveFill,
   applyQuoteMarks,
   applyWsfLiveFill,
   closePosition,
   defaultCopySettings,
+  placeLiveMasterFill,
   placeMasterTrade,
   resolveQueuedCopies,
 } from "@/lib/copy-engine";
-import type { WsfLiveOrderResult } from "@/lib/wsf/types";
+import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { seedDesk } from "@/lib/seed";
 import { clearDesk, loadDesk, saveDesk } from "@/lib/storage";
 import type {
@@ -166,6 +168,16 @@ export function placeTrade(input: MasterTradeInput): {
   return { error: result.error ?? null, groupId: result.groupId };
 }
 
+export function placeLiveMaster(
+  input: MasterTradeInput,
+  result: LiveOrderResult,
+  broker: LiveBroker
+): { error: string | null; groupId?: string } {
+  const next = placeLiveMasterFill(desk, input, result, broker);
+  persist(next.state);
+  return { error: next.error ?? null, groupId: next.groupId };
+}
+
 export function resolveGroup(groupId: string) {
   persist(resolveQueuedCopies(desk, groupId));
 }
@@ -174,8 +186,24 @@ export function setWsfLiveCopy(enabled: boolean) {
   patchDesk((current) => ({ ...current, wsfLiveCopy: enabled }));
 }
 
-export function applyWsfLiveCopyResult(eventId: string, result: WsfLiveOrderResult) {
+export function setFtmoLiveMaster(enabled: boolean) {
+  patchDesk((current) => ({ ...current, ftmoLiveMaster: enabled }));
+}
+
+export function setFundednextLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, fundednextLiveCopy: enabled }));
+}
+
+export function applyWsfLiveCopyResult(eventId: string, result: LiveOrderResult) {
   persist(applyWsfLiveFill(desk, eventId, result));
+}
+
+export function applyLiveCopyResult(
+  eventId: string,
+  result: LiveOrderResult,
+  broker: LiveBroker
+) {
+  persist(applyLiveFill(desk, eventId, result, broker));
 }
 
 export function flattenPosition(positionId: string): string | null {

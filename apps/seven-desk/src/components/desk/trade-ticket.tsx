@@ -39,11 +39,19 @@ export function TradeTicket() {
     if (Number(lots) >= 2) {
       return "2.00 lots × FundingPips 0.8 exceeds its 1.00 max lot — expect a skip.";
     }
-    if (state.wsfLiveCopy) {
-      return `WSF live copy is armed. EURUSD → EURUSDc 0.01 on 149736. ${enabledSlaves} slaves will attempt a fill (WSF live, others paper).`;
+    if (state.ftmoLiveMaster) {
+      return `FTMO live master is armed. Ticket becomes 0.01 EURUSD on 541163357 before any copy. ${enabledSlaves} slaves will attempt a fill.`;
+    }
+    if (state.wsfLiveCopy || state.fundednextLiveCopy) {
+      return `Live copy armed: ${[
+        state.wsfLiveCopy ? "WSF 0.01 EURUSDc" : null,
+        state.fundednextLiveCopy ? "FN 0.01 EURUSD" : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")}. ${enabledSlaves} slaves will attempt a fill.`;
     }
     return `Fortraders is copy-off. ${enabledSlaves} slaves will attempt a fill.`;
-  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy]);
+  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy]);
 
   function submit() {
     setFormError(null);
@@ -90,14 +98,16 @@ export function TradeTicket() {
       <CardHeader className="border-b">
         <CardTitle>Place master trade</CardTitle>
         <p className="text-xs text-muted-foreground">
-          Paper fill on{" "}
+          {state.ftmoLiveMaster ? "Live FTMO master fill on " : "Paper fill on "}
           <span className="text-foreground">
             {master ? FIRM_BY_ID[master.firmId].name : "—"}
           </span>
-          , then fan out through the copy engine. Other slaves stay paper.
-          {state.wsfLiveCopy
-            ? " WSF live copy is armed — the WSF slave is a real min-lot OrderSend on 149736."
-            : " WSF is paper unless you arm live copy on the WSF card."}
+          , then fan out through the copy engine.
+          {state.wsfLiveCopy ? " WSF slave is live min-lot." : ""}
+          {state.fundednextLiveCopy ? " FundedNext slave is live min-lot." : ""}
+          {!state.wsfLiveCopy && !state.fundednextLiveCopy && !state.ftmoLiveMaster
+            ? " Live OrderSend stays off until you arm a card."
+            : ""}
         </p>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">

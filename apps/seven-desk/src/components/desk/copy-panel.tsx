@@ -10,7 +10,9 @@ import { defaultCopySettings } from "@/lib/copy-engine";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { MASTER_SYMBOLS } from "@/lib/quotes";
+import { FundedNextLiveCopy } from "@/components/desk/fundednext-live-copy";
 import { FundedNextLiveProbe } from "@/components/desk/fundednext-live-probe";
+import { FtmoLiveMaster } from "@/components/desk/ftmo-live-master";
 import { FtmoLiveProbe } from "@/components/desk/ftmo-live-probe";
 import { WsfLiveProbe } from "@/components/desk/wsf-live-probe";
 import { WsfLiveCopy } from "@/components/desk/wsf-live-copy";
@@ -138,9 +140,19 @@ export function CopyPanel() {
           </>
         ) : null}
 
-        {account.firmId === "fundednext" ? <FundedNextLiveProbe /> : null}
+        {account.firmId === "fundednext" ? (
+          <>
+            <FundedNextLiveProbe />
+            <FundedNextLiveCopy />
+          </>
+        ) : null}
 
-        {account.firmId === "ftmo" ? <FtmoLiveProbe /> : null}
+        {account.firmId === "ftmo" ? (
+          <>
+            <FtmoLiveProbe />
+            <FtmoLiveMaster />
+          </>
+        ) : null}
 
         {isMaster ? (
           <p className="rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">

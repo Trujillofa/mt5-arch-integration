@@ -10,18 +10,21 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { applyQuoteMarks, pendingWsfLiveEvents } from "@/lib/copy-engine";
+import { applyQuoteMarks, pendingLiveSlaveEvents } from "@/lib/copy-engine";
 import {
-  applyWsfLiveCopyResult,
+  applyLiveCopyResult,
   flattenPosition,
   getDeskSnapshot,
   getPersistError,
   getServerDeskSnapshot,
+  placeLiveMaster,
   placeTrade as placeTradeStore,
   resetDemo as resetDemoStore,
   resolveGroup,
   selectAccount as selectAccountStore,
   setConnection as setConnectionStore,
+  setFundednextLiveCopy as setFundednextLiveCopyStore,
+  setFtmoLiveMaster as setFtmoLiveMasterStore,
   setMaster as setMasterStore,
   setSymbolMap as setSymbolMapStore,
   setWsfLiveCopy as setWsfLiveCopyStore,
@@ -30,8 +33,10 @@ import {
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
-import { WSF_LIVE_CONFIRM } from "@/lib/wsf/constants";
-import type { WsfLiveOrderResult } from "@/lib/wsf/types";
+import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
+import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
+import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
+import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
 import { nudgeQuotes } from "@/lib/quotes";
 import type {
   ConnectionStatus,
@@ -58,9 +63,56 @@ interface DeskApi {
   flatten: (positionId: string) => string | null;
   resetDemo: () => void;
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
+  setFtmoLiveMaster: (enabled: boolean, confirm: string) => string | null;
+  setFundednextLiveCopy: (enabled: boolean, confirm: string) => string | null;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
+
+function endpointFor(broker: LiveBroker, action: "open" | "close"): string {
+  if (broker === "wsf") return action === "close" ? "/api/wsf/order/close" : "/api/wsf/order";
+  if (broker === "ftmo") return action === "close" ? "/api/ftmo/order/close" : "/api/ftmo/order";
+  return action === "close" ? "/api/fundednext/order/close" : "/api/fundednext/order";
+}
+
+function confirmFor(
+  broker: LiveBroker,
+  refs: { wsf: string; ftmo: string; fn: string }
+): string {
+  if (broker === "wsf") return refs.wsf || WSF_LIVE_CONFIRM;
+  if (broker === "ftmo") return refs.ftmo || FTMO_LIVE_CONFIRM;
+  return refs.fn || FUNDEDNEXT_LIVE_CONFIRM;
+}
+
+function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
+  if (reason === WSF_LIVE_PENDING) return "wsf";
+  if (reason === FUNDEDNEXT_LIVE_PENDING) return "fundednext";
+  return null;
+}
+
+async function postLiveOrder(
+  broker: LiveBroker,
+  action: "open" | "close",
+  confirm: string,
+  symbol: string,
+  side: string
+): Promise<LiveOrderResult> {
+  const endpoint = endpointFor(broker, action);
+  const response = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({
+      live: true,
+      confirm,
+      action,
+      symbol,
+      side,
+      volume_min: true,
+    }),
+  });
+  return (await response.json()) as LiveOrderResult;
+}
 
 export function DeskProvider({ children }: { children: React.ReactNode }) {
   const state = useSyncExternalStore(
@@ -71,6 +123,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   const [busy, setBusy] = useState(false);
   const timers = useRef<number[]>([]);
   const wsfConfirm = useRef("");
+  const ftmoConfirm = useRef("");
+  const fnConfirm = useRef("");
 
   useEffect(() => {
     const tick = window.setInterval(() => {
@@ -94,6 +148,11 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const setMaster = useCallback((id: string) => {
+    const account = getDeskSnapshot().accounts.find((row) => row.id === id);
+    if (!account || account.firmId !== "ftmo") {
+      ftmoConfirm.current = "";
+      setFtmoLiveMasterStore(false);
+    }
     setMasterStore(id);
   }, []);
 
@@ -134,72 +193,143 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const setFtmoLiveMaster = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== FTMO_LIVE_CONFIRM) {
+      return `Type ${FTMO_LIVE_CONFIRM} to arm FTMO live master.`;
+    }
+    const master = getDeskSnapshot().accounts.find((row) => row.id === getDeskSnapshot().masterId);
+    if (enabled && master?.firmId !== "ftmo") {
+      return "Make FTMO the master before arming live master.";
+    }
+    ftmoConfirm.current = enabled ? confirm : "";
+    setFtmoLiveMasterStore(enabled);
+    return null;
+  }, []);
+
+  const setFundednextLiveCopy = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== FUNDEDNEXT_LIVE_CONFIRM) {
+      return `Type ${FUNDEDNEXT_LIVE_CONFIRM} to arm FundedNext live copy.`;
+    }
+    fnConfirm.current = enabled ? confirm : "";
+    setFundednextLiveCopyStore(enabled);
+    return null;
+  }, []);
+
+  const fanOutLiveSlaves = useCallback(async (groupId: string) => {
+    const refs = {
+      wsf: wsfConfirm.current,
+      ftmo: ftmoConfirm.current,
+      fn: fnConfirm.current,
+    };
+    const pending = pendingLiveSlaveEvents(getDeskSnapshot(), groupId);
+    for (const event of pending) {
+      const broker = brokerForPendingReason(event.reason);
+      if (!broker) continue;
+      const symbol =
+        broker === "wsf" && event.symbol === "EURUSD" ? "EURUSDc" : event.symbol;
+      try {
+        const payload = await postLiveOrder(
+          broker,
+          "open",
+          confirmFor(broker, refs),
+          symbol,
+          event.side
+        );
+        applyLiveCopyResult(event.id, payload, broker);
+      } catch (caught) {
+        applyLiveCopyResult(
+          event.id,
+          {
+            ok: false,
+            source: "seven-desk",
+            endpoint: endpointFor(broker, "open"),
+            requestId: "",
+            stage: "copy",
+            reason: caught instanceof Error ? caught.message : `${broker} live copy failed`,
+            login: null,
+            server: null,
+            winePrefix: broker === "wsf" ? ".mt5-wsf" : broker === "ftmo" ? ".mt5-ftmo" : ".mt5-fundednext",
+          },
+          broker
+        );
+      }
+    }
+  }, []);
+
   const placeTrade = useCallback((input: MasterTradeInput) => {
+    const snapshot = getDeskSnapshot();
+    const master = snapshot.accounts.find((row) => row.id === snapshot.masterId);
+    if (snapshot.ftmoLiveMaster) {
+      if (master?.firmId !== "ftmo") {
+        return "FTMO live master is armed but FTMO is not the master.";
+      }
+      if (input.symbol !== "EURUSD" && input.symbol !== "EURUSDc") {
+        return "FTMO live master is EURUSD min-lot only.";
+      }
+      setBusy(true);
+      const handle = window.setTimeout(() => {
+        void (async () => {
+          try {
+            const liveInput: MasterTradeInput = {
+              ...input,
+              symbol: "EURUSD",
+              lots: 0.01,
+            };
+            const payload = await postLiveOrder(
+              "ftmo",
+              "open",
+              ftmoConfirm.current || FTMO_LIVE_CONFIRM,
+              "EURUSD",
+              liveInput.side
+            );
+            const placed = placeLiveMaster(liveInput, payload, "ftmo");
+            if (placed.groupId && !placed.error) {
+              resolveGroup(placed.groupId);
+              await fanOutLiveSlaves(placed.groupId);
+            }
+          } finally {
+            setBusy(false);
+          }
+        })();
+      }, 160);
+      timers.current.push(handle);
+      return null;
+    }
+
     const result = placeTradeStore(input);
     if (result.groupId && !result.error) {
       setBusy(true);
       const handle = window.setTimeout(() => {
         void (async () => {
           resolveGroup(result.groupId!);
-          const pending = pendingWsfLiveEvents(getDeskSnapshot(), result.groupId!);
-          for (const event of pending) {
-            try {
-              const response = await fetch("/api/wsf/order", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                cache: "no-store",
-                body: JSON.stringify({
-                  live: true,
-                  confirm: wsfConfirm.current || WSF_LIVE_CONFIRM,
-                  action: "open",
-                  symbol: event.symbol === "EURUSD" ? "EURUSDc" : event.symbol,
-                  side: event.side,
-                  volume_min: true,
-                }),
-              });
-              const payload = (await response.json()) as WsfLiveOrderResult;
-              applyWsfLiveCopyResult(event.id, payload);
-            } catch (caught) {
-              applyWsfLiveCopyResult(event.id, {
-                ok: false,
-                source: "seven-desk",
-                endpoint: "/api/wsf/order",
-                requestId: "",
-                stage: "copy",
-                reason: caught instanceof Error ? caught.message : "WSF live copy failed",
-                login: null,
-                server: null,
-                winePrefix: ".mt5-wsf",
-              });
-            }
-          }
+          await fanOutLiveSlaves(result.groupId!);
           setBusy(false);
         })();
       }, 160);
       timers.current.push(handle);
     }
     return result.error;
-  }, []);
+  }, [fanOutLiveSlaves]);
 
   const flatten = useCallback((positionId: string) => {
     const position = getDeskSnapshot().positions.find((row) => row.id === positionId);
-    if (position?.liveBroker === "wsf") {
+    if (position?.liveBroker) {
+      const broker = position.liveBroker;
+      const refs = {
+        wsf: wsfConfirm.current,
+        ftmo: ftmoConfirm.current,
+        fn: fnConfirm.current,
+      };
       setBusy(true);
       void (async () => {
         try {
-          await fetch("/api/wsf/order/close", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            cache: "no-store",
-            body: JSON.stringify({
-              live: true,
-              confirm: wsfConfirm.current || WSF_LIVE_CONFIRM,
-              action: "close",
-              symbol: position.symbol,
-              side: position.side,
-              volume_min: true,
-            }),
-          });
+          await postLiveOrder(
+            broker,
+            "close",
+            confirmFor(broker, refs),
+            position.symbol,
+            position.side
+          );
         } finally {
           flattenPosition(positionId);
           setBusy(false);
@@ -215,7 +345,11 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     timers.current = [];
     setBusy(false);
     wsfConfirm.current = "";
+    ftmoConfirm.current = "";
+    fnConfirm.current = "";
     setWsfLiveCopyStore(false);
+    setFtmoLiveMasterStore(false);
+    setFundednextLiveCopyStore(false);
     resetDemoStore();
   }, []);
 
@@ -236,6 +370,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       flatten,
       resetDemo,
       setWsfLiveCopy,
+      setFtmoLiveMaster,
+      setFundednextLiveCopy,
     }),
     [
       persistError,
@@ -251,6 +387,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       flatten,
       resetDemo,
       setWsfLiveCopy,
+      setFtmoLiveMaster,
+      setFundednextLiveCopy,
     ]
   );
 

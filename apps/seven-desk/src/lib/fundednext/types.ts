@@ -2,6 +2,9 @@
 export const FUNDEDNEXT_EXPECTED_LOGIN = "13981906";
 export const FUNDEDNEXT_EXPECTED_SERVER = "FundedNext-Server 2";
 export const FUNDEDNEXT_SERVER_NEEDLE = "FundedNext";
+export const FUNDEDNEXT_LIVE_CONFIRM = "FN-13981906";
+export const FUNDEDNEXT_LIVE_PENDING = "fn-live-pending";
+export const FUNDEDNEXT_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FundedNextConnectionStatus =
   | "connected"

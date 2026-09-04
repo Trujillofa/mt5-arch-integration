@@ -57,7 +57,7 @@ export function FtmoLiveProbe() {
           </p>
           <p className="text-xs text-muted-foreground">
             Read-only snapshot for {FTMO_EXPECTED_LOGIN} @ {FTMO_EXPECTED_SERVER}.
-            Copy execution stays paper. There is no FTMO live-order API.
+            Snapshot is read-only. Live OrderSend is the FTMO live master control below.
           </p>
         </div>
         <Button type="button" size="sm" disabled={busy} onClick={run}>
