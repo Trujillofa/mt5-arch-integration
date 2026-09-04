@@ -61,8 +61,29 @@ def assert_branded_term_dir(broker: str, term_dir: Path) -> Path:
     return resolved
 
 
-def chart_bytes(broker: str) -> bytes:
+def chart_bytes(broker: str, *, with_expert: bool = True) -> bytes:
     symbol = SYMBOL[broker]
+    # ACG build 6180 times out EA/script init (~5 min) if the chart symbol
+    # has no quotes yet. Alpha starts quotes-first; skip the XAU dump.
+    dump_history = "false" if broker == "alphacapital" else "true"
+    symbols = "EURUSD" if broker == "alphacapital" else "EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD"
+    expert = ""
+    if with_expert:
+        expert = f"""
+<expert>
+name=Mt5ArchBridge
+path=Experts\\Mt5ArchBridge.ex5
+expertmode=5
+<inputs>
+InpTimerSec=5
+InpBroker={broker}
+InpSymbols={symbols}
+InpTimeframes=H1,H4,D1
+InpCandleCount=30
+InpDumpHistory={dump_history}
+</inputs>
+</expert>
+"""
     body = f"""<chart>
 id=1
 symbol={symbol}
@@ -84,19 +105,7 @@ expertmode=0
 fixed_height=-1
 </indicator>
 </window>
-
-<expert>
-name=Mt5ArchBridge
-path=Experts\\Mt5ArchBridge.ex5
-expertmode=5
-<inputs>
-InpTimerSec=5
-InpBroker={broker}
-InpSymbols=EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD
-InpTimeframes=H1,H4,D1
-InpCandleCount=30
-</inputs>
-</expert>
+{expert}
 </chart>
 """
     text = body.replace("\r\n", "\n").replace("\n", "\r\n")
@@ -126,12 +135,39 @@ def heartbeat_is_fresh(term_dir: Path, max_age: float = DEFAULT_FRESH_SEC) -> bo
     return age is not None and age <= max_age
 
 
-def inject_charts(broker: str, term_dir: Path, *, require_ex5: bool = True) -> list[Path]:
+def quotes_ready(term_dir: Path, symbol: str | None = None) -> bool:
+    """True when portable Bases has downloaded history/ticks for the chart symbol."""
+    resolved = Path(term_dir).expanduser().resolve()
+    sym = (symbol or "EURUSD").upper()
+    bases = resolved / "Bases"
+    if not bases.is_dir():
+        return False
+    for path in bases.rglob("*"):
+        if not path.is_file() or path.stat().st_size <= 0:
+            continue
+        parts = [part.upper() for part in path.parts]
+        name = path.name.upper()
+        if sym not in parts and not name.startswith(sym):
+            continue
+        if path.suffix.lower() in {".hcc", ".hc", ".tkc"}:
+            return True
+        if "HISTORY" in parts or "TICKS" in parts:
+            return True
+    return False
+
+
+def inject_charts(
+    broker: str,
+    term_dir: Path,
+    *,
+    require_ex5: bool = True,
+    with_expert: bool = True,
+) -> list[Path]:
     resolved = assert_branded_term_dir(broker, term_dir)
     ex5 = resolved / "MQL5" / "Experts" / "Mt5ArchBridge.ex5"
-    if require_ex5 and not ex5.is_file():
+    if with_expert and require_ex5 and not ex5.is_file():
         raise InjectError(f"Mt5ArchBridge.ex5 missing under {resolved}")
-    payload = chart_bytes(broker)
+    payload = chart_bytes(broker, with_expert=with_expert)
     written: list[Path] = []
     for path in chart_paths(resolved):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -184,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--broker", required=True, choices=LIVE_RESTORE)
     parser.add_argument("--term-dir", required=True)
     parser.add_argument("--fresh", action="store_true", help="exit 0 if heartbeat is fresh")
+    parser.add_argument("--quotes-ready", action="store_true", help="exit 0 if Bases has symbol history")
+    parser.add_argument("--no-expert", action="store_true", help="write Default chart without Mt5ArchBridge")
     parser.add_argument("--max-age", type=float, default=DEFAULT_FRESH_SEC)
     parser.add_argument("--stop-branded", action="store_true")
     parser.add_argument("--allow-missing-ex5", action="store_true")
@@ -192,12 +230,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.fresh:
             return 0 if heartbeat_is_fresh(term_dir, args.max_age) else 1
+        if args.quotes_ready:
+            symbol = SYMBOL.get(args.broker, "EURUSD")
+            return 0 if quotes_ready(term_dir, symbol) else 1
         if args.stop_branded:
             pids = stop_branded_terminal(args.broker, term_dir)
             print("stopped", " ".join(str(p) for p in pids) if pids else "none")
             return 0
         written = inject_charts(
-            args.broker, term_dir, require_ex5=not args.allow_missing_ex5
+            args.broker,
+            term_dir,
+            require_ex5=not args.allow_missing_ex5,
+            with_expert=not args.no_expert,
         )
         for path in written:
             print(path)

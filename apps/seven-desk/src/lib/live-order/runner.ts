@@ -245,7 +245,65 @@ function pathsFor(firm: FirmSpec) {
     resultFile: join(bridgeDir, "desk_live_order_result.json"),
     configIni: join(brand, "desk_live_order.ini"),
     bridgeDir,
+    extraBridgeDirs: commonBridgeDirs(firm.prefix),
   };
+}
+
+function commonBridgeDirs(prefix: string): string[] {
+  const users = join(prefix, "drive_c", "users");
+  const out: string[] = [];
+  if (!existsSync(users)) return out;
+  try {
+    for (const name of readdirSync(users)) {
+      out.push(
+        join(users, name, "AppData", "Roaming", "MetaQuotes", "Terminal", "Common", "Files", "mt5_arch")
+      );
+    }
+  } catch {
+    return out;
+  }
+  return out;
+}
+
+function quotesReady(brandDir: string, symbol: string): boolean {
+  const bases = join(brandDir, "Bases");
+  if (!existsSync(bases)) return false;
+  const want = symbol.toUpperCase();
+  const stack = [bases];
+  while (stack.length > 0) {
+    const dir = stack.pop();
+    if (!dir) break;
+    let names: string[] = [];
+    try {
+      names = readdirSync(dir);
+    } catch {
+      continue;
+    }
+    for (const name of names) {
+      const full = join(dir, name);
+      let st;
+      try {
+        st = statSync(full);
+      } catch {
+        continue;
+      }
+      if (st.isDirectory()) {
+        stack.push(full);
+        continue;
+      }
+      if (st.size <= 0) continue;
+      const upper = full.toUpperCase();
+      const file = name.toUpperCase();
+      if (!upper.includes(`/${want}/`) && !upper.includes(`\\${want}\\`) && !file.startsWith(want)) {
+        continue;
+      }
+      if (file.endsWith(".HCC") || file.endsWith(".HC") || file.endsWith(".TKC")) return true;
+      if (upper.includes("/HISTORY/") || upper.includes("/TICKS/") || upper.includes("\\HISTORY\\") || upper.includes("\\TICKS\\")) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function wineEnv(prefix: string): NodeJS.ProcessEnv {
@@ -398,7 +456,12 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `magic=${firm.magic}`,
     "",
   ].join("\n");
+  mkdirSync(paths.bridgeDir, { recursive: true });
   writeFileSync(paths.requestFile, body, { encoding: "utf8" });
+  for (const dir of paths.extraBridgeDirs) {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "desk_live_order_request.txt"), body, { encoding: "utf8" });
+  }
 }
 
 function writeStartupIni(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, symbol: string): string | null {
@@ -422,6 +485,7 @@ AllowLiveTrading=1
 Enabled=1
 Account=1
 Profile=1
+Chart=1
 [StartUp]
 Script=${SCRIPT_NAME}
 Symbol=${symbol}
@@ -476,15 +540,48 @@ function parseResultJson(text: string): Partial<LiveOrderResult> {
   }
 }
 
-function waitResult(resultFile: string, timeoutMs: number): Partial<LiveOrderResult> {
+function resultCandidates(paths: ReturnType<typeof pathsFor>): string[] {
+  return [
+    paths.resultFile,
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_result.json")),
+  ];
+}
+
+function waitResult(paths: ReturnType<typeof pathsFor>, timeoutMs: number): Partial<LiveOrderResult> {
   const deadline = Date.now() + timeoutMs;
+  const files = resultCandidates(paths);
   while (Date.now() < deadline) {
-    if (existsSync(resultFile)) {
-      return parseResultJson(readFileSync(resultFile, "utf8"));
+    for (const resultFile of files) {
+      if (existsSync(resultFile)) {
+        return parseResultJson(readFileSync(resultFile, "utf8"));
+      }
     }
     spawnSync("sleep", ["0.4"]);
   }
   return { ok: false, stage: "timeout", reason: "one-shot produced no result json" };
+}
+
+function waitQuotesOrFresh(
+  firm: FirmSpec,
+  paths: ReturnType<typeof pathsFor>,
+  symbol: string,
+  timeoutMs: number
+): boolean {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (quotesReady(paths.brandDir, symbol)) return true;
+    if (existsSync(join(paths.bridgeDir, "heartbeat.txt"))) {
+      try {
+        if (Date.now() - statSync(join(paths.bridgeDir, "heartbeat.txt")).mtimeMs < 60000) {
+          return true;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    spawnSync("sleep", ["1"]);
+  }
+  return quotesReady(paths.brandDir, symbol);
 }
 
 function newRequestId(firm: DeskLiveFirm): string {
@@ -560,22 +657,40 @@ export async function executeDeskLiveOrder(
   }
 
   writeStartupIni(firm, paths, parsed.symbol);
-  if (existsSync(paths.resultFile)) {
-    try {
-      unlinkSync(paths.resultFile);
-    } catch {
-      // ignore
+  for (const resultFile of resultCandidates(paths)) {
+    if (existsSync(resultFile)) {
+      try {
+        unlinkSync(resultFile);
+      } catch {
+        // ignore
+      }
     }
   }
   writeRequest(firm, paths, parsed, requestId);
 
+  if (firm.id === "alphacapital" && !quotesReady(paths.brandDir, parsed.symbol)) {
+    const ready = waitQuotesOrFresh(firm, paths, parsed.symbol, 90000);
+    if (!ready) {
+      return {
+        status: 409,
+        result: fail(firm, 409, "symbol", "EURUSD not synchronized — no history/ticks yet; not sending OrderSend", {
+          requestId,
+          endpoint,
+          login: identity.login ? Number(identity.login) : null,
+          server: identity.server,
+        }).result,
+      };
+    }
+  }
+
   const stopped = stopPrefix(firm.prefix);
   let wineStatus: number | null = null;
+  const wineTimeout = firm.id === "alphacapital" ? 180000 : 90000;
   try {
     const run = spawnSync("wine", ["./terminal64.exe", "/portable", "/config:desk_live_order.ini"], {
       cwd: paths.brandDir,
       encoding: "utf8",
-      timeout: 90000,
+      timeout: wineTimeout,
       env: wineEnv(firm.prefix),
     });
     wineStatus = run.status;
@@ -599,7 +714,8 @@ export async function executeDeskLiveOrder(
     }
   }
 
-  const parsedResult = waitResult(paths.resultFile, existsSync(paths.resultFile) ? 1000 : 20000);
+  const haveResult = resultCandidates(paths).some((path) => existsSync(path));
+  const parsedResult = waitResult(paths, haveResult ? 1000 : 20000);
   if (!parsedResult.ok && parsedResult.stage === "timeout" && wineStatus != null) {
     parsedResult.reason = `${parsedResult.reason} (wine status ${wineStatus})`;
   }

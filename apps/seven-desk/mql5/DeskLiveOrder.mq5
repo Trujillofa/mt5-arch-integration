@@ -22,9 +22,24 @@ double g_volume     = 0.0;
 int    g_use_vmin   = 1;
 int    g_magic      = 20263850;
 
+void EnsureBridgeDir()
+  {
+   FolderCreate("mt5_arch");
+   FolderCreate("mt5_arch", FILE_COMMON);
+  }
+
+int OpenBridge(const string rel, const int flags)
+  {
+   int h = FileOpen(rel, flags);
+   if(h == INVALID_HANDLE)
+      h = FileOpen(rel, flags | FILE_COMMON);
+   return h;
+  }
+
 void WriteResult(const string body)
   {
-   int h = FileOpen(RESULT_PATH, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   EnsureBridgeDir();
+   int h = OpenBridge(RESULT_PATH, FILE_WRITE | FILE_TXT | FILE_ANSI);
    if(h == INVALID_HANDLE)
      {
       Print("FileOpen failed ", RESULT_PATH, " err=", GetLastError());
@@ -55,7 +70,8 @@ string ReadLineValue(const string line, const string key)
 
 bool ReadRequest()
   {
-   int h = FileOpen(REQUEST_PATH, FILE_READ | FILE_TXT | FILE_ANSI);
+   EnsureBridgeDir();
+   int h = OpenBridge(REQUEST_PATH, FILE_READ | FILE_TXT | FILE_ANSI);
    if(h == INVALID_HANDLE)
       return false;
    while(!FileIsEnding(h))
@@ -105,6 +121,26 @@ bool WaitConnected(const int max_ms)
       waited += 500;
      }
    return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login);
+  }
+
+bool WaitSymbolReady(const string symbol, const int max_ms)
+  {
+   int waited = 0;
+   SymbolSelect(symbol, true);
+   while(waited < max_ms)
+     {
+      ResetLastError();
+      if(SymbolIsSynchronized(symbol) && SymbolInfoDouble(symbol, SYMBOL_BID) > 0.0)
+         return true;
+      Sleep(250);
+      waited += 250;
+     }
+   return (SymbolIsSynchronized(symbol) && SymbolInfoDouble(symbol, SYMBOL_BID) > 0.0);
+  }
+
+bool IsNettingAccount()
+  {
+   return (AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_NETTING);
   }
 
 string FailJson(const string stage, const string reason,
@@ -250,6 +286,7 @@ bool SendDeal(const string symbol, const ENUM_ORDER_TYPE type, const double volu
 
 void OnStart()
   {
+   EnsureBridgeDir();
    if(!ReadRequest())
      {
       WriteResult(FailJson("request", "missing desk_live_order_request.txt",
@@ -302,6 +339,12 @@ void OnStart()
    ResetLastError();
    if(!SymbolInfoInteger(symbol, SYMBOL_SELECT))
       SymbolSelect(symbol, true);
+   if(!WaitSymbolReady(symbol, 90000))
+     {
+      WriteResult(FailJson("symbol", "symbol not synchronized — no bid yet",
+                           login, server, GetLastError(), symbol));
+      return;
+     }
    Sleep(300);
 
    if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED))
@@ -455,6 +498,9 @@ void OnStart()
          MqlTradeResult res;
          bool sent = SendDeal(symbol, ctype, close_vol, position_ticket,
                               filling, digits, comment_close, res);
+         if(!sent && IsNettingAccount())
+            sent = SendDeal(symbol, ctype, close_vol, 0,
+                            filling, digits, comment_close, res);
          close_ret = (int)res.retcode;
          close_msg = res.comment;
          if(sent && (res.retcode == TRADE_RETCODE_DONE || res.retcode == TRADE_RETCODE_DONE_PARTIAL))
