@@ -76,10 +76,10 @@ export function seedAccounts(): TradingAccount[] {
     account(
       ACCOUNT_IDS.alphacapital,
       "alphacapital",
-      "2044811",
+      "2765247",
       "MT5",
       "ACGMarkets",
-      50_000
+      100_000
     ),
   ];
 }
@@ -162,5 +162,6 @@ export function seedDesk(): DeskState {
     wsfLiveCopy: false,
     ftmoLiveMaster: false,
     fundednextLiveCopy: false,
+    alphacapitalLiveCopy: false,
   };
 }

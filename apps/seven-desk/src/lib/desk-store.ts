@@ -199,6 +199,10 @@ export function setFundednextLiveCopy(enabled: boolean) {
   patchDesk((current) => ({ ...current, fundednextLiveCopy: enabled }));
 }
 
+export function setAlphacapitalLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, alphacapitalLiveCopy: enabled }));
+}
+
 export function applyWsfLiveCopyResult(eventId: string, result: LiveOrderResult) {
   persist(applyWsfLiveFill(desk, eventId, result));
 }

@@ -52,6 +52,17 @@ function migrateOperatorLogins(state: DeskState): DeskState {
           };
         }
       }
+      if (account.firmId === "alphacapital") {
+        if (account.login === "2765247" && account.server === "ACGMarkets") {
+          return account;
+        }
+        return {
+          ...account,
+          login: "2765247",
+          server: "ACGMarkets",
+          platform: "MT5",
+        };
+      }
       return account;
     }),
   };
@@ -77,6 +88,7 @@ export function loadDesk(): DeskState {
     wsfLiveCopy: false,
     ftmoLiveMaster: false,
     fundednextLiveCopy: false,
+    alphacapitalLiveCopy: false,
   });
 }
 

@@ -5,5 +5,6 @@
   "wsf": "WSFmarkets MT5 Terminal",
   "fundednext": "FundedNext MT5 Terminal",
   "ftmo": "FTMO Global Markets MT5 Terminal",
+  "alphacapital": "ACG Markets MT5 Terminal",
   "_generic": "MetaTrader 5"
 }

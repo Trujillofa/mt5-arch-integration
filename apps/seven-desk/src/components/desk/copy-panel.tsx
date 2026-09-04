@@ -10,6 +10,8 @@ import { defaultCopySettings } from "@/lib/copy-engine";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { MASTER_SYMBOLS } from "@/lib/quotes";
+import { AlphaCapitalLiveCopy } from "@/components/desk/alphacapital-live-copy";
+import { AlphaCapitalLiveProbe } from "@/components/desk/alphacapital-live-probe";
 import { FundedNextLiveCopy } from "@/components/desk/fundednext-live-copy";
 import { FundedNextLiveProbe } from "@/components/desk/fundednext-live-probe";
 import { FtmoLiveMaster } from "@/components/desk/ftmo-live-master";
@@ -151,6 +153,13 @@ export function CopyPanel() {
           <>
             <FtmoLiveProbe />
             <FtmoLiveMaster />
+          </>
+        ) : null}
+
+        {account.firmId === "alphacapital" ? (
+          <>
+            <AlphaCapitalLiveProbe />
+            <AlphaCapitalLiveCopy />
           </>
         ) : null}
 
