@@ -24,7 +24,7 @@ FIRMS = {
     "ftmo": {
         "role": "master",
         "prefix": HOME / ".mt5-ftmo",
-        "brands": ("FTMO Global Markets MT5 Terminal", "MetaTrader 5"),
+        "brands": ("FTMO Global Markets MT5 Terminal",),
         "login": "541163357",
         "confirm": "FTMO-541163357",
         "needle": "FTMO",
@@ -35,7 +35,7 @@ FIRMS = {
     "wsf": {
         "role": "slave",
         "prefix": HOME / ".mt5-wsf",
-        "brands": ("WSFmarkets MT5 Terminal", "MetaTrader 5"),
+        "brands": ("WSFmarkets MT5 Terminal",),
         "login": "149736",
         "confirm": "WSF-149736",
         "needle": "WSF",
@@ -46,7 +46,7 @@ FIRMS = {
     "fundednext": {
         "role": "slave",
         "prefix": HOME / ".mt5-fundednext",
-        "brands": ("FundedNext MT5 Terminal", "MetaTrader 5"),
+        "brands": ("FundedNext MT5 Terminal",),
         "login": "13981906",
         "confirm": "FN-13981906",
         "needle": "FundedNext",

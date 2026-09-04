@@ -164,7 +164,7 @@ export function probeFundedNextLive(): FundedNextLiveReport {
   let snapshot: Snapshot | null = null;
   for (const dir of bridgeDirs) {
     const candidate = readAccountJson(join(dir, "account.json"));
-    if (!candidate?.login) continue;
+    if (!candidate?.login || candidate.login !== FUNDEDNEXT_EXPECTED_LOGIN) continue;
     snapshot = candidate;
     notes.push("Read Mt5ArchBridge account.json (path not printed).");
     if (snapshotIsLive(candidate)) break;

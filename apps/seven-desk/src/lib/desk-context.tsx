@@ -10,13 +10,19 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { applyQuoteMarks, pendingLiveSlaveEvents } from "@/lib/copy-engine";
+import {
+  applyQuoteMarks,
+  liveCloseAlreadyFlat,
+  liveGroupPositions,
+  pendingLiveSlaveEvents,
+} from "@/lib/copy-engine";
 import {
   applyLiveCopyResult,
   flattenPosition,
   getDeskSnapshot,
   getPersistError,
   getServerDeskSnapshot,
+  markLiveCloseFailed,
   placeLiveMaster,
   placeTrade as placeTradeStore,
   resetDemo as resetDemoStore,
@@ -61,6 +67,7 @@ interface DeskApi {
   setSymbolMap: (slaveAccountId: string, masterSymbol: string, mapped: string) => void;
   placeTrade: (input: MasterTradeInput) => string | null;
   flatten: (positionId: string) => string | null;
+  actionError: string | null;
   resetDemo: () => void;
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFtmoLiveMaster: (enabled: boolean, confirm: string) => string | null;
@@ -98,20 +105,35 @@ async function postLiveOrder(
   side: string
 ): Promise<LiveOrderResult> {
   const endpoint = endpointFor(broker, action);
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    cache: "no-store",
-    body: JSON.stringify({
-      live: true,
-      confirm,
-      action,
-      symbol,
-      side,
-      volume_min: true,
-    }),
-  });
-  return (await response.json()) as LiveOrderResult;
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({
+        live: true,
+        confirm,
+        action,
+        symbol,
+        side,
+        volume_min: true,
+      }),
+    });
+    return (await response.json()) as LiveOrderResult;
+  } catch (caught) {
+    return {
+      ok: false,
+      source: "seven-desk",
+      endpoint,
+      requestId: "",
+      stage: action,
+      reason: caught instanceof Error ? caught.message : `${broker} ${action} failed`,
+      login: null,
+      server: null,
+      winePrefix:
+        broker === "wsf" ? ".mt5-wsf" : broker === "ftmo" ? ".mt5-ftmo" : ".mt5-fundednext",
+    };
+  }
 }
 
 export function DeskProvider({ children }: { children: React.ReactNode }) {
@@ -121,6 +143,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     getServerDeskSnapshot
   );
   const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const timers = useRef<number[]>([]);
   const wsfConfirm = useRef("");
   const ftmoConfirm = useRef("");
@@ -312,38 +335,56 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   }, [fanOutLiveSlaves]);
 
   const flatten = useCallback((positionId: string) => {
-    const position = getDeskSnapshot().positions.find((row) => row.id === positionId);
-    if (position?.liveBroker) {
-      const broker = position.liveBroker;
-      const refs = {
-        wsf: wsfConfirm.current,
-        ftmo: ftmoConfirm.current,
-        fn: fnConfirm.current,
-      };
-      setBusy(true);
-      void (async () => {
-        try {
-          await postLiveOrder(
-            broker,
-            "close",
-            confirmFor(broker, refs),
-            position.symbol,
-            position.side
-          );
-        } finally {
-          flattenPosition(positionId);
-          setBusy(false);
-        }
-      })();
-      return null;
+    const snapshot = getDeskSnapshot();
+    const position = snapshot.positions.find((row) => row.id === positionId);
+    if (!position) return "Position already closed.";
+    if (!position.liveBroker) {
+      setActionError(null);
+      return flattenPosition(positionId);
     }
-    return flattenPosition(positionId);
+    const refs = {
+      wsf: wsfConfirm.current,
+      ftmo: ftmoConfirm.current,
+      fn: fnConfirm.current,
+    };
+    const targets = liveGroupPositions(snapshot, positionId);
+    setActionError(null);
+    setBusy(true);
+    void (async () => {
+      const failures: string[] = [];
+      try {
+        for (const row of targets) {
+          if (!row.liveBroker) continue;
+          const symbol =
+            row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+          const payload = await postLiveOrder(
+            row.liveBroker,
+            "close",
+            confirmFor(row.liveBroker, refs),
+            symbol,
+            row.side
+          );
+          if (liveCloseAlreadyFlat(payload)) {
+            flattenPosition(row.id);
+          } else {
+            const reason = payload.reason || `${row.liveBroker} live close failed`;
+            markLiveCloseFailed(row.id, `${reason} — desk row kept`);
+            failures.push(`${row.liveBroker}: ${reason}`);
+          }
+        }
+      } finally {
+        setActionError(failures.length ? failures.join(" · ") : null);
+        setBusy(false);
+      }
+    })();
+    return null;
   }, []);
 
   const resetDemo = useCallback(() => {
     timers.current.forEach((id) => window.clearTimeout(id));
     timers.current = [];
     setBusy(false);
+    setActionError(null);
     wsfConfirm.current = "";
     ftmoConfirm.current = "";
     fnConfirm.current = "";
@@ -360,6 +401,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       hydrateError: persistError,
       state,
       busy,
+      actionError,
       selectAccount,
       setMaster,
       updateAccount,
@@ -377,6 +419,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       persistError,
       state,
       busy,
+      actionError,
       selectAccount,
       setMaster,
       updateAccount,

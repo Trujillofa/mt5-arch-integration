@@ -39,11 +39,14 @@ export function FtmoLiveProbe() {
   }
 
   useEffect(() => {
-    if (lastReport) {
-      applyToDesk(lastReport, updateAccount);
-      return;
-    }
-    void run();
+    const handle = window.setTimeout(() => {
+      if (lastReport) {
+        applyToDesk(lastReport, updateAccount);
+        return;
+      }
+      void run();
+    }, 0);
+    return () => window.clearTimeout(handle);
     // One auto-fetch on mount so the FTMO card picks up 541163357.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -77,6 +77,13 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
   fi
 
   term="$(find_terminal64)" || die "terminal64.exe not found under $WINEPREFIX"
+  case "$broker" in
+    wsf|ftmo|fundednext)
+      if [[ "$term" == *"/Program Files/MetaTrader 5/terminal64.exe" ]]; then
+        die "$broker generic MetaQuotes tree is not the live book — start the branded terminal64.exe"
+      fi
+      ;;
+  esac
   info "Starting $broker in background: $term"
   extra=()
   if [[ -f "$(dirname "$term")/auto_login.ini" ]]; then

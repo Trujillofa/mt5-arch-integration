@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { WSF_EXPECTED_LOGIN } from "@/lib/wsf/constants";
 import type { WsfDealRow, WsfFetchedAccount, WsfPositionRow } from "@/lib/wsf/types";
 
 export interface Mt5ArchCliResult {
@@ -34,9 +35,12 @@ export function probeMt5ArchCli(): Mt5ArchCliResult {
     };
   }
   try {
-    const winePrefix = process.env.WINEPREFIX || join(homedir(), ".mt5-wsf");
-    const brands = ["WSFmarkets MT5 Terminal", "MetaTrader 5"];
-    let bridgeDir = process.env.MT5_BRIDGE_DIR || "";
+    const winePrefix = join(homedir(), ".mt5-wsf");
+    const brands = ["WSFmarkets MT5 Terminal"];
+    let bridgeDir = process.env.WSF_MT5_BRIDGE_DIR || "";
+    if (bridgeDir && !bridgeDir.includes(".mt5-wsf")) {
+      bridgeDir = "";
+    }
     if (!bridgeDir) {
       for (const brand of brands) {
         const dir = join(winePrefix, "drive_c", "Program Files", brand, "MQL5", "Files", "mt5_arch");
@@ -89,6 +93,14 @@ export function probeMt5ArchCli(): Mt5ArchCliResult {
       name?: string;
     };
     const login = parsed.login != null ? String(parsed.login) : "";
+    if (login && login !== WSF_EXPECTED_LOGIN) {
+      return {
+        book: null,
+        positions: [],
+        deals: [],
+        note: `Refusing snapshot login ${login} — expected ${WSF_EXPECTED_LOGIN}.`,
+      };
+    }
     return {
       book: login
         ? {

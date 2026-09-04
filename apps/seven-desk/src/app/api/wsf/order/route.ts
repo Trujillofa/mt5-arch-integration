@@ -2,7 +2,7 @@ import { executeWsfLiveOrder } from "@/lib/wsf/live-order";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 export async function POST(request: Request) {
   let body: unknown;

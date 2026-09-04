@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { WSF_EXPECTED_LOGIN } from "@/lib/wsf/constants";
 import type { WsfDealRow, WsfFetchedAccount, WsfPositionRow } from "@/lib/wsf/types";
 import type { WsfOperatorEnv } from "@/lib/wsf/env";
 
@@ -11,7 +12,7 @@ export interface Mt5FileSnapshot {
   note: string;
 }
 
-const BRAND_DIRS = ["WSFmarkets MT5 Terminal", "MetaTrader 5"];
+const BRAND_DIRS = ["WSFmarkets MT5 Terminal"];
 
 function asNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -44,12 +45,15 @@ function isDir(path: string): boolean {
   }
 }
 
+function isWsfPrefix(prefix: string): boolean {
+  return prefix.includes(".mt5-wsf");
+}
+
 function bridgeDirs(env: WsfOperatorEnv): string[] {
   const dirs: string[] = [];
-  if (env.bridgeDir) dirs.push(env.bridgeDir);
-  if (process.env.MT5_BRIDGE_DIR) dirs.push(process.env.MT5_BRIDGE_DIR);
-  const prefixes = [env.winePrefix, join(homedir(), ".mt5-wsf"), join(homedir(), ".mt5")].filter(
-    (path): path is string => Boolean(path)
+  if (env.bridgeDir && isWsfPrefix(env.bridgeDir)) dirs.push(env.bridgeDir);
+  const prefixes = [env.winePrefix, join(homedir(), ".mt5-wsf")].filter(
+    (path): path is string => typeof path === "string" && isWsfPrefix(path)
   );
   for (const prefix of prefixes) {
     for (const brand of BRAND_DIRS) {
@@ -63,8 +67,6 @@ function snapshotFiles(env: WsfOperatorEnv): string[] {
   return [
     env.stateFile,
     process.env.WSF_MT5_STATE_FILE,
-    process.env.MT5_STATE_FILE,
-    join(process.cwd(), ".mt5-state.json"),
     ...bridgeDirs(env).map((dir) => join(dir, "account.json")),
   ].filter((path): path is string => Boolean(path));
 }
@@ -158,6 +160,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
       const raw = JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
       const book = parseBook(raw, env);
       const login = book?.login || env.mt5Login || "unknown";
+      if (login !== WSF_EXPECTED_LOGIN) continue;
       const dir = path.endsWith("account.json") ? path.slice(0, -"account.json".length) : "";
       let positions = parsePositions(raw.positions, login);
       let deals: WsfDealRow[] = [];

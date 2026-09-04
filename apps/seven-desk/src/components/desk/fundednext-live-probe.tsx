@@ -39,11 +39,14 @@ export function FundedNextLiveProbe() {
   }
 
   useEffect(() => {
-    if (lastReport) {
-      applyToDesk(lastReport, updateAccount);
-      return;
-    }
-    void run();
+    const handle = window.setTimeout(() => {
+      if (lastReport) {
+        applyToDesk(lastReport, updateAccount);
+        return;
+      }
+      void run();
+    }, 0);
+    return () => window.clearTimeout(handle);
     // One auto-fetch on mount so the FundedNext card picks up 13981906.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

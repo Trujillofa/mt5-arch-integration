@@ -4,6 +4,7 @@ import {
   applyWsfLiveFill,
   closePosition,
   defaultCopySettings,
+  markLiveCloseError,
   placeLiveMasterFill,
   placeMasterTrade,
   resolveQueuedCopies,
@@ -23,6 +24,7 @@ const SERVER_SEED = applyQuoteMarks(seedDesk());
 let desk: DeskState = SERVER_SEED;
 let persistError: string | null = null;
 let hydrated = false;
+let clientReleased = false;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -31,6 +33,7 @@ function emit() {
 
 function persist(next: DeskState) {
   desk = next;
+  clientReleased = true;
   if (typeof window !== "undefined") {
     try {
       saveDesk(next);
@@ -53,6 +56,7 @@ export function subscribeDesk(listener: () => void) {
         persistError =
           "Could not restore the desk from local storage. Loaded a fresh paper book.";
       }
+      clientReleased = true;
       emit();
     });
   }
@@ -62,6 +66,7 @@ export function subscribeDesk(listener: () => void) {
 }
 
 export function getDeskSnapshot() {
+  if (!clientReleased) return SERVER_SEED;
   return desk;
 }
 
@@ -210,6 +215,10 @@ export function flattenPosition(positionId: string): string | null {
   const result = closePosition(desk, positionId);
   persist(result.state);
   return result.error ?? null;
+}
+
+export function markLiveCloseFailed(positionId: string, reason: string) {
+  persist(markLiveCloseError(desk, positionId, reason));
 }
 
 export function resetDemo() {

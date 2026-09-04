@@ -16,7 +16,7 @@ import { formatLots, formatMoney, formatPnl, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 export function PositionsPanel() {
-  const { state, flatten } = useDesk();
+  const { state, flatten, busy, actionError } = useDesk();
 
   if (state.positions.length === 0) {
     return (
@@ -31,6 +31,12 @@ export function PositionsPanel() {
   }
 
   return (
+    <div>
+      {actionError ? (
+        <p className="border-b border-rose-500/30 bg-rose-500/10 px-4 py-2 text-xs text-rose-300">
+          {actionError}
+        </p>
+      ) : null}
     <Table>
       <TableHeader>
         <TableRow>
@@ -87,9 +93,10 @@ export function PositionsPanel() {
                   type="button"
                   size="xs"
                   variant="outline"
+                  disabled={busy}
                   onClick={() => flatten(position.id)}
                 >
-                  Close
+                  {position.liveBroker ? "Close live" : "Close"}
                 </Button>
               </TableCell>
             </TableRow>
@@ -97,6 +104,7 @@ export function PositionsPanel() {
         })}
       </TableBody>
     </Table>
+    </div>
   );
 }
 

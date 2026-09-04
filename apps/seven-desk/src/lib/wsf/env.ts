@@ -19,7 +19,7 @@ export interface WsfOperatorEnv {
 const REPO_ROOT = join(homedir(), "Projects/trading/mt5-arch-integration");
 const DEFAULT_WSF_PREFIX = join(homedir(), ".mt5-wsf");
 
-/** Live OrderSend is WSF-only. Never follow a leftover Vantage/FP WINEPREFIX. */
+/** Live OrderSend and probes stay on ~/.mt5-wsf. Never follow leftover WINEPREFIX. */
 export const WSF_ONLY_PREFIX = DEFAULT_WSF_PREFIX;
 export const WSF_BRAND_INSTALL = "WSFmarkets MT5 Terminal";
 export {
@@ -97,9 +97,13 @@ export function readOperatorEnv(): WsfOperatorEnv {
     mt5Server: pick(file, "WSF_MT5_SERVER", "MT5_SERVER") || "WSFmarkets-Server",
     hasMt5Password: Boolean(pick(file, "WSF_MT5_PASSWORD", "MT5_PASSWORD")),
     mt5Backend: pick(file, "MT5_BACKEND", "WSF_MT5_BACKEND"),
-    winePrefix: pick(file, "WINEPREFIX") || (existsSync(DEFAULT_WSF_PREFIX) ? DEFAULT_WSF_PREFIX : null),
-    stateFile: pick(file, "WSF_MT5_STATE_FILE", "MT5_STATE_FILE"),
-    bridgeDir: pick(file, "MT5_BRIDGE_DIR", "WSF_MT5_BRIDGE_DIR"),
+    winePrefix: (() => {
+      const pinned = pick(file, "WSF_WINEPREFIX");
+      if (pinned && pinned.includes(".mt5-wsf")) return pinned;
+      return existsSync(DEFAULT_WSF_PREFIX) ? DEFAULT_WSF_PREFIX : null;
+    })(),
+    stateFile: pick(file, "WSF_MT5_STATE_FILE"),
+    bridgeDir: pick(file, "WSF_MT5_BRIDGE_DIR"),
     hasMetaApiToken: Boolean(pick(file, "METAAPI_TOKEN")),
     hasCTraderToken: Boolean(pick(file, "CTRADER_ACCESS_TOKEN")),
     hasCTraderPassword: Boolean(pick(file, "WSF_DEMO_PASSWORD", "WSF_CTRADER_PASSWORD")),

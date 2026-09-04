@@ -160,7 +160,7 @@ void FillDealsFromHistory(const ulong position_ticket, const ulong order_ticket,
                           double &open_price, double &close_price,
                           double &profit, double &swap, double &commission)
   {
-   HistorySelect(TimeCurrent() - 300, TimeCurrent() + 5);
+   HistorySelect(TimeCurrent() - 86400, TimeCurrent() + 5);
    for(int i = HistoryDealsTotal() - 1; i >= 0; i--)
      {
       ulong d = HistoryDealGetTicket(i);

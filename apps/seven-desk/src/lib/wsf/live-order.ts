@@ -489,16 +489,39 @@ function enrichFromJournal(
   return next;
 }
 
+function isWsfBrandRow(row: ProcRow, prefix: string): boolean {
+  return isWsfPrefixRow(row, prefix) && row.cwd.includes("WSFmarkets MT5 Terminal");
+}
+
+function isGenericWsfRow(row: ProcRow, prefix: string): boolean {
+  return isWsfPrefixRow(row, prefix) && /\/Program Files\/MetaTrader 5\/?$/.test(row.cwd);
+}
+
 function restoreWsfTerminal(paths: ReturnType<typeof wsfPaths>): string {
-  const already = listTerminal64().some((row) => isWsfPrefixRow(row, paths.prefix));
-  if (already) return "WSF brand terminal already running";
+  const leftover: number[] = [];
+  for (const row of listTerminal64()) {
+    if (!isGenericWsfRow(row, paths.prefix)) continue;
+    try {
+      process.kill(row.pid, "SIGTERM");
+      leftover.push(row.pid);
+    } catch {
+      // gone
+    }
+  }
+  const already = listTerminal64().some((row) => isWsfBrandRow(row, paths.prefix));
+  if (already) {
+    return leftover.length
+      ? `WSF brand terminal already running; stopped generic leftover ${leftover.join(",")}`
+      : "WSF brand terminal already running";
+  }
   const helper = join(repoRoot(), "scripts/21-start-broker-background.sh");
   const child = spawn(helper, ["wsf"], {
     detached: true,
     stdio: "ignore",
   });
   child.unref();
-  return `restored WSF brand terminal via background helper pid ${child.pid ?? "?"}`;
+  const extra = leftover.length ? `; stopped generic leftover ${leftover.join(",")}` : "";
+  return `restored WSF brand terminal via background helper pid ${child.pid ?? "?"}${extra}`;
 }
 
 function newRequestId(): string {
