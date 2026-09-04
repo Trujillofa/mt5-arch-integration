@@ -17,7 +17,9 @@ tree inside those prefixes (that leftover can carry another company’s
 one-shot — login/server identity on the last branded `account.json` does.
 Fetch/probe still fail closed on a stale snapshot. **CLOSE positions** on
 the blotter bar flattens every desk row (live groups first, fail-closed;
-paper after). It never talks to Vantage, FP, or official MCP on :22346.
+paper after). An already-flat close (`no open … desk position` or
+`position vanished`) drops the desk row the same as `ok`. It never talks
+to Vantage, FP, or official MCP on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

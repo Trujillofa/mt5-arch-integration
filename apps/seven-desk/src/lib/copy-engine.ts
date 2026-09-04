@@ -525,8 +525,8 @@ export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
   if (result.ok) return true;
   const reason = (result.reason ?? "").toLowerCase();
   return (
-    reason.includes("no open desk position") ||
-    reason.includes("position vanished")
+    reason.includes("position vanished") ||
+    /no open\b.*\bdesk position/.test(reason)
   );
 }
 

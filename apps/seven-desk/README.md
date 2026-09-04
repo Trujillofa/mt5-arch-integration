@@ -119,7 +119,7 @@ POST /api/wsf/order/close
 { "live": true, "confirm": "WSF-149736" }
 ```
 
-Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. A stale file-bridge heartbeat does not block the one-shot (same as FTMO/FN). After the send, the path restores the branded WSF terminal in the background. **CLOSE positions** on the blotter bar flattens every open desk row: live groups first (fail-closed), then paper.
+Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. A stale file-bridge heartbeat does not block the one-shot (same as FTMO/FN). After the send, the path restores the branded WSF terminal in the background. **CLOSE positions** on the blotter bar flattens every open desk row: live groups first (fail-closed), then paper. An already-flat close (`no open … desk position` / `position vanished`) drops the desk row.
 
 The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO and FundedNext live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP are never used.
 
