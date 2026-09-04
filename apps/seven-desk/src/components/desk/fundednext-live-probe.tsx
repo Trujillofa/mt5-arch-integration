@@ -57,8 +57,8 @@ export function FundedNextLiveProbe() {
           </p>
           <p className="text-xs text-muted-foreground">
             Read-only snapshot for {FUNDEDNEXT_EXPECTED_LOGIN} @{" "}
-            {FUNDEDNEXT_EXPECTED_SERVER}. Copy execution stays paper. There is no
-            FundedNext live-order API.
+            {FUNDEDNEXT_EXPECTED_SERVER}. Snapshot is read-only. Live OrderSend
+            is the FundedNext live copy control below.
           </p>
         </div>
         <Button type="button" size="sm" disabled={busy} onClick={run}>

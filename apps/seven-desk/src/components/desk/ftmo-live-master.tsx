@@ -6,48 +6,48 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDesk } from "@/lib/desk-context";
-import { WSF_LIVE_CONFIRM } from "@/lib/wsf/constants";
+import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
 
-export function WsfLiveCopy() {
-  const { state, setWsfLiveCopy } = useDesk();
+export function FtmoLiveMaster() {
+  const { state, setFtmoLiveMaster } = useDesk();
   const [ack, setAck] = useState(false);
   const [confirm, setConfirm] = useState("");
 
-  const armed = state.wsfLiveCopy;
-  const canArm = ack && confirm === WSF_LIVE_CONFIRM;
+  const master = state.accounts.find((row) => row.id === state.masterId);
+  const ftmoIsMaster = master?.firmId === "ftmo";
+  const armed = state.ftmoLiveMaster;
+  const canArm = ack && confirm === FTMO_LIVE_CONFIRM && ftmoIsMaster;
   const hint = useMemo(() => {
+    if (!ftmoIsMaster) return "Make FTMO the master before arming a live master fill.";
     if (armed) {
-      return "Armed. The next master fill copies to WSF 149736 as a min-lot EURUSDc open (not a scratch). Other slaves stay paper unless also armed.";
+      return "Armed. Place master trade sends 0.01 EURUSD on FTMO 541163357. Copies wait until that fill.";
     }
-    if (!ack) return "Tick the acknowledgement. This is a real WSF order on each master fill.";
-    if (confirm !== WSF_LIVE_CONFIRM) return `Type ${WSF_LIVE_CONFIRM} exactly.`;
-    return "Enable the switch to arm live copy.";
-  }, [armed, ack, confirm]);
+    if (!ack) return "Tick the acknowledgement. This is a real FTMO order.";
+    if (confirm !== FTMO_LIVE_CONFIRM) return `Type ${FTMO_LIVE_CONFIRM} exactly.`;
+    return "Enable the switch to arm live master.";
+  }, [armed, ack, confirm, ftmoIsMaster]);
 
   function onToggle(value: boolean) {
     if (!value) {
-      setWsfLiveCopy(false, "");
+      setFtmoLiveMaster(false, "");
       setAck(false);
       setConfirm("");
       return;
     }
-    const error = setWsfLiveCopy(true, confirm);
-    if (error) {
-      toast.error(error);
-    }
+    const error = setFtmoLiveMaster(true, confirm);
+    if (error) toast.error(error);
   }
 
   return (
     <section className="space-y-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
       <div>
         <p className="text-[11px] font-medium tracking-wide text-amber-100 uppercase">
-          WSF live copy
+          FTMO live master
         </p>
         <p className="text-xs text-muted-foreground">
-          When armed, Place master trade sends the WSF slave fill through{" "}
-          <span className="font-mono">POST /api/wsf/order</span> (open, min lot,
-          login 149736 only). Paper copy still fans out to the other books.
-          Starts the WSF terminal in the background if it is down.
+          When armed, Place master trade is a real min-lot{" "}
+          <span className="font-mono">POST /api/ftmo/order</span> on login 541163357.
+          Slaves copy only after that fill. Not Vantage, not FP.
         </p>
       </div>
 
@@ -58,24 +58,19 @@ export function WsfLiveCopy() {
           checked={ack}
           onChange={(event) => {
             setAck(event.target.checked);
-            if (!event.target.checked && armed) {
-              setWsfLiveCopy(false, "");
-            }
+            if (!event.target.checked && armed) setFtmoLiveMaster(false, "");
           }}
         />
-        <span>
-          Copy each master fill to live WSF 149736 at 0.01 lot. Not FundedNext,
-          not FTMO, not Vantage.
-        </span>
+        <span>Send the master ticket as a live 0.01 EURUSD order on FTMO 541163357.</span>
       </label>
 
       <div className="space-y-1.5">
-        <Label htmlFor="wsf-copy-confirm">Confirm token</Label>
+        <Label htmlFor="ftmo-master-confirm">Confirm token</Label>
         <Input
-          id="wsf-copy-confirm"
+          id="ftmo-master-confirm"
           value={confirm}
           onChange={(event) => setConfirm(event.target.value)}
-          placeholder={WSF_LIVE_CONFIRM}
+          placeholder={FTMO_LIVE_CONFIRM}
           autoComplete="off"
           spellCheck={false}
           className="font-mono"
@@ -84,11 +79,11 @@ export function WsfLiveCopy() {
       </div>
 
       <div className="flex items-center justify-between gap-3">
-        <Label htmlFor="wsf-live-copy" className="text-xs">
-          Arm live copy
+        <Label htmlFor="ftmo-live-master" className="text-xs">
+          Arm live master
         </Label>
         <Switch
-          id="wsf-live-copy"
+          id="ftmo-live-master"
           checked={armed}
           disabled={!canArm && !armed}
           onCheckedChange={(value) => onToggle(Boolean(value))}

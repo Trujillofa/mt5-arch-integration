@@ -2,6 +2,9 @@
 export const FTMO_EXPECTED_LOGIN = "541163357";
 export const FTMO_EXPECTED_SERVER = "FTMO-Server4";
 export const FTMO_SERVER_NEEDLE = "FTMO";
+export const FTMO_LIVE_CONFIRM = "FTMO-541163357";
+export const FTMO_LIVE_PENDING = "ftmo-live-pending";
+export const FTMO_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FtmoConnectionStatus =
   | "connected"

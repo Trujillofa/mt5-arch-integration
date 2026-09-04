@@ -205,9 +205,9 @@ export function probeFtmoLive(): FtmoLiveReport {
   const bookHonesty = live
     ? `Live FTMO MT5 ${FTMO_EXPECTED_LOGIN} @ ${
         snapshot?.server || FTMO_EXPECTED_SERVER
-      }. Read-only file-bridge. No FTMO order API.`
+      }. Read-only file-bridge snapshot. Live OrderSend is the FTMO live master control.`
     : winePrefixPresent
-      ? "FTMO Wine prefix is on disk. Waiting for an authorized Mt5ArchBridge account.json (read-only EA). Title-only login is not treated as connected. No live order path."
+      ? "FTMO Wine prefix is on disk. Waiting for an authorized Mt5ArchBridge account.json (read-only EA). Title-only login is not treated as connected. Live OrderSend is the FTMO live master control."
       : "FTMO Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {

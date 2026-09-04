@@ -75,6 +75,8 @@ export function loadDesk(): DeskState {
     quotes: parsed.quotes ?? fallback.quotes,
     selectedAccountId: parsed.selectedAccountId ?? fallback.selectedAccountId,
     wsfLiveCopy: false,
+    ftmoLiveMaster: false,
+    fundednextLiveCopy: false,
   });
 }
 

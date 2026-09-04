@@ -17,7 +17,7 @@ export const FIRMS: FirmProfile[] = [
     platforms: ["MT4", "MT5", "cTrader", "Match-Trader"],
     typicalServer: "FundedNext-Server 2",
     notes:
-      "Operator book is MT5 13981906 @ FundedNext-Server 2 (Stellar 2-Step P1 100K). Read-only file-bridge probe. No FundedNext live-order API — attaching an EA is an add-on risk the operator accepted for the snapshot.",
+      "Operator book is MT5 13981906 @ FundedNext-Server 2 (Stellar 2-Step P1 100K). Fetch is read-only. Arm FundedNext live copy to send the FN slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
   },
   {
     id: "neomaa",
@@ -52,7 +52,7 @@ export const FIRMS: FirmProfile[] = [
     platforms: ["MT4", "MT5", "cTrader", "DXtrade"],
     typicalServer: "FTMO-Server4",
     notes:
-      "Operator book is MT5 541163357 @ FTMO-Server4. Read-only file-bridge probe. No FTMO live-order API — attaching an EA is an add-on risk the operator accepted for the snapshot.",
+      "Operator book is MT5 541163357 @ FTMO-Server4. Fetch is read-only. Arm FTMO live master to send Place master trade as a min-lot OrderSend first; slaves copy only after that fill. Not Vantage/FP/MCP.",
   },
   {
     id: "alphacapital",

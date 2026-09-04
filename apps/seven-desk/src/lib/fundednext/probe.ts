@@ -207,9 +207,9 @@ export function probeFundedNextLive(): FundedNextLiveReport {
   const bookHonesty = liveBalance
     ? `Live FundedNext MT5 ${FUNDEDNEXT_EXPECTED_LOGIN} @ ${
         snapshot?.server || FUNDEDNEXT_EXPECTED_SERVER
-      }. Read-only file-bridge. No FundedNext order API.`
+      }. Read-only file-bridge snapshot. Live OrderSend is the FundedNext live copy control.`
     : winePrefixPresent
-      ? "FundedNext Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). No live order path."
+      ? "FundedNext Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the FundedNext live copy control."
       : "FundedNext Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {

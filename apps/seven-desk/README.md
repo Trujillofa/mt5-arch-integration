@@ -91,7 +91,7 @@ Select the FundedNext card and click **Fetch FundedNext**, or:
 - `GET /api/fundednext/probe` — fail-closed file-bridge snapshot
 - `GET /api/fundednext/account` — sanitized account snapshot only
 
-Uses `FUNDEDNEXT_MT5_*` from the gitignored repo `.env` (login `13981906`, server `FundedNext-Server 2`, prefix `~/.mt5-fundednext`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. There is **no** `POST /api/fundednext/order`. Attaching `Mt5ArchBridge` is a FundedNext add-on risk the operator accepted for the snapshot.
+Uses `FUNDEDNEXT_MT5_*` from the gitignored repo `.env` (login `13981906`, server `FundedNext-Server 2`, prefix `~/.mt5-fundednext`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a FundedNext add-on risk the operator accepted for the snapshot. Arm **FundedNext live copy** on the same card to send each master fill through `POST /api/fundednext/order` (`confirm: "FN-13981906"`, 0.01 EURUSD).
 
 ## FTMO live fetch (read-only)
 
@@ -100,7 +100,7 @@ Select the FTMO card and click **Fetch FTMO**, or:
 - `GET /api/ftmo/probe` — fail-closed file-bridge snapshot
 - `GET /api/ftmo/account` — sanitized account snapshot only
 
-Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. There is **no** `POST /api/ftmo/order`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot.
+Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot. Arm **FTMO live master** on the FTMO card (`confirm: "FTMO-541163357"`) so Place master trade is a real 0.01 EURUSD `POST /api/ftmo/order`. Copies wait until that fill.
 
 ## WSF live order (opt-in, fail-closed)
 
@@ -119,9 +119,9 @@ POST /api/wsf/order/close
 { "live": true, "confirm": "WSF-149736" }
 ```
 
-Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper. If `~/.mt5-wsf` is down, the order path starts that terminal in the background and waits for a fresh snapshot.
+Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. If `~/.mt5-wsf` is down, the order path starts that terminal in the background and waits for a fresh snapshot.
 
-The route resolves `WINEPREFIX` to `~/.mt5-wsf` only, re-reads the file-bridge account, and refuses unless login is **149736** and the server contains **WSF**. Volume must be the symbol minimum (or `volume_min: true`). It wraps the proven WSF-prefix one-shot MQL `/config` `[StartUp]` script; the desk API is the entry point. `src/mt5_arch` CLI/MCP stays read-only. FundedNext and FTMO have no live-order API.
+The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO and FundedNext live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP are never used.
 
 Optional overrides (not committed; never put secrets in git):
 

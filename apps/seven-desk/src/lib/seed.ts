@@ -160,5 +160,7 @@ export function seedDesk(): DeskState {
     quotes: SEED_QUOTES.map((quote) => ({ ...quote })),
     selectedAccountId: ACCOUNT_IDS.wsf,
     wsfLiveCopy: false,
+    ftmoLiveMaster: false,
+    fundednextLiveCopy: false,
   };
 }
