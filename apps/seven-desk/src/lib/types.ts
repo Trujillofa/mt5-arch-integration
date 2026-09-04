@@ -74,7 +74,7 @@ export interface Position {
   mark: number;
   pnl: number;
   /** Set when the fill was a real OrderSend, not paper. */
-  liveBroker?: "wsf" | "ftmo" | "fundednext" | "alphacapital";
+  liveBroker?: "wsf" | "ftmo" | "fundednext" | "alphacapital" | "fundingpips";
   liveOrder?: number;
   /** Copy-group id so flatten can close sibling live books. */
   groupId?: string;
@@ -119,4 +119,5 @@ export interface DeskState {
   ftmoLiveMaster: boolean;
   fundednextLiveCopy: boolean;
   alphacapitalLiveCopy: boolean;
+  fundingpipsLiveCopy: boolean;
 }

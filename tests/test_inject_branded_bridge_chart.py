@@ -78,6 +78,24 @@ def test_quotes_ready_btc_counts_for_alphacapital(tmp_path: Path) -> None:
     assert any(inject.quotes_ready(term_dir, symbol) for symbol in inject.ALPHA_QUOTE_SYMBOLS)
 
 
+def test_inject_fundingpips_writes_inpbroker(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "FundingPips 2 MT5 Terminal")
+    written = inject.inject_charts("fundingpips", term_dir)
+    text = _chart_text(written[0])
+    assert "InpBroker=fundingpips" in text
+    assert "symbol=EURUSD" in text
+    assert "Mt5ArchBridge" in text
+
+
+def test_inject_fundingpips_quotes_first_omits_expert(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "FundingPips 2 MT5 Terminal")
+    written = inject.inject_charts("fundingpips", term_dir, with_expert=False)
+    text = _chart_text(written[0])
+    assert "symbol=EURUSD" in text
+    assert "Mt5ArchBridge" not in text
+    assert "<expert>" not in text
+
+
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "WSFmarkets MT5 Terminal")
     written = inject.inject_charts("wsf", term_dir)

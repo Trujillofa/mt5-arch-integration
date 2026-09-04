@@ -41,9 +41,9 @@ export const FIRMS: FirmProfile[] = [
     name: "FundingPips",
     legalName: "Funding Pips",
     platforms: ["MT5", "cTrader", "Match-Trader"],
-    typicalServer: "FundingPips-Server",
+    typicalServer: "FundingPips2-SIM",
     notes:
-      "Typically Match-Trader or cTrader. MT5 still appears on some programmes (e.g. later Prime stages).",
+      "Operator book is MT5 11669306 @ FundingPips2-SIM. Fetch is read-only. Arm FundingPips live copy to send the FundingPips slave of each master fill as a min-lot OrderSend. Not Vantage/FP Markets/MCP.",
   },
   {
     id: "ftmo",
