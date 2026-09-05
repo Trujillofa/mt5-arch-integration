@@ -17,6 +17,13 @@ import {
 } from "@/lib/fundednext/env";
 import { FUNDEDNEXT_EXPECTED_SERVER, FUNDEDNEXT_LIVE_CONFIRM } from "@/lib/fundednext/types";
 import {
+  FUNDINGPIPS_BRAND_INSTALLS,
+  FUNDINGPIPS_EXPECTED_LOGIN,
+  FUNDINGPIPS_ONLY_PREFIX,
+  FUNDINGPIPS_SERVER_NEEDLE,
+} from "@/lib/fundingpips/env";
+import { FUNDINGPIPS_EXPECTED_SERVER, FUNDINGPIPS_LIVE_CONFIRM } from "@/lib/fundingpips/types";
+import {
   FTMO_BRAND_INSTALLS,
   FTMO_EXPECTED_LOGIN,
   FTMO_ONLY_PREFIX,
@@ -90,6 +97,18 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     magic: 20263850,
     defaultSymbol: "EURUSD",
     restoreArg: "alphacapital",
+  },
+  fundingpips: {
+    id: "fundingpips",
+    prefix: FUNDINGPIPS_ONLY_PREFIX,
+    brands: FUNDINGPIPS_BRAND_INSTALLS,
+    login: FUNDINGPIPS_EXPECTED_LOGIN,
+    confirm: FUNDINGPIPS_LIVE_CONFIRM,
+    needle: FUNDINGPIPS_SERVER_NEEDLE,
+    server: FUNDINGPIPS_EXPECTED_SERVER,
+    magic: 20263851,
+    defaultSymbol: "EURUSD",
+    restoreArg: "fundingpips",
   },
 };
 
@@ -680,6 +699,18 @@ export async function executeDeskLiveOrder(
     }
   }
   writeRequest(firm, paths, parsed, requestId);
+
+  if (firm.id === "fundingpips" && !quotesReady(paths.brandDir, parsed.symbol)) {
+    return {
+      status: 409,
+      result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
+  }
 
   if (firm.id === "alphacapital" && !quotesReady(paths.brandDir, parsed.symbol)) {
     const ready = waitQuotesOrFresh(firm, paths, parsed.symbol, 90000);

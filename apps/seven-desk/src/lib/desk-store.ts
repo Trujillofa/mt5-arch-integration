@@ -203,6 +203,10 @@ export function setAlphacapitalLiveCopy(enabled: boolean) {
   patchDesk((current) => ({ ...current, alphacapitalLiveCopy: enabled }));
 }
 
+export function setFundingpipsLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, fundingpipsLiveCopy: enabled }));
+}
+
 export function applyWsfLiveCopyResult(eventId: string, result: LiveOrderResult) {
   persist(applyWsfLiveFill(desk, eventId, result));
 }

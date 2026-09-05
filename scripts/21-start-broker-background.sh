@@ -6,7 +6,7 @@
 #
 # Does not load repo .env (that pins WSF). Does not print passwords.
 # Refuses vantage / fpmarkets / exness so those live books stay put.
-# For wsf / ftmo / fundednext / alphacapital, writes Mt5ArchBridge onto the
+# For wsf / ftmo / fundednext / alphacapital / fundingpips, writes Mt5ArchBridge onto the
 # branded Default chart (portable loads MQL5/Profiles/Charts/Default). A stale
 # heartbeat restarts only that prefix's branded terminal64 — never a generic
 # Program Files/MetaTrader 5 tree.
@@ -81,7 +81,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
 
   term="$(find_terminal64)" || die "terminal64.exe not found under $WINEPREFIX"
   case "$broker" in
-    wsf|ftmo|fundednext|alphacapital)
+    wsf|ftmo|fundednext|alphacapital|fundingpips)
       if [[ "$term" == *"/Program Files/MetaTrader 5/terminal64.exe" ]]; then
         die "$broker generic MetaQuotes tree is not the live book — start the branded terminal64.exe"
       fi

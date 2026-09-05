@@ -63,6 +63,17 @@ function migrateOperatorLogins(state: DeskState): DeskState {
           platform: "MT5",
         };
       }
+      if (account.firmId === "fundingpips") {
+        if (account.login === "11669306" && account.server === "FundingPips2-SIM") {
+          return account;
+        }
+        return {
+          ...account,
+          login: "11669306",
+          server: "FundingPips2-SIM",
+          platform: "MT5",
+        };
+      }
       return account;
     }),
   };
@@ -89,6 +100,7 @@ export function loadDesk(): DeskState {
     ftmoLiveMaster: false,
     fundednextLiveCopy: false,
     alphacapitalLiveCopy: false,
+    fundingpipsLiveCopy: false,
   });
 }
 

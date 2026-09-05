@@ -78,6 +78,24 @@ def test_quotes_ready_btc_counts_for_alphacapital(tmp_path: Path) -> None:
     assert any(inject.quotes_ready(term_dir, symbol) for symbol in inject.ALPHA_QUOTE_SYMBOLS)
 
 
+def test_inject_fundingpips_writes_inpbroker(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "FundingPips 2 MT5 Terminal")
+    written = inject.inject_charts("fundingpips", term_dir)
+    text = _chart_text(written[0])
+    assert "InpBroker=fundingpips" in text
+    assert "symbol=EURUSD" in text
+    assert "Mt5ArchBridge" in text
+
+
+def test_inject_fundingpips_quotes_first_omits_expert(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "FundingPips 2 MT5 Terminal")
+    written = inject.inject_charts("fundingpips", term_dir, with_expert=False)
+    text = _chart_text(written[0])
+    assert "symbol=EURUSD" in text
+    assert "Mt5ArchBridge" not in text
+    assert "<expert>" not in text
+
+
 def test_quotes_ready_btcusd_matches_pro_folder(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
     hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "BTCUSD.pro" / "2026.hcc"
@@ -114,12 +132,13 @@ def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> Non
 
 
 def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
-    """WSF/FTMO/FN must not delete leftover Default tabs; Alpha must."""
+    """WSF/FTMO/FN/FundingPips must not delete leftover Default tabs; Alpha must."""
     leftover = b"stale-tab"
     cases = (
         ("wsf", "WSFmarkets MT5 Terminal"),
         ("ftmo", "FTMO Global Markets MT5 Terminal"),
         ("fundednext", "FundedNext MT5 Terminal"),
+        ("fundingpips", "FundingPips 2 MT5 Terminal"),
     )
     for broker, brand in cases:
         term_dir = _brand_tree(tmp_path / broker, brand)

@@ -45,7 +45,7 @@ Note: `tests/test_xau_pipeline.py` asserts `xauusd_data.csv` exists and spans �
 
 ## Multi-broker model
 
-One Wine prefix **per broker** (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`, `~/.mt5-exness`; legacy generic `~/.mt5`). Brand installers only pre-seed a terminal's server list — cross-company logins fail with `Invalid account`. Brokers with `config/brokers/<name>.env` switch via `./scripts/16-use-broker.sh <name>` or `uv run mt5-arch brokers`. `~/.mt5-exness` exists on disk but there is no `config/brokers/exness.env` yet — select Exness by exporting `WINEPREFIX` directly (same note as `docs/MT5-INTEGRATION-CAPABILITIES.md`).
+One Wine prefix **per broker** (`~/.mt5-vantage`, `~/.mt5-wsf`, `~/.mt5-fpmarkets`, `~/.mt5-fundednext`, `~/.mt5-ftmo`, `~/.mt5-alphacapital`, `~/.mt5-fundingpips`, `~/.mt5-exness`; legacy generic `~/.mt5`). Brand installers only pre-seed a terminal's server list — cross-company logins fail with `Invalid account`. Brokers with `config/brokers/<name>.env` switch via `./scripts/16-use-broker.sh <name>` or `uv run mt5-arch brokers`. `~/.mt5-exness` exists on disk but there is no `config/brokers/exness.env` yet — select Exness by exporting `WINEPREFIX` directly (same note as `docs/MT5-INTEGRATION-CAPABILITIES.md`).
 
 Brand install dirs differ (`Program Files/Vantage International MT5`, `.../FP Markets MT5 Terminal`, …) and are listed in `config/broker_install_dirs.json` (consumed by `scripts/19-run-htf-fib-backtest.sh` and `fetch_data.py`). The generic `MetaTrader 5` default in `file_bridge.py::default_bridge_dir` stays overridable via `MT5_BRIDGE_DIR` (platform layer). Adding a broker means updating that JSON (and adding a broker env when ready).
 

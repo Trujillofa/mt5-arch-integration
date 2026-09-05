@@ -68,9 +68,9 @@ export function seedAccounts(): TradingAccount[] {
     account(
       ACCOUNT_IDS.fundingpips,
       "fundingpips",
-      "4478219",
-      "cTrader",
-      "FundingPips-Server",
+      "11669306",
+      "MT5",
+      "FundingPips2-SIM",
       100_000
     ),
     account(
@@ -163,5 +163,6 @@ export function seedDesk(): DeskState {
     ftmoLiveMaster: false,
     fundednextLiveCopy: false,
     alphacapitalLiveCopy: false,
+    fundingpipsLiveCopy: false,
   };
 }
