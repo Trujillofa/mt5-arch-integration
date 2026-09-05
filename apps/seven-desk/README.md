@@ -1,6 +1,6 @@
 # Seven Desk
 
-Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads each firm’s file-bridge snapshots when that Wine terminal is up. Paper adapter stays the default copy path. Live OrderSend is fail-closed and opt-in on **FTMO 541163357** (master), **WSF 149736**, **FundedNext 13981906**, **Alpha Capital 2765247**, and **FundingPips 11669306** — branded `terminal64.exe` trees, never Vantage/FP Markets or a generic `MetaTrader 5` folder inside those prefixes.
+Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads each firm’s file-bridge snapshots when that Wine terminal is up. Paper adapter stays the default copy path. Live OrderSend is fail-closed and opt-in on **FTMO 541163357** (master), **WSF 149736**, **FundedNext 13981906**, **Alpha Capital 2765247**, **FundingPips 11669306**, **Neomaa 7745107**, and **Fortraders 737150** — branded `terminal64.exe` trees, never Vantage/FP Markets or a generic `MetaTrader 5` folder inside those prefixes.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
@@ -23,8 +23,8 @@ Each book ships with a seeded paper account, a typical platform, and an honest s
 | --- | --- | --- |
 | WSF (Wall Street Funded) | MT5, cTrader, Match-Trader | **`WSFmarkets-Server`** |
 | FundedNext | MT4, MT5, cTrader, Match-Trader | **`FundedNext-Server 2`** (login `13981906`) |
-| Neomaa (NEOMAAA Funded) | MT5, TradeLocker | `NEOMAAA-Live` |
-| Fortraders | MT5, TradeLocker, cTrader | `ForTraders-Server` |
+| Neomaa (NEOMAAA Funded) | MT5, TradeLocker | **`Neomaaa-Live`** (login `7745107`) |
+| Fortraders | **MT5** (this challenge; not TradeLocker), cTrader | **`FTTrading-Server`** (login `737150`) |
 | FundingPips | MT5, cTrader, Match-Trader | **`FundingPips2-SIM`** (login `11669306`) |
 | FTMO | MT4, MT5, cTrader, DXtrade | **`FTMO-Server4`** (login `541163357`) |
 | Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** (login `2765247`) |
@@ -48,7 +48,6 @@ Settings, blotter, and positions persist in **localStorage** (`sevendesk.v1`). *
 
 ### Seeded skip cases (so the blotter is not all greens)
 
-- **Fortraders** starts with copy **off** → `slave disabled`
 - **FundingPips** maps `NAS100` to blank → `symbol unmapped`
 - **FundingPips** `max lot` is `1.00` with `0.8×` → a `2.00` lot master → `max lot`
 - **Neomaa** maps `XAUUSD` → `GOLD` (still fills)
@@ -122,6 +121,24 @@ Select the FundingPips card and click **Fetch FundingPips**, or:
 
 Uses `FUNDINGPIPS_MT5_*` from the gitignored repo `.env` (login `11669306`, server `FundingPips2-SIM`, prefix `~/.mt5-fundingpips`). It does **not** read WSF `MT5_*` / `WINEPREFIX`, and it is not FP Markets (`~/.mt5-fpmarkets`). Attaching `Mt5ArchBridge` is a FundingPips add-on risk the operator accepted for the snapshot. Arm **FundingPips live copy** on the same card to send each master fill through `POST /api/fundingpips/order` (`confirm: "FUNDINGPIPS-11669306"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
 
+## Neomaa live fetch (read-only)
+
+Select the Neomaa card and click **Fetch Neomaa**, or:
+
+- `GET /api/neomaa/probe` — fail-closed file-bridge snapshot
+- `GET /api/neomaa/account` — sanitized account snapshot only
+
+Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-Live`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
+
+## Fortraders live fetch (read-only)
+
+Select the Fortraders card and click **Fetch Fortraders**, or:
+
+- `GET /api/fortraders/probe` — fail-closed file-bridge snapshot
+- `GET /api/fortraders/account` — sanitized account snapshot only
+
+Uses `FORTRADERS_MT5_*` from the gitignored repo `.env` (login `737150`, server `FTTrading-Server`, prefix `~/.mt5-fortraders`). It does **not** read WSF `MT5_*` / `WINEPREFIX`, and it is not FTMO (`~/.mt5-ftmo`), FP Markets, or FundingPips. This challenge is **MT5**, not TradeLocker. Attaching `Mt5ArchBridge` is a Fortraders add-on risk the operator accepted for the snapshot. Arm **Fortraders live copy** on the same card to send each master fill through `POST /api/fortraders/order` (`confirm: "FORTRADERS-737150"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
+
 ## WSF live order (opt-in, fail-closed)
 
 Paper remains the default. A live min-lot send requires all of:
@@ -141,7 +158,7 @@ POST /api/wsf/order/close
 
 Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. A stale file-bridge heartbeat does not block the one-shot (same as FTMO/FN). After the send, the path restores the branded WSF terminal in the background and reattaches `Mt5ArchBridge` on the Default chart when the heartbeat is stale. **CLOSE positions** on the blotter bar flattens every open desk row: live groups first (fail-closed), then paper. An already-flat close (`no open … desk position` / `position vanished`) drops the desk row. Live close result JSON retries `HistorySelectByPosition` so `deal_close` is not left at 0 when the journal already has the out deal.
 
-The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, Alpha Capital, and FundingPips live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` / `~/.mt5-alphacapital` / `~/.mt5-fundingpips` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP Markets are never used.
+The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, Alpha Capital, FundingPips, Neomaa, and Fortraders live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` / `~/.mt5-alphacapital` / `~/.mt5-fundingpips` / `~/.mt5-neomaa` / `~/.mt5-fortraders` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP Markets are never used.
 
 Optional overrides (not committed; never put secrets in git):
 
@@ -159,7 +176,7 @@ WSF_ENV_FILE=
 
 - `AccountAdapter` in `src/lib/adapters/types.ts`
 - `PaperAdapter` in `src/lib/adapters/paper.ts` — copy-engine fill path unless that book’s live switch is armed
-- `POST /api/ftmo/order`, `/api/wsf/order`, `/api/fundednext/order`, `/api/alphacapital/order`, `/api/fundingpips/order` — branded-prefix min-lot (scratch, master, or copy-open)
+- `POST /api/ftmo/order`, `/api/wsf/order`, `/api/fundednext/order`, `/api/alphacapital/order`, `/api/fundingpips/order`, `/api/neomaa/order`, `/api/fortraders/order` — branded-prefix min-lot (scratch, master, or copy-open)
 - `src/lib/adapters/metaapi.stub.ts` — comments/stub only for a future MetaAPI/MT5 adapter. If a token were added later, keep falling back to paper when it is missing.
 
 There is no database, no auth, and no second UI kit. UI state lives in React context + localStorage.

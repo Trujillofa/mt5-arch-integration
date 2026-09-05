@@ -54,6 +54,8 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert "ftmo" in names, "expected config/brokers/ftmo.env"
     assert "alphacapital" in names, "expected config/brokers/alphacapital.env"
     assert "fundingpips" in names, "expected config/brokers/fundingpips.env"
+    assert "neomaa" in names, "expected config/brokers/neomaa.env"
+    assert "fortraders" in names, "expected config/brokers/fortraders.env"
 
     wsf = load_broker_profile("wsf")
     assert wsf.login == "149736"
@@ -91,6 +93,19 @@ def test_load_and_list_shipped_broker_profiles() -> None:
     assert "mt5-fundingpips" in fpips.wineprefix
     assert "fpmarkets" not in fpips.wineprefix
 
+    neo = load_broker_profile("neomaa")
+    assert neo.login == "7745107"
+    assert neo.server == "Neomaaa-Live"
+    assert "mt5-neomaa" in neo.wineprefix
+
+    ftt = load_broker_profile("fortraders")
+    assert ftt.login == "737150"
+    assert ftt.server == "FTTrading-Server"
+    assert "mt5-fortraders" in ftt.wineprefix
+    assert "mt5-ftmo" not in ftt.wineprefix
+    assert "mt5-fpmarkets" not in ftt.wineprefix
+    assert "mt5-fundingpips" not in ftt.wineprefix
+
     # as_exports never includes password keys; Settings reads MT5_BROKER
     exp = vant.as_exports()
     assert "MT5_PASSWORD" not in exp
@@ -105,6 +120,8 @@ def test_broker_install_dirs_include_funded_brands() -> None:
     assert data["ftmo"] == "FTMO Global Markets MT5 Terminal"
     assert data["alphacapital"] == "ACG Markets MT5 Terminal"
     assert data["fundingpips"] == "FundingPips 2 MT5 Terminal"
+    assert data["neomaa"] == "Neomaaa MT5 Terminal"
+    assert data["fortraders"] == "FT Trading MT5 Terminal"
     assert data["wsf"] == "WSFmarkets MT5 Terminal"
     assert data["_generic"] == "MetaTrader 5"
 

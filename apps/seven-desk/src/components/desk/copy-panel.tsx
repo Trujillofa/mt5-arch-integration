@@ -14,8 +14,12 @@ import { AlphaCapitalLiveCopy } from "@/components/desk/alphacapital-live-copy";
 import { AlphaCapitalLiveProbe } from "@/components/desk/alphacapital-live-probe";
 import { FundedNextLiveCopy } from "@/components/desk/fundednext-live-copy";
 import { FundedNextLiveProbe } from "@/components/desk/fundednext-live-probe";
+import { FortradersLiveCopy } from "@/components/desk/fortraders-live-copy";
+import { FortradersLiveProbe } from "@/components/desk/fortraders-live-probe";
 import { FundingPipsLiveCopy } from "@/components/desk/fundingpips-live-copy";
 import { FundingPipsLiveProbe } from "@/components/desk/fundingpips-live-probe";
+import { NeomaaLiveCopy } from "@/components/desk/neomaa-live-copy";
+import { NeomaaLiveProbe } from "@/components/desk/neomaa-live-probe";
 import { FtmoLiveMaster } from "@/components/desk/ftmo-live-master";
 import { FtmoLiveProbe } from "@/components/desk/ftmo-live-probe";
 import { WsfLiveProbe } from "@/components/desk/wsf-live-probe";
@@ -169,6 +173,20 @@ export function CopyPanel() {
           <>
             <FundingPipsLiveProbe />
             <FundingPipsLiveCopy />
+          </>
+        ) : null}
+
+        {account.firmId === "neomaa" ? (
+          <>
+            <NeomaaLiveProbe />
+            <NeomaaLiveCopy />
+          </>
+        ) : null}
+
+        {account.firmId === "fortraders" ? (
+          <>
+            <FortradersLiveProbe />
+            <FortradersLiveCopy />
           </>
         ) : null}
 

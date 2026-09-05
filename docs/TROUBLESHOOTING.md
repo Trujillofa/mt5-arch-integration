@@ -311,6 +311,8 @@ Each launcher sets the correct `WINEPREFIX` and runs `terminal64.exe /portable`
 | Vantage | `vantageinternational5setup.exe` | `~/.mt5-vantage` | **27496181** (live) | **`VantageMarkets-Live 5`** (not `VantageInternational-Live 5`) |
 | FP Markets SC | `fpmarketssc5setup.exe` | `~/.mt5-fpmarkets` | **84076984** (live) | **`FPMarketsSC-Live`** |
 | Exness | `exness5setup.exe` | `~/.mt5-exness` | Set your account login | Select the exact server shown by Exness |
+| Neomaa | `neomaaa5setup.exe` | `~/.mt5-neomaa` | **7745107** | `Neomaaa-Live` |
+| Fortraders (FT Trading) | `fttrading5setup.exe` | `~/.mt5-fortraders` | **737150** | `FTTrading-Server` |
 
 Broker terminals install under brand folders; scripts expect `…/MetaTrader 5` — create a symlink:
 

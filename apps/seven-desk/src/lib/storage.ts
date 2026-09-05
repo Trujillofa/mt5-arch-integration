@@ -74,6 +74,32 @@ function migrateOperatorLogins(state: DeskState): DeskState {
           platform: "MT5",
         };
       }
+      if (account.firmId === "neomaa") {
+        if (account.login === "7745107" && account.server === "Neomaaa-Live") {
+          return account;
+        }
+        return {
+          ...account,
+          login: "7745107",
+          server: "Neomaaa-Live",
+          platform: "MT5",
+        };
+      }
+      if (account.firmId === "fortraders") {
+        if (
+          account.login === "737150" &&
+          account.server === "FTTrading-Server" &&
+          account.platform === "MT5"
+        ) {
+          return account;
+        }
+        return {
+          ...account,
+          login: "737150",
+          server: "FTTrading-Server",
+          platform: "MT5",
+        };
+      }
       return account;
     }),
   };
@@ -101,6 +127,8 @@ export function loadDesk(): DeskState {
     fundednextLiveCopy: false,
     alphacapitalLiveCopy: false,
     fundingpipsLiveCopy: false,
+    neomaaLiveCopy: false,
+    fortradersLiveCopy: false,
   });
 }
 
