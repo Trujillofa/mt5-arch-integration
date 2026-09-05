@@ -96,6 +96,71 @@ def test_inject_fundingpips_quotes_first_omits_expert(tmp_path: Path) -> None:
     assert "<expert>" not in text
 
 
+def test_quotes_ready_btcusd_matches_pro_folder(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "BTCUSD.pro" / "2026.hcc"
+    hcc.parent.mkdir(parents=True, exist_ok=True)
+    hcc.write_bytes(b"hcc")
+    assert inject.quotes_ready(term_dir, "BTCUSD") is True
+    assert inject.quotes_ready(term_dir, "BTCUSD.pro") is True
+    assert inject.quotes_ready(term_dir, "EURUSD") is False
+
+
+def test_quotes_ready_audcad_pro_counts_for_alphacapital(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "AUDCAD.pro" / "2026.hcc"
+    hcc.parent.mkdir(parents=True, exist_ok=True)
+    hcc.write_bytes(b"hcc")
+    assert inject.quotes_ready(term_dir, "AUDCAD.pro") is True
+    assert inject.alpha_ready_symbol(term_dir) == "AUDCAD.pro"
+    assert any(inject.quotes_ready(term_dir, symbol) for symbol in inject.ALPHA_QUOTE_SYMBOLS)
+
+
+def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "AUDCAD.pro" / "2026.hcc"
+    hcc.parent.mkdir(parents=True, exist_ok=True)
+    hcc.write_bytes(b"hcc")
+    extra = term_dir / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+    extra.parent.mkdir(parents=True, exist_ok=True)
+    extra.write_bytes(b"stale")
+    written = inject.inject_charts("alphacapital", term_dir, with_expert=True)
+    text = _chart_text(written[0])
+    assert "symbol=AUDCAD.pro" in text
+    assert "Mt5ArchBridge" in text
+    assert not extra.exists()
+
+
+def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
+    """WSF/FTMO/FN must not delete leftover Default tabs; Alpha must."""
+    leftover = b"stale-tab"
+    cases = (
+        ("wsf", "WSFmarkets MT5 Terminal"),
+        ("ftmo", "FTMO Global Markets MT5 Terminal"),
+        ("fundednext", "FundedNext MT5 Terminal"),
+    )
+    for broker, brand in cases:
+        term_dir = _brand_tree(tmp_path / broker, brand)
+        extra = term_dir / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        extra.write_bytes(leftover)
+        order = extra.parent / "order.wnd"
+        order.write_bytes(b"keep-me")
+        inject.inject_charts(broker, term_dir)
+        assert extra.is_file() and extra.read_bytes() == leftover
+        assert order.read_bytes() == b"keep-me"
+
+    alpha = _brand_tree(tmp_path / "alphacapital", "ACG Markets MT5 Terminal")
+    extra = alpha / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+    extra.parent.mkdir(parents=True, exist_ok=True)
+    extra.write_bytes(leftover)
+    order = extra.parent / "order.wnd"
+    order.write_bytes(b"keep-me")
+    inject.inject_charts("alphacapital", alpha)
+    assert not extra.exists()
+    assert order.read_bytes() == b"\xff\xfe" + "chart01.chr\r\n".encode("utf-16-le")
+
+
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "WSFmarkets MT5 Terminal")
     written = inject.inject_charts("wsf", term_dir)

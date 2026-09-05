@@ -24,8 +24,18 @@ SYMBOL = {
     "alphacapital": "BTCUSD",
     "fundingpips": "EURUSD",
 }
-# Alpha quotes-first: FX is often dead on weekends; BTC ticks are enough.
-ALPHA_QUOTE_SYMBOLS = ("BTCUSD", "BTCUSDc", "BTCUSD.r", "EURUSD")
+# Alpha quotes-first tries BTCUSD first. ACG's live names are often *.pro;
+# bare BTCUSD/EURUSD charts stay blank (symbol sync timeout) while AUDCAD.pro
+# already has history. Allow those so 21 can attach Mt5ArchBridge.
+ALPHA_QUOTE_SYMBOLS = (
+    "BTCUSD",
+    "BTCUSDc",
+    "BTCUSD.r",
+    "BTCUSD.pro",
+    "EURUSD",
+    "EURUSD.pro",
+    "AUDCAD.pro",
+)
 DEFAULT_FRESH_SEC = 60
 
 
@@ -64,8 +74,8 @@ def assert_branded_term_dir(broker: str, term_dir: Path) -> Path:
     return resolved
 
 
-def chart_bytes(broker: str, *, with_expert: bool = True) -> bytes:
-    symbol = SYMBOL[broker]
+def chart_bytes(broker: str, *, with_expert: bool = True, symbol: str | None = None) -> bytes:
+    symbol = symbol or SYMBOL[broker]
     # ACG build 6180 times out EA/script init (~5 min) if the chart symbol
     # has no quotes yet. Alpha starts quotes-first; skip the XAU dump.
     dump_history = "false" if broker == "alphacapital" else "true"
@@ -142,6 +152,20 @@ def heartbeat_is_fresh(term_dir: Path, max_age: float = DEFAULT_FRESH_SEC) -> bo
     return age is not None and age <= max_age
 
 
+def _path_matches_symbol(path: Path, symbol: str) -> bool:
+    """Match BTCUSD to a BTCUSD.pro history folder (ACG suffix), not EURUSD."""
+    sym = symbol.upper()
+    name = path.name.upper()
+    if name == sym or name.startswith(f"{sym}."):
+        return True
+    for part in (part.upper() for part in path.parts):
+        if part == sym:
+            return True
+        if part.startswith(f"{sym}."):
+            return True
+    return False
+
+
 def quotes_ready(term_dir: Path, symbol: str | None = None) -> bool:
     """True when portable Bases has downloaded history/ticks for the chart symbol."""
     resolved = Path(term_dir).expanduser().resolve()
@@ -153,14 +177,41 @@ def quotes_ready(term_dir: Path, symbol: str | None = None) -> bool:
         if not path.is_file() or path.stat().st_size <= 0:
             continue
         parts = [part.upper() for part in path.parts]
-        name = path.name.upper()
-        if sym not in parts and not name.startswith(sym):
+        if not _path_matches_symbol(path, sym):
             continue
         if path.suffix.lower() in {".hcc", ".hc", ".tkc"}:
             return True
         if "HISTORY" in parts or "TICKS" in parts:
             return True
     return False
+
+
+def alpha_ready_symbol(term_dir: Path) -> str | None:
+    """First Alpha allowlist symbol that already has Bases history."""
+    resolved = Path(term_dir).expanduser().resolve()
+    for symbol in ALPHA_QUOTE_SYMBOLS:
+        if quotes_ready(resolved, symbol):
+            return symbol
+    return None
+
+
+def prune_default_chart_siblings(term_dir: Path, broker: str = "") -> None:
+    """Alpha-only: Default profile must be one chart.
+
+    Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext
+    locked books keep leftover Default tabs — do not rewrite order.wnd there.
+    """
+    if broker != "alphacapital":
+        return
+    for chart in chart_paths(term_dir):
+        parent = chart.parent
+        if parent.name != "Default" or not parent.is_dir():
+            continue
+        for extra in parent.glob("chart*.chr"):
+            if extra.name != chart.name:
+                extra.unlink()
+        order = parent / "order.wnd"
+        order.write_bytes(b"\xff\xfe" + "chart01.chr\r\n".encode("utf-16-le"))
 
 
 def inject_charts(
@@ -174,12 +225,21 @@ def inject_charts(
     ex5 = resolved / "MQL5" / "Experts" / "Mt5ArchBridge.ex5"
     if with_expert and require_ex5 and not ex5.is_file():
         raise InjectError(f"Mt5ArchBridge.ex5 missing under {resolved}")
-    payload = chart_bytes(broker, with_expert=with_expert)
+    symbol = SYMBOL[broker]
+    if broker == "alphacapital" and with_expert:
+        ready = alpha_ready_symbol(resolved)
+        if ready:
+            symbol = ready
+    payload = chart_bytes(broker, with_expert=with_expert, symbol=symbol)
     written: list[Path] = []
     for path in chart_paths(resolved):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(payload)
         written.append(path)
+    # Leftover Default tabs steal focus on ACG (AUDCAD.pro vs BTCUSD).
+    # Do not prune WSF/FTMO/FundedNext — those locked books keep extra tabs.
+    if broker == "alphacapital":
+        prune_default_chart_siblings(resolved, broker)
     return written
 
 
