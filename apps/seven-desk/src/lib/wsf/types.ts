@@ -56,6 +56,7 @@ export interface WsfIdentity {
 
 export type WsfConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

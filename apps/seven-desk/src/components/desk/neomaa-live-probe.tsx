@@ -89,6 +89,8 @@ function applyToDesk(
       balance?: number;
       equity?: number;
       label?: string;
+      status?: "connected" | "disconnected";
+      statusReason?: string;
     }
   ) => void
 ) {
@@ -99,6 +101,16 @@ function applyToDesk(
     login,
     server,
     platform: "MT5",
+    ...(report.connectionStatus === "connected"
+      ? { status: "connected" as const, statusReason: undefined }
+      : {}),
+    ...(report.connectionStatus === "disconnected"
+      ? {
+          status: "disconnected" as const,
+          statusReason:
+            "Neomaaa-Live trade server offline (weekend FX). File-bridge is writing.",
+        }
+      : {}),
     ...(report.connectionStatus === "connected" && report.balance != null
       ? { balance: report.balance }
       : {}),
@@ -117,6 +129,11 @@ function connectionCopy(status: NeomaaConnectionStatus): {
       return {
         label: "connected",
         className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+      };
+    case "disconnected":
+      return {
+        label: "trade server offline",
+        className: "border-amber-500/30 bg-amber-500/10 text-amber-100",
       };
     case "wrong_account":
       return {

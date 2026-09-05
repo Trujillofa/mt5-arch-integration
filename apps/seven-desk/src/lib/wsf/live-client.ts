@@ -19,6 +19,7 @@ import {
   WSF_SPOTWARE_CONNECT_ACCOUNTS,
   WSF_USER_AGENT,
 } from "@/lib/wsf/contract";
+import { canReportConnected, freshnessRejectNote } from "@/lib/bridge-freshness";
 import { operatorEnvPresent, readOperatorEnv, winePrefixExists } from "@/lib/wsf/env";
 import { probeMt5ArchCli } from "@/lib/wsf/mt5-arch-cli";
 import { readMt5FileBackend } from "@/lib/wsf/mt5-file-backend";
@@ -866,6 +867,17 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
   const mt5Server = operator.mt5Server || card?.mt5Server || WSF_MT5_SERVER;
 
   const fileSnap = readMt5FileBackend(operator);
+  if (fileSnap.book && !canReportConnected(fileSnap.freshness)) {
+    const reject = freshnessRejectNote(fileSnap.freshness);
+    if (reject) fileSnap.note = `${fileSnap.note} ${reject}`.trim();
+    fileSnap.book = {
+      ...fileSnap.book,
+      balance: null,
+      equity: null,
+    };
+    fileSnap.positions = [];
+    fileSnap.deals = [];
+  }
   const archCli = probeMt5ArchCli();
 
   const [mt5, ctrader, matchTrader, plant] = await Promise.all([
@@ -962,7 +974,7 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
   ];
 
   const winePrefixPresent = winePrefixExists(operator);
-  const fileBridgePresent = Boolean(fileSnap.book && fileSnap.book.balance != null);
+  const fileBridgePresent = fileSnap.freshness.fileBridgePresent;
   const liveBalance =
     books.find((book) => book.source === "mt5-env" && book.balance != null) ||
     books.find((book) => book.kind === "personal-env" && book.balance != null);
@@ -1041,7 +1053,10 @@ function deriveConnectionStatus(input: {
   winePrefixPresent: boolean;
   fileBridgePresent: boolean;
 }): WsfConnectionStatus {
+  // Stale file-backend balances are stripped before this runs, so liveBalance
+  // here is a fresh heartbeat or a non-file source (MetaAPI).
   if (input.liveBalance) return "connected";
+  if (input.fileBridgePresent && input.usedOperator) return "disconnected";
   if (!input.usedOperator) return "no_credentials";
   if (!input.hasPassword) return "password_missing";
   if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";

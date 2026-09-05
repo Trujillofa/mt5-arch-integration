@@ -11,6 +11,11 @@ import {
   readFortradersEnv,
   type FortradersOperatorEnv,
 } from "@/lib/fortraders/env";
+import {
+  deriveFileBridgeConnectionStatus,
+  freshnessRejectNote,
+  inspectBridgeFreshness,
+} from "@/lib/bridge-freshness";
 import type { FortradersConnectionStatus, FortradersLiveReport } from "@/lib/fortraders/types";
 
 interface Snapshot {
@@ -136,16 +141,19 @@ function deriveStatus(input: {
   fileBridgePresent: boolean;
   hasPassword: boolean;
   usedOperator: boolean;
+  freshness: ReturnType<typeof inspectBridgeFreshness>;
 }): FortradersConnectionStatus {
-  const login = input.snapshot?.login;
-  if (login && login !== FORTRADERS_EXPECTED_LOGIN) return "wrong_account";
-  if (snapshotIsLive(input.snapshot) && login === FORTRADERS_EXPECTED_LOGIN) {
-    return "connected";
-  }
-  if (!input.usedOperator) return "no_credentials";
-  if (!input.hasPassword) return "password_missing";
-  if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";
-  return "auth_failed";
+  return deriveFileBridgeConnectionStatus({
+    login: input.snapshot?.login,
+    expectedLogin: FORTRADERS_EXPECTED_LOGIN,
+    snapshotLive: snapshotIsLive(input.snapshot),
+    terminalConnected: input.snapshot?.terminalConnected,
+    winePrefixPresent: input.winePrefixPresent,
+    fileBridgePresent: input.fileBridgePresent,
+    freshness: input.freshness,
+    hasPassword: input.hasPassword,
+    usedOperator: input.usedOperator,
+  });
 }
 
 export function probeFortradersLive(): FortradersLiveReport {
@@ -156,9 +164,11 @@ export function probeFortradersLive(): FortradersLiveReport {
     ? [env.bridgeDir]
     : fortradersBridgeCandidates(env.winePrefix);
   const preferredBridge = env.bridgeDir || fortradersBridgeDir(env.winePrefix);
-  const fileBridgePresent = bridgeDirs.some(
-    (dir) => isFile(join(dir, "account.json")) || isFile(join(dir, "heartbeat.txt")),
-  );
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs,
+    winePrefix: env.winePrefix,
+  });
+  const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
 
   let snapshot: Snapshot | null = null;
@@ -196,21 +206,29 @@ export function probeFortradersLive(): FortradersLiveReport {
   }
 
   const liveBalance = snapshotIsLive(snapshot);
+  if (liveBalance) {
+    const reject = freshnessRejectNote(freshness);
+    if (reject) notes.push(reject);
+  }
   const connectionStatus = deriveStatus({
     snapshot,
     winePrefixPresent,
     fileBridgePresent,
     hasPassword: env.hasMt5Password,
     usedOperator,
+    freshness,
   });
 
-  const bookHonesty = liveBalance
-    ? `Live Fortraders MT5 ${FORTRADERS_EXPECTED_LOGIN} @ ${
-        snapshot?.server || FORTRADERS_EXPECTED_SERVER
-      }. Read-only file-bridge snapshot. Live OrderSend is the Fortraders live copy control.`
-    : winePrefixPresent
-      ? "Fortraders Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Fortraders live copy control."
-      : "Fortraders Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
+  const bookHonesty =
+    connectionStatus === "connected"
+      ? `Live Fortraders MT5 ${FORTRADERS_EXPECTED_LOGIN} @ ${
+          snapshot?.server || FORTRADERS_EXPECTED_SERVER
+        }. Read-only file-bridge snapshot. Live OrderSend is the Fortraders live copy control.`
+      : connectionStatus === "disconnected"
+        ? `Fortraders ${FORTRADERS_EXPECTED_LOGIN} is not a live session — stale/missing heartbeat, terminal64 down, or trade server offline. Leftover account.json is not connected. Live OrderSend is the Fortraders live copy control.`
+        : winePrefixPresent
+          ? "Fortraders Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Fortraders live copy control."
+          : "Fortraders Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {
     source: "operator-env",

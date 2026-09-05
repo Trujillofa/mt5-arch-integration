@@ -1,6 +1,10 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import {
+  inspectBridgeFreshness,
+  type BridgeFreshness,
+} from "@/lib/bridge-freshness";
 import { WSF_EXPECTED_LOGIN } from "@/lib/wsf/constants";
 import type { WsfDealRow, WsfFetchedAccount, WsfPositionRow } from "@/lib/wsf/types";
 import type { WsfOperatorEnv } from "@/lib/wsf/env";
@@ -10,6 +14,7 @@ export interface Mt5FileSnapshot {
   positions: WsfPositionRow[];
   deals: WsfDealRow[];
   note: string;
+  freshness: BridgeFreshness;
 }
 
 const BRAND_DIRS = ["WSFmarkets MT5 Terminal"];
@@ -142,13 +147,22 @@ function parseDealsCsv(text: string, login: string): WsfDealRow[] {
   });
 }
 
+function snapshotFreshness(env: WsfOperatorEnv): BridgeFreshness {
+  return inspectBridgeFreshness({
+    bridgeDirs: bridgeDirs(env),
+    winePrefix: env.winePrefix,
+  });
+}
+
 export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
+  const freshness = snapshotFreshness(env);
   if (env.mt5Backend && env.mt5Backend !== "file") {
     return {
       book: null,
       positions: [],
       deals: [],
       note: `MT5_BACKEND=${env.mt5Backend} is not a file snapshot — skipped.`,
+      freshness,
     };
   }
 
@@ -180,6 +194,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
           positions,
           deals,
           note: `Read Mt5ArchBridge snapshot (${positions.length} position(s), ${deals.length} deal(s)). Path not printed.`,
+          freshness,
         };
       }
     } catch {
@@ -197,5 +212,6 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
         ? "MT5_BACKEND=file: found a Wine mt5_arch directory but no readable account.json (terminal/EA not writing on this host)."
         : `MT5_BACKEND=file but no Mt5ArchBridge snapshot on this host (${found} candidate file(s)). Use ~/.mt5-wsf + scripts/16-use-broker.sh wsf.`
       : "No MT5 file-backend snapshot configured.",
+    freshness,
   };
 }

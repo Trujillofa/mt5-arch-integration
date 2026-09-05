@@ -8,6 +8,7 @@ export const NEOMAA_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type NeomaaConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

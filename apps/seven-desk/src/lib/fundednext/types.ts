@@ -8,6 +8,7 @@ export const FUNDEDNEXT_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FundedNextConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

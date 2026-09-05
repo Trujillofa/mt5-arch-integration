@@ -11,6 +11,11 @@ import {
   readAlphaCapitalEnv,
   type AlphaCapitalOperatorEnv,
 } from "@/lib/alphacapital/env";
+import {
+  deriveFileBridgeConnectionStatus,
+  freshnessRejectNote,
+  inspectBridgeFreshness,
+} from "@/lib/bridge-freshness";
 import type {
   AlphaCapitalConnectionStatus,
   AlphaCapitalLiveReport,
@@ -139,16 +144,19 @@ function deriveStatus(input: {
   fileBridgePresent: boolean;
   hasPassword: boolean;
   usedOperator: boolean;
+  freshness: ReturnType<typeof inspectBridgeFreshness>;
 }): AlphaCapitalConnectionStatus {
-  const login = input.snapshot?.login;
-  if (login && login !== ALPHACAPITAL_EXPECTED_LOGIN) return "wrong_account";
-  if (snapshotIsLive(input.snapshot) && login === ALPHACAPITAL_EXPECTED_LOGIN) {
-    return "connected";
-  }
-  if (!input.usedOperator) return "no_credentials";
-  if (!input.hasPassword) return "password_missing";
-  if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";
-  return "auth_failed";
+  return deriveFileBridgeConnectionStatus({
+    login: input.snapshot?.login,
+    expectedLogin: ALPHACAPITAL_EXPECTED_LOGIN,
+    snapshotLive: snapshotIsLive(input.snapshot),
+    terminalConnected: input.snapshot?.terminalConnected,
+    winePrefixPresent: input.winePrefixPresent,
+    fileBridgePresent: input.fileBridgePresent,
+    freshness: input.freshness,
+    hasPassword: input.hasPassword,
+    usedOperator: input.usedOperator,
+  });
 }
 
 export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
@@ -159,9 +167,11 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
     ? [env.bridgeDir]
     : alphacapitalBridgeCandidates(env.winePrefix);
   const preferredBridge = env.bridgeDir || alphacapitalBridgeDir(env.winePrefix);
-  const fileBridgePresent = bridgeDirs.some(
-    (dir) => isFile(join(dir, "account.json")) || isFile(join(dir, "heartbeat.txt")),
-  );
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs,
+    winePrefix: env.winePrefix,
+  });
+  const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
 
   let snapshot: Snapshot | null = null;
@@ -199,21 +209,29 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
   }
 
   const liveBalance = snapshotIsLive(snapshot);
+  if (liveBalance) {
+    const reject = freshnessRejectNote(freshness);
+    if (reject) notes.push(reject);
+  }
   const connectionStatus = deriveStatus({
     snapshot,
     winePrefixPresent,
     fileBridgePresent,
     hasPassword: env.hasMt5Password,
     usedOperator,
+    freshness,
   });
 
-  const bookHonesty = liveBalance
-    ? `Live Alpha Capital MT5 ${ALPHACAPITAL_EXPECTED_LOGIN} @ ${
-        snapshot?.server || ALPHACAPITAL_EXPECTED_SERVER
-      }. Read-only file-bridge snapshot. Live OrderSend is the Alpha Capital live copy control.`
-    : winePrefixPresent
-      ? "Alpha Capital Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Alpha Capital live copy control."
-      : "Alpha Capital Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
+  const bookHonesty =
+    connectionStatus === "connected"
+      ? `Live Alpha Capital MT5 ${ALPHACAPITAL_EXPECTED_LOGIN} @ ${
+          snapshot?.server || ALPHACAPITAL_EXPECTED_SERVER
+        }. Read-only file-bridge snapshot. Live OrderSend is the Alpha Capital live copy control.`
+      : connectionStatus === "disconnected"
+        ? `Alpha Capital ${ALPHACAPITAL_EXPECTED_LOGIN} is not a live session — stale/missing heartbeat, terminal64 down, or trade server offline. Leftover account.json is not connected. Live OrderSend is the Alpha Capital live copy control.`
+        : winePrefixPresent
+          ? "Alpha Capital Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Alpha Capital live copy control."
+          : "Alpha Capital Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {
     source: "operator-env",
