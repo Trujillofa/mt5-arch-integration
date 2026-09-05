@@ -132,12 +132,13 @@ def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> Non
 
 
 def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
-    """WSF/FTMO/FN must not delete leftover Default tabs; Alpha must."""
+    """WSF/FTMO/FN/FundingPips must not delete leftover Default tabs; Alpha must."""
     leftover = b"stale-tab"
     cases = (
         ("wsf", "WSFmarkets MT5 Terminal"),
         ("ftmo", "FTMO Global Markets MT5 Terminal"),
         ("fundednext", "FundedNext MT5 Terminal"),
+        ("fundingpips", "FundingPips 2 MT5 Terminal"),
     )
     for broker, brand in cases:
         term_dir = _brand_tree(tmp_path / broker, brand)

@@ -87,14 +87,14 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
       fi
       term_dir="$(cd "$(dirname "$term")" && pwd)"
       quotes_first=0
-      if [[ "$broker" == "alphacapital" || "$broker" == "fundingpips" ]] && \
+      if [[ "$broker" == "alphacapital" ]] && \
          ! python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
            --broker "$broker" --term-dir "$term_dir" --quotes-ready; then
         quotes_first=1
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" --no-expert --allow-missing-ex5 \
           || die "failed to write quotes-first Default chart for $broker"
-        info "$broker has no quotes/history yet — starting without Mt5ArchBridge so charts can sync"
+        info "$broker has no quotes/history yet — starting without Mt5ArchBridge so BTC/FX can sync"
       else
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" \

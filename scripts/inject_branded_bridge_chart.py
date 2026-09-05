@@ -198,8 +198,9 @@ def alpha_ready_symbol(term_dir: Path) -> str | None:
 def prune_default_chart_siblings(term_dir: Path, broker: str = "") -> None:
     """Alpha-only: Default profile must be one chart.
 
-    Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext
-    locked books keep leftover Default tabs — do not rewrite order.wnd there.
+    Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext /
+    FundingPips locked books keep leftover Default tabs — do not rewrite
+    order.wnd there.
     """
     if broker != "alphacapital":
         return
