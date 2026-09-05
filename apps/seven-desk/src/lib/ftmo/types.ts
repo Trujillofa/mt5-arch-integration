@@ -8,6 +8,7 @@ export const FTMO_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FtmoConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

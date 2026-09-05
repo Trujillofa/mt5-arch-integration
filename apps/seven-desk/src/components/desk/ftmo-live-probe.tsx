@@ -116,6 +116,11 @@ function connectionCopy(status: FtmoConnectionStatus): {
         label: "connected",
         className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
       };
+    case "disconnected":
+      return {
+        label: "stale / offline",
+        className: "border-amber-500/30 bg-amber-500/10 text-amber-100",
+      };
     case "wrong_account":
       return {
         label: "wrong account",

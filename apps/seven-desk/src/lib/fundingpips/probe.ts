@@ -11,6 +11,11 @@ import {
   readFundingPipsEnv,
   type FundingPipsOperatorEnv,
 } from "@/lib/fundingpips/env";
+import {
+  deriveFileBridgeConnectionStatus,
+  freshnessRejectNote,
+  inspectBridgeFreshness,
+} from "@/lib/bridge-freshness";
 import type { FundingPipsConnectionStatus, FundingPipsLiveReport } from "@/lib/fundingpips/types";
 
 interface Snapshot {
@@ -136,16 +141,19 @@ function deriveStatus(input: {
   fileBridgePresent: boolean;
   hasPassword: boolean;
   usedOperator: boolean;
+  freshness: ReturnType<typeof inspectBridgeFreshness>;
 }): FundingPipsConnectionStatus {
-  const login = input.snapshot?.login;
-  if (login && login !== FUNDINGPIPS_EXPECTED_LOGIN) return "wrong_account";
-  if (snapshotIsLive(input.snapshot) && login === FUNDINGPIPS_EXPECTED_LOGIN) {
-    return "connected";
-  }
-  if (!input.usedOperator) return "no_credentials";
-  if (!input.hasPassword) return "password_missing";
-  if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";
-  return "auth_failed";
+  return deriveFileBridgeConnectionStatus({
+    login: input.snapshot?.login,
+    expectedLogin: FUNDINGPIPS_EXPECTED_LOGIN,
+    snapshotLive: snapshotIsLive(input.snapshot),
+    terminalConnected: input.snapshot?.terminalConnected,
+    winePrefixPresent: input.winePrefixPresent,
+    fileBridgePresent: input.fileBridgePresent,
+    freshness: input.freshness,
+    hasPassword: input.hasPassword,
+    usedOperator: input.usedOperator,
+  });
 }
 
 export function probeFundingPipsLive(): FundingPipsLiveReport {
@@ -156,9 +164,11 @@ export function probeFundingPipsLive(): FundingPipsLiveReport {
     ? [env.bridgeDir]
     : fundingpipsBridgeCandidates(env.winePrefix);
   const preferredBridge = env.bridgeDir || fundingpipsBridgeDir(env.winePrefix);
-  const fileBridgePresent = bridgeDirs.some(
-    (dir) => isFile(join(dir, "account.json")) || isFile(join(dir, "heartbeat.txt")),
-  );
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs,
+    winePrefix: env.winePrefix,
+  });
+  const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
 
   let snapshot: Snapshot | null = null;
@@ -196,21 +206,29 @@ export function probeFundingPipsLive(): FundingPipsLiveReport {
   }
 
   const liveBalance = snapshotIsLive(snapshot);
+  if (liveBalance) {
+    const reject = freshnessRejectNote(freshness);
+    if (reject) notes.push(reject);
+  }
   const connectionStatus = deriveStatus({
     snapshot,
     winePrefixPresent,
     fileBridgePresent,
     hasPassword: env.hasMt5Password,
     usedOperator,
+    freshness,
   });
 
-  const bookHonesty = liveBalance
-    ? `Live FundingPips MT5 ${FUNDINGPIPS_EXPECTED_LOGIN} @ ${
-        snapshot?.server || FUNDINGPIPS_EXPECTED_SERVER
-      }. Read-only file-bridge snapshot. Live OrderSend is the FundingPips live copy control.`
-    : winePrefixPresent
-      ? "FundingPips Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the FundingPips live copy control."
-      : "FundingPips Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
+  const bookHonesty =
+    connectionStatus === "connected"
+      ? `Live FundingPips MT5 ${FUNDINGPIPS_EXPECTED_LOGIN} @ ${
+          snapshot?.server || FUNDINGPIPS_EXPECTED_SERVER
+        }. Read-only file-bridge snapshot. Live OrderSend is the FundingPips live copy control.`
+      : connectionStatus === "disconnected"
+        ? `FundingPips ${FUNDINGPIPS_EXPECTED_LOGIN} is not a live session — stale/missing heartbeat, terminal64 down, or trade server offline. Leftover account.json is not connected. Live OrderSend is the FundingPips live copy control.`
+        : winePrefixPresent
+          ? "FundingPips Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the FundingPips live copy control."
+          : "FundingPips Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {
     source: "operator-env",

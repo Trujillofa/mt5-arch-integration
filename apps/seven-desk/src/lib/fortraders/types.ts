@@ -8,6 +8,7 @@ export const FORTRADERS_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FortradersConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

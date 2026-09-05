@@ -8,6 +8,7 @@ export const ALPHACAPITAL_LIVE_SYMBOLS = ["EURUSD", "BTCUSD", "BTCUSDc", "BTCUSD
 
 export type AlphaCapitalConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

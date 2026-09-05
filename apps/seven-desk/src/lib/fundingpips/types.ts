@@ -8,6 +8,7 @@ export const FUNDINGPIPS_LIVE_SYMBOLS = ["EURUSD"] as const;
 
 export type FundingPipsConnectionStatus =
   | "connected"
+  | "disconnected"
   | "missing_wine"
   | "auth_failed"
   | "password_missing"

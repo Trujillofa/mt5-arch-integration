@@ -94,8 +94,12 @@ function applyToDesk(
     ...(login ? { login } : {}),
     ...(server ? { server } : {}),
     platform: "MT5",
-    ...(personal?.balance != null ? { balance: personal.balance } : {}),
-    ...(personal?.equity != null ? { equity: personal.equity } : {}),
+    ...(report.connectionStatus === "connected" && personal?.balance != null
+      ? { balance: personal.balance }
+      : {}),
+    ...(report.connectionStatus === "connected" && personal?.equity != null
+      ? { equity: personal.equity }
+      : {}),
   });
 }
 
@@ -103,6 +107,8 @@ function connectionCopy(status: WsfConnectionStatus): { label: string; className
   switch (status) {
     case "connected":
       return { label: "connected", className: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" };
+    case "disconnected":
+      return { label: "stale / offline", className: "border-amber-500/30 bg-amber-500/10 text-amber-100" };
     case "auth_failed":
       return { label: "auth failed", className: "border-rose-500/30 bg-rose-500/10 text-rose-200" };
     case "missing_wine":
@@ -248,6 +254,8 @@ function HistoryBlock({
         <p>
           {connectionStatus === "connected"
             ? "No open positions or recent deals in the live snapshot."
+            : connectionStatus === "disconnected"
+              ? "No live history. Heartbeat is stale/missing or terminal64 is down — leftover account.json is not a live session."
             : connectionStatus === "missing_wine"
               ? "No live history. Password is loaded; Wine prefix / Mt5ArchBridge is still missing on this host."
               : connectionStatus === "auth_failed"

@@ -11,6 +11,11 @@ import {
   readFtmoEnv,
   type FtmoOperatorEnv,
 } from "@/lib/ftmo/env";
+import {
+  deriveFileBridgeConnectionStatus,
+  freshnessRejectNote,
+  inspectBridgeFreshness,
+} from "@/lib/bridge-freshness";
 import type { FtmoConnectionStatus, FtmoLiveReport } from "@/lib/ftmo/types";
 
 interface Snapshot {
@@ -136,16 +141,19 @@ function deriveStatus(input: {
   fileBridgePresent: boolean;
   hasPassword: boolean;
   usedOperator: boolean;
+  freshness: ReturnType<typeof inspectBridgeFreshness>;
 }): FtmoConnectionStatus {
-  const login = input.snapshot?.login;
-  if (login && login !== FTMO_EXPECTED_LOGIN) return "wrong_account";
-  if (snapshotIsLive(input.snapshot) && login === FTMO_EXPECTED_LOGIN) {
-    return "connected";
-  }
-  if (!input.usedOperator) return "no_credentials";
-  if (!input.hasPassword) return "password_missing";
-  if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";
-  return "auth_failed";
+  return deriveFileBridgeConnectionStatus({
+    login: input.snapshot?.login,
+    expectedLogin: FTMO_EXPECTED_LOGIN,
+    snapshotLive: snapshotIsLive(input.snapshot),
+    terminalConnected: input.snapshot?.terminalConnected,
+    winePrefixPresent: input.winePrefixPresent,
+    fileBridgePresent: input.fileBridgePresent,
+    freshness: input.freshness,
+    hasPassword: input.hasPassword,
+    usedOperator: input.usedOperator,
+  });
 }
 
 export function probeFtmoLive(): FtmoLiveReport {
@@ -154,9 +162,11 @@ export function probeFtmoLive(): FtmoLiveReport {
   const winePrefixPresent = existsSync(env.winePrefix);
   const bridgeDirs = env.bridgeDir ? [env.bridgeDir] : ftmoBridgeCandidates(env.winePrefix);
   const preferredBridge = env.bridgeDir || ftmoBridgeDir(env.winePrefix);
-  const fileBridgePresent = bridgeDirs.some(
-    (dir) => isFile(join(dir, "account.json")) || isFile(join(dir, "heartbeat.txt")),
-  );
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs,
+    winePrefix: env.winePrefix,
+  });
+  const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
 
   let snapshot: Snapshot | null = null;
@@ -194,21 +204,29 @@ export function probeFtmoLive(): FtmoLiveReport {
   }
 
   const live = snapshotIsLive(snapshot);
+  if (live) {
+    const reject = freshnessRejectNote(freshness);
+    if (reject) notes.push(reject);
+  }
   const connectionStatus = deriveStatus({
     snapshot,
     winePrefixPresent,
     fileBridgePresent,
     hasPassword: env.hasMt5Password,
     usedOperator,
+    freshness,
   });
 
-  const bookHonesty = live
-    ? `Live FTMO MT5 ${FTMO_EXPECTED_LOGIN} @ ${
-        snapshot?.server || FTMO_EXPECTED_SERVER
-      }. Read-only file-bridge snapshot. Live OrderSend is the FTMO live master control.`
-    : winePrefixPresent
-      ? "FTMO Wine prefix is on disk. Waiting for an authorized Mt5ArchBridge account.json (read-only EA). Title-only login is not treated as connected. Live OrderSend is the FTMO live master control."
-      : "FTMO Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
+  const bookHonesty =
+    connectionStatus === "connected"
+      ? `Live FTMO MT5 ${FTMO_EXPECTED_LOGIN} @ ${
+          snapshot?.server || FTMO_EXPECTED_SERVER
+        }. Read-only file-bridge snapshot. Live OrderSend is the FTMO live master control.`
+      : connectionStatus === "disconnected"
+        ? `FTMO ${FTMO_EXPECTED_LOGIN} is not a live session — stale/missing heartbeat, terminal64 down, or trade server offline. Leftover account.json is not connected. Live OrderSend is the FTMO live master control.`
+        : winePrefixPresent
+          ? "FTMO Wine prefix is on disk. Waiting for an authorized Mt5ArchBridge account.json (read-only EA). Title-only login is not treated as connected. Live OrderSend is the FTMO live master control."
+          : "FTMO Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {
     source: "operator-env",

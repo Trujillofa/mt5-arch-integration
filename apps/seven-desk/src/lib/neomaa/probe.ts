@@ -11,6 +11,11 @@ import {
   readNeomaaEnv,
   type NeomaaOperatorEnv,
 } from "@/lib/neomaa/env";
+import {
+  deriveFileBridgeConnectionStatus,
+  freshnessRejectNote,
+  inspectBridgeFreshness,
+} from "@/lib/bridge-freshness";
 import type { NeomaaConnectionStatus, NeomaaLiveReport } from "@/lib/neomaa/types";
 
 interface Snapshot {
@@ -136,16 +141,19 @@ function deriveStatus(input: {
   fileBridgePresent: boolean;
   hasPassword: boolean;
   usedOperator: boolean;
+  freshness: ReturnType<typeof inspectBridgeFreshness>;
 }): NeomaaConnectionStatus {
-  const login = input.snapshot?.login;
-  if (login && login !== NEOMAA_EXPECTED_LOGIN) return "wrong_account";
-  if (snapshotIsLive(input.snapshot) && login === NEOMAA_EXPECTED_LOGIN) {
-    return "connected";
-  }
-  if (!input.usedOperator) return "no_credentials";
-  if (!input.hasPassword) return "password_missing";
-  if (!input.winePrefixPresent || !input.fileBridgePresent) return "missing_wine";
-  return "auth_failed";
+  return deriveFileBridgeConnectionStatus({
+    login: input.snapshot?.login,
+    expectedLogin: NEOMAA_EXPECTED_LOGIN,
+    snapshotLive: snapshotIsLive(input.snapshot),
+    terminalConnected: input.snapshot?.terminalConnected,
+    winePrefixPresent: input.winePrefixPresent,
+    fileBridgePresent: input.fileBridgePresent,
+    freshness: input.freshness,
+    hasPassword: input.hasPassword,
+    usedOperator: input.usedOperator,
+  });
 }
 
 export function probeNeomaaLive(): NeomaaLiveReport {
@@ -156,9 +164,11 @@ export function probeNeomaaLive(): NeomaaLiveReport {
     ? [env.bridgeDir]
     : neomaaBridgeCandidates(env.winePrefix);
   const preferredBridge = env.bridgeDir || neomaaBridgeDir(env.winePrefix);
-  const fileBridgePresent = bridgeDirs.some(
-    (dir) => isFile(join(dir, "account.json")) || isFile(join(dir, "heartbeat.txt")),
-  );
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs,
+    winePrefix: env.winePrefix,
+  });
+  const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
 
   let snapshot: Snapshot | null = null;
@@ -172,7 +182,9 @@ export function probeNeomaaLive(): NeomaaLiveReport {
   if (snapshot?.login) {
     if (!snapshotIsLive(snapshot)) {
       notes.push(
-        "Snapshot is title-only (empty currency/leverage, not trade-authorized)."
+        snapshot.terminalConnected === false
+          ? "Mt5ArchBridge is writing, but Neomaaa-Live is disconnected (empty AccountInfo). Weekend FX — not an auth failure."
+          : "Snapshot is title-only (empty currency/leverage, not trade-authorized)."
       );
     }
   } else {
@@ -196,21 +208,31 @@ export function probeNeomaaLive(): NeomaaLiveReport {
   }
 
   const liveBalance = snapshotIsLive(snapshot);
+  if (liveBalance) {
+    const reject = freshnessRejectNote(freshness);
+    if (reject) notes.push(reject);
+  }
   const connectionStatus = deriveStatus({
     snapshot,
     winePrefixPresent,
     fileBridgePresent,
     hasPassword: env.hasMt5Password,
     usedOperator,
+    freshness,
   });
 
-  const bookHonesty = liveBalance
-    ? `Live Neomaa MT5 ${NEOMAA_EXPECTED_LOGIN} @ ${
-        snapshot?.server || NEOMAA_EXPECTED_SERVER
-      }. Read-only file-bridge snapshot. Live OrderSend is the Neomaa live copy control.`
-    : winePrefixPresent
-      ? "Neomaa Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Neomaa live copy control."
-      : "Neomaa Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
+  const bookHonesty =
+    connectionStatus === "connected"
+      ? `Live Neomaa MT5 ${NEOMAA_EXPECTED_LOGIN} @ ${
+          snapshot?.server || NEOMAA_EXPECTED_SERVER
+        }. Read-only file-bridge snapshot. Live OrderSend is the Neomaa live copy control.`
+      : connectionStatus === "disconnected"
+        ? `File-bridge is live for ${NEOMAA_EXPECTED_LOGIN} @ ${
+            snapshot?.server || NEOMAA_EXPECTED_SERVER
+          }, but the trade server is disconnected. Balance/quotes stay empty until Neomaaa-Live is up (weekend FX). Not an auth failure. Live OrderSend stays on the Neomaa live copy control.`
+        : winePrefixPresent
+          ? "Neomaa Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Neomaa live copy control."
+          : "Neomaa Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
 
   return {
     source: "operator-env",
@@ -234,9 +256,11 @@ export function probeNeomaaLive(): NeomaaLiveReport {
     fetchNotes: notes,
     nextSecretNeeded: liveBalance
       ? null
-      : env.hasMt5Password
-        ? "A running ~/.mt5-neomaa terminal with read-only Mt5ArchBridge writing account.json."
-        : `NEOMAA_MT5_PASSWORD for login ${NEOMAA_EXPECTED_LOGIN}.`,
+      : connectionStatus === "disconnected"
+        ? "Neomaaa-Live trade-server session. Fetch Neomaa again when the journal shows authorized/connected — do not restart other books."
+        : env.hasMt5Password
+          ? "A running ~/.mt5-neomaa terminal with read-only Mt5ArchBridge writing account.json."
+          : `NEOMAA_MT5_PASSWORD for login ${NEOMAA_EXPECTED_LOGIN}.`,
   };
 }
 
