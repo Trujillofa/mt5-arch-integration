@@ -1,6 +1,6 @@
 /** Shared live OrderSend result. Safe to import from the browser. */
 
-export type LiveBroker = "wsf" | "ftmo" | "fundednext" | "alphacapital" | "fundingpips";
+export type LiveBroker = "wsf" | "ftmo" | "fundednext" | "alphacapital" | "fundingpips" | "neomaa" | "fortraders";
 export type LiveOrderAction = "scratch" | "open" | "close";
 
 export interface LiveOrderResult {

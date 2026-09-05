@@ -207,6 +207,14 @@ export function setFundingpipsLiveCopy(enabled: boolean) {
   patchDesk((current) => ({ ...current, fundingpipsLiveCopy: enabled }));
 }
 
+export function setNeomaaLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, neomaaLiveCopy: enabled }));
+}
+
+export function setFortradersLiveCopy(enabled: boolean) {
+  patchDesk((current) => ({ ...current, fortradersLiveCopy: enabled }));
+}
+
 export function applyWsfLiveCopyResult(eventId: string, result: LiveOrderResult) {
   persist(applyWsfLiveFill(desk, eventId, result));
 }

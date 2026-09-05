@@ -41,6 +41,8 @@ Broker-branded installers mainly pre-seed **server lists** and branding. They ar
 | `config/brokers/wsf.env` | `~/.mt5-wsf` | `./scripts/16-use-broker.sh wsf` |
 | `config/brokers/vantage.env` | `~/.mt5-vantage` | `./scripts/16-use-broker.sh vantage` |
 | `config/brokers/fpmarkets.env` | `~/.mt5-fpmarkets` (login 84076984 / `FPMarketsSC-Live`) | `./scripts/16-use-broker.sh fpmarkets` |
+| `config/brokers/neomaa.env` | `~/.mt5-neomaa` (login 7745107 / `Neomaaa-Live`) | `./scripts/16-use-broker.sh neomaa` |
+| `config/brokers/fortraders.env` | `~/.mt5-fortraders` (login 737150 / `FTTrading-Server`) | `./scripts/16-use-broker.sh fortraders` |
 
 ```bash
 uv run mt5-arch brokers          # list profiles (no passwords)

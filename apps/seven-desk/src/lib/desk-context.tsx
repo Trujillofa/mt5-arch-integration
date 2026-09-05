@@ -32,7 +32,9 @@ import {
   setConnection as setConnectionStore,
   setAlphacapitalLiveCopy as setAlphacapitalLiveCopyStore,
   setFundednextLiveCopy as setFundednextLiveCopyStore,
+  setFortradersLiveCopy as setFortradersLiveCopyStore,
   setFundingpipsLiveCopy as setFundingpipsLiveCopyStore,
+  setNeomaaLiveCopy as setNeomaaLiveCopyStore,
   setFtmoLiveMaster as setFtmoLiveMasterStore,
   setMaster as setMasterStore,
   setSymbolMap as setSymbolMapStore,
@@ -44,7 +46,9 @@ import {
 } from "@/lib/desk-store";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
+import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_CONFIRM, FUNDINGPIPS_LIVE_PENDING } from "@/lib/fundingpips/types";
+import { NEOMAA_LIVE_CONFIRM, NEOMAA_LIVE_PENDING } from "@/lib/neomaa/types";
 import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
@@ -80,6 +84,8 @@ interface DeskApi {
   setFundednextLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setAlphacapitalLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFundingpipsLiveCopy: (enabled: boolean, confirm: string) => string | null;
+  setNeomaaLiveCopy: (enabled: boolean, confirm: string) => string | null;
+  setFortradersLiveCopy: (enabled: boolean, confirm: string) => string | null;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
@@ -93,6 +99,12 @@ function endpointFor(broker: LiveBroker, action: "open" | "close"): string {
   if (broker === "fundingpips") {
     return action === "close" ? "/api/fundingpips/order/close" : "/api/fundingpips/order";
   }
+  if (broker === "neomaa") {
+    return action === "close" ? "/api/neomaa/order/close" : "/api/neomaa/order";
+  }
+  if (broker === "fortraders") {
+    return action === "close" ? "/api/fortraders/order/close" : "/api/fortraders/order";
+  }
   return action === "close" ? "/api/fundednext/order/close" : "/api/fundednext/order";
 }
 
@@ -101,6 +113,8 @@ function confirmFor(broker: LiveBroker, refs: ConfirmRefs): string {
   if (broker === "ftmo") return refs.ftmo || FTMO_LIVE_CONFIRM;
   if (broker === "alphacapital") return refs.acg || ALPHACAPITAL_LIVE_CONFIRM;
   if (broker === "fundingpips") return refs.fpips || FUNDINGPIPS_LIVE_CONFIRM;
+  if (broker === "neomaa") return refs.neo || NEOMAA_LIVE_CONFIRM;
+  if (broker === "fortraders") return refs.ftt || FORTRADERS_LIVE_CONFIRM;
   return refs.fn || FUNDEDNEXT_LIVE_CONFIRM;
 }
 
@@ -109,6 +123,8 @@ function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
   if (reason === FUNDEDNEXT_LIVE_PENDING) return "fundednext";
   if (reason === ALPHACAPITAL_LIVE_PENDING) return "alphacapital";
   if (reason === FUNDINGPIPS_LIVE_PENDING) return "fundingpips";
+  if (reason === NEOMAA_LIVE_PENDING) return "neomaa";
+  if (reason === FORTRADERS_LIVE_PENDING) return "fortraders";
   return null;
 }
 
@@ -117,10 +133,20 @@ function winePrefixFor(broker: LiveBroker): string {
   if (broker === "ftmo") return ".mt5-ftmo";
   if (broker === "alphacapital") return ".mt5-alphacapital";
   if (broker === "fundingpips") return ".mt5-fundingpips";
+  if (broker === "neomaa") return ".mt5-neomaa";
+  if (broker === "fortraders") return ".mt5-fortraders";
   return ".mt5-fundednext";
 }
 
-type ConfirmRefs = { wsf: string; ftmo: string; fn: string; acg: string; fpips: string };
+type ConfirmRefs = {
+  wsf: string;
+  ftmo: string;
+  fn: string;
+  acg: string;
+  fpips: string;
+  neo: string;
+  ftt: string;
+};
 
 async function closeLiveGroup(
   positionId: string,
@@ -202,6 +228,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   const fnConfirm = useRef("");
   const acgConfirm = useRef("");
   const fpipsConfirm = useRef("");
+  const neoConfirm = useRef("");
+  const fttConfirm = useRef("");
 
   useEffect(() => {
     const tick = window.setInterval(() => {
@@ -310,6 +338,24 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const setNeomaaLiveCopy = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== NEOMAA_LIVE_CONFIRM) {
+      return `Type ${NEOMAA_LIVE_CONFIRM} to arm Neomaa live copy.`;
+    }
+    neoConfirm.current = enabled ? confirm : "";
+    setNeomaaLiveCopyStore(enabled);
+    return null;
+  }, []);
+
+  const setFortradersLiveCopy = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== FORTRADERS_LIVE_CONFIRM) {
+      return `Type ${FORTRADERS_LIVE_CONFIRM} to arm Fortraders live copy.`;
+    }
+    fttConfirm.current = enabled ? confirm : "";
+    setFortradersLiveCopyStore(enabled);
+    return null;
+  }, []);
+
   const fanOutLiveSlaves = useCallback(async (groupId: string) => {
     const refs = {
       wsf: wsfConfirm.current,
@@ -317,6 +363,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       fn: fnConfirm.current,
       acg: acgConfirm.current,
       fpips: fpipsConfirm.current,
+      neo: neoConfirm.current,
+      ftt: fttConfirm.current,
     };
     const pending = pendingLiveSlaveEvents(getDeskSnapshot(), groupId);
     for (const event of pending) {
@@ -422,6 +470,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       fn: fnConfirm.current,
       acg: acgConfirm.current,
       fpips: fpipsConfirm.current,
+      neo: neoConfirm.current,
+      ftt: fttConfirm.current,
     };
     setActionError(null);
     setBusy(true);
@@ -449,6 +499,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       fn: fnConfirm.current,
       acg: acgConfirm.current,
       fpips: fpipsConfirm.current,
+      neo: neoConfirm.current,
+      ftt: fttConfirm.current,
     };
     setActionError(null);
     if (liveRepIds.length === 0) {
@@ -485,11 +537,15 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     fnConfirm.current = "";
     acgConfirm.current = "";
     fpipsConfirm.current = "";
+    neoConfirm.current = "";
+    fttConfirm.current = "";
     setWsfLiveCopyStore(false);
     setFtmoLiveMasterStore(false);
     setFundednextLiveCopyStore(false);
     setAlphacapitalLiveCopyStore(false);
     setFundingpipsLiveCopyStore(false);
+    setNeomaaLiveCopyStore(false);
+    setFortradersLiveCopyStore(false);
     resetDemoStore();
   }, []);
 
@@ -516,6 +572,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFundednextLiveCopy,
       setAlphacapitalLiveCopy,
       setFundingpipsLiveCopy,
+      setNeomaaLiveCopy,
+      setFortradersLiveCopy,
     }),
     [
       persistError,
@@ -537,6 +595,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFundednextLiveCopy,
       setAlphacapitalLiveCopy,
       setFundingpipsLiveCopy,
+      setNeomaaLiveCopy,
+      setFortradersLiveCopy,
     ]
   );
 

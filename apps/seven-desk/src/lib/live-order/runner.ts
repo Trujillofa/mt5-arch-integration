@@ -17,12 +17,26 @@ import {
 } from "@/lib/fundednext/env";
 import { FUNDEDNEXT_EXPECTED_SERVER, FUNDEDNEXT_LIVE_CONFIRM } from "@/lib/fundednext/types";
 import {
+  FORTRADERS_BRAND_INSTALLS,
+  FORTRADERS_EXPECTED_LOGIN,
+  FORTRADERS_ONLY_PREFIX,
+  FORTRADERS_SERVER_NEEDLE,
+} from "@/lib/fortraders/env";
+import { FORTRADERS_EXPECTED_SERVER, FORTRADERS_LIVE_CONFIRM } from "@/lib/fortraders/types";
+import {
   FUNDINGPIPS_BRAND_INSTALLS,
   FUNDINGPIPS_EXPECTED_LOGIN,
   FUNDINGPIPS_ONLY_PREFIX,
   FUNDINGPIPS_SERVER_NEEDLE,
 } from "@/lib/fundingpips/env";
 import { FUNDINGPIPS_EXPECTED_SERVER, FUNDINGPIPS_LIVE_CONFIRM } from "@/lib/fundingpips/types";
+import {
+  NEOMAA_BRAND_INSTALLS,
+  NEOMAA_EXPECTED_LOGIN,
+  NEOMAA_ONLY_PREFIX,
+  NEOMAA_SERVER_NEEDLE,
+} from "@/lib/neomaa/env";
+import { NEOMAA_EXPECTED_SERVER, NEOMAA_LIVE_CONFIRM } from "@/lib/neomaa/types";
 import {
   FTMO_BRAND_INSTALLS,
   FTMO_EXPECTED_LOGIN,
@@ -109,6 +123,30 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     magic: 20263851,
     defaultSymbol: "EURUSD",
     restoreArg: "fundingpips",
+  },
+  neomaa: {
+    id: "neomaa",
+    prefix: NEOMAA_ONLY_PREFIX,
+    brands: NEOMAA_BRAND_INSTALLS,
+    login: NEOMAA_EXPECTED_LOGIN,
+    confirm: NEOMAA_LIVE_CONFIRM,
+    needle: NEOMAA_SERVER_NEEDLE,
+    server: NEOMAA_EXPECTED_SERVER,
+    magic: 20263852,
+    defaultSymbol: "EURUSD",
+    restoreArg: "neomaa",
+  },
+  fortraders: {
+    id: "fortraders",
+    prefix: FORTRADERS_ONLY_PREFIX,
+    brands: FORTRADERS_BRAND_INSTALLS,
+    login: FORTRADERS_EXPECTED_LOGIN,
+    confirm: FORTRADERS_LIVE_CONFIRM,
+    needle: FORTRADERS_SERVER_NEEDLE,
+    server: FORTRADERS_EXPECTED_SERVER,
+    magic: 20263853,
+    defaultSymbol: "EURUSD",
+    restoreArg: "fortraders",
   },
 };
 
@@ -700,7 +738,10 @@ export async function executeDeskLiveOrder(
   }
   writeRequest(firm, paths, parsed, requestId);
 
-  if (firm.id === "fundingpips" && !quotesReady(paths.brandDir, parsed.symbol)) {
+  if (
+    (firm.id === "fundingpips" || firm.id === "neomaa" || firm.id === "fortraders") &&
+    !quotesReady(paths.brandDir, parsed.symbol)
+  ) {
     return {
       status: 409,
       result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {

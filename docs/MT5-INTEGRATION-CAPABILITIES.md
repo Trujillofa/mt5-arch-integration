@@ -65,6 +65,8 @@ One Wine prefix per broker. One `terminal64.exe` per prefix. Brand installers pr
 | `fpmarkets` | `~/.mt5-fpmarkets` | `FPMarketsSC-Live` | `./scripts/16-use-broker.sh fpmarkets` |
 | `vantage` | `~/.mt5-vantage` | `VantageMarkets-Live 5` | `./scripts/16-use-broker.sh vantage` |
 | `wsf` | `~/.mt5-wsf` | `WSFmarkets-Server` | `./scripts/16-use-broker.sh wsf` |
+| `neomaa` | `~/.mt5-neomaa` | `Neomaaa-Live` | `./scripts/16-use-broker.sh neomaa` |
+| `fortraders` | `~/.mt5-fortraders` | `FTTrading-Server` | `./scripts/16-use-broker.sh fortraders` |
 
 `~/.mt5-exness` exists on disk; there is no `config/brokers/exness.env`. Registry maps Exness `XAUUSD` → `XAUUSDm` only.
 

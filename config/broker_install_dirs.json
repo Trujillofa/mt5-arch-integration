@@ -7,5 +7,7 @@
   "ftmo": "FTMO Global Markets MT5 Terminal",
   "alphacapital": "ACG Markets MT5 Terminal",
   "fundingpips": "FundingPips 2 MT5 Terminal",
+  "neomaa": "Neomaaa MT5 Terminal",
+  "fortraders": "FT Trading MT5 Terminal",
   "_generic": "MetaTrader 5"
 }

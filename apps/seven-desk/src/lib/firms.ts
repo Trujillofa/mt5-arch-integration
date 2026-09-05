@@ -24,17 +24,18 @@ export const FIRMS: FirmProfile[] = [
     name: "Neomaa",
     legalName: "NEOMAAA Funded",
     platforms: ["MT5", "TradeLocker"],
-    typicalServer: "NEOMAAA-Live",
+    typicalServer: "Neomaaa-Live",
     notes:
-      "Typically MT5 via NEOMAAA Ltd. TradeLocker is also offered on some funded programmes.",
+      "Operator book is MT5 7745107 @ Neomaaa-Live. Fetch is read-only. Arm Neomaa live copy to send the Neomaa slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
   },
   {
     id: "fortraders",
     name: "Fortraders",
     legalName: "For Traders",
     platforms: ["MT5", "TradeLocker", "cTrader"],
-    typicalServer: "ForTraders-Server",
-    notes: "Typically MT5, TradeLocker, or cTrader depending on the challenge you bought.",
+    typicalServer: "FTTrading-Server",
+    notes:
+      "Operator book is MT5 737150 @ FTTrading-Server (this challenge is MT5, not TradeLocker). Fetch is read-only. Arm Fortraders live copy to send the Fortraders slave of each master fill as a min-lot OrderSend. Not FTMO/FP Markets/FundingPips/MCP.",
   },
   {
     id: "fundingpips",

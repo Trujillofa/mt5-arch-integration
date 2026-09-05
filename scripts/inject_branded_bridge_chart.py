@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write Mt5ArchBridge onto a branded Default chart. WSF / FTMO / FundedNext / Alpha / FundingPips.
+"""Write Mt5ArchBridge onto a branded Default chart. WSF / FTMO / FundedNext / Alpha / FundingPips / Neomaa / Fortraders.
 
 Refuses a generic Program Files/MetaTrader 5 tree (FTMO's leftover can carry
 another company's account.json). Does not touch vantage / fpmarkets / exness.
@@ -16,13 +16,23 @@ import time
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-LIVE_RESTORE = ("wsf", "ftmo", "fundednext", "alphacapital", "fundingpips")
+LIVE_RESTORE = (
+    "wsf",
+    "ftmo",
+    "fundednext",
+    "alphacapital",
+    "fundingpips",
+    "neomaa",
+    "fortraders",
+)
 SYMBOL = {
     "wsf": "EURUSDc",
     "ftmo": "EURUSD",
     "fundednext": "EURUSD",
     "alphacapital": "BTCUSD",
     "fundingpips": "EURUSD",
+    "neomaa": "EURUSD",
+    "fortraders": "EURUSD",
 }
 # Alpha quotes-first tries BTCUSD first. ACG's live names are often *.pro;
 # bare BTCUSD/EURUSD charts stay blank (symbol sync timeout) while AUDCAD.pro
@@ -199,7 +209,7 @@ def prune_default_chart_siblings(term_dir: Path, broker: str = "") -> None:
     """Alpha-only: Default profile must be one chart.
 
     Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext /
-    FundingPips locked books keep leftover Default tabs — do not rewrite
+    FundingPips / Neomaa / Fortraders locked books keep leftover Default tabs — do not rewrite
     order.wnd there.
     """
     if broker != "alphacapital":

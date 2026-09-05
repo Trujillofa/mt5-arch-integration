@@ -56,13 +56,13 @@ export function seedAccounts(): TradingAccount[] {
       "FundedNext-Server 2",
       100_000
     ),
-    account(ACCOUNT_IDS.neomaa, "neomaa", "6104482", "MT5", "NEOMAAA-Live", 25_000),
+    account(ACCOUNT_IDS.neomaa, "neomaa", "7745107", "MT5", "Neomaaa-Live", 25_000),
     account(
       ACCOUNT_IDS.fortraders,
       "fortraders",
-      "9031120",
-      "TradeLocker",
-      "ForTraders-Server",
+      "737150",
+      "MT5",
+      "FTTrading-Server",
       50_000
     ),
     account(
@@ -118,7 +118,7 @@ export function seedCopySettings(): CopySettings[] {
     },
     {
       slaveAccountId: ACCOUNT_IDS.fortraders,
-      enabled: false,
+      enabled: true,
       lotMultiplier: 0.5,
       maxLot: 1,
       maxSlippagePips: 2,
@@ -164,5 +164,7 @@ export function seedDesk(): DeskState {
     fundednextLiveCopy: false,
     alphacapitalLiveCopy: false,
     fundingpipsLiveCopy: false,
+    neomaaLiveCopy: false,
+    fortradersLiveCopy: false,
   };
 }

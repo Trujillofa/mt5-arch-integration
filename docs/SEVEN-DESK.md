@@ -8,14 +8,15 @@ Paper copy is the default and never live-OrderSends. WSF live fetch is optional
 and fails closed when the prefix or bridge is absent. A separate fail-closed
 path `POST /api/wsf/order` can send a min-lot scratch on WSF 149736 only when
 the body has `{ "live": true, "confirm": "WSF-149736" }`. Arm **WSF live copy**
-or **FundedNext live copy** or **Alpha Capital live copy** on those cards
+or **FundedNext live copy** or **Alpha Capital live copy** or **FundingPips live copy**
+or **Neomaa live copy** or **Fortraders live copy** on those cards
 for min-lot slave opens. Arm
 **FTMO live master** so Place master trade is a real 0.01 EURUSD on 541163357
 before any copy. Other books stay paper. One-shots restore the branded
 terminal in the background and refuse a generic `Program Files/MetaTrader 5`
 tree inside those prefixes (that leftover can carry another company’s
 `account.json`). Restore writes `Mt5ArchBridge` onto the branded Default
-chart (`InpBroker=wsf|ftmo|fundednext|alphacapital`) and restarts that book when
+chart (`InpBroker=wsf|ftmo|fundednext|alphacapital|fundingpips|neomaa|fortraders`) and restarts that book when
 `heartbeat.txt` is stale, so fetch/probe can see a fresh snapshot again.
 A stale heartbeat does not block a live one-shot — login/server identity
 on the last branded `account.json` does. Fetch/probe still fail closed on

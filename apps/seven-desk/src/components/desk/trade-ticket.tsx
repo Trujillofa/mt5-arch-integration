@@ -42,18 +42,27 @@ export function TradeTicket() {
     if (state.ftmoLiveMaster) {
       return `FTMO live master is armed. Ticket becomes 0.01 EURUSD on 541163357 before any copy. ${enabledSlaves} slaves will attempt a fill.`;
     }
-    if (state.wsfLiveCopy || state.fundednextLiveCopy || state.alphacapitalLiveCopy || state.fundingpipsLiveCopy) {
+    if (
+      state.wsfLiveCopy ||
+      state.fundednextLiveCopy ||
+      state.alphacapitalLiveCopy ||
+      state.fundingpipsLiveCopy ||
+      state.neomaaLiveCopy ||
+      state.fortradersLiveCopy
+    ) {
       return `Live copy armed: ${[
         state.wsfLiveCopy ? "WSF 0.01 EURUSDc" : null,
         state.fundednextLiveCopy ? "FN 0.01 EURUSD" : null,
         state.alphacapitalLiveCopy ? "ACG 0.01 EURUSD" : null,
         state.fundingpipsLiveCopy ? "FundingPips 0.01 EURUSD" : null,
+        state.neomaaLiveCopy ? "Neomaa 0.01 EURUSD" : null,
+        state.fortradersLiveCopy ? "Fortraders 0.01 EURUSD" : null,
       ]
         .filter(Boolean)
         .join(" · ")}. ${enabledSlaves} slaves will attempt a fill.`;
     }
-    return `Fortraders is copy-off. ${enabledSlaves} slaves will attempt a fill.`;
-  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy, state.fundingpipsLiveCopy]);
+    return `${enabledSlaves} slaves will attempt a fill. Live OrderSend stays off until you arm a card.`;
+  }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy, state.fundingpipsLiveCopy, state.neomaaLiveCopy, state.fortradersLiveCopy]);
 
   function submit() {
     setFormError(null);
@@ -109,10 +118,14 @@ export function TradeTicket() {
           {state.fundednextLiveCopy ? " FundedNext slave is live min-lot." : ""}
           {state.alphacapitalLiveCopy ? " Alpha Capital slave is live min-lot." : ""}
           {state.fundingpipsLiveCopy ? " FundingPips slave is live min-lot." : ""}
+          {state.neomaaLiveCopy ? " Neomaa slave is live min-lot." : ""}
+          {state.fortradersLiveCopy ? " Fortraders slave is live min-lot." : ""}
           {!state.wsfLiveCopy &&
           !state.fundednextLiveCopy &&
           !state.alphacapitalLiveCopy &&
           !state.fundingpipsLiveCopy &&
+          !state.neomaaLiveCopy &&
+          !state.fortradersLiveCopy &&
           !state.ftmoLiveMaster
             ? " Live OrderSend stays off until you arm a card."
             : ""}
