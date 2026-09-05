@@ -1,0 +1,14 @@
+[Unit]
+Description=Seven Desk (host Next.js on :3847)
+# Host next, not Podman — the desk orchestrates Wine / scripts/21 / file-bridge.
+
+[Service]
+Type=simple
+WorkingDirectory=%h/Projects/trading/mt5-arch-integration/apps/seven-desk
+Environment=PATH=%h/.local/share/mise/installs/node/latest/bin:%h/.local/bin:%h/.local/share/mise/shims:/usr/local/bin:/usr/bin
+ExecStart=%h/Projects/trading/mt5-arch-integration/scripts/20-seven-desk.sh --foreground
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

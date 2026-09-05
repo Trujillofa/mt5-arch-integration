@@ -4,7 +4,9 @@ Browser copy-trading desk nested in **mt5-arch-integration**. Live fetch reads e
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
-./scripts/20-seven-desk.sh          # or: cd apps/seven-desk && npm install && npm run dev
+./scripts/20-seven-desk.sh          # host systemd --user keep-alive on :3847 (not Podman)
+./scripts/20-seven-desk.sh --status
+./scripts/20-seven-desk.sh --stop
 # http://127.0.0.1:3847
 ./scripts/16-use-broker.sh wsf      # optional: export WSF MT5 login/server into the shell
 ```

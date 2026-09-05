@@ -27,6 +27,16 @@ to Vantage, FP, or official MCP on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration
-./scripts/20-seven-desk.sh
+./scripts/20-seven-desk.sh            # host systemd --user keep-alive on :3847
+./scripts/20-seven-desk.sh --status
+./scripts/20-seven-desk.sh --stop
+# or: systemctl --user status|stop|start seven-desk.service
 # http://127.0.0.1:3847
 ```
+
+`20` installs `ops/systemd/seven-desk.service` into `~/.config/systemd/user/`
+and `enable --now`s it (`Restart=always`). Host next, not Podman — the desk
+orchestrates Wine / `scripts/21` / file-bridge on the host. It leaves :3847
+alone if HTTP 200 is already up. After reboot it comes back when user linger
+is on (`WantedBy=default.target`). A Cursor PTY `npm run dev` dies with the
+session.
