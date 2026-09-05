@@ -194,8 +194,14 @@ def alpha_ready_symbol(term_dir: Path) -> str | None:
     return None
 
 
-def prune_default_chart_siblings(term_dir: Path) -> None:
-    """Default profile must be one chart. Leftover AUDCAD.pro tabs steal focus."""
+def prune_default_chart_siblings(term_dir: Path, broker: str = "") -> None:
+    """Alpha-only: Default profile must be one chart.
+
+    Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext
+    locked books keep leftover Default tabs — do not rewrite order.wnd there.
+    """
+    if broker != "alphacapital":
+        return
     for chart in chart_paths(term_dir):
         parent = chart.parent
         if parent.name != "Default" or not parent.is_dir():
@@ -229,7 +235,10 @@ def inject_charts(
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(payload)
         written.append(path)
-    prune_default_chart_siblings(resolved)
+    # Leftover Default tabs steal focus on ACG (AUDCAD.pro vs BTCUSD).
+    # Do not prune WSF/FTMO/FundedNext — those locked books keep extra tabs.
+    if broker == "alphacapital":
+        prune_default_chart_siblings(resolved, broker)
     return written
 
 

@@ -113,6 +113,36 @@ def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> Non
     assert not extra.exists()
 
 
+def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
+    """WSF/FTMO/FN must not delete leftover Default tabs; Alpha must."""
+    leftover = b"stale-tab"
+    cases = (
+        ("wsf", "WSFmarkets MT5 Terminal"),
+        ("ftmo", "FTMO Global Markets MT5 Terminal"),
+        ("fundednext", "FundedNext MT5 Terminal"),
+    )
+    for broker, brand in cases:
+        term_dir = _brand_tree(tmp_path / broker, brand)
+        extra = term_dir / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+        extra.parent.mkdir(parents=True, exist_ok=True)
+        extra.write_bytes(leftover)
+        order = extra.parent / "order.wnd"
+        order.write_bytes(b"keep-me")
+        inject.inject_charts(broker, term_dir)
+        assert extra.is_file() and extra.read_bytes() == leftover
+        assert order.read_bytes() == b"keep-me"
+
+    alpha = _brand_tree(tmp_path / "alphacapital", "ACG Markets MT5 Terminal")
+    extra = alpha / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+    extra.parent.mkdir(parents=True, exist_ok=True)
+    extra.write_bytes(leftover)
+    order = extra.parent / "order.wnd"
+    order.write_bytes(b"keep-me")
+    inject.inject_charts("alphacapital", alpha)
+    assert not extra.exists()
+    assert order.read_bytes() == b"\xff\xfe" + "chart01.chr\r\n".encode("utf-16-le")
+
+
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "WSFmarkets MT5 Terminal")
     written = inject.inject_charts("wsf", term_dir)
