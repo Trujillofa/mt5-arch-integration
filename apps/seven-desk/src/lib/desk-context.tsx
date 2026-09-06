@@ -50,6 +50,7 @@ import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortrade
 import { FUNDINGPIPS_LIVE_CONFIRM, FUNDINGPIPS_LIVE_PENDING } from "@/lib/fundingpips/types";
 import { NEOMAA_LIVE_CONFIRM, NEOMAA_LIVE_PENDING } from "@/lib/neomaa/types";
 import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
+import { LIVE_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
 import { nudgeQuotes } from "@/lib/quotes";
@@ -189,6 +190,7 @@ async function postLiveOrder(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
+      signal: AbortSignal.timeout(LIVE_ORDER_CLIENT_BUDGET_MS),
       body: JSON.stringify({
         live: true,
         confirm,
@@ -200,13 +202,19 @@ async function postLiveOrder(
     });
     return (await response.json()) as LiveOrderResult;
   } catch (caught) {
+    const timedOut =
+      caught instanceof Error && (caught.name === "TimeoutError" || caught.name === "AbortError");
     return {
       ok: false,
       source: "seven-desk",
       endpoint,
       requestId: "",
-      stage: action,
-      reason: caught instanceof Error ? caught.message : `${broker} ${action} failed`,
+      stage: timedOut ? "timeout" : action,
+      reason: timedOut
+        ? "client deadline — live order route returned no JSON"
+        : caught instanceof Error
+          ? caught.message
+          : `${broker} ${action} failed`,
       login: null,
       server: null,
       winePrefix: winePrefixFor(broker),

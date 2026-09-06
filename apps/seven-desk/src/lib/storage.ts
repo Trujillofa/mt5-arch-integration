@@ -53,13 +53,13 @@ function migrateOperatorLogins(state: DeskState): DeskState {
         }
       }
       if (account.firmId === "alphacapital") {
-        if (account.login === "2765247" && account.server === "ACGMarkets") {
+        if (account.login === "2765247" && account.server === "ACGMarkets-Main") {
           return account;
         }
         return {
           ...account,
           login: "2765247",
-          server: "ACGMarkets",
+          server: "ACGMarkets-Main",
           platform: "MT5",
         };
       }

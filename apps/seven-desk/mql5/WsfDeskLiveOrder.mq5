@@ -101,7 +101,8 @@ bool WaitConnected(const int max_ms)
       Sleep(500);
       waited += 500;
      }
-   return (AccountInfoInteger(ACCOUNT_LOGIN) == EXPECT_LOGIN);
+   // Login-only is not connected — do not proceed to OrderSend.
+   return false;
   }
 
 string FailJson(const string stage, const string reason,
@@ -257,7 +258,7 @@ void OnStart()
       return;
      }
 
-   if(!WaitConnected(45000))
+   if(!WaitConnected(20000))
      {
       WriteResult(FailJson("connect", "timeout waiting for login 149736 + connected",
                            AccountInfoInteger(ACCOUNT_LOGIN),

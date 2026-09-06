@@ -60,9 +60,9 @@ export const FIRMS: FirmProfile[] = [
     name: "Alpha Capital",
     legalName: "Alpha Capital Group",
     platforms: ["MT5", "cTrader", "DXtrade", "TradeLocker"],
-    typicalServer: "ACGMarkets",
+    typicalServer: "ACGMarkets-Main",
     notes:
-      "Operator book is MT5 2765247 @ ACGMarkets. Fetch is read-only. Arm Alpha Capital live copy to send the Alpha slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
+      "Operator book is MT5 2765247 @ ACGMarkets-Main. Fetch is read-only. Arm Alpha Capital live copy to send the Alpha slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
   },
 ];
 

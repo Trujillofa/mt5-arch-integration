@@ -27,7 +27,7 @@ Each book ships with a seeded paper account, a typical platform, and an honest s
 | Fortraders | **MT5** (this challenge; not TradeLocker), cTrader | **`FTTrading-Server`** (login `737150`) |
 | FundingPips | MT5, cTrader, Match-Trader | **`FundingPips2-SIM`** (login `11669306`) |
 | FTMO | MT4, MT5, cTrader, DXtrade | **`FTMO-Server4`** (login `541163357`) |
-| Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets`** (login `2765247`) |
+| Alpha Capital | MT5, cTrader, DXtrade, TradeLocker | **`ACGMarkets-Main`** (login `2765247`) |
 
 FTMO starts as the **master**. The others are slaves with copy rules already filled in so a first trade does something visible.
 
@@ -110,7 +110,7 @@ Select the Alpha Capital card and click **Fetch Alpha Capital**, or:
 - `GET /api/alphacapital/probe` — fail-closed file-bridge snapshot
 - `GET /api/alphacapital/account` — sanitized account snapshot only
 
-Uses `ALPHA_MT5_*` from the gitignored repo `.env` (login `2765247`, server `ACGMarkets`, prefix `~/.mt5-alphacapital`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is an Alpha Capital add-on risk the operator accepted for the snapshot. Arm **Alpha Capital live copy** on the same card to send each master fill through `POST /api/alphacapital/order` (`confirm: "ACG-2765247"`, 0.01 EURUSD).
+Uses `ALPHA_MT5_*` from the gitignored repo `.env` (login `2765247`, server `ACGMarkets-Main`, prefix `~/.mt5-alphacapital`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is an Alpha Capital add-on risk the operator accepted for the snapshot. Arm **Alpha Capital live copy** on the same card to send each master fill through `POST /api/alphacapital/order` (`confirm: "ACG-2765247"`, 0.01 EURUSD). Live order routes return JSON within a 70s HTTP budget — they do not hang on a silent Wine one-shot.
 
 ## FundingPips live fetch (read-only)
 
@@ -128,7 +128,7 @@ Select the Neomaa card and click **Fetch Neomaa**, or:
 - `GET /api/neomaa/probe` — fail-closed file-bridge snapshot
 - `GET /api/neomaa/account` — sanitized account snapshot only
 
-Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-Live`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
+Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-Live`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if `terminal_connected=false` (weekend FX / Neomaaa-Live down — not auth) or if EURUSD has no history/ticks yet.
 
 ## Fortraders live fetch (read-only)
 

@@ -3,6 +3,16 @@ import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileS
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import {
+  LIVE_ORDER_HTTP_BUDGET_MS,
+  WINE_ONESHOT_BUDGET_MS,
+  asJsonBool,
+  disconnectedOrderReason,
+  remainingMs,
+  resultMatchesRequest,
+  withDeadline,
+} from "@/lib/live-order/guards";
+import { runWineUntil, sleep } from "@/lib/live-order/wine-oneshot";
+import {
   WSF_EXPECTED_LOGIN,
   WSF_LIVE_CONFIRM,
   WSF_SERVER_NEEDLE,
@@ -184,9 +194,10 @@ function readBridgeIdentity(accountJson: string): {
   server: string | null;
   company: string | null;
   balance: number | null;
+  terminalConnected: boolean | null;
 } {
   if (!existsSync(accountJson)) {
-    return { login: null, server: null, company: null, balance: null };
+    return { login: null, server: null, company: null, balance: null, terminalConnected: null };
   }
   try {
     const raw = JSON.parse(readFileSync(accountJson, "utf8")) as Record<string, unknown>;
@@ -195,9 +206,10 @@ function readBridgeIdentity(accountJson: string): {
       server: raw.server != null ? String(raw.server) : null,
       company: raw.company != null ? String(raw.company) : null,
       balance: typeof raw.balance === "number" ? raw.balance : null,
+      terminalConnected: asJsonBool(raw.terminal_connected),
     };
   } catch {
-    return { login: null, server: null, company: null, balance: null };
+    return { login: null, server: null, company: null, balance: null, terminalConnected: null };
   }
 }
 
@@ -263,7 +275,7 @@ function isWsfPrefixRow(row: ProcRow, prefix: string): boolean {
   return row.cwd.includes(".mt5-wsf") && row.cwd.includes("WSFmarkets MT5 Terminal");
 }
 
-function stopWsfBrandTerminals(prefix: string): number[] {
+async function stopWsfBrandTerminals(prefix: string): Promise<number[]> {
   const stopped: number[] = [];
   for (const row of listTerminal64()) {
     if (!isWsfPrefixRow(row, prefix)) continue;
@@ -278,7 +290,7 @@ function stopWsfBrandTerminals(prefix: string): number[] {
   while (Date.now() < deadline) {
     const still = listTerminal64().filter((row) => stopped.includes(row.pid));
     if (still.length === 0) break;
-    spawnSync("sleep", ["0.2"]);
+    await sleep(200);
   }
   for (const row of listTerminal64()) {
     if (!stopped.includes(row.pid)) continue;
@@ -510,11 +522,18 @@ function newRequestId(): string {
   return `d${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
+export interface WsfLiveOrderOptions {
+  requestId?: string;
+  deadlineMs?: number;
+}
+
 export async function executeWsfLiveOrder(
   body: WsfLiveOrderInput,
-  endpoint = "/api/wsf/order"
+  endpoint = "/api/wsf/order",
+  options: WsfLiveOrderOptions = {}
 ): Promise<{ status: number; result: WsfLiveOrderResult }> {
-  const requestId = newRequestId();
+  const requestId = options.requestId || newRequestId();
+  const deadlineMs = options.deadlineMs ?? Date.now() + LIVE_ORDER_HTTP_BUDGET_MS;
   const parsed = validateLiveOrderBody(body);
   if (!parsed.ok) {
     parsed.result.requestId = requestId;
@@ -565,10 +584,22 @@ export async function executeWsfLiveOrder(
       }).result,
     };
   }
+  if (identity.terminalConnected === false) {
+    return {
+      status: 409,
+      result: fail(409, "connect", disconnectedOrderReason("wsf", identity.server), {
+        requestId,
+        endpoint,
+        login: Number(identity.login),
+        server: identity.server,
+      }).result,
+    };
+  }
 
   // One-shot logs in via wsf_desk_order.ini. A stale Mt5ArchBridge heartbeat
   // must not block — restore terminals often never rewrite the snapshot.
   // Identity above already pinned login 149736 @ WSFmarkets-Server.
+  // Explicit terminal_connected=false above is the disconnected fail-closed.
 
   const compileError = compileScript(paths);
   if (compileError) {
@@ -596,22 +627,39 @@ export async function executeWsfLiveOrder(
   }
   writeRequest(paths, parsed, requestId);
 
-  const stopped = stopWsfBrandTerminals(paths.prefix);
-  const run = spawnSync("wine", ["./terminal64.exe", "/portable", `/config:wsf_desk_order.ini`], {
+  const stopped = await stopWsfBrandTerminals(paths.prefix);
+  const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
+  const wine = await runWineUntil({
     cwd: paths.brandDir,
-    encoding: "utf8",
-    timeout: 90000,
+    args: ["./terminal64.exe", "/portable", "/config:wsf_desk_order.ini"],
     env: wineEnv(paths.prefix),
+    deadlineMs: wineDeadline,
+    isDone: () => {
+      if (!existsSync(paths.resultFile)) return false;
+      const parsedFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
+      return resultMatchesRequest(parsedFile.requestId, requestId);
+    },
+    onAbort: async () => {
+      await stopWsfBrandTerminals(paths.prefix);
+    },
   });
 
   let parsedResult: Partial<WsfLiveOrderResult> = {};
   if (existsSync(paths.resultFile)) {
-    parsedResult = parseResultJson(readFileSync(paths.resultFile, "utf8"));
-  } else {
+    const fromFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
+    if (resultMatchesRequest(fromFile.requestId, requestId)) {
+      parsedResult = fromFile;
+    }
+  }
+  if (!parsedResult.stage) {
     parsedResult = {
       ok: false,
       stage: "timeout",
-      reason: `one-shot produced no result (wine status ${run.status}${run.error ? ` ${run.error.message}` : ""})`,
+      reason: wine.timedOut
+        ? "wine one-shot exceeded deadline — no matching result json"
+        : `one-shot produced no result (wine status ${wine.exitCode}${
+            remainingMs(deadlineMs) < 0 ? " after HTTP budget" : ""
+          })`,
     };
   }
 
@@ -661,4 +709,60 @@ export async function executeWsfLiveOrder(
 
 export function homeRelativePrefix(): string {
   return join("~", relative(homedir(), resolveWsfOnlyPrefix()) || ".mt5-wsf");
+}
+
+export function handleWsfLiveOrderPost(endpoint: string, forceAction?: WsfLiveOrderAction) {
+  return async (request: Request): Promise<Response> => {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json(
+        {
+          ok: false,
+          source: "seven-desk",
+          endpoint,
+          stage: "body",
+          reason: "JSON body required",
+          winePrefix: ".mt5-wsf",
+        },
+        { status: 400 }
+      );
+    }
+    const payload = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+    const requestId = newRequestId();
+    const deadlineMs = Date.now() + LIVE_ORDER_HTTP_BUDGET_MS;
+    const { status, result } = await withDeadline(
+      executeWsfLiveOrder(
+        {
+          live: payload.live,
+          confirm: payload.confirm,
+          action: forceAction ?? payload.action,
+          symbol: payload.symbol,
+          side: payload.side,
+          volume: payload.volume,
+          volume_min: payload.volume_min,
+        },
+        endpoint,
+        { requestId, deadlineMs }
+      ),
+      LIVE_ORDER_HTTP_BUDGET_MS,
+      {
+        status: 504,
+        result: {
+          ok: false,
+          source: "seven-desk",
+          endpoint,
+          requestId,
+          stage: "timeout",
+          reason:
+            "live order exceeded HTTP deadline — wine one-shot aborted; no hang without JSON",
+          login: null,
+          server: null,
+          winePrefix: ".mt5-wsf",
+        },
+      }
+    );
+    return Response.json(result, { status });
+  };
 }

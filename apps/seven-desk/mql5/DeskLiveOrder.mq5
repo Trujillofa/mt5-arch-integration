@@ -120,7 +120,8 @@ bool WaitConnected(const int max_ms)
       Sleep(500);
       waited += 500;
      }
-   return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login);
+   // Login-only is not connected. Weekend / Neomaaa-Live down must fail closed.
+   return false;
   }
 
 bool WaitSymbolReady(const string symbol, const int max_ms)
@@ -318,7 +319,7 @@ void OnStart()
       return;
      }
 
-   if(!WaitConnected(45000))
+   if(!WaitConnected(20000))
      {
       WriteResult(FailJson("connect", "timeout waiting for expected login + connected",
                            AccountInfoInteger(ACCOUNT_LOGIN),
@@ -348,7 +349,7 @@ void OnStart()
    ResetLastError();
    if(!SymbolInfoInteger(symbol, SYMBOL_SELECT))
       SymbolSelect(symbol, true);
-   if(!WaitSymbolReady(symbol, 90000))
+   if(!WaitSymbolReady(symbol, 20000))
      {
       WriteResult(FailJson("symbol", "symbol not synchronized — no bid yet",
                            login, server, GetLastError(), symbol));

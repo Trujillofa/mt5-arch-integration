@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { LIVE_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
 import type { WsfLiveOrderResult } from "@/lib/wsf/types";
 
 const CONFIRM = "WSF-149736";
@@ -35,6 +36,7 @@ export function WsfLiveScratch() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
+        signal: AbortSignal.timeout(LIVE_ORDER_CLIENT_BUDGET_MS),
         body: JSON.stringify({
           live: true,
           confirm: CONFIRM,

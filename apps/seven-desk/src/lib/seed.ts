@@ -78,7 +78,7 @@ export function seedAccounts(): TradingAccount[] {
       "alphacapital",
       "2765247",
       "MT5",
-      "ACGMarkets",
+      "ACGMarkets-Main",
       100_000
     ),
   ];
