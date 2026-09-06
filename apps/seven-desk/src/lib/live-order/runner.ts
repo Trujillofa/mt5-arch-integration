@@ -3,6 +3,23 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync,
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import {
+  LIVE_ORDER_HTTP_BUDGET_MS,
+  WINE_ONESHOT_BUDGET_MS,
+  asJsonBool,
+  classifyOrphanRequest,
+  deadlineExceeded,
+  disconnectedOrderReason,
+  httpTimeoutResult,
+  inFlightOrphanReason,
+  parseRequestFields,
+  remainingMs,
+  resolveStartupServer,
+  resultBelongsToRequest,
+  resultMatchesRequest,
+  withDeadline,
+} from "@/lib/live-order/guards";
+import { runWineUntil, sleep } from "@/lib/live-order/wine-oneshot";
+import {
   ALPHACAPITAL_BRAND_INSTALLS,
   ALPHACAPITAL_EXPECTED_LOGIN,
   ALPHACAPITAL_ONLY_PREFIX,
@@ -421,7 +438,7 @@ function listPrefixPids(prefix: string): number[] {
   return pids;
 }
 
-function stopPrefix(prefix: string): number[] {
+async function stopPrefix(prefix: string): Promise<number[]> {
   const stopped = listPrefixPids(prefix);
   for (const pid of stopped) {
     try {
@@ -432,7 +449,7 @@ function stopPrefix(prefix: string): number[] {
   }
   const deadline = Date.now() + 4000;
   while (Date.now() < deadline && listPrefixPids(prefix).length > 0) {
-    spawnSync("sleep", ["0.2"]);
+    await sleep(200);
   }
   for (const pid of listPrefixPids(prefix)) {
     try {
@@ -481,7 +498,7 @@ function compileScript(firm: FirmSpec, paths: ReturnType<typeof pathsFor>): stri
   const result = spawnSync("wine", [paths.metaEditor, `/compile:${SCRIPT_NAME}.mq5`, "/log"], {
     cwd: paths.scriptsDir,
     encoding: "utf8",
-    timeout: 45000,
+    timeout: 20000,
     env: wineEnv(firm.prefix),
   });
   if (!existsSync(paths.scriptEx5)) {
@@ -524,6 +541,7 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `volume=${parsed.volume ?? MIN_LOT}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `magic=${firm.magic}`,
+    `issued_at=${Math.floor(Date.now() / 1000)}`,
     "",
   ].join("\n");
   mkdirSync(paths.bridgeDir, { recursive: true });
@@ -534,12 +552,17 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
   }
 }
 
-function writeStartupIni(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, symbol: string): string | null {
+function writeStartupIni(
+  firm: FirmSpec,
+  paths: ReturnType<typeof pathsFor>,
+  symbol: string,
+  server: string
+): string | null {
   const password = readAutoLoginPassword(paths.autoLogin);
   const common = [
     "[Common]",
     `Login=${firm.login}`,
-    `Server=${firm.server}`,
+    `Server=${server}`,
     "ProxyEnable=0",
     "KeepPrivate=1",
     "NewsEnable=0",
@@ -566,17 +589,25 @@ ShutdownTerminal=1
   return null;
 }
 
-function readBridgeIdentity(accountJson: string): { login: string | null; server: string | null; company: string | null } {
-  if (!existsSync(accountJson)) return { login: null, server: null, company: null };
+function readBridgeIdentity(accountJson: string): {
+  login: string | null;
+  server: string | null;
+  company: string | null;
+  terminalConnected: boolean | null;
+} {
+  if (!existsSync(accountJson)) {
+    return { login: null, server: null, company: null, terminalConnected: null };
+  }
   try {
     const raw = JSON.parse(readFileSync(accountJson, "utf8")) as Record<string, unknown>;
     return {
       login: raw.login != null ? String(raw.login) : null,
       server: raw.server != null ? String(raw.server) : null,
       company: raw.company != null ? String(raw.company) : null,
+      terminalConnected: asJsonBool(raw.terminal_connected),
     };
   } catch {
-    return { login: null, server: null, company: null };
+    return { login: null, server: null, company: null, terminalConnected: null };
   }
 }
 
@@ -617,54 +648,149 @@ function resultCandidates(paths: ReturnType<typeof pathsFor>): string[] {
   ];
 }
 
-function waitResult(paths: ReturnType<typeof pathsFor>, timeoutMs: number): Partial<LiveOrderResult> {
-  const deadline = Date.now() + timeoutMs;
-  const files = resultCandidates(paths);
-  while (Date.now() < deadline) {
-    for (const resultFile of files) {
-      if (existsSync(resultFile)) {
-        return parseResultJson(readFileSync(resultFile, "utf8"));
-      }
-    }
-    spawnSync("sleep", ["0.4"]);
-  }
-  return { ok: false, stage: "timeout", reason: "one-shot produced no result json" };
+function requestCandidates(paths: ReturnType<typeof pathsFor>): string[] {
+  return [
+    paths.requestFile,
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_request.txt")),
+  ];
 }
 
-function waitQuotesOrFresh(
-  firm: FirmSpec,
-  paths: ReturnType<typeof pathsFor>,
-  symbol: string,
-  timeoutMs: number
-): boolean {
-  const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
-    if (quotesReady(paths.brandDir, symbol)) return true;
-    if (existsSync(join(paths.bridgeDir, "heartbeat.txt"))) {
-      try {
-        if (Date.now() - statSync(join(paths.bridgeDir, "heartbeat.txt")).mtimeMs < 60000) {
-          return true;
-        }
-      } catch {
-        // ignore
-      }
-    }
-    spawnSync("sleep", ["1"]);
+function claimCandidates(paths: ReturnType<typeof pathsFor>): string[] {
+  return [
+    join(paths.bridgeDir, "desk_live_order_claimed.txt"),
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_claimed.txt")),
+  ];
+}
+
+function unlinkQuiet(path: string): void {
+  try {
+    unlinkSync(path);
+  } catch {
+    // gone
   }
-  return quotesReady(paths.brandDir, symbol);
+}
+
+function dropBridgeFiles(files: string[]): void {
+  for (const file of files) {
+    if (existsSync(file)) unlinkQuiet(file);
+  }
+}
+
+function inspectOrphanRequest(paths: ReturnType<typeof pathsFor>): {
+  class: ReturnType<typeof classifyOrphanRequest>;
+  requestId: string;
+} {
+  let requestId = "";
+  let issuedAt: number | null = null;
+  let fileMtimeMs = 0;
+  let requestPresent = false;
+  for (const file of requestCandidates(paths)) {
+    if (!existsSync(file)) continue;
+    requestPresent = true;
+    const fields = parseRequestFields(readFileSync(file, "utf8"));
+    if (fields.requestId) requestId = fields.requestId;
+    if (fields.issuedAt != null) issuedAt = fields.issuedAt;
+    try {
+      fileMtimeMs = statSync(file).mtimeMs;
+    } catch {
+      fileMtimeMs = 0;
+    }
+    break;
+  }
+  if (!requestPresent) {
+    for (const file of claimCandidates(paths)) {
+      if (!existsSync(file)) continue;
+      requestPresent = true;
+      const claimed = readFileSync(file, "utf8").trim();
+      if (claimed) requestId = claimed;
+      try {
+        fileMtimeMs = statSync(file).mtimeMs;
+      } catch {
+        fileMtimeMs = 0;
+      }
+      break;
+    }
+  }
+  const matchingResult =
+    Boolean(requestId) &&
+    resultCandidates(paths).some((file) => {
+      if (!existsSync(file)) return false;
+      const parsed = parseResultJson(readFileSync(file, "utf8"));
+      return resultBelongsToRequest(parsed.requestId, requestId);
+    });
+  const klass = classifyOrphanRequest({
+    requestPresent,
+    requestId,
+    issuedAt,
+    fileMtimeMs,
+    matchingResult,
+  });
+  if (klass === "stale" || klass === "done") {
+    dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
+    if (klass === "stale") dropBridgeFiles(resultCandidates(paths));
+  }
+  return { class: klass, requestId };
+}
+
+function tryReadMatchingResult(
+  paths: ReturnType<typeof pathsFor>,
+  requestId: string
+): Partial<LiveOrderResult> | null {
+  for (const resultFile of resultCandidates(paths)) {
+    if (!existsSync(resultFile)) continue;
+    const parsed = parseResultJson(readFileSync(resultFile, "utf8"));
+    if (!resultMatchesRequest(parsed.requestId, requestId)) continue;
+    return parsed;
+  }
+  return null;
+}
+
+async function waitResult(
+  paths: ReturnType<typeof pathsFor>,
+  timeoutMs: number,
+  requestId: string
+): Promise<Partial<LiveOrderResult>> {
+  const deadline = Date.now() + timeoutMs;
+  let sawMismatch = false;
+  while (Date.now() < deadline) {
+    for (const resultFile of resultCandidates(paths)) {
+      if (!existsSync(resultFile)) continue;
+      const parsed = parseResultJson(readFileSync(resultFile, "utf8"));
+      if (!resultMatchesRequest(parsed.requestId, requestId)) {
+        sawMismatch = true;
+        continue;
+      }
+      return parsed;
+    }
+    await sleep(250);
+  }
+  return {
+    ok: false,
+    stage: "timeout",
+    reason: sawMismatch
+      ? "one-shot produced a result for a different request_id"
+      : "one-shot produced no result json",
+  };
 }
 
 function newRequestId(firm: DeskLiveFirm): string {
   return `${firm}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 }
 
+export interface DeskLiveOrderOptions {
+  requestId?: string;
+  deadlineMs?: number;
+}
+
 export async function executeDeskLiveOrder(
   firmId: DeskLiveFirm,
   body: LiveOrderInput,
-  endpoint: string
+  endpoint: string,
+  options: DeskLiveOrderOptions = {}
 ): Promise<{ status: number; result: LiveOrderResult }> {
   const firm = FIRMS[firmId];
-  const requestId = newRequestId(firmId);
+  const requestId = options.requestId || newRequestId(firmId);
+  const deadlineMs = options.deadlineMs ?? Date.now() + LIVE_ORDER_HTTP_BUDGET_MS;
   const parsed = validateBody(firm, body);
   if (!parsed.ok) {
     parsed.result.requestId = requestId;
@@ -712,6 +838,29 @@ export async function executeDeskLiveOrder(
       }).result,
     };
   }
+  if (identity.terminalConnected === false) {
+    return {
+      status: 409,
+      result: fail(firm, 409, "connect", disconnectedOrderReason(firm.id, identity.server), {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
+  }
+
+  if (deadlineExceeded(deadlineMs) || remainingMs(deadlineMs) < 8000) {
+    return {
+      status: 504,
+      result: fail(firm, 504, "timeout", "live order deadline exhausted before wine one-shot", {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
+  }
 
   const compileError = compileScript(firm, paths);
   if (compileError) {
@@ -726,22 +875,25 @@ export async function executeDeskLiveOrder(
     };
   }
 
-  writeStartupIni(firm, paths, parsed.symbol);
-  for (const resultFile of resultCandidates(paths)) {
-    if (existsSync(resultFile)) {
-      try {
-        unlinkSync(resultFile);
-      } catch {
-        // ignore
-      }
-    }
+  const orphan = inspectOrphanRequest(paths);
+  if (orphan.class === "in_flight") {
+    return {
+      status: 409,
+      result: fail(firm, 409, "orphan", inFlightOrphanReason(orphan.requestId), {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
   }
-  writeRequest(firm, paths, parsed, requestId);
 
-  if (
-    (firm.id === "fundingpips" || firm.id === "neomaa" || firm.id === "fortraders") &&
-    !quotesReady(paths.brandDir, parsed.symbol)
-  ) {
+  const needsQuotes =
+    firm.id === "fundingpips" ||
+    firm.id === "neomaa" ||
+    firm.id === "fortraders" ||
+    (firm.id === "alphacapital" && !parsed.symbol.toUpperCase().startsWith("BTC"));
+  if (needsQuotes && !quotesReady(paths.brandDir, parsed.symbol)) {
     return {
       status: 409,
       result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
@@ -753,57 +905,42 @@ export async function executeDeskLiveOrder(
     };
   }
 
-  if (firm.id === "alphacapital" && !quotesReady(paths.brandDir, parsed.symbol)) {
-    const ready = waitQuotesOrFresh(firm, paths, parsed.symbol, 90000);
-    const btc = parsed.symbol.toUpperCase().startsWith("BTC");
-    if (!ready && !btc) {
-      return {
-        status: 409,
-        result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
-          requestId,
-          endpoint,
-          login: identity.login ? Number(identity.login) : null,
-          server: identity.server,
-        }).result,
-      };
-    }
-  }
+  const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
+  writeStartupIni(firm, paths, parsed.symbol, startupServer);
+  dropBridgeFiles(resultCandidates(paths));
+  writeRequest(firm, paths, parsed, requestId);
 
-  const stopped = stopPrefix(firm.prefix);
-  let wineStatus: number | null = null;
-  const wineTimeout = firm.id === "alphacapital" ? 180000 : 90000;
+  let stopped: number[] = [];
+  let parsedResult: Partial<LiveOrderResult> = {};
   try {
-    const run = spawnSync("wine", ["./terminal64.exe", "/portable", "/config:desk_live_order.ini"], {
+    stopped = await stopPrefix(firm.prefix);
+    const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
+    const wine = await runWineUntil({
       cwd: paths.brandDir,
-      encoding: "utf8",
-      timeout: wineTimeout,
+      args: ["./terminal64.exe", "/portable", "/config:desk_live_order.ini"],
       env: wineEnv(firm.prefix),
+      deadlineMs: wineDeadline,
+      isDone: () => tryReadMatchingResult(paths, requestId) != null,
+      onAbort: async () => {
+        await stopPrefix(firm.prefix);
+      },
     });
-    wineStatus = run.status;
-  } catch (caught) {
-    wineStatus = null;
-    if (!(caught instanceof Error && /ETIMEDOUT|timeout/i.test(caught.message))) {
-      const restoreNote = restoreTerminal(firm);
-      try {
-        unlinkSync(paths.configIni);
-      } catch {
-        // drop leftover ini
-      }
-      return {
-        status: 500,
-        result: fail(firm, 500, "wine", caught instanceof Error ? caught.message : "wine failed", {
-          requestId,
-          endpoint,
-          restoreNote,
-        }).result,
-      };
-    }
-  }
 
-  const haveResult = resultCandidates(paths).some((path) => existsSync(path));
-  const parsedResult = waitResult(paths, haveResult ? 1000 : 20000);
-  if (!parsedResult.ok && parsedResult.stage === "timeout" && wineStatus != null) {
-    parsedResult.reason = `${parsedResult.reason} (wine status ${wineStatus})`;
+    parsedResult =
+      tryReadMatchingResult(paths, requestId) ??
+      (await waitResult(paths, wine.timedOut ? 400 : 1500, requestId));
+    if (!parsedResult.ok && parsedResult.stage === "timeout") {
+      if (wine.timedOut) {
+        parsedResult.reason =
+          "wine one-shot exceeded deadline — no matching result json (orphan request cleaned; no hang without JSON)";
+      } else if (wine.exitCode != null) {
+        parsedResult.reason = `${parsedResult.reason} (wine status ${wine.exitCode})`;
+      }
+    }
+  } finally {
+    await stopPrefix(firm.prefix);
+    dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
+    unlinkQuiet(paths.configIni);
   }
 
   const result: LiveOrderResult = {
@@ -834,11 +971,6 @@ export async function executeDeskLiveOrder(
     restoreNote: "",
   };
 
-  try {
-    unlinkSync(paths.configIni);
-  } catch {
-    // leftover ini may contain a password — best-effort drop
-  }
   result.restoreNote = restoreTerminal(firm);
   if (result.login != null && Number(result.login) !== Number(firm.login)) {
     result.ok = false;
@@ -851,6 +983,7 @@ export async function executeDeskLiveOrder(
 
 export function handleLiveOrderPost(firmId: DeskLiveFirm, endpoint: string, forceAction?: LiveOrderAction) {
   return async (request: Request): Promise<Response> => {
+    const firm = FIRMS[firmId];
     let body: unknown;
     try {
       body = await request.json();
@@ -862,25 +995,52 @@ export function handleLiveOrderPost(firmId: DeskLiveFirm, endpoint: string, forc
           endpoint,
           stage: "body",
           reason: "JSON body required",
-          winePrefix: winePrefixLabel(FIRMS[firmId].prefix),
+          winePrefix: winePrefixLabel(firm.prefix),
         },
         { status: 400 }
       );
     }
     const payload = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
-    const { status, result } = await executeDeskLiveOrder(
-      firmId,
-      {
-        live: payload.live,
-        confirm: payload.confirm,
-        action: forceAction ?? payload.action,
-        symbol: payload.symbol,
-        side: payload.side,
-        volume: payload.volume,
-        volume_min: payload.volume_min,
-      },
-      endpoint
-    );
-    return Response.json(result, { status });
+    const requestId = newRequestId(firmId);
+    const deadlineMs = Date.now() + LIVE_ORDER_HTTP_BUDGET_MS;
+    try {
+      const { status, result } = await withDeadline(
+        executeDeskLiveOrder(
+          firmId,
+          {
+            live: payload.live,
+            confirm: payload.confirm,
+            action: forceAction ?? payload.action,
+            symbol: payload.symbol,
+            side: payload.side,
+            volume: payload.volume,
+            volume_min: payload.volume_min,
+          },
+          endpoint,
+          { requestId, deadlineMs }
+        ),
+        LIVE_ORDER_HTTP_BUDGET_MS,
+        {
+          status: 504,
+          result: httpTimeoutResult({
+            endpoint,
+            requestId,
+            winePrefix: winePrefixLabel(firm.prefix),
+          }),
+        }
+      );
+      return Response.json(result, { status });
+    } catch (caught) {
+      return Response.json(
+        fail(
+          firm,
+          500,
+          "error",
+          caught instanceof Error ? caught.message : "live order failed",
+          { requestId, endpoint }
+        ).result,
+        { status: 500 }
+      );
+    }
   };
 }

@@ -9,6 +9,8 @@
 
 #define REQUEST_PATH     "mt5_arch\\desk_live_order_request.txt"
 #define RESULT_PATH      "mt5_arch\\desk_live_order_result.json"
+#define CLAIM_PATH       "mt5_arch\\desk_live_order_claimed.txt"
+#define REQUEST_TTL_SEC  90
 
 string g_request_id = "";
 string g_action     = "scratch";
@@ -21,6 +23,7 @@ string g_expect_needle = "";
 double g_volume     = 0.0;
 int    g_use_vmin   = 1;
 int    g_magic      = 20263850;
+long   g_issued_at  = 0;
 
 void EnsureBridgeDir()
   {
@@ -93,9 +96,54 @@ bool ReadRequest()
       v = ReadLineValue(line, "expect_login"); if(v != "") g_expect_login = StringToInteger(v);
       v = ReadLineValue(line, "expect_confirm"); if(v != "") g_expect_confirm = v;
       v = ReadLineValue(line, "expect_needle"); if(v != "") g_expect_needle = v;
+      v = ReadLineValue(line, "issued_at"); if(v != "") g_issued_at = StringToInteger(v);
      }
    FileClose(h);
    return true;
+  }
+
+void DeleteRequest()
+  {
+   FileDelete(REQUEST_PATH);
+   FileDelete(REQUEST_PATH, FILE_COMMON);
+  }
+
+bool ResultAlreadyFor(const string request_id)
+  {
+   if(request_id == "")
+      return false;
+   int h = OpenBridge(RESULT_PATH, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+      return false;
+   string body = "";
+   while(!FileIsEnding(h))
+      body += FileReadString(h);
+   FileClose(h);
+   return (StringFind(body, "\"request_id\": \"" + request_id + "\"") >= 0);
+  }
+
+bool AlreadyClaimed(const string request_id)
+  {
+   if(request_id == "")
+      return false;
+   int h = OpenBridge(CLAIM_PATH, FILE_READ | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+      return false;
+   string line = FileReadString(h);
+   FileClose(h);
+   StringTrimLeft(line);
+   StringTrimRight(line);
+   return (line == request_id);
+  }
+
+void WriteClaim(const string request_id)
+  {
+   EnsureBridgeDir();
+   int h = OpenBridge(CLAIM_PATH, FILE_WRITE | FILE_TXT | FILE_ANSI);
+   if(h == INVALID_HANDLE)
+      return;
+   FileWriteString(h, request_id);
+   FileClose(h);
   }
 
 ENUM_ORDER_TYPE_FILLING PickFilling(const string symbol)
@@ -120,7 +168,8 @@ bool WaitConnected(const int max_ms)
       Sleep(500);
       waited += 500;
      }
-   return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login);
+   // Login-only is not connected. Weekend / Neomaaa-Live down must fail closed.
+   return false;
   }
 
 bool WaitSymbolReady(const string symbol, const int max_ms)
@@ -315,10 +364,36 @@ void OnStart()
       WriteResult(FailJson("confirm", "confirm token mismatch — refusing OrderSend",
                            AccountInfoInteger(ACCOUNT_LOGIN),
                            AccountInfoString(ACCOUNT_SERVER), 0, ""));
+      DeleteRequest();
       return;
      }
+   Print("DeskLiveOrder request_id=", g_request_id, " issued_at=", g_issued_at);
+   if(ResultAlreadyFor(g_request_id))
+     {
+      Print("DeskLiveOrder already has a result for ", g_request_id, " — not sending OrderSend");
+      DeleteRequest();
+      return;
+     }
+   if(g_issued_at > 0 && ((long)TimeGMT() - g_issued_at) > REQUEST_TTL_SEC)
+     {
+      WriteResult(FailJson("orphan", "stale desk_live_order_request — refusing OrderSend",
+                           AccountInfoInteger(ACCOUNT_LOGIN),
+                           AccountInfoString(ACCOUNT_SERVER), 0, ""));
+      DeleteRequest();
+      return;
+     }
+   if(AlreadyClaimed(g_request_id))
+     {
+      WriteResult(FailJson("orphan", "request_id already claimed — not sending OrderSend",
+                           AccountInfoInteger(ACCOUNT_LOGIN),
+                           AccountInfoString(ACCOUNT_SERVER), 0, ""));
+      DeleteRequest();
+      return;
+     }
+   WriteClaim(g_request_id);
+   DeleteRequest();
 
-   if(!WaitConnected(45000))
+   if(!WaitConnected(20000))
      {
       WriteResult(FailJson("connect", "timeout waiting for expected login + connected",
                            AccountInfoInteger(ACCOUNT_LOGIN),
@@ -348,7 +423,7 @@ void OnStart()
    ResetLastError();
    if(!SymbolInfoInteger(symbol, SYMBOL_SELECT))
       SymbolSelect(symbol, true);
-   if(!WaitSymbolReady(symbol, 90000))
+   if(!WaitSymbolReady(symbol, 20000))
      {
       WriteResult(FailJson("symbol", "symbol not synchronized — no bid yet",
                            login, server, GetLastError(), symbol));

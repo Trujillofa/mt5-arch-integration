@@ -20,7 +20,17 @@ chart (`InpBroker=wsf|ftmo|fundednext|alphacapital|fundingpips|neomaa|fortraders
 `heartbeat.txt` is stale, so fetch/probe can see a fresh snapshot again.
 A stale heartbeat does not block a live one-shot — login/server identity
 on the last branded `account.json` does. Fetch/probe still fail closed on
-a stale snapshot. **CLOSE positions** on
+a stale snapshot. An explicit `terminal_connected=false` (weekend FX /
+Neomaaa-Live down) refuses OrderSend immediately with JSON 409 — it does
+not launch Wine. Live order HTTP handlers return JSON within ~70s even
+when a one-shot is silent; they no longer `spawnSync` wine for up to
+180s (that blocked the event loop and left Alpha Capital POSTs with no
+body). Alpha one-shots log into `ACGMarkets-Main` (not `ACGMarkets`).
+A leftover `desk_live_order_request.txt` without a matching result is an
+orphan: in-flight (younger than 90s) refuses a second OrderSend; stale
+orphans are deleted. The one-shot claims `request_id` before OrderSend
+and will not re-process the same id after a restart.
+**CLOSE positions** on
 the blotter bar flattens every desk row (live groups first, fail-closed;
 paper after). An already-flat close (`no open … desk position` or
 `position vanished`) drops the desk row the same as `ok`. It never talks

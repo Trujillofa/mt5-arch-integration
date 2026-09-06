@@ -108,7 +108,7 @@ function applyToDesk(
       ? {
           status: "disconnected" as const,
           statusReason:
-            "Neomaaa-Live trade server offline (weekend FX). File-bridge is writing.",
+            "Neomaaa-Live trade server offline (weekend FX). File-bridge is writing. Restart this book only — do not restart other books.",
         }
       : {}),
     ...(report.connectionStatus === "connected" && report.balance != null

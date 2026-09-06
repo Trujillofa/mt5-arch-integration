@@ -1,6 +1,6 @@
 /** Client-safe identity. Do not import `@/lib/alphacapital/env` from the browser. */
 export const ALPHACAPITAL_EXPECTED_LOGIN = "2765247";
-export const ALPHACAPITAL_EXPECTED_SERVER = "ACGMarkets";
+export const ALPHACAPITAL_EXPECTED_SERVER = "ACGMarkets-Main";
 export const ALPHACAPITAL_SERVER_NEEDLE = "ACG";
 export const ALPHACAPITAL_LIVE_CONFIRM = "ACG-2765247";
 export const ALPHACAPITAL_LIVE_PENDING = "alphacapital-live-pending";
