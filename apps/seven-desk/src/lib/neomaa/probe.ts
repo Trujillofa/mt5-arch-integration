@@ -229,7 +229,7 @@ export function probeNeomaaLive(): NeomaaLiveReport {
       : connectionStatus === "disconnected"
         ? `File-bridge is live for ${NEOMAA_EXPECTED_LOGIN} @ ${
             snapshot?.server || NEOMAA_EXPECTED_SERVER
-          }, but the trade server is disconnected. Balance/quotes stay empty until Neomaaa-Live is up (weekend FX). Not an auth failure. Live OrderSend stays on the Neomaa live copy control.`
+          }, but the trade server is disconnected. Balance/quotes stay empty until Neomaaa-Live is up (weekend FX). Not an auth failure. Live OrderSend fail-closed; this desk will not restart ~/.mt5-neomaa or any other book. Restart Neomaa separately when Neomaaa-Live is up.`
         : winePrefixPresent
           ? "Neomaa Wine prefix is on disk. Waiting for a fresh Mt5ArchBridge account.json (read-only EA). Live OrderSend is the Neomaa live copy control."
           : "Neomaa Wine prefix is missing. Card stays on the operator login/server; paper copy is unchanged.";
@@ -257,7 +257,7 @@ export function probeNeomaaLive(): NeomaaLiveReport {
     nextSecretNeeded: liveBalance
       ? null
       : connectionStatus === "disconnected"
-        ? "Neomaaa-Live trade-server session. Fetch Neomaa again when the journal shows authorized/connected — do not restart other books."
+        ? "Neomaaa-Live trade-server session. Fetch Neomaa again when the journal shows authorized/connected. Restart ~/.mt5-neomaa only — do not restart other books."
         : env.hasMt5Password
           ? "A running ~/.mt5-neomaa terminal with read-only Mt5ArchBridge writing account.json."
           : `NEOMAA_MT5_PASSWORD for login ${NEOMAA_EXPECTED_LOGIN}.`,

@@ -63,6 +63,23 @@ def test_result_json_must_match_request_id() -> None:
     assert "tryReadMatchingResult" in runner
 
 
+def test_orphan_request_is_swept_or_fail_closed() -> None:
+    guards = GUARDS.read_text(encoding="utf-8")
+    runner = RUNNER.read_text(encoding="utf-8")
+    mql = MQL.read_text(encoding="utf-8")
+    assert "LIVE_ORDER_REQUEST_TTL_MS = 90_000" in guards
+    assert "classifyOrphanRequest" in guards
+    assert "inspectOrphanRequest" in runner
+    assert 'orphan.class === "in_flight"' in runner
+    assert "inFlightOrphanReason" in runner
+    assert "issued_at=" in runner
+    assert "dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)])" in runner
+    assert "AlreadyClaimed" in mql
+    assert "stale desk_live_order_request" in mql
+    assert "REQUEST_TTL_SEC" in mql
+    assert "WriteClaim" in mql
+
+
 def test_mql_requires_terminal_connected_and_caps_waits() -> None:
     desk = MQL.read_text(encoding="utf-8")
     wsf = WSF_MQL.read_text(encoding="utf-8")

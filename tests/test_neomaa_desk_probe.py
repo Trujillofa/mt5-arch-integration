@@ -27,5 +27,8 @@ def test_neomaa_probe_has_disconnected_status() -> None:
     assert '| "disconnected"' in types
     assert "deriveFileBridgeConnectionStatus" in probe
     assert "Not an auth failure" in probe
+    assert "will not restart ~/.mt5-neomaa" in probe
+    assert "do not restart other books" in probe
     assert "trade server offline" in ui
     assert 'status: "disconnected"' in ui
+    assert "do not restart other books" in ui

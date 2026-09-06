@@ -8,6 +8,72 @@ export const LIVE_ORDER_HTTP_BUDGET_MS = 70_000;
 export const WINE_ONESHOT_BUDGET_MS = 50_000;
 /** Browser / desk-context AbortSignal. Slightly above the server budget. */
 export const LIVE_ORDER_CLIENT_BUDGET_MS = 75_000;
+/**
+ * Orphan request without a matching result is stale after this TTL.
+ * In-flight leftovers (script died mid-restart) must not be OrderSent again.
+ */
+export const LIVE_ORDER_REQUEST_TTL_MS = 90_000;
+
+export type OrphanClass = "absent" | "done" | "in_flight" | "stale";
+
+export function parseRequestFields(text: string): {
+  requestId: string;
+  issuedAt: number | null;
+} {
+  let requestId = "";
+  let issuedAt: number | null = null;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (line.startsWith("request_id=")) {
+      requestId = line.slice("request_id=".length).trim();
+    } else if (line.startsWith("issued_at=")) {
+      const parsed = Number(line.slice("issued_at=".length).trim());
+      issuedAt = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    }
+  }
+  return { requestId, issuedAt };
+}
+
+/** Node writes unix seconds; accept ms if a host already stamped that way. */
+export function requestIssuedAtMs(issuedAt: number | null, fileMtimeMs: number): number {
+  if (issuedAt == null || !Number.isFinite(issuedAt) || issuedAt <= 0) return fileMtimeMs;
+  return issuedAt < 1e12 ? issuedAt * 1000 : issuedAt;
+}
+
+export function resultBelongsToRequest(
+  resultId: string | null | undefined,
+  requestId: string
+): boolean {
+  if (!requestId || !resultId) return false;
+  return resultId === requestId;
+}
+
+export function classifyOrphanRequest(input: {
+  requestPresent: boolean;
+  requestId: string;
+  issuedAt: number | null;
+  fileMtimeMs: number;
+  matchingResult: boolean;
+  nowMs?: number;
+  ttlMs?: number;
+}): OrphanClass {
+  if (!input.requestPresent) return "absent";
+  if (input.matchingResult && input.requestId) return "done";
+  const now = input.nowMs ?? Date.now();
+  const origin = requestIssuedAtMs(input.issuedAt, input.fileMtimeMs);
+  const age = now - origin;
+  const ttl = input.ttlMs ?? LIVE_ORDER_REQUEST_TTL_MS;
+  if (age >= ttl) return "stale";
+  return "in_flight";
+}
+
+export function inFlightOrphanReason(requestId: string): string {
+  const id = requestId || "unknown";
+  return (
+    `orphan desk_live_order_request ${id} has no matching result and is still within TTL — ` +
+    `refusing a second OrderSend (host hang left request without response)`
+  );
+}
 
 export function isTradeServerDisconnected(
   terminalConnected: boolean | null | undefined
@@ -29,8 +95,7 @@ export function resultMatchesRequest(
   resultId: string | null | undefined,
   requestId: string
 ): boolean {
-  if (!resultId) return true;
-  return resultId === requestId;
+  return resultBelongsToRequest(resultId, requestId);
 }
 
 export function remainingMs(deadlineMs: number, nowMs = Date.now()): number {

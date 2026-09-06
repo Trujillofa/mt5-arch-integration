@@ -35,6 +35,8 @@ def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
     assert "SymbolAllowed" in text
     assert "WaitConnected(20000)" in text
     assert "WaitSymbolReady(symbol, 20000)" in text
+    assert "AlreadyClaimed" in text
+    assert "REQUEST_TTL_SEC" in text
     assert (
         "return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login)"
         not in text

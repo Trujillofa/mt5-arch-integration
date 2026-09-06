@@ -6,11 +6,15 @@ import {
   LIVE_ORDER_HTTP_BUDGET_MS,
   WINE_ONESHOT_BUDGET_MS,
   asJsonBool,
+  classifyOrphanRequest,
   deadlineExceeded,
   disconnectedOrderReason,
   httpTimeoutResult,
+  inFlightOrphanReason,
+  parseRequestFields,
   remainingMs,
   resolveStartupServer,
+  resultBelongsToRequest,
   resultMatchesRequest,
   withDeadline,
 } from "@/lib/live-order/guards";
@@ -537,6 +541,7 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `volume=${parsed.volume ?? MIN_LOT}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `magic=${firm.magic}`,
+    `issued_at=${Math.floor(Date.now() / 1000)}`,
     "",
   ].join("\n");
   mkdirSync(paths.bridgeDir, { recursive: true });
@@ -641,6 +646,90 @@ function resultCandidates(paths: ReturnType<typeof pathsFor>): string[] {
     paths.resultFile,
     ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_result.json")),
   ];
+}
+
+function requestCandidates(paths: ReturnType<typeof pathsFor>): string[] {
+  return [
+    paths.requestFile,
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_request.txt")),
+  ];
+}
+
+function claimCandidates(paths: ReturnType<typeof pathsFor>): string[] {
+  return [
+    join(paths.bridgeDir, "desk_live_order_claimed.txt"),
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "desk_live_order_claimed.txt")),
+  ];
+}
+
+function unlinkQuiet(path: string): void {
+  try {
+    unlinkSync(path);
+  } catch {
+    // gone
+  }
+}
+
+function dropBridgeFiles(files: string[]): void {
+  for (const file of files) {
+    if (existsSync(file)) unlinkQuiet(file);
+  }
+}
+
+function inspectOrphanRequest(paths: ReturnType<typeof pathsFor>): {
+  class: ReturnType<typeof classifyOrphanRequest>;
+  requestId: string;
+} {
+  let requestId = "";
+  let issuedAt: number | null = null;
+  let fileMtimeMs = 0;
+  let requestPresent = false;
+  for (const file of requestCandidates(paths)) {
+    if (!existsSync(file)) continue;
+    requestPresent = true;
+    const fields = parseRequestFields(readFileSync(file, "utf8"));
+    if (fields.requestId) requestId = fields.requestId;
+    if (fields.issuedAt != null) issuedAt = fields.issuedAt;
+    try {
+      fileMtimeMs = statSync(file).mtimeMs;
+    } catch {
+      fileMtimeMs = 0;
+    }
+    break;
+  }
+  if (!requestPresent) {
+    for (const file of claimCandidates(paths)) {
+      if (!existsSync(file)) continue;
+      requestPresent = true;
+      const claimed = readFileSync(file, "utf8").trim();
+      if (claimed) requestId = claimed;
+      try {
+        fileMtimeMs = statSync(file).mtimeMs;
+      } catch {
+        fileMtimeMs = 0;
+      }
+      break;
+    }
+  }
+  const matchingResult =
+    Boolean(requestId) &&
+    resultCandidates(paths).some((file) => {
+      if (!existsSync(file)) return false;
+      const parsed = parseResultJson(readFileSync(file, "utf8"));
+      return resultBelongsToRequest(parsed.requestId, requestId);
+    });
+  const klass = classifyOrphanRequest({
+    requestPresent,
+    requestId,
+    issuedAt,
+    fileMtimeMs,
+    matchingResult,
+  });
+  if (klass === "stale" || klass === "done") {
+    dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
+    if (klass === "stale") dropBridgeFiles(resultCandidates(paths));
+  }
+  return { class: klass, requestId };
 }
 
 function tryReadMatchingResult(
@@ -786,18 +875,18 @@ export async function executeDeskLiveOrder(
     };
   }
 
-  const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
-  writeStartupIni(firm, paths, parsed.symbol, startupServer);
-  for (const resultFile of resultCandidates(paths)) {
-    if (existsSync(resultFile)) {
-      try {
-        unlinkSync(resultFile);
-      } catch {
-        // ignore
-      }
-    }
+  const orphan = inspectOrphanRequest(paths);
+  if (orphan.class === "in_flight") {
+    return {
+      status: 409,
+      result: fail(firm, 409, "orphan", inFlightOrphanReason(orphan.requestId), {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
   }
-  writeRequest(firm, paths, parsed, requestId);
 
   const needsQuotes =
     firm.id === "fundingpips" ||
@@ -816,29 +905,42 @@ export async function executeDeskLiveOrder(
     };
   }
 
-  const stopped = await stopPrefix(firm.prefix);
-  const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
-  const wine = await runWineUntil({
-    cwd: paths.brandDir,
-    args: ["./terminal64.exe", "/portable", "/config:desk_live_order.ini"],
-    env: wineEnv(firm.prefix),
-    deadlineMs: wineDeadline,
-    isDone: () => tryReadMatchingResult(paths, requestId) != null,
-    onAbort: async () => {
-      await stopPrefix(firm.prefix);
-    },
-  });
+  const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
+  writeStartupIni(firm, paths, parsed.symbol, startupServer);
+  dropBridgeFiles(resultCandidates(paths));
+  writeRequest(firm, paths, parsed, requestId);
 
-  const parsedResult =
-    tryReadMatchingResult(paths, requestId) ??
-    (await waitResult(paths, wine.timedOut ? 400 : 1500, requestId));
-  if (!parsedResult.ok && parsedResult.stage === "timeout") {
-    if (wine.timedOut) {
-      parsedResult.reason =
-        "wine one-shot exceeded deadline — no matching result json (Alpha-like bridge silence no longer hangs HTTP)";
-    } else if (wine.exitCode != null) {
-      parsedResult.reason = `${parsedResult.reason} (wine status ${wine.exitCode})`;
+  let stopped: number[] = [];
+  let parsedResult: Partial<LiveOrderResult> = {};
+  try {
+    stopped = await stopPrefix(firm.prefix);
+    const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
+    const wine = await runWineUntil({
+      cwd: paths.brandDir,
+      args: ["./terminal64.exe", "/portable", "/config:desk_live_order.ini"],
+      env: wineEnv(firm.prefix),
+      deadlineMs: wineDeadline,
+      isDone: () => tryReadMatchingResult(paths, requestId) != null,
+      onAbort: async () => {
+        await stopPrefix(firm.prefix);
+      },
+    });
+
+    parsedResult =
+      tryReadMatchingResult(paths, requestId) ??
+      (await waitResult(paths, wine.timedOut ? 400 : 1500, requestId));
+    if (!parsedResult.ok && parsedResult.stage === "timeout") {
+      if (wine.timedOut) {
+        parsedResult.reason =
+          "wine one-shot exceeded deadline — no matching result json (orphan request cleaned; no hang without JSON)";
+      } else if (wine.exitCode != null) {
+        parsedResult.reason = `${parsedResult.reason} (wine status ${wine.exitCode})`;
+      }
     }
+  } finally {
+    await stopPrefix(firm.prefix);
+    dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
+    unlinkQuiet(paths.configIni);
   }
 
   const result: LiveOrderResult = {
@@ -869,11 +971,6 @@ export async function executeDeskLiveOrder(
     restoreNote: "",
   };
 
-  try {
-    unlinkSync(paths.configIni);
-  } catch {
-    // leftover ini may contain a password — best-effort drop
-  }
   result.restoreNote = restoreTerminal(firm);
   if (result.login != null && Number(result.login) !== Number(firm.login)) {
     result.ok = false;

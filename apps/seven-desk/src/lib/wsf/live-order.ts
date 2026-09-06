@@ -6,8 +6,12 @@ import {
   LIVE_ORDER_HTTP_BUDGET_MS,
   WINE_ONESHOT_BUDGET_MS,
   asJsonBool,
+  classifyOrphanRequest,
   disconnectedOrderReason,
+  inFlightOrphanReason,
+  parseRequestFields,
   remainingMs,
+  resultBelongsToRequest,
   resultMatchesRequest,
   withDeadline,
 } from "@/lib/live-order/guards";
@@ -365,9 +369,75 @@ function writeRequest(paths: ReturnType<typeof wsfPaths>, parsed: GuardOk, reque
     `volume=${parsed.volume ?? CONSERVATIVE_FX_MIN}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `magic=${WSF_LIVE_MAGIC}`,
+    `issued_at=${Math.floor(Date.now() / 1000)}`,
     "",
   ].join("\n");
   writeFileSync(paths.requestFile, body, { encoding: "utf8" });
+}
+
+function wsfClaimFile(paths: ReturnType<typeof wsfPaths>): string {
+  return join(paths.bridgeDir, "wsf_desk_order_claimed.txt");
+}
+
+function inspectWsfOrphan(paths: ReturnType<typeof wsfPaths>): {
+  class: ReturnType<typeof classifyOrphanRequest>;
+  requestId: string;
+} {
+  let requestPresent = false;
+  let requestId = "";
+  let issuedAt: number | null = null;
+  let fileMtimeMs = 0;
+  if (existsSync(paths.requestFile)) {
+    requestPresent = true;
+    const fields = parseRequestFields(readFileSync(paths.requestFile, "utf8"));
+    requestId = fields.requestId;
+    issuedAt = fields.issuedAt;
+    try {
+      fileMtimeMs = statSync(paths.requestFile).mtimeMs;
+    } catch {
+      fileMtimeMs = 0;
+    }
+  } else if (existsSync(wsfClaimFile(paths))) {
+    requestPresent = true;
+    requestId = readFileSync(wsfClaimFile(paths), "utf8").trim();
+    try {
+      fileMtimeMs = statSync(wsfClaimFile(paths)).mtimeMs;
+    } catch {
+      fileMtimeMs = 0;
+    }
+  }
+  let matchingResult = false;
+  if (requestId && existsSync(paths.resultFile)) {
+    const parsed = parseResultJson(readFileSync(paths.resultFile, "utf8"));
+    matchingResult = resultBelongsToRequest(parsed.requestId, requestId);
+  }
+  const klass = classifyOrphanRequest({
+    requestPresent,
+    requestId,
+    issuedAt,
+    fileMtimeMs,
+    matchingResult,
+  });
+  if (klass === "stale" || klass === "done") {
+    try {
+      unlinkSync(paths.requestFile);
+    } catch {
+      // ignore
+    }
+    try {
+      unlinkSync(wsfClaimFile(paths));
+    } catch {
+      // ignore
+    }
+    if (klass === "stale" && existsSync(paths.resultFile)) {
+      try {
+        unlinkSync(paths.resultFile);
+      } catch {
+        // ignore
+      }
+    }
+  }
+  return { class: klass, requestId };
 }
 
 function writeStartupIni(paths: ReturnType<typeof wsfPaths>, symbol: string): string | null {
@@ -614,6 +684,19 @@ export async function executeWsfLiveOrder(
     };
   }
 
+  const orphan = inspectWsfOrphan(paths);
+  if (orphan.class === "in_flight") {
+    return {
+      status: 409,
+      result: fail(409, "orphan", inFlightOrphanReason(orphan.requestId), {
+        requestId,
+        endpoint,
+        login: Number(identity.login),
+        server: identity.server,
+      }).result,
+    };
+  }
+
   const iniError = writeStartupIni(paths, parsed.symbol);
   if (iniError) {
     return { status: 500, result: fail(500, "ini", iniError, { requestId, endpoint }).result };
@@ -629,38 +712,52 @@ export async function executeWsfLiveOrder(
 
   const stopped = await stopWsfBrandTerminals(paths.prefix);
   const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
-  const wine = await runWineUntil({
-    cwd: paths.brandDir,
-    args: ["./terminal64.exe", "/portable", "/config:wsf_desk_order.ini"],
-    env: wineEnv(paths.prefix),
-    deadlineMs: wineDeadline,
-    isDone: () => {
-      if (!existsSync(paths.resultFile)) return false;
-      const parsedFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
-      return resultMatchesRequest(parsedFile.requestId, requestId);
-    },
-    onAbort: async () => {
-      await stopWsfBrandTerminals(paths.prefix);
-    },
-  });
-
   let parsedResult: Partial<WsfLiveOrderResult> = {};
-  if (existsSync(paths.resultFile)) {
-    const fromFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
-    if (resultMatchesRequest(fromFile.requestId, requestId)) {
-      parsedResult = fromFile;
+  try {
+    const wine = await runWineUntil({
+      cwd: paths.brandDir,
+      args: ["./terminal64.exe", "/portable", "/config:wsf_desk_order.ini"],
+      env: wineEnv(paths.prefix),
+      deadlineMs: wineDeadline,
+      isDone: () => {
+        if (!existsSync(paths.resultFile)) return false;
+        const parsedFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
+        return resultMatchesRequest(parsedFile.requestId, requestId);
+      },
+      onAbort: async () => {
+        await stopWsfBrandTerminals(paths.prefix);
+      },
+    });
+
+    if (existsSync(paths.resultFile)) {
+      const fromFile = parseResultJson(readFileSync(paths.resultFile, "utf8"));
+      if (resultMatchesRequest(fromFile.requestId, requestId)) {
+        parsedResult = fromFile;
+      }
     }
-  }
-  if (!parsedResult.stage) {
-    parsedResult = {
-      ok: false,
-      stage: "timeout",
-      reason: wine.timedOut
-        ? "wine one-shot exceeded deadline — no matching result json"
-        : `one-shot produced no result (wine status ${wine.exitCode}${
-            remainingMs(deadlineMs) < 0 ? " after HTTP budget" : ""
-          })`,
-    };
+    if (!parsedResult.stage) {
+      parsedResult = {
+        ok: false,
+        stage: "timeout",
+        reason: wine.timedOut
+          ? "wine one-shot exceeded deadline — no matching result json"
+          : `one-shot produced no result (wine status ${wine.exitCode}${
+              remainingMs(deadlineMs) < 0 ? " after HTTP budget" : ""
+            })`,
+      };
+    }
+  } finally {
+    await stopWsfBrandTerminals(paths.prefix);
+    try {
+      unlinkSync(paths.requestFile);
+    } catch {
+      // ignore
+    }
+    try {
+      unlinkSync(wsfClaimFile(paths));
+    } catch {
+      // ignore
+    }
   }
 
   const base: WsfLiveOrderResult = {
