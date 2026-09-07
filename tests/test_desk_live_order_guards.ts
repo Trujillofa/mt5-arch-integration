@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  alphaStartupChartSymbol,
   classifyOrphanRequest,
   deadlineExceeded,
   disconnectedOrderReason,
@@ -7,6 +8,7 @@ import {
   inFlightOrphanReason,
   isTradeServerDisconnected,
   parseRequestFields,
+  quotesPathMatchesSymbol,
   remainingMs,
   requestIssuedAtMs,
   resolveStartupServer,
@@ -27,6 +29,44 @@ assert.equal(
 assert.equal(resolveStartupServer("ACGMarkets-Main", "ACGMarkets", "ACG"), "ACGMarkets-Main");
 assert.equal(resolveStartupServer(null, "ACGMarkets-Main", "ACG"), "ACGMarkets-Main");
 assert.equal(resolveStartupServer("WSFmarkets-Server", "ACGMarkets-Main", "ACG"), "ACGMarkets-Main");
+
+assert.equal(
+  quotesPathMatchesSymbol(
+    "/Bases/ACGMarkets-Main/history/EURUSD.pro/2026.hcc",
+    "2026.hcc",
+    "EURUSD"
+  ),
+  true
+);
+assert.equal(
+  quotesPathMatchesSymbol(
+    "/Bases/ACGMarkets-Main/history/EURUSD/2026.hcc",
+    "2026.hcc",
+    "EURUSD"
+  ),
+  true
+);
+assert.equal(
+  quotesPathMatchesSymbol(
+    "C:\\Bases\\ACGMarkets-Main\\history\\EURUSD.pro\\2026.hcc",
+    "2026.hcc",
+    "EURUSD"
+  ),
+  true
+);
+assert.equal(
+  quotesPathMatchesSymbol(
+    "/Bases/ACGMarkets-Main/history/GBPUSD.pro/2026.hcc",
+    "2026.hcc",
+    "EURUSD"
+  ),
+  false
+);
+assert.equal(quotesPathMatchesSymbol("/Bases/history/EURUSD.pro/2026.hcc", "2026.hcc", "GBPUSD"), false);
+assert.equal(alphaStartupChartSymbol("alphacapital", "EURUSD"), "EURUSD.pro");
+assert.equal(alphaStartupChartSymbol("alphacapital", "EURUSDc"), "EURUSD.pro");
+assert.equal(alphaStartupChartSymbol("alphacapital", "BTCUSD"), "BTCUSD");
+assert.equal(alphaStartupChartSymbol("ftmo", "EURUSD"), "EURUSD");
 
 assert.equal(resultMatchesRequest("abc", "abc"), true);
 assert.equal(resultMatchesRequest("", "abc"), false);

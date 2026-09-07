@@ -5,6 +5,7 @@ import { join, relative, resolve } from "node:path";
 import {
   LIVE_ORDER_HTTP_BUDGET_MS,
   WINE_ONESHOT_BUDGET_MS,
+  alphaStartupChartSymbol,
   asJsonBool,
   classifyOrphanRequest,
   deadlineExceeded,
@@ -12,6 +13,7 @@ import {
   httpTimeoutResult,
   inFlightOrphanReason,
   parseRequestFields,
+  quotesPathMatchesSymbol,
   remainingMs,
   resolveStartupServer,
   resultBelongsToRequest,
@@ -381,7 +383,7 @@ function quotesReady(brandDir: string, symbol: string): boolean {
       if (st.size <= 0) continue;
       const upper = full.toUpperCase();
       const file = name.toUpperCase();
-      if (!upper.includes(`/${want}/`) && !upper.includes(`\\${want}\\`) && !file.startsWith(want)) {
+      if (!quotesPathMatchesSymbol(full, name, want)) {
         continue;
       }
       if (file.endsWith(".HCC") || file.endsWith(".HC") || file.endsWith(".TKC")) return true;
@@ -906,7 +908,7 @@ export async function executeDeskLiveOrder(
   }
 
   const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
-  writeStartupIni(firm, paths, parsed.symbol, startupServer);
+  writeStartupIni(firm, paths, alphaStartupChartSymbol(firm.id, parsed.symbol), startupServer);
   dropBridgeFiles(resultCandidates(paths));
   writeRequest(firm, paths, parsed, requestId);
 
