@@ -62,6 +62,11 @@ for broker in "$@"; do
   set +a
   export_wine_env
 
+  # Wine IPv6 connect often fails with STATUS_HOST_UNREACHABLE and yields
+  # zero Network journal lines (Neomaa symptom). Alpha already has this key.
+  wine reg add 'HKLM\System\CurrentControlSet\Services\Tcpip6\Parameters' \
+    /v DisabledComponents /t REG_DWORD /d 255 /f >/dev/null 2>&1 || true
+
   case "$(realpath "${WINEPREFIX}")" in
     *mt5-vantage*|*mt5-fpmarkets*|*mt5-exness*)
       die "refusing forbidden prefix $WINEPREFIX"
