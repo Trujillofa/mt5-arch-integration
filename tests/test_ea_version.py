@@ -14,7 +14,10 @@ from pathlib import Path
 
 import pytest
 
-EA = Path(__file__).resolve().parents[1] / "mql5" / "Mt5ArchBridge.mq5"
+ROOT = Path(__file__).resolve().parents[1]
+EA = ROOT / "mql5" / "Mt5ArchBridge.mq5"
+SNAPSHOTS = ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh"
+RO_EA = ROOT / "mql5" / "Mt5ArchBridgeReadOnly.mq5"
 
 
 @pytest.fixture(scope="module")
@@ -39,8 +42,29 @@ def test_oninit_print_uses_the_define_not_a_literal(source: str) -> None:
     assert not re.search(r'WRITER v\d+\.\d+', source), "hardcoded version in OnInit print"
 
 
-def test_heartbeat_writes_the_version_field(source: str) -> None:
-    assert '" version=" + BRIDGE_VERSION' in source
+def test_heartbeat_writes_the_version_field() -> None:
+    snapshots = SNAPSHOTS.read_text(encoding="utf-8")
+    assert '" version=" + BRIDGE_VERSION' in snapshots
+    assert '" readonly=" + (BRIDGE_READONLY ? "true" : "false")' in snapshots
+    assert "OrderSend(" not in snapshots
+    assert "#include <DeskOrderBridge" not in snapshots
+
+
+def test_readonly_ea_is_snapshot_only() -> None:
+    text = RO_EA.read_text(encoding="utf-8")
+    assert '#include <FileBridgeSnapshots.mqh>' in text
+    assert "#include <DeskOrderBridge" not in text
+    assert "OrderSend(" not in text
+    assert "OrderSend" not in text
+    assert "DeskOrderProcessIfRequested" not in text
+    assert "desk_live_order_request" not in text
+    assert "#define BRIDGE_READONLY true" in text
+    assert 'WRITER v" + BRIDGE_VERSION' in text
+    assert "readonly=true" in text
+    prop = re.search(r'#property\s+version\s+"([\d.]+)"', text)
+    define = re.search(r'#define\s+BRIDGE_VERSION\s+"([\d.]+)"', text)
+    assert prop is not None and define is not None
+    assert prop.group(1) == define.group(1)
 
 
 def test_min_deal_dump_version_is_not_ahead_of_the_ea(source: str) -> None:

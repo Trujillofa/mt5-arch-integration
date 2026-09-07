@@ -19,6 +19,7 @@ import {
   inFlightOrphanReason,
   isUs30Family,
   oneshotChartSymbol,
+  parseBridgeReadonly,
   parseBridgeVersion,
   parseLiveOrderRequest,
   parseRequestFields,
@@ -612,17 +613,28 @@ function readBridgeIdentity(accountJson: string): {
   }
 }
 
-function readHeartbeatVersion(paths: ReturnType<typeof pathsFor>): number[] | null {
+function readHeartbeatText(paths: ReturnType<typeof pathsFor>): string {
   const files = [
     join(paths.bridgeDir, "heartbeat.txt"),
     ...paths.extraBridgeDirs.map((dir) => join(dir, "heartbeat.txt")),
   ];
   for (const file of files) {
     if (!existsSync(file)) continue;
-    const version = parseBridgeVersion(readFileSync(file, "utf8"));
-    if (version) return version;
+    try {
+      return readFileSync(file, "utf8");
+    } catch {
+      continue;
+    }
   }
-  return null;
+  return "";
+}
+
+function readHeartbeatVersion(paths: ReturnType<typeof pathsFor>): number[] | null {
+  return parseBridgeVersion(readHeartbeatText(paths));
+}
+
+function readHeartbeatReadonly(paths: ReturnType<typeof pathsFor>): boolean {
+  return parseBridgeReadonly(readHeartbeatText(paths));
 }
 
 function parseResultJson(text: string): Partial<LiveOrderResult> {
@@ -885,6 +897,7 @@ export async function executeDeskLiveOrder(
     version: readHeartbeatVersion(paths),
     tradeAllowed: identity.tradeAllowed,
     algoAllowed: identity.algoAllowed,
+    readonly: readHeartbeatReadonly(paths),
   });
   if (eaBlocked) {
     return {

@@ -15,6 +15,7 @@ import {
   eaNotReadyReason,
   inFlightOrphanReason,
   oneshotChartSymbol,
+  parseBridgeReadonly,
   parseBridgeVersion,
   parseLiveOrderRequest,
   parseRequestFields,
@@ -693,12 +694,14 @@ export async function executeWsfLiveOrder(
     winePrefix: paths.prefix,
   });
   const hbFile = join(paths.bridgeDir, "heartbeat.txt");
-  const version = existsSync(hbFile) ? parseBridgeVersion(readFileSync(hbFile, "utf8")) : null;
+  const hbText = existsSync(hbFile) ? readFileSync(hbFile, "utf8") : "";
+  const version = parseBridgeVersion(hbText);
   const eaBlocked = eaNotReadyReason({
     heartbeatFresh: freshness.heartbeatFresh,
     version,
     tradeAllowed: identity.tradeAllowed,
     algoAllowed: identity.algoAllowed,
+    readonly: parseBridgeReadonly(hbText),
   });
   if (eaBlocked) {
     return {

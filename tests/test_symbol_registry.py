@@ -21,6 +21,8 @@ from mt5_arch.symbol_registry import (
 ROOT = Path(__file__).resolve().parents[1]
 INDICATOR = ROOT / "mql5" / "Indicators" / "ForexHtfPivotsFib.mq5"
 BRIDGE = ROOT / "mql5" / "Mt5ArchBridge.mq5"
+BRIDGE_RO = ROOT / "mql5" / "Mt5ArchBridgeReadOnly.mq5"
+SNAPSHOTS = ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh"
 EXPORTER = ROOT / "mql5" / "Scripts" / "ExportInstrumentHistory.mq5"
 CAP_SCRIPT = ROOT / "mql5" / "Scripts" / "ExportSymbolCapabilities.mq5"
 AUDIT_SCRIPT = ROOT / "mql5" / "Scripts" / "ExportSymbolSyncAudit.mq5"
@@ -52,16 +54,17 @@ def test_unknown_and_unmapped_refuse():
 
 
 def test_no_suffix_walk_in_mql5_consumers():
-    for path in (BRIDGE, EXPORTER, INDICATOR, CAP_SCRIPT, AUDIT_SCRIPT):
+    for path in (BRIDGE, BRIDGE_RO, SNAPSHOTS, EXPORTER, INDICATOR, CAP_SCRIPT, AUDIT_SCRIPT):
         text = path.read_text()
         assert "OrderSend(" not in text
         assert 'suffixes[] = {"m"' not in text
         assert 'suffixes[0] = "m"' not in text
         assert ".RAW" not in text
-    assert "FxResolveSymbol" in BRIDGE.read_text()
+    assert "FxResolveSymbol" in SNAPSHOTS.read_text()
     assert "FxResolveSymbol" in EXPORTER.read_text()
     assert "FxCanonicalFromBrokerSymbolAny" in INDICATOR.read_text()
     assert "InpBroker" in BRIDGE.read_text()
+    assert "InpBroker" in BRIDGE_RO.read_text()
     assert "InpBroker" in EXPORTER.read_text()
     assert "InpBroker" in CAP_SCRIPT.read_text()
     assert "InpBroker" in AUDIT_SCRIPT.read_text()

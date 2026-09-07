@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { parseBridgeReadonly } from "@/lib/live-order/guards";
 import {
   ALPHACAPITAL_EXPECTED_LOGIN,
   ALPHACAPITAL_EXPECTED_SERVER,
@@ -173,6 +174,23 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
   });
   const fileBridgePresent = freshness.fileBridgePresent;
   const notes: string[] = [];
+  let bridgeReadonly: boolean | null = null;
+  for (const dir of bridgeDirs) {
+    const hb = join(dir, "heartbeat.txt");
+    if (!isFile(hb)) continue;
+    try {
+      const text = readFileSync(hb, "utf8");
+      if (/(?:^|\s)readonly=(true|false)\b/i.test(text)) {
+        bridgeReadonly = parseBridgeReadonly(text);
+        break;
+      }
+    } catch {
+      continue;
+    }
+  }
+  if (bridgeReadonly === true) {
+    notes.push("Heartbeat reports readonly=true — Mt5ArchBridgeReadOnly; orders 409.");
+  }
 
   let snapshot: Snapshot | null = null;
   for (const dir of bridgeDirs) {
@@ -226,7 +244,11 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
     connectionStatus === "connected"
       ? `Live Alpha Capital MT5 ${ALPHACAPITAL_EXPECTED_LOGIN} @ ${
           snapshot?.server || ALPHACAPITAL_EXPECTED_SERVER
-        }. Read-only file-bridge snapshot. Live OrderSend is the Alpha Capital live copy control.`
+        }. ${
+          bridgeReadonly
+            ? "Mt5ArchBridgeReadOnly heartbeat (readonly=true). POST /api/alphacapital/order returns 409."
+            : "Read-only file-bridge snapshot. Live OrderSend is the Alpha Capital live copy control."
+        }`
       : connectionStatus === "disconnected"
         ? `Alpha Capital ${ALPHACAPITAL_EXPECTED_LOGIN} is not a live session — stale/missing heartbeat, terminal64 down, or trade server offline. Leftover account.json is not connected. Live OrderSend is the Alpha Capital live copy control.`
         : winePrefixPresent
@@ -240,6 +262,7 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
     ordersPlaced: false,
     winePrefixPresent,
     fileBridgePresent,
+    bridgeReadonly,
     connectionStatus,
     login: snapshot?.login || env.mt5Login,
     server: snapshot?.server || env.mt5Server,
@@ -279,5 +302,6 @@ export function alphacapitalAccountSnapshot(report: AlphaCapitalLiveReport) {
     nextSecretNeeded: report.nextSecretNeeded,
     winePrefixPresent: report.winePrefixPresent,
     fileBridgePresent: report.fileBridgePresent,
+    bridgeReadonly: report.bridgeReadonly,
   };
 }

@@ -53,6 +53,8 @@ DEFAULT_DEAL_DUMP_TIMEOUT_SECONDS = 30.0
 
 # heartbeat.txt trailer written by EA >= 1.24: "... symbol=EURUSD version=1.24".
 _HEARTBEAT_VERSION_RE = re.compile(r"(?:^|\s)version=(?P<version>\d+(?:\.\d+)*)")
+# Read-only EA (>= email-safe Alpha build): "... version=1.25 readonly=true".
+_HEARTBEAT_READONLY_RE = re.compile(r"(?:^|\s)readonly=(?P<flag>true|false)\b", re.IGNORECASE)
 
 # EA build that first served dump_deals.request. Below this the handshake can
 # never complete, so waiting the full timeout only delays a certain failure.
@@ -69,6 +71,15 @@ def parse_bridge_version(text: str) -> tuple[int, ...] | None:
     if not m:
         return None
     return tuple(int(p) for p in m.group("version").split("."))
+
+
+def parse_bridge_readonly(text: str) -> bool:
+    """True only when heartbeat.txt has an explicit readonly=true flag.
+
+    Missing field (deployed v1.25 trading books) means trading, not read-only.
+    """
+    m = _HEARTBEAT_READONLY_RE.search(text)
+    return bool(m and m.group("flag").lower() == "true")
 
 
 class FileBridgeError(Exception):
@@ -148,6 +159,16 @@ class FileBridgeClient:
             return parse_bridge_version(_read_bridge_text(hb, label="heartbeat.txt"))
         except FileBridgeError:
             return None
+
+    def bridge_readonly(self) -> bool:
+        """True when heartbeat.txt reports readonly=true. Never raises."""
+        hb = self.bridge_dir / "heartbeat.txt"
+        if not hb.exists():
+            return False
+        try:
+            return parse_bridge_readonly(_read_bridge_text(hb, label="heartbeat.txt"))
+        except FileBridgeError:
+            return False
 
     def _read_json(self, name: str) -> Any:
         path = self.bridge_dir / name

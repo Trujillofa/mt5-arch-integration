@@ -66,6 +66,7 @@ def test_disconnected_bridge_fails_closed_before_wine() -> None:
     assert "disconnectedOrderReason(firm.id, identity.server)" in runner
     assert "refusing OrderSend" in runner
     assert "identity.terminalConnected === false" in wsf
+    assert "parseBridgeReadonly" in wsf
     assert 'NEOMAA_EXPECTED_SERVER = "Neomaaa-global"' in neomaa
     assert 'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"' in neomaa
 
@@ -134,6 +135,9 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     assert "DESK_LIMIT_OFFSET_POINTS 50" in include
     assert "not falling back to wine one-shot" in runner
     assert "eaNotReadyReason" in runner
+    assert "readHeartbeatReadonly" in runner
+    assert "parseBridgeReadonly" in runner
+    assert "read-only bridge" in GUARDS.read_text(encoding="utf-8")
     assert "DEFAULT_DESK_LOTS = 1.4" in firms
     assert "FUNDEDNEXT_DEFAULT_LOTS = 0.35" in firms
     assert "FUNDINGPIPS_DEFAULT_LOTS = 0.8" in firms

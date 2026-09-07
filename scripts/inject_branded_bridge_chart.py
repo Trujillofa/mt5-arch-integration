@@ -86,6 +86,11 @@ def assert_branded_term_dir(broker: str, term_dir: Path) -> Path:
     return resolved
 
 
+def expert_stem(broker: str) -> str:
+    """Alpha attaches the email-safe read-only EA. Other restore books stay on v1.25 trading."""
+    return "Mt5ArchBridgeReadOnly" if broker == "alphacapital" else "Mt5ArchBridge"
+
+
 def chart_bytes(broker: str, *, with_expert: bool = True, symbol: str | None = None) -> bytes:
     symbol = symbol or SYMBOL[broker]
     # ACG build 6180 times out EA/script init (~5 min) if the chart symbol
@@ -98,10 +103,11 @@ def chart_bytes(broker: str, *, with_expert: bool = True, symbol: str | None = N
     )
     expert = ""
     if with_expert:
+        stem = expert_stem(broker)
         expert = f"""
 <expert>
-name=Mt5ArchBridge
-path=Experts\\Mt5ArchBridge.ex5
+name={stem}
+path=Experts\\{stem}.ex5
 expertmode=5
 <inputs>
 InpTimerSec=5
@@ -235,9 +241,10 @@ def inject_charts(
     with_expert: bool = True,
 ) -> list[Path]:
     resolved = assert_branded_term_dir(broker, term_dir)
-    ex5 = resolved / "MQL5" / "Experts" / "Mt5ArchBridge.ex5"
+    stem = expert_stem(broker)
+    ex5 = resolved / "MQL5" / "Experts" / f"{stem}.ex5"
     if with_expert and require_ex5 and not ex5.is_file():
-        raise InjectError(f"Mt5ArchBridge.ex5 missing under {resolved}")
+        raise InjectError(f"{stem}.ex5 missing under {resolved}")
     symbol = SYMBOL[broker]
     if broker == "alphacapital" and with_expert:
         ready = alpha_ready_symbol(resolved)

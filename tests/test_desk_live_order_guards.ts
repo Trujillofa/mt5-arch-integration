@@ -5,6 +5,7 @@ import {
   classifyOrphanRequest,
   eaNotReadyReason,
   isAlreadyFlatReason,
+  parseBridgeReadonly,
   parseBridgeVersion,
   resolveLimitPrice,
   versionAtLeast,
@@ -553,6 +554,9 @@ assert.equal(isAlreadyFlatReason("position vanished before close"), true);
 assert.equal(isAlreadyFlatReason("OrderSend pending rejected"), false);
 
 assert.deepEqual(parseBridgeVersion("1 connected=1 symbol=EURUSD version=1.25"), [1, 25]);
+assert.equal(parseBridgeReadonly("1 connected=1 symbol=EURUSD.pro version=1.25 readonly=true"), true);
+assert.equal(parseBridgeReadonly("1 connected=1 symbol=EURUSD version=1.25 readonly=false"), false);
+assert.equal(parseBridgeReadonly("1 connected=1 symbol=EURUSD version=1.25"), false);
 assert.equal(versionAtLeast([1, 25], [1, 25]), true);
 assert.equal(versionAtLeast([1, 24], [1, 25]), false);
 assert.match(
@@ -572,6 +576,26 @@ assert.match(
     algoAllowed: true,
   }) ?? "",
   /not falling back to wine one-shot/
+);
+assert.match(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 25],
+    tradeAllowed: true,
+    algoAllowed: true,
+    readonly: true,
+  }) ?? "",
+  /read-only bridge/
+);
+assert.equal(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 25],
+    tradeAllowed: true,
+    algoAllowed: true,
+    readonly: false,
+  }),
+  null
 );
 
 console.log("test_desk_live_order_guards.ts ok");
