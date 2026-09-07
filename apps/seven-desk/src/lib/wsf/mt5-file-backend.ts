@@ -193,7 +193,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
           book,
           positions,
           deals,
-          note: `Read Mt5ArchBridge snapshot (${positions.length} position(s), ${deals.length} deal(s)). Path not printed.`,
+          note: `Read Mt5ArchBridge snapshot (${positions.length} position(s), ${deals.length} deal(s)). Pending orders are not exported (positions.json is PositionsTotal only). Path not printed.`,
           freshness,
         };
       }

@@ -15,6 +15,7 @@ WSF_MQL = DESK / "mql5" / "WsfDeskLiveOrder.mq5"
 TYPES = DESK / "src" / "lib" / "alphacapital" / "types.ts"
 NEOMAA_TYPES = DESK / "src" / "lib" / "neomaa" / "types.ts"
 WSF_LIVE = DESK / "src" / "lib" / "wsf" / "live-order.ts"
+WSF_FILE = DESK / "src" / "lib" / "wsf" / "mt5-file-backend.ts"
 CONTEXT = DESK / "src" / "lib" / "desk-context.tsx"
 GUARDS_UNIT = ROOT / "tests" / "test_desk_live_order_guards.ts"
 
@@ -134,6 +135,13 @@ def test_us30_pending_contract_is_opt_in() -> None:
     assert "volume_confirm" in guards
     assert "LIVE_ORDER_VOLUME_HARD_MAX = 10" in guards
     assert "US30_SELECT_VARIANTS" in guards
+    assert "DJ30.c" in guards
+    assert "us30SelectVariantsForFirm" in guards
+    assert "WSF_US30_PREFERRED" in guards
+    assert '"DJ30.c"' in mql
+    assert '"DJ30.c"' in wsf
+    assert wsf.index('"DJ30.c"') < wsf.index('"US30.cash"')
+    assert "positions.json is PositionsTotal only" in WSF_FILE.read_text(encoding="utf-8")
     assert "oneshotChartSymbol" in runner
     assert "isUs30Family(parsed.symbol)" in runner
     assert "TRADE_ACTION_PENDING" in mql
