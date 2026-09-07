@@ -23,7 +23,7 @@ Each book ships with a seeded paper account, a typical platform, and an honest s
 | --- | --- | --- |
 | WSF (Wall Street Funded) | MT5, cTrader, Match-Trader | **`WSFmarkets-Server`** |
 | FundedNext | MT4, MT5, cTrader, Match-Trader | **`FundedNext-Server 2`** (login `13981906`) |
-| Neomaa (NEOMAAA Funded) | MT5, TradeLocker | **`Neomaaa-Live`** (login `7745107`) |
+| Neomaa (NEOMAAA Funded) | MT5, TradeLocker | **`Neomaaa-global`** (login `7745107`) |
 | Fortraders | **MT5** (this challenge; not TradeLocker), cTrader | **`FTTrading-Server`** (login `737150`) |
 | FundingPips | MT5, cTrader, Match-Trader | **`FundingPips2-SIM`** (login `11669306`) |
 | FTMO | MT4, MT5, cTrader, DXtrade | **`FTMO-Server4`** (login `541163357`) |
@@ -128,7 +128,7 @@ Select the Neomaa card and click **Fetch Neomaa**, or:
 - `GET /api/neomaa/probe` — fail-closed file-bridge snapshot
 - `GET /api/neomaa/account` — sanitized account snapshot only
 
-Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-Live`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if `terminal_connected=false` (weekend FX / Neomaaa-Live down — not auth) or if EURUSD has no history/ticks yet.
+Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-global`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 0.01 EURUSD). The paper card stays until that switch is armed. One-shots return 409 if `terminal_connected=false` (weekend FX / Neomaaa-global down — not auth) or if EURUSD has no history/ticks yet.
 
 ## Fortraders live fetch (read-only)
 

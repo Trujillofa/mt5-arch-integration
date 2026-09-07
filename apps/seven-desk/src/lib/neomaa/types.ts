@@ -1,6 +1,6 @@
 /** Client-safe identity. Do not import `@/lib/neomaa/env` from the browser. */
 export const NEOMAA_EXPECTED_LOGIN = "7745107";
-export const NEOMAA_EXPECTED_SERVER = "Neomaaa-Live";
+export const NEOMAA_EXPECTED_SERVER = "Neomaaa-global";
 export const NEOMAA_SERVER_NEEDLE = "Neomaaa";
 export const NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107";
 export const NEOMAA_LIVE_PENDING = "neomaa-live-pending";

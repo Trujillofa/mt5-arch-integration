@@ -24,9 +24,9 @@ export const FIRMS: FirmProfile[] = [
     name: "Neomaa",
     legalName: "NEOMAAA Funded",
     platforms: ["MT5", "TradeLocker"],
-    typicalServer: "Neomaaa-Live",
+    typicalServer: "Neomaaa-global",
     notes:
-      "Operator book is MT5 7745107 @ Neomaaa-Live. Fetch is read-only. Arm Neomaa live copy to send the Neomaa slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
+      "Operator book is MT5 7745107 @ Neomaaa-global. Fetch is read-only. Arm Neomaa live copy to send the Neomaa slave of each master fill as a min-lot OrderSend. Not Vantage/FP/MCP.",
   },
   {
     id: "fortraders",

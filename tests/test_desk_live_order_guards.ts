@@ -128,9 +128,9 @@ assert.match(inFlightOrphanReason("alphacapital-mtqehcjkdtlj"), /refusing a seco
 assert.equal(deadlineExceeded(Date.now() - 1), true);
 assert.ok(remainingMs(Date.now() + 5_000) > 0);
 
-const reason = disconnectedOrderReason("neomaa", "Neomaaa-Live");
+const reason = disconnectedOrderReason("neomaa", "Neomaaa-global");
 assert.match(reason, /terminal_connected=false/);
-assert.match(reason, /Neomaaa-Live/);
+assert.match(reason, /Neomaaa-global/);
 assert.match(reason, /not an auth failure/);
 
 const timeout = httpTimeoutResult({

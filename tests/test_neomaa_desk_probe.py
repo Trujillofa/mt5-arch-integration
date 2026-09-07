@@ -15,7 +15,7 @@ def test_neomaa_identity_and_magic_unchanged() -> None:
     types = TYPES.read_text(encoding="utf-8")
     runner = RUNNER.read_text(encoding="utf-8")
     assert 'NEOMAA_EXPECTED_LOGIN = "7745107"' in types
-    assert 'NEOMAA_EXPECTED_SERVER = "Neomaaa-Live"' in types
+    assert 'NEOMAA_EXPECTED_SERVER = "Neomaaa-global"' in types
     assert 'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"' in types
     assert "magic: 20263852" in runner
 

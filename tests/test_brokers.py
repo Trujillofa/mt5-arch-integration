@@ -95,7 +95,7 @@ def test_load_and_list_shipped_broker_profiles() -> None:
 
     neo = load_broker_profile("neomaa")
     assert neo.login == "7745107"
-    assert neo.server == "Neomaaa-Live"
+    assert neo.server == "Neomaaa-global"
     assert "mt5-neomaa" in neo.wineprefix
 
     ftt = load_broker_profile("fortraders")
