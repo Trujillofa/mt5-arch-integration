@@ -89,7 +89,7 @@ export interface WsfLiveReport {
   currency: string | null;
 }
 
-export type WsfLiveOrderAction = "scratch" | "open" | "close";
+export type WsfLiveOrderAction = "scratch" | "open" | "close" | "cancel";
 
 export interface WsfLiveOrderResult {
   ok: boolean;
@@ -104,7 +104,12 @@ export interface WsfLiveOrderResult {
   symbol?: string;
   volume?: number;
   side?: string;
+  orderType?: string;
+  price?: number;
+  sl?: number;
+  tp?: number;
   order?: number;
+  ticket?: number;
   position?: number;
   dealOpen?: number;
   dealClose?: number;

@@ -4,14 +4,17 @@ import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import {
   LIVE_ORDER_HTTP_BUDGET_MS,
+  MIN_LIVE_LOT,
   WINE_ONESHOT_BUDGET_MS,
-  alphaStartupChartSymbol,
   asJsonBool,
   classifyOrphanRequest,
   deadlineExceeded,
   disconnectedOrderReason,
   httpTimeoutResult,
   inFlightOrphanReason,
+  isUs30Family,
+  oneshotChartSymbol,
+  parseLiveOrderRequest,
   parseRequestFields,
   quotesPathMatchesSymbol,
   remainingMs,
@@ -63,21 +66,16 @@ import {
   FTMO_SERVER_NEEDLE,
 } from "@/lib/ftmo/env";
 import { FTMO_EXPECTED_SERVER, FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
-import type { LiveBroker, LiveOrderAction, LiveOrderInput, LiveOrderResult } from "@/lib/live-order/types";
+import type {
+  LiveBroker,
+  LiveOrderAction,
+  LiveOrderInput,
+  LiveOrderResult,
+  LiveOrderType,
+} from "@/lib/live-order/types";
 
 const SCRIPT_NAME = "DeskLiveOrder";
 const FORBIDDEN = [".mt5-vantage", ".mt5-fpmarkets", ".mt5-exness"] as const;
-const FX_LIVE_SYMBOLS = new Set(["EURUSD", "EURUSDc"]);
-/** ACG weekend/crypto path only. Other desk firms stay FX. */
-const ALPHA_BTC_SYMBOLS = new Set(["BTCUSD", "BTCUSDc", "BTCUSD.r"]);
-const MIN_LOT = 0.01;
-
-function allowedSymbols(firm: FirmSpec): Set<string> {
-  if (firm.id === "alphacapital") {
-    return new Set([...FX_LIVE_SYMBOLS, ...ALPHA_BTC_SYMBOLS]);
-  }
-  return FX_LIVE_SYMBOLS;
-}
 
 export type DeskLiveFirm = Exclude<LiveBroker, "wsf">;
 
@@ -172,10 +170,15 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
 interface GuardOk {
   ok: true;
   action: LiveOrderAction;
+  orderType: LiveOrderType;
   symbol: string;
   side: "BUY" | "SELL";
   useVolumeMin: boolean;
   volume: number | null;
+  price: number | null;
+  sl: number | null;
+  tp: number | null;
+  ticket: number | null;
   confirm: string;
 }
 
@@ -232,57 +235,17 @@ function fail(
   };
 }
 
-function asString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function validateBody(firm: FirmSpec, body: LiveOrderInput): GuardOk | GuardFail {
-  if (body.live !== true) {
-    return fail(firm, 400, "confirm", "live must be true — paper is the default");
+  const parsed = parseLiveOrderRequest({
+    body,
+    expectedConfirm: firm.confirm,
+    defaultSymbol: firm.defaultSymbol,
+    firmId: firm.id,
+  });
+  if (!parsed.ok) {
+    return fail(firm, parsed.status, parsed.stage, parsed.reason);
   }
-  const confirm = asString(body.confirm);
-  if (confirm !== firm.confirm) {
-    return fail(firm, 403, "confirm", `confirm must be exactly ${firm.confirm}`);
-  }
-  const actionRaw = asString(body.action).toLowerCase() || "scratch";
-  if (actionRaw !== "scratch" && actionRaw !== "open" && actionRaw !== "close") {
-    return fail(firm, 400, "action", "action must be scratch, open, or close");
-  }
-  const symbol = asString(body.symbol) || firm.defaultSymbol;
-  if (!allowedSymbols(firm).has(symbol)) {
-    const hint =
-      firm.id === "alphacapital"
-        ? "EURUSD/EURUSDc or BTCUSD/BTCUSDc/BTCUSD.r"
-        : "EURUSD/EURUSDc only";
-    return fail(firm, 400, "symbol", `symbol not allowed — ${hint}`);
-  }
-  const sideRaw = asString(body.side).toLowerCase() || "buy";
-  if (sideRaw !== "buy" && sideRaw !== "sell") {
-    return fail(firm, 400, "side", "side must be buy or sell");
-  }
-  const volumeMinFlag = body.volume_min === true || body.volume === undefined || body.volume === null;
-  let volume: number | null = null;
-  if (body.volume !== undefined && body.volume !== null && body.volume !== "") {
-    volume = typeof body.volume === "number" ? body.volume : Number(body.volume);
-    if (!Number.isFinite(volume)) {
-      return fail(firm, 400, "volume", "volume must be a number");
-    }
-    if (!volumeMinFlag && Math.abs(volume - MIN_LOT) > 1e-8) {
-      return fail(firm, 400, "volume", "volume must be the symbol minimum (0.01) or pass volume_min=true");
-    }
-    if (volume > MIN_LOT + 1e-8) {
-      return fail(firm, 400, "volume", "volume exceeds symbol minimum — refusing larger size");
-    }
-  }
-  return {
-    ok: true,
-    action: actionRaw,
-    symbol,
-    side: sideRaw === "sell" ? "SELL" : "BUY",
-    useVolumeMin: volumeMinFlag || volume == null,
-    volume,
-    confirm,
-  };
+  return { ok: true, ...parsed.fields };
 }
 
 function assertAllowedPrefix(prefix: string, expected: string): string | null {
@@ -540,8 +503,13 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `expect_confirm=${firm.confirm}`,
     `expect_login=${firm.login}`,
     `expect_needle=${firm.needle}`,
-    `volume=${parsed.volume ?? MIN_LOT}`,
+    `volume=${parsed.volume ?? MIN_LIVE_LOT}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
+    `order_type=${parsed.orderType}`,
+    `price=${parsed.price ?? 0}`,
+    `sl=${parsed.sl ?? 0}`,
+    `tp=${parsed.tp ?? 0}`,
+    `ticket=${parsed.ticket ?? 0}`,
     `magic=${firm.magic}`,
     `issued_at=${Math.floor(Date.now() / 1000)}`,
     "",
@@ -627,7 +595,12 @@ function parseResultJson(text: string): Partial<LiveOrderResult> {
       symbol: raw.symbol != null ? String(raw.symbol) : undefined,
       volume: typeof raw.volume === "number" ? raw.volume : undefined,
       side: raw.side != null ? String(raw.side) : undefined,
+      orderType: raw.order_type != null ? String(raw.order_type) : undefined,
+      price: typeof raw.price === "number" ? raw.price : undefined,
+      sl: typeof raw.sl === "number" ? raw.sl : undefined,
+      tp: typeof raw.tp === "number" ? raw.tp : undefined,
       order: typeof raw.order === "number" ? raw.order : undefined,
+      ticket: typeof raw.ticket === "number" ? raw.ticket : typeof raw.order === "number" ? raw.order : undefined,
       position: typeof raw.position === "number" ? raw.position : undefined,
       dealOpen: typeof raw.deal_open === "number" ? raw.deal_open : undefined,
       dealClose: typeof raw.deal_close === "number" ? raw.deal_close : undefined,
@@ -891,10 +864,11 @@ export async function executeDeskLiveOrder(
   }
 
   const needsQuotes =
-    firm.id === "fundingpips" ||
-    firm.id === "neomaa" ||
-    firm.id === "fortraders" ||
-    (firm.id === "alphacapital" && !parsed.symbol.toUpperCase().startsWith("BTC"));
+    !isUs30Family(parsed.symbol) &&
+    (firm.id === "fundingpips" ||
+      firm.id === "neomaa" ||
+      firm.id === "fortraders" ||
+      (firm.id === "alphacapital" && !parsed.symbol.toUpperCase().startsWith("BTC")));
   if (needsQuotes && !quotesReady(paths.brandDir, parsed.symbol)) {
     return {
       status: 409,
@@ -908,7 +882,7 @@ export async function executeDeskLiveOrder(
   }
 
   const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
-  writeStartupIni(firm, paths, alphaStartupChartSymbol(firm.id, parsed.symbol), startupServer);
+  writeStartupIni(firm, paths, oneshotChartSymbol(firm.id, parsed.symbol), startupServer);
   dropBridgeFiles(resultCandidates(paths));
   writeRequest(firm, paths, parsed, requestId);
 
@@ -958,7 +932,12 @@ export async function executeDeskLiveOrder(
     symbol: parsedResult.symbol ?? parsed.symbol,
     volume: parsedResult.volume,
     side: parsedResult.side ?? parsed.side,
+    orderType: parsedResult.orderType ?? parsed.orderType,
+    price: parsedResult.price ?? parsed.price ?? undefined,
+    sl: parsedResult.sl ?? parsed.sl ?? undefined,
+    tp: parsedResult.tp ?? parsed.tp ?? undefined,
     order: parsedResult.order,
+    ticket: parsedResult.ticket ?? parsedResult.order,
     position: parsedResult.position,
     dealOpen: parsedResult.dealOpen,
     dealClose: parsedResult.dealClose,
@@ -1013,10 +992,17 @@ export function handleLiveOrderPost(firmId: DeskLiveFirm, endpoint: string, forc
             live: payload.live,
             confirm: payload.confirm,
             action: forceAction ?? payload.action,
+            order_type: payload.order_type,
             symbol: payload.symbol,
             side: payload.side,
             volume: payload.volume,
             volume_min: payload.volume_min,
+            volume_confirm: payload.volume_confirm,
+            price: payload.price,
+            sl: payload.sl,
+            tp: payload.tp,
+            ticket: payload.ticket,
+            order: payload.order,
           },
           endpoint,
           { requestId, deadlineMs }

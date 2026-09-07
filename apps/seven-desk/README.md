@@ -158,7 +158,39 @@ POST /api/wsf/order/close
 
 Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as `action: "open"` at 0.01 lot. Other slaves stay paper unless their own live-copy switch is armed. A stale file-bridge heartbeat does not block the one-shot (same as FTMO/FN). After the send, the path restores the branded WSF terminal in the background and reattaches `Mt5ArchBridge` on the Default chart when the heartbeat is stale. **CLOSE positions** on the blotter bar flattens every open desk row: live groups first (fail-closed), then paper. An already-flat close (`no open … desk position` / `position vanished`) drops the desk row. Live close result JSON retries `HistorySelectByPosition` so `deal_close` is not left at 0 when the journal already has the out deal.
 
-The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, Alpha Capital, FundingPips, Neomaa, and Fortraders live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` / `~/.mt5-alphacapital` / `~/.mt5-fundingpips` / `~/.mt5-neomaa` / `~/.mt5-fortraders` only. Volume must be the symbol minimum. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP Markets are never used.
+The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, Alpha Capital, FundingPips, Neomaa, and Fortraders live orders use `DeskLiveOrder.mq5` on `~/.mt5-ftmo` / `~/.mt5-fundednext` / `~/.mt5-alphacapital` / `~/.mt5-fundingpips` / `~/.mt5-neomaa` / `~/.mt5-fortraders` only. Market scratch/open/close still defaults to the symbol minimum. On the five working books (wsf, ftmo, fundednext, fundingpips, fortraders — not Alpha / Neomaa) a pending US30 limit may pass an explicit volume when `volume_confirm: true`. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP Markets are never used.
+
+### US30 pending limit (opt-in)
+
+Paper remains the default. The host places after deploy — this path does not arm itself.
+
+```http
+POST /api/ftmo/order
+{
+  "live": true,
+  "confirm": "FTMO-541163357",
+  "action": "open",
+  "order_type": "buy_limit",
+  "symbol": "US30",
+  "side": "buy",
+  "price": 53100,
+  "tp": 53500,
+  "sl": 52500,
+  "volume": 4.0,
+  "volume_confirm": true
+}
+```
+
+Same body on `/api/wsf/order` (`confirm: "WSF-149736"`), `/api/fundednext/order` (`FN-13981906`), `/api/fundingpips/order` (`FUNDINGPIPS-11669306`), `/api/fortraders/order` (`FORTRADERS-737150`). Broker symbol names differ (`US30`, `US30.cash`, `DJ30`, `US30m`, …); the one-shot `SymbolSelect`s those variants. If the catalog has no US30 family the route returns JSON `stage=symbol` and does not hang. Startup chart stays EURUSD/EURUSDc because host Market Watch may be FX-only.
+
+Cancel the pending order (ticket from the place result, or omit ticket to match magic + symbol):
+
+```http
+POST /api/{firm}/order
+{ "live": true, "confirm": "<token>", "action": "cancel", "ticket": 123456789 }
+```
+
+`POST /api/{firm}/order/close` still closes a filled position. If no position exists it will `TRADE_ACTION_REMOVE` a matching pending ticket. Existing min-lot EURUSD `{ live: true, confirm, action: "open", volume_min: true }` is unchanged. Volume above 0.01 without `volume_confirm` is refused (hard max 10). Copy-engine live switches stay EURUSD min-lot and do not set `volume_confirm`.
 
 Optional overrides (not committed; never put secrets in git):
 

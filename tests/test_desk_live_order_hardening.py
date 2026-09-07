@@ -40,7 +40,7 @@ def test_alpha_fx_rewrites_eurusd_pro() -> None:
     guards = GUARDS.read_text(encoding="utf-8")
     mql = MQL.read_text(encoding="utf-8")
     assert "quotesPathMatchesSymbol" in runner
-    assert "alphaStartupChartSymbol(firm.id, parsed.symbol)" in runner
+    assert "oneshotChartSymbol(firm.id, parsed.symbol)" in runner
     assert 'return "EURUSD.pro"' in guards
     assert 'SymbolSelect("EURUSD.pro"' in mql
     assert 'symbol = "EURUSD.pro"' in mql
@@ -119,9 +119,29 @@ def test_client_fetch_has_abort_deadline() -> None:
 
 
 def test_live_is_not_the_default() -> None:
+    guards = GUARDS.read_text(encoding="utf-8")
     runner = RUNNER.read_text(encoding="utf-8")
-    assert "live must be true — paper is the default" in runner
-    assert "body.live !== true" in runner
+    assert "live must be true — paper is the default" in guards
+    assert "body.live !== true" in guards
+    assert "parseLiveOrderRequest" in runner
+
+
+def test_us30_pending_contract_is_opt_in() -> None:
+    guards = GUARDS.read_text(encoding="utf-8")
+    runner = RUNNER.read_text(encoding="utf-8")
+    mql = MQL.read_text(encoding="utf-8")
+    wsf = WSF_MQL.read_text(encoding="utf-8")
+    assert "volume_confirm" in guards
+    assert "LIVE_ORDER_VOLUME_HARD_MAX = 10" in guards
+    assert "US30_SELECT_VARIANTS" in guards
+    assert "oneshotChartSymbol" in runner
+    assert "isUs30Family(parsed.symbol)" in runner
+    assert "TRADE_ACTION_PENDING" in mql
+    assert "ORDER_TYPE_BUY_LIMIT" in mql
+    assert "TRADE_ACTION_REMOVE" in mql
+    assert "TRADE_ACTION_PENDING" in wsf
+    assert "ORDER_TYPE_BUY_LIMIT" in wsf
+    assert "use_volume_min" in runner
 
 
 def test_guards_node_unit() -> None:

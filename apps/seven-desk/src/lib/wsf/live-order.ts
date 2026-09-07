@@ -4,11 +4,14 @@ import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import {
   LIVE_ORDER_HTTP_BUDGET_MS,
+  MIN_LIVE_LOT,
   WINE_ONESHOT_BUDGET_MS,
   asJsonBool,
   classifyOrphanRequest,
   disconnectedOrderReason,
   inFlightOrphanReason,
+  oneshotChartSymbol,
+  parseLiveOrderRequest,
   parseRequestFields,
   remainingMs,
   resultBelongsToRequest,
@@ -23,31 +26,42 @@ import {
   resolveWsfOnlyPrefix,
   wsfBrandTerminalDir,
 } from "@/lib/wsf/env";
+import type { LiveOrderType } from "@/lib/live-order/types";
 import type { WsfLiveOrderAction, WsfLiveOrderResult } from "@/lib/wsf/types";
 
 export const WSF_LIVE_MAGIC = 20263847;
-const ALLOWED_SYMBOLS = new Set(["EURUSDc", "EURUSD"]);
 const FORBIDDEN_PREFIX_MARKERS = [".mt5-vantage", ".mt5-fpmarkets", ".mt5-exness"];
-const CONSERVATIVE_FX_MIN = 0.01;
 const SCRIPT_NAME = "WsfDeskLiveOrder";
 
 export interface WsfLiveOrderInput {
   live: unknown;
   confirm: unknown;
   action?: unknown;
+  order_type?: unknown;
   symbol?: unknown;
   side?: unknown;
   volume?: unknown;
   volume_min?: unknown;
+  volume_confirm?: unknown;
+  price?: unknown;
+  sl?: unknown;
+  tp?: unknown;
+  ticket?: unknown;
+  order?: unknown;
 }
 
 export interface GuardOk {
   ok: true;
   action: WsfLiveOrderAction;
+  orderType: LiveOrderType;
   symbol: string;
   side: "BUY" | "SELL";
   useVolumeMin: boolean;
   volume: number | null;
+  price: number | null;
+  sl: number | null;
+  tp: number | null;
+  ticket: number | null;
   confirm: string;
 }
 
@@ -91,57 +105,17 @@ function fail(
   };
 }
 
-function asString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 export function validateLiveOrderBody(body: WsfLiveOrderInput): GuardOk | GuardFail {
-  if (body.live !== true) {
-    return fail(400, "confirm", "live must be true — paper is the default");
+  const parsed = parseLiveOrderRequest({
+    body,
+    expectedConfirm: WSF_LIVE_CONFIRM,
+    defaultSymbol: "EURUSDc",
+    firmId: "wsf",
+  });
+  if (!parsed.ok) {
+    return fail(parsed.status, parsed.stage, parsed.reason);
   }
-  const confirm = asString(body.confirm);
-  if (confirm !== WSF_LIVE_CONFIRM) {
-    return fail(403, "confirm", `confirm must be exactly ${WSF_LIVE_CONFIRM}`);
-  }
-  const actionRaw = asString(body.action).toLowerCase() || "scratch";
-  if (actionRaw !== "scratch" && actionRaw !== "open" && actionRaw !== "close") {
-    return fail(400, "action", "action must be scratch, open, or close");
-  }
-  const symbol = asString(body.symbol) || "EURUSDc";
-  if (!ALLOWED_SYMBOLS.has(symbol)) {
-    return fail(400, "symbol", "symbol not allowed — EURUSDc/EURUSD only on the WSF live path");
-  }
-  const sideRaw = asString(body.side).toLowerCase() || "buy";
-  if (sideRaw !== "buy" && sideRaw !== "sell") {
-    return fail(400, "side", "side must be buy or sell");
-  }
-  const volumeMinFlag = body.volume_min === true || body.volume === undefined || body.volume === null;
-  let volume: number | null = null;
-  if (body.volume !== undefined && body.volume !== null && body.volume !== "") {
-    volume = typeof body.volume === "number" ? body.volume : Number(body.volume);
-    if (!Number.isFinite(volume)) {
-      return fail(400, "volume", "volume must be a number");
-    }
-    if (!volumeMinFlag && Math.abs(volume - CONSERVATIVE_FX_MIN) > 1e-8) {
-      return fail(
-        400,
-        "volume",
-        "volume must be the symbol minimum (0.01) or pass volume_min=true"
-      );
-    }
-    if (volume > CONSERVATIVE_FX_MIN + 1e-8) {
-      return fail(400, "volume", "volume exceeds symbol minimum — refusing larger size");
-    }
-  }
-  return {
-    ok: true,
-    action: actionRaw,
-    symbol,
-    side: sideRaw === "sell" ? "SELL" : "BUY",
-    useVolumeMin: volumeMinFlag || volume == null,
-    volume,
-    confirm,
-  };
+  return { ok: true, ...parsed.fields };
 }
 
 function real(path: string): string {
@@ -366,8 +340,13 @@ function writeRequest(paths: ReturnType<typeof wsfPaths>, parsed: GuardOk, reque
     `symbol=${parsed.symbol}`,
     `side=${parsed.side}`,
     `confirm=${parsed.confirm}`,
-    `volume=${parsed.volume ?? CONSERVATIVE_FX_MIN}`,
+    `volume=${parsed.volume ?? MIN_LIVE_LOT}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
+    `order_type=${parsed.orderType}`,
+    `price=${parsed.price ?? 0}`,
+    `sl=${parsed.sl ?? 0}`,
+    `tp=${parsed.tp ?? 0}`,
+    `ticket=${parsed.ticket ?? 0}`,
     `magic=${WSF_LIVE_MAGIC}`,
     `issued_at=${Math.floor(Date.now() / 1000)}`,
     "",
@@ -481,7 +460,12 @@ function parseResultJson(text: string): Partial<WsfLiveOrderResult> {
       symbol: raw.symbol != null ? String(raw.symbol) : undefined,
       volume: typeof raw.volume === "number" ? raw.volume : undefined,
       side: raw.side != null ? String(raw.side) : undefined,
+      orderType: raw.order_type != null ? String(raw.order_type) : undefined,
+      price: typeof raw.price === "number" ? raw.price : undefined,
+      sl: typeof raw.sl === "number" ? raw.sl : undefined,
+      tp: typeof raw.tp === "number" ? raw.tp : undefined,
       order: typeof raw.order === "number" ? raw.order : undefined,
+      ticket: typeof raw.ticket === "number" ? raw.ticket : typeof raw.order === "number" ? raw.order : undefined,
       position: typeof raw.position === "number" ? raw.position : undefined,
       dealOpen: typeof raw.deal_open === "number" ? raw.deal_open : undefined,
       dealClose: typeof raw.deal_close === "number" ? raw.deal_close : undefined,
@@ -697,7 +681,7 @@ export async function executeWsfLiveOrder(
     };
   }
 
-  const iniError = writeStartupIni(paths, parsed.symbol);
+  const iniError = writeStartupIni(paths, oneshotChartSymbol("wsf", parsed.symbol));
   if (iniError) {
     return { status: 500, result: fail(500, "ini", iniError, { requestId, endpoint }).result };
   }
@@ -773,7 +757,12 @@ export async function executeWsfLiveOrder(
     symbol: parsedResult.symbol ?? parsed.symbol,
     volume: parsedResult.volume,
     side: parsedResult.side ?? parsed.side,
+    orderType: parsedResult.orderType ?? parsed.orderType,
+    price: parsedResult.price ?? parsed.price ?? undefined,
+    sl: parsedResult.sl ?? parsed.sl ?? undefined,
+    tp: parsedResult.tp ?? parsed.tp ?? undefined,
     order: parsedResult.order,
+    ticket: parsedResult.ticket ?? parsedResult.order,
     position: parsedResult.position,
     dealOpen: parsedResult.dealOpen,
     dealClose: parsedResult.dealClose,
@@ -835,10 +824,17 @@ export function handleWsfLiveOrderPost(endpoint: string, forceAction?: WsfLiveOr
           live: payload.live,
           confirm: payload.confirm,
           action: forceAction ?? payload.action,
+          order_type: payload.order_type,
           symbol: payload.symbol,
           side: payload.side,
           volume: payload.volume,
           volume_min: payload.volume_min,
+          volume_confirm: payload.volume_confirm,
+          price: payload.price,
+          sl: payload.sl,
+          tp: payload.tp,
+          ticket: payload.ticket,
+          order: payload.order,
         },
         endpoint,
         { requestId, deadlineMs }
