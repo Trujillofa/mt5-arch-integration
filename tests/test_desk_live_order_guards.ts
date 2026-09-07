@@ -301,6 +301,15 @@ const tpWrong = parseLiveOrderRequest({
 assert.equal(tpWrong.ok, false);
 if (!tpWrong.ok) assert.match(tpWrong.reason, /tp > price/);
 
+const scratchBig = parseLiveOrderRequest({
+  body: { ...base, action: "scratch", volume: 4, volume_confirm: true },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(scratchBig.ok, false);
+if (!scratchBig.ok) assert.match(scratchBig.reason, /scratch is min-lot/);
+
 const scratchPending = parseLiveOrderRequest({
   body: { ...base, action: "scratch", order_type: "buy_limit", symbol: "US30", price: 53100 },
   expectedConfirm: "FTMO-541163357",

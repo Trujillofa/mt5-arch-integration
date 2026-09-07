@@ -274,6 +274,14 @@ export function parseLiveOrderRequest(input: {
     }
   }
   if (action === "scratch") {
+    if (volume != null && volume > MIN_LIVE_LOT + 1e-8) {
+      return {
+        ok: false,
+        status: 400,
+        stage: "volume",
+        reason: "scratch is min-lot market open+close only — omit volume or pass volume_min=true",
+      };
+    }
     useVolumeMin = true;
   }
 
