@@ -179,7 +179,7 @@ bool WaitConnected(const int max_ms)
       Sleep(500);
       waited += 500;
      }
-   // Login-only is not connected. Weekend / Neomaaa-Live down must fail closed.
+   // Login-only is not connected. Weekend / Neomaaa-global down must fail closed.
    return false;
   }
 

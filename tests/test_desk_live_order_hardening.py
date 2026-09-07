@@ -64,7 +64,7 @@ def test_disconnected_bridge_fails_closed_before_wine() -> None:
     assert "disconnectedOrderReason(firm.id, identity.server)" in runner
     assert "refusing OrderSend" in runner
     assert "identity.terminalConnected === false" in wsf
-    assert 'NEOMAA_EXPECTED_SERVER = "Neomaaa-Live"' in neomaa
+    assert 'NEOMAA_EXPECTED_SERVER = "Neomaaa-global"' in neomaa
     assert 'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"' in neomaa
 
 

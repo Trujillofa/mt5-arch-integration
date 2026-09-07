@@ -56,7 +56,7 @@ export function seedAccounts(): TradingAccount[] {
       "FundedNext-Server 2",
       100_000
     ),
-    account(ACCOUNT_IDS.neomaa, "neomaa", "7745107", "MT5", "Neomaaa-Live", 25_000),
+    account(ACCOUNT_IDS.neomaa, "neomaa", "7745107", "MT5", "Neomaaa-global", 25_000),
     account(
       ACCOUNT_IDS.fortraders,
       "fortraders",

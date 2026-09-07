@@ -75,13 +75,13 @@ function migrateOperatorLogins(state: DeskState): DeskState {
         };
       }
       if (account.firmId === "neomaa") {
-        if (account.login === "7745107" && account.server === "Neomaaa-Live") {
+        if (account.login === "7745107" && account.server === "Neomaaa-global") {
           return account;
         }
         return {
           ...account,
           login: "7745107",
-          server: "Neomaaa-Live",
+          server: "Neomaaa-global",
           platform: "MT5",
         };
       }

@@ -21,7 +21,7 @@ chart (`InpBroker=wsf|ftmo|fundednext|alphacapital|fundingpips|neomaa|fortraders
 A stale heartbeat does not block a live one-shot — login/server identity
 on the last branded `account.json` does. Fetch/probe still fail closed on
 a stale snapshot. An explicit `terminal_connected=false` (weekend FX /
-Neomaaa-Live down) refuses OrderSend immediately with JSON 409 — it does
+Neomaaa-global down) refuses OrderSend immediately with JSON 409 — it does
 not launch Wine. Live order HTTP handlers return JSON within ~70s even
 when a one-shot is silent; they no longer `spawnSync` wine for up to
 180s (that blocked the event loop and left Alpha Capital POSTs with no
