@@ -22,14 +22,20 @@ export const US30_SELECT_VARIANTS = [
   "US30.cash",
   "US30.Cash",
   "US30c",
+  "US30.c",
   "US30.m",
   "US30m",
   "US30.r",
   "DJ30",
+  "DJ30.c",
+  "DJ30c",
   "DJ30.cash",
   "DJI30",
   "WS30",
 ] as const;
+
+/** WSF 149736 @ WSFmarkets-Server Market Watch name is DJ30.c (host evidence). */
+export const WSF_US30_PREFERRED = "DJ30.c";
 
 export function normalizeSymbolKey(symbol: string): string {
   return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
@@ -39,6 +45,15 @@ const US30_KEYS = new Set(US30_SELECT_VARIANTS.map((name) => normalizeSymbolKey(
 
 export function isUs30Family(symbol: string): boolean {
   return US30_KEYS.has(normalizeSymbolKey(symbol));
+}
+
+/** SymbolSelect try-list. WSF tries DJ30.c first; other books keep the shared order. */
+export function us30SelectVariantsForFirm(firmId: string): readonly string[] {
+  if (firmId !== "wsf") return US30_SELECT_VARIANTS;
+  return [
+    WSF_US30_PREFERRED,
+    ...US30_SELECT_VARIANTS.filter((name) => name !== WSF_US30_PREFERRED),
+  ];
 }
 
 export function us30AllowedForFirm(firmId: string): boolean {
@@ -63,7 +78,10 @@ export function symbolAllowedForFirm(firmId: string, symbol: string): boolean {
 export function allowedSymbolHint(firmId: string): string {
   if (firmId === "alphacapital") return "EURUSD/EURUSDc or BTCUSD/BTCUSDc/BTCUSD.r";
   if (firmId === "neomaa") return "EURUSD/EURUSDc only";
-  return "EURUSD/EURUSDc or US30 family (US30, US30.cash, DJ30, …)";
+  if (firmId === "wsf") {
+    return "EURUSD/EURUSDc or US30 family (DJ30.c, US30, …)";
+  }
+  return "EURUSD/EURUSDc or US30 family (US30, US30.cash, DJ30, DJ30.c, …)";
 }
 
 /** One-shot chart must already exist in Market Watch. US30 may not. */

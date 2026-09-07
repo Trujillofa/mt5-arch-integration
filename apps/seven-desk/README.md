@@ -181,7 +181,7 @@ POST /api/ftmo/order
 }
 ```
 
-Same body on `/api/wsf/order` (`confirm: "WSF-149736"`), `/api/fundednext/order` (`FN-13981906`), `/api/fundingpips/order` (`FUNDINGPIPS-11669306`), `/api/fortraders/order` (`FORTRADERS-737150`). Broker symbol names differ (`US30`, `US30.cash`, `DJ30`, `US30m`, …); the one-shot `SymbolSelect`s those variants. If the catalog has no US30 family the route returns JSON `stage=symbol` and does not hang. Startup chart stays EURUSD/EURUSDc because host Market Watch may be FX-only.
+Same body on `/api/wsf/order` (`confirm: "WSF-149736"`), `/api/fundednext/order` (`FN-13981906`), `/api/fundingpips/order` (`FUNDINGPIPS-11669306`), `/api/fortraders/order` (`FORTRADERS-737150`). Broker symbol names differ (`US30`, `US30.cash`, `DJ30`, `DJ30.c`, `US30m`, …); the one-shot `SymbolSelect`s those variants. WSF 149736 @ WSFmarkets-Server uses **`DJ30.c`** and tries that name first (a request may still say `"symbol": "US30"`). If the catalog has no US30 family the route returns JSON `stage=symbol` and does not hang. Startup chart stays EURUSD/EURUSDc because host Market Watch may be FX-only. File-bridge `openPositions` is `PositionsTotal` only — a working WSF pending on `DJ30.c` will not appear there.
 
 Cancel the pending order (ticket from the place result, or omit ticket to match magic + symbol):
 

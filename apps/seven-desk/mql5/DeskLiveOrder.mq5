@@ -229,14 +229,15 @@ bool IsUs30Family(const string symbol)
    StringReplace(u, "_", "");
    StringReplace(u, "-", "");
    return (u == "US30" || u == "US30CASH" || u == "US30C" || u == "US30M" ||
-           u == "US30R" || u == "US30PRO" || u == "DJ30" || u == "DJ30CASH" ||
-           u == "DJI30" || u == "WS30");
+           u == "US30R" || u == "US30PRO" || u == "DJ30" || u == "DJ30C" ||
+           u == "DJ30CASH" || u == "DJI30" || u == "WS30");
   }
 
 bool SelectUs30Variant(string &symbol)
   {
-   string variants[] = {"US30","US30.cash","US30.Cash","US30c","US30.m",
-                        "US30m","US30.r","DJ30","DJ30.cash","DJI30","WS30"};
+   string variants[] = {"US30","US30.cash","US30.Cash","US30c","US30.c","US30.m",
+                        "US30m","US30.r","DJ30","DJ30.c","DJ30c","DJ30.cash",
+                        "DJI30","WS30"};
    if(symbol != "" && SymbolSelect(symbol, true))
       return true;
    for(int i = 0; i < ArraySize(variants); i++)
@@ -276,7 +277,7 @@ bool ResolveSymbol(string &symbol, const long login, const string server)
       if(SelectUs30Variant(symbol))
          return true;
       WriteResult(FailJson("symbol",
-                           "US30 family not in catalog — SymbolSelect failed (tried US30, US30.cash, DJ30, …)",
+                           "US30 family not in catalog — SymbolSelect failed (tried US30, US30.cash, DJ30, DJ30.c, …)",
                            login, server, GetLastError(), symbol));
       return false;
      }

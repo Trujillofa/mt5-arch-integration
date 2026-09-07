@@ -29,6 +29,9 @@ def test_wsf_live_order_allows_us30_pending() -> None:
     text = WSF.read_text(encoding="utf-8")
     assert "IsUs30Family" in text
     assert "US30.cash" in text
+    assert '"DJ30.c"' in text
+    assert "DJ30C" in text
+    assert text.index('"DJ30.c"') < text.index('"US30.cash"')
     assert "TRADE_ACTION_PENDING" in text
     assert "ORDER_TYPE_BUY_LIMIT" in text
     assert "TRADE_ACTION_REMOVE" in text
@@ -55,6 +58,8 @@ def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
     )
     assert "IsUs30Family" in text
     assert "US30.cash" in text
+    assert '"DJ30.c"' in text
+    assert "DJ30C" in text
     assert "TRADE_ACTION_PENDING" in text
     assert "ORDER_TYPE_BUY_LIMIT" in text
     assert "TRADE_ACTION_REMOVE" in text

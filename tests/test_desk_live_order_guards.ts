@@ -19,6 +19,7 @@ import {
   resultBelongsToRequest,
   resultMatchesRequest,
   symbolAllowedForFirm,
+  us30SelectVariantsForFirm,
   withDeadline,
 } from "../apps/seven-desk/src/lib/live-order/guards.ts";
 
@@ -156,13 +157,22 @@ assert.equal(won, "soon");
 
 assert.equal(isUs30Family("US30"), true);
 assert.equal(isUs30Family("US30.cash"), true);
+assert.equal(isUs30Family("US30.c"), true);
 assert.equal(isUs30Family("us30m"), true);
 assert.equal(isUs30Family("DJ30"), true);
+assert.equal(isUs30Family("DJ30.c"), true);
+assert.equal(isUs30Family("dj30.c"), true);
+assert.equal(isUs30Family("DJ30c"), true);
 assert.equal(isUs30Family("DJI30"), true);
 assert.equal(isUs30Family("EURUSD"), false);
 assert.equal(isUs30Family("US500"), false);
+assert.equal(us30SelectVariantsForFirm("wsf")[0], "DJ30.c");
+assert.equal(us30SelectVariantsForFirm("ftmo")[0], "US30");
+assert.ok(us30SelectVariantsForFirm("ftmo").includes("DJ30.c"));
 assert.equal(symbolAllowedForFirm("ftmo", "US30"), true);
 assert.equal(symbolAllowedForFirm("wsf", "US30.cash"), true);
+assert.equal(symbolAllowedForFirm("wsf", "DJ30.c"), true);
+assert.equal(symbolAllowedForFirm("wsf", "dj30.c"), true);
 assert.equal(symbolAllowedForFirm("fundednext", "DJ30"), true);
 assert.equal(symbolAllowedForFirm("fundingpips", "US30"), true);
 assert.equal(symbolAllowedForFirm("fortraders", "US30"), true);
@@ -356,6 +366,54 @@ assert.equal(sellLimit.ok, true);
 if (sellLimit.ok) {
   assert.equal(sellLimit.fields.orderType, "sell_limit");
   assert.equal(sellLimit.fields.side, "SELL");
+}
+
+const wsfDj30c = parseLiveOrderRequest({
+  body: {
+    live: true,
+    confirm: "WSF-149736",
+    action: "open",
+    order_type: "buy_limit",
+    symbol: "DJ30.c",
+    side: "buy",
+    price: 53100,
+    tp: 53500,
+    sl: 52500,
+    volume: 4,
+    volume_confirm: true,
+  },
+  expectedConfirm: "WSF-149736",
+  defaultSymbol: "EURUSDc",
+  firmId: "wsf",
+});
+assert.equal(wsfDj30c.ok, true);
+if (wsfDj30c.ok) {
+  assert.equal(wsfDj30c.fields.symbol, "DJ30.c");
+  assert.equal(wsfDj30c.fields.orderType, "buy_limit");
+  assert.equal(wsfDj30c.fields.volume, 4);
+}
+
+const wsfUs30Resolves = parseLiveOrderRequest({
+  body: {
+    live: true,
+    confirm: "WSF-149736",
+    action: "open",
+    order_type: "buy_limit",
+    symbol: "US30",
+    side: "buy",
+    price: 53100,
+    tp: 53500,
+    sl: 52500,
+    volume: 4,
+    volume_confirm: true,
+  },
+  expectedConfirm: "WSF-149736",
+  defaultSymbol: "EURUSDc",
+  firmId: "wsf",
+});
+assert.equal(wsfUs30Resolves.ok, true);
+if (wsfUs30Resolves.ok) {
+  assert.equal(wsfUs30Resolves.fields.symbol, "US30");
 }
 
 const cancel = parseLiveOrderRequest({
