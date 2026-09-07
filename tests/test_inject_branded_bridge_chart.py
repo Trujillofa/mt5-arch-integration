@@ -164,17 +164,19 @@ def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> Non
     assert not extra.exists()
 
 
-def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
-    """WSF/FTMO/FN/FundingPips/Neomaa/Fortraders must not delete leftover Default tabs; Alpha must."""
+def test_prune_default_chart_siblings_on_all_live_restore(tmp_path: Path) -> None:
+    """Every 21 restore firm prunes leftover Default tabs so chart01 keeps the EA."""
     leftover = b"stale-tab"
     cases = (
         ("wsf", "WSFmarkets MT5 Terminal"),
         ("ftmo", "FTMO Global Markets MT5 Terminal"),
         ("fundednext", "FundedNext MT5 Terminal"),
+        ("alphacapital", "ACG Markets MT5 Terminal"),
         ("fundingpips", "FundingPips 2 MT5 Terminal"),
         ("neomaa", "Neomaaa MT5 Terminal"),
         ("fortraders", "FT Trading MT5 Terminal"),
     )
+    order_want = b"\xff\xfe" + "chart01.chr\r\n".encode("utf-16-le")
     for broker, brand in cases:
         term_dir = _brand_tree(tmp_path / broker, brand)
         extra = term_dir / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
@@ -183,18 +185,24 @@ def test_prune_default_chart_siblings_is_alpha_only(tmp_path: Path) -> None:
         order = extra.parent / "order.wnd"
         order.write_bytes(b"keep-me")
         inject.inject_charts(broker, term_dir)
-        assert extra.is_file() and extra.read_bytes() == leftover
-        assert order.read_bytes() == b"keep-me"
+        assert not extra.exists(), broker
+        assert order.read_bytes() == order_want, broker
 
-    alpha = _brand_tree(tmp_path / "alphacapital", "ACG Markets MT5 Terminal")
-    extra = alpha / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
+
+def test_prune_default_chart_siblings_skips_non_restore(tmp_path: Path) -> None:
+    """vantage / fpmarkets / exness are not LIVE_RESTORE — prune is a no-op."""
+    leftover = b"stale-tab"
+    term_dir = _brand_tree(tmp_path, "Vantage International MT5")
+    extra = term_dir / "MQL5" / "Profiles" / "Charts" / "Default" / "chart08.chr"
     extra.parent.mkdir(parents=True, exist_ok=True)
     extra.write_bytes(leftover)
     order = extra.parent / "order.wnd"
     order.write_bytes(b"keep-me")
-    inject.inject_charts("alphacapital", alpha)
-    assert not extra.exists()
-    assert order.read_bytes() == b"\xff\xfe" + "chart01.chr\r\n".encode("utf-16-le")
+    inject.prune_default_chart_siblings(term_dir, "vantage")
+    inject.prune_default_chart_siblings(term_dir, "fpmarkets")
+    inject.prune_default_chart_siblings(term_dir, "exness")
+    assert extra.is_file() and extra.read_bytes() == leftover
+    assert order.read_bytes() == b"keep-me"
 
 
 def test_inject_wsf_uses_eurusdc(tmp_path: Path) -> None:

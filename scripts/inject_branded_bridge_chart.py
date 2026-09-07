@@ -208,13 +208,13 @@ def alpha_ready_symbol(term_dir: Path) -> str | None:
 
 
 def prune_default_chart_siblings(term_dir: Path, broker: str = "") -> None:
-    """Alpha-only: Default profile must be one chart.
+    """LIVE_RESTORE: Default profile must be one chart.
 
-    Leftover AUDCAD.pro tabs steal focus on ACG. WSF / FTMO / FundedNext /
-    FundingPips / Neomaa / Fortraders locked books keep leftover Default tabs — do not rewrite
-    order.wnd there.
+    Leftover Default tabs steal chart01 (Fortraders/Neomaa lost the EA;
+    FTMO/Alpha then attached onto US30 and OnInit 32767). Applies to every
+    ``21`` restore firm — not vantage / fpmarkets / exness.
     """
-    if broker != "alphacapital":
+    if broker not in LIVE_RESTORE:
         return
     for chart in chart_paths(term_dir):
         parent = chart.parent
@@ -249,10 +249,7 @@ def inject_charts(
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(payload)
         written.append(path)
-    # Leftover Default tabs steal focus on ACG (AUDCAD.pro vs BTCUSD).
-    # Do not prune WSF/FTMO/FundedNext — those locked books keep extra tabs.
-    if broker == "alphacapital":
-        prune_default_chart_siblings(resolved, broker)
+    prune_default_chart_siblings(resolved, broker)
     return written
 
 
