@@ -33,6 +33,7 @@ def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
     assert "ACCOUNT_MARGIN_MODE_RETAIL_NETTING" in text
     assert "BTCUSD" in text
     assert "SymbolAllowed" in text
+    assert 'SymbolSelect("EURUSD.pro"' in text
     assert "WaitConnected(20000)" in text
     assert "WaitSymbolReady(symbol, 20000)" in text
     assert "AlreadyClaimed" in text

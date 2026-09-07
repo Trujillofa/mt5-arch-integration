@@ -91,6 +91,29 @@ export function resolveStartupServer(
   return expected;
 }
 
+/** ACG Markets stores FX history under EURUSD.pro when the desk asks for EURUSD. */
+export function quotesPathMatchesSymbol(
+  fullPath: string,
+  fileName: string,
+  symbol: string
+): boolean {
+  const want = symbol.toUpperCase();
+  const upper = fullPath.toUpperCase();
+  const file = fileName.toUpperCase();
+  if (upper.includes(`/${want}/`) || upper.includes(`\\${want}\\`) || file.startsWith(want)) {
+    return true;
+  }
+  return upper.includes(`/${want}.`) || upper.includes(`\\${want}.`);
+}
+
+/** One-shot chart must open the ACG *.pro name or the script never gets quotes. */
+export function alphaStartupChartSymbol(firmId: string, symbol: string): string {
+  if (firmId !== "alphacapital") return symbol;
+  const upper = symbol.toUpperCase();
+  if (upper === "EURUSD" || upper === "EURUSDC") return "EURUSD.pro";
+  return symbol;
+}
+
 export function resultMatchesRequest(
   resultId: string | null | undefined,
   requestId: string

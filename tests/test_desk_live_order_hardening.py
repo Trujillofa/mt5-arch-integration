@@ -35,6 +35,17 @@ def test_http_budget_is_bounded_and_shared() -> None:
     assert "onAbort" in wine
 
 
+def test_alpha_fx_rewrites_eurusd_pro() -> None:
+    runner = RUNNER.read_text(encoding="utf-8")
+    guards = GUARDS.read_text(encoding="utf-8")
+    mql = MQL.read_text(encoding="utf-8")
+    assert "quotesPathMatchesSymbol" in runner
+    assert "alphaStartupChartSymbol(firm.id, parsed.symbol)" in runner
+    assert 'return "EURUSD.pro"' in guards
+    assert 'SymbolSelect("EURUSD.pro"' in mql
+    assert 'symbol = "EURUSD.pro"' in mql
+
+
 def test_alpha_startup_server_is_acgmarkets_main() -> None:
     types = TYPES.read_text(encoding="utf-8")
     runner = RUNNER.read_text(encoding="utf-8")

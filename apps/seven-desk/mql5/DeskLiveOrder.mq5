@@ -227,6 +227,11 @@ bool ResolveSymbol(string &symbol, const long login, const string server)
                            login, server, 0, symbol));
       return false;
      }
+   if((symbol == "EURUSD" || symbol == "EURUSDc") && SymbolSelect("EURUSD.pro", true))
+     {
+      symbol = "EURUSD.pro";
+      return true;
+     }
    if(SymbolSelect(symbol, true))
       return true;
    if(symbol == "EURUSDc" && SymbolSelect("EURUSD", true))
