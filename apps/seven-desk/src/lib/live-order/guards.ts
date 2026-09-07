@@ -1,6 +1,307 @@
 /** Pure live-order helpers. Safe to unit-test without Wine. */
 
-import type { LiveOrderResult } from "./types";
+import type {
+  LiveBroker,
+  LiveOrderAction,
+  LiveOrderInput,
+  LiveOrderResult,
+  LiveOrderType,
+} from "./types";
+
+/** Conservative FX/index min used when the body omits volume. */
+export const MIN_LIVE_LOT = 0.01;
+/**
+ * Hard refuse above this even with volume_confirm. Broker SYMBOL_VOLUME_MAX
+ * is the second cap inside the one-shot. 4.0 US30 lots is inside this bound.
+ */
+export const LIVE_ORDER_VOLUME_HARD_MAX = 10;
+
+/** Broker names tried by SymbolSelect, requested name first at runtime. */
+export const US30_SELECT_VARIANTS = [
+  "US30",
+  "US30.cash",
+  "US30.Cash",
+  "US30c",
+  "US30.m",
+  "US30m",
+  "US30.r",
+  "DJ30",
+  "DJ30.cash",
+  "DJI30",
+  "WS30",
+] as const;
+
+export function normalizeSymbolKey(symbol: string): string {
+  return symbol.toUpperCase().replace(/[^A-Z0-9]/g, "");
+}
+
+const US30_KEYS = new Set(US30_SELECT_VARIANTS.map((name) => normalizeSymbolKey(name)));
+
+export function isUs30Family(symbol: string): boolean {
+  return US30_KEYS.has(normalizeSymbolKey(symbol));
+}
+
+export function us30AllowedForFirm(firmId: string): boolean {
+  return (
+    firmId === "wsf" ||
+    firmId === "ftmo" ||
+    firmId === "fundednext" ||
+    firmId === "fundingpips" ||
+    firmId === "fortraders"
+  );
+}
+
+export function symbolAllowedForFirm(firmId: string, symbol: string): boolean {
+  if (symbol === "EURUSD" || symbol === "EURUSDc") return true;
+  if (firmId === "alphacapital") {
+    return symbol === "BTCUSD" || symbol === "BTCUSDc" || symbol === "BTCUSD.r";
+  }
+  if (!us30AllowedForFirm(firmId)) return false;
+  return isUs30Family(symbol);
+}
+
+export function allowedSymbolHint(firmId: string): string {
+  if (firmId === "alphacapital") return "EURUSD/EURUSDc or BTCUSD/BTCUSDc/BTCUSD.r";
+  if (firmId === "neomaa") return "EURUSD/EURUSDc only";
+  return "EURUSD/EURUSDc or US30 family (US30, US30.cash, DJ30, …)";
+}
+
+/** One-shot chart must already exist in Market Watch. US30 may not. */
+export function oneshotChartSymbol(firmId: string, symbol: string): string {
+  if (isUs30Family(symbol)) {
+    return firmId === "wsf" ? "EURUSDc" : "EURUSD";
+  }
+  return alphaStartupChartSymbol(firmId, symbol);
+}
+
+export type ParsedLiveOrder = {
+  action: LiveOrderAction;
+  orderType: LiveOrderType;
+  symbol: string;
+  side: "BUY" | "SELL";
+  useVolumeMin: boolean;
+  volume: number | null;
+  price: number | null;
+  sl: number | null;
+  tp: number | null;
+  ticket: number | null;
+  confirm: string;
+};
+
+export type LiveOrderParseResult =
+  | { ok: true; fields: ParsedLiveOrder }
+  | { ok: false; status: number; stage: string; reason: string };
+
+function asString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function parseNumberField(
+  value: unknown,
+  name: string
+): { ok: true; value: number | null } | { ok: false; reason: string } {
+  if (value === undefined || value === null || value === "") {
+    return { ok: true, value: null };
+  }
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed)) {
+    return { ok: false, reason: `${name} must be a number` };
+  }
+  return { ok: true, value: parsed };
+}
+
+export function parseLiveOrderRequest(input: {
+  body: LiveOrderInput;
+  expectedConfirm: string;
+  defaultSymbol: string;
+  firmId: LiveBroker | string;
+}): LiveOrderParseResult {
+  const { body, expectedConfirm, defaultSymbol, firmId } = input;
+  if (body.live !== true) {
+    return { ok: false, status: 400, stage: "confirm", reason: "live must be true — paper is the default" };
+  }
+  const confirm = asString(body.confirm);
+  if (confirm !== expectedConfirm) {
+    return { ok: false, status: 403, stage: "confirm", reason: `confirm must be exactly ${expectedConfirm}` };
+  }
+
+  const orderTypeRaw = asString(body.order_type).toLowerCase() || "market";
+  let orderType: LiveOrderType;
+  if (orderTypeRaw === "market") {
+    orderType = "market";
+  } else if (orderTypeRaw === "buy_limit") {
+    orderType = "buy_limit";
+  } else if (orderTypeRaw === "sell_limit") {
+    orderType = "sell_limit";
+  } else if (orderTypeRaw === "limit") {
+    orderType = "buy_limit";
+  } else {
+    return {
+      ok: false,
+      status: 400,
+      stage: "order_type",
+      reason: "order_type must be market, buy_limit, sell_limit, or limit",
+    };
+  }
+
+  const pending = orderType === "buy_limit" || orderType === "sell_limit";
+  const actionRaw = asString(body.action).toLowerCase() || (pending ? "open" : "scratch");
+  if (
+    actionRaw !== "scratch" &&
+    actionRaw !== "open" &&
+    actionRaw !== "close" &&
+    actionRaw !== "cancel"
+  ) {
+    return { ok: false, status: 400, stage: "action", reason: "action must be scratch, open, close, or cancel" };
+  }
+  const action: LiveOrderAction = actionRaw;
+  if (pending && action === "scratch") {
+    return {
+      ok: false,
+      status: 400,
+      stage: "action",
+      reason: "scratch is market open+close only — use action=open with order_type=buy_limit",
+    };
+  }
+  if (pending && action === "close") {
+    return {
+      ok: false,
+      status: 400,
+      stage: "action",
+      reason: "close is for positions — use action=cancel to remove a pending order",
+    };
+  }
+
+  const symbol = asString(body.symbol) || defaultSymbol;
+  if (!symbolAllowedForFirm(firmId, symbol)) {
+    return { ok: false, status: 400, stage: "symbol", reason: `symbol not allowed — ${allowedSymbolHint(firmId)}` };
+  }
+
+  const sideRaw = asString(body.side).toLowerCase() || (orderType === "sell_limit" ? "sell" : "buy");
+  if (sideRaw !== "buy" && sideRaw !== "sell") {
+    return { ok: false, status: 400, stage: "side", reason: "side must be buy or sell" };
+  }
+  if (orderTypeRaw === "limit") {
+    orderType = sideRaw === "sell" ? "sell_limit" : "buy_limit";
+  }
+  if (orderType === "buy_limit" && sideRaw === "sell") {
+    return { ok: false, status: 400, stage: "side", reason: "order_type=buy_limit requires side=buy" };
+  }
+  if (orderType === "sell_limit" && sideRaw === "buy") {
+    return { ok: false, status: 400, stage: "side", reason: "order_type=sell_limit requires side=sell" };
+  }
+  const side: "BUY" | "SELL" = sideRaw === "sell" ? "SELL" : "BUY";
+
+  const priceField = parseNumberField(body.price, "price");
+  if (!priceField.ok) return { ok: false, status: 400, stage: "price", reason: priceField.reason };
+  const slField = parseNumberField(body.sl, "sl");
+  if (!slField.ok) return { ok: false, status: 400, stage: "sl", reason: slField.reason };
+  const tpField = parseNumberField(body.tp, "tp");
+  if (!tpField.ok) return { ok: false, status: 400, stage: "tp", reason: tpField.reason };
+  const ticketRaw = body.ticket !== undefined && body.ticket !== null && body.ticket !== "" ? body.ticket : body.order;
+  const ticketField = parseNumberField(ticketRaw, "ticket");
+  if (!ticketField.ok) return { ok: false, status: 400, stage: "ticket", reason: ticketField.reason };
+  if (ticketField.value != null && (ticketField.value <= 0 || !Number.isInteger(ticketField.value))) {
+    return { ok: false, status: 400, stage: "ticket", reason: "ticket must be a positive integer" };
+  }
+
+  if (pending && action === "open") {
+    if (priceField.value == null || priceField.value <= 0) {
+      return { ok: false, status: 400, stage: "price", reason: "pending order requires price > 0" };
+    }
+    if (slField.value != null && slField.value <= 0) {
+      return { ok: false, status: 400, stage: "sl", reason: "sl must be greater than 0 when set" };
+    }
+    if (tpField.value != null && tpField.value <= 0) {
+      return { ok: false, status: 400, stage: "tp", reason: "tp must be greater than 0 when set" };
+    }
+    if (orderType === "buy_limit") {
+      if (slField.value != null && slField.value >= priceField.value) {
+        return { ok: false, status: 400, stage: "sl", reason: "buy_limit requires sl < price" };
+      }
+      if (tpField.value != null && tpField.value <= priceField.value) {
+        return { ok: false, status: 400, stage: "tp", reason: "buy_limit requires tp > price" };
+      }
+    } else {
+      if (slField.value != null && slField.value <= priceField.value) {
+        return { ok: false, status: 400, stage: "sl", reason: "sell_limit requires sl > price" };
+      }
+      if (tpField.value != null && tpField.value >= priceField.value) {
+        return { ok: false, status: 400, stage: "tp", reason: "sell_limit requires tp < price" };
+      }
+    }
+  }
+
+  const volumeMinFlag = body.volume_min === true || body.volume === undefined || body.volume === null;
+  const volumeConfirm = asJsonBool(body.volume_confirm) === true;
+  const volumeField = parseNumberField(body.volume, "volume");
+  if (!volumeField.ok) return { ok: false, status: 400, stage: "volume", reason: volumeField.reason };
+  let volume = volumeField.value;
+  let useVolumeMin = volumeMinFlag || volume == null;
+  if (volume != null) {
+    if (volume <= 0) {
+      return { ok: false, status: 400, stage: "volume", reason: "volume must be greater than 0" };
+    }
+    if (volume > LIVE_ORDER_VOLUME_HARD_MAX + 1e-8) {
+      return {
+        ok: false,
+        status: 400,
+        stage: "volume",
+        reason: `volume exceeds hard max ${LIVE_ORDER_VOLUME_HARD_MAX} — refusing absurd size`,
+      };
+    }
+    if (!volumeMinFlag && volume > MIN_LIVE_LOT + 1e-8 && !volumeConfirm) {
+      return {
+        ok: false,
+        status: 400,
+        stage: "volume",
+        reason: "volume above 0.01 requires volume_confirm=true (confirm token is identity, not size intent)",
+      };
+    }
+    if (volumeMinFlag) {
+      if (volume > MIN_LIVE_LOT + 1e-8) {
+        return {
+          ok: false,
+          status: 400,
+          stage: "volume",
+          reason: "volume_min=true refuses a larger volume — omit volume_min and pass volume_confirm=true",
+        };
+      }
+      useVolumeMin = true;
+      volume = MIN_LIVE_LOT;
+    } else {
+      useVolumeMin = false;
+    }
+  }
+  if (action === "scratch") {
+    if (volume != null && volume > MIN_LIVE_LOT + 1e-8) {
+      return {
+        ok: false,
+        status: 400,
+        stage: "volume",
+        reason: "scratch is min-lot market open+close only — omit volume or pass volume_min=true",
+      };
+    }
+    useVolumeMin = true;
+  }
+
+  return {
+    ok: true,
+    fields: {
+      action,
+      orderType: pending ? orderType : "market",
+      symbol,
+      side,
+      useVolumeMin,
+      volume,
+      price: pending ? priceField.value : null,
+      sl: pending ? slField.value : null,
+      tp: pending ? tpField.value : null,
+      ticket: ticketField.value,
+      confirm,
+    },
+  };
+}
 
 /** HTTP routes must return JSON before typical client 120s cutoffs. */
 export const LIVE_ORDER_HTTP_BUDGET_MS = 70_000;

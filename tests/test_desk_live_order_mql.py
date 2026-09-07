@@ -25,6 +25,17 @@ def test_fill_deals_from_history_is_shared() -> None:
     assert "need_close" in text
 
 
+def test_wsf_live_order_allows_us30_pending() -> None:
+    text = WSF.read_text(encoding="utf-8")
+    assert "IsUs30Family" in text
+    assert "US30.cash" in text
+    assert "TRADE_ACTION_PENDING" in text
+    assert "ORDER_TYPE_BUY_LIMIT" in text
+    assert "TRADE_ACTION_REMOVE" in text
+    assert "WaitSymbolReady(symbol, 20000)" in text
+    assert "requested volume is not the symbol minimum" not in text
+
+
 def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
     text = DESK.read_text(encoding="utf-8")
     assert "FolderCreate(\"mt5_arch\")" in text
@@ -42,3 +53,10 @@ def test_desk_live_order_creates_dir_and_falls_back_to_file_common() -> None:
         "return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login)"
         not in text
     )
+    assert "IsUs30Family" in text
+    assert "US30.cash" in text
+    assert "TRADE_ACTION_PENDING" in text
+    assert "ORDER_TYPE_BUY_LIMIT" in text
+    assert "TRADE_ACTION_REMOVE" in text
+    assert "SYMBOL_VOLUME_MAX" in text
+    assert "requested volume is not the symbol minimum" not in text

@@ -1,8 +1,9 @@
 //+------------------------------------------------------------------+
 //| WsfDeskLiveOrder.mq5 — Seven Desk WSF-only one-shot OrderSend.   |
 //| Hard-stops unless login==149736, server contains WSF, and the    |
-//| request confirm token is WSF-149736. Min lot only. No retry on   |
-//| a rejected open. Not a copy engine. Not an EA.                   |
+//| request confirm token is WSF-149736. Market min-lot is default.  |
+//| Pending US30 limits may use an explicit volume. No retry on a    |
+//| rejected open. Not a copy engine. Not an EA.                     |
 //+------------------------------------------------------------------+
 #property copyright "seven-desk"
 #property version   "1.00"
@@ -24,6 +25,11 @@ double g_volume     = 0.0;
 int    g_use_vmin   = 1;
 int    g_magic      = 20263847;
 long   g_issued_at  = 0;
+string g_order_type = "market";
+double g_price      = 0.0;
+double g_sl         = 0.0;
+double g_tp         = 0.0;
+ulong  g_ticket     = 0;
 
 void WriteResult(const string body)
   {
@@ -78,6 +84,11 @@ bool ReadRequest()
       v = ReadLineValue(line, "use_volume_min"); if(v != "") g_use_vmin = (int)StringToInteger(v);
       v = ReadLineValue(line, "magic");      if(v != "") g_magic = (int)StringToInteger(v);
       v = ReadLineValue(line, "issued_at");  if(v != "") g_issued_at = StringToInteger(v);
+      v = ReadLineValue(line, "order_type"); if(v != "") g_order_type = v;
+      v = ReadLineValue(line, "price");      if(v != "") g_price = StringToDouble(v);
+      v = ReadLineValue(line, "sl");         if(v != "") g_sl = StringToDouble(v);
+      v = ReadLineValue(line, "tp");         if(v != "") g_tp = StringToDouble(v);
+      v = ReadLineValue(line, "ticket");     if(v != "") g_ticket = (ulong)StringToInteger(v);
      }
    FileClose(h);
    return true;
@@ -151,6 +162,21 @@ bool WaitConnected(const int max_ms)
    return false;
   }
 
+bool WaitSymbolReady(const string symbol, const int max_ms)
+  {
+   int waited = 0;
+   SymbolSelect(symbol, true);
+   while(waited < max_ms)
+     {
+      ResetLastError();
+      if(SymbolIsSynchronized(symbol) && SymbolInfoDouble(symbol, SYMBOL_BID) > 0.0)
+         return true;
+      Sleep(250);
+      waited += 250;
+     }
+   return (SymbolIsSynchronized(symbol) && SymbolInfoDouble(symbol, SYMBOL_BID) > 0.0);
+  }
+
 string FailJson(const string stage, const string reason,
                 const long login, const string server,
                 const int retcode, const string retmsg)
@@ -169,11 +195,51 @@ string FailJson(const string stage, const string reason,
       "}\n";
   }
 
+bool IsUs30Family(const string symbol)
+  {
+   string u = symbol;
+   StringToUpper(u);
+   StringReplace(u, ".", "");
+   StringReplace(u, "_", "");
+   StringReplace(u, "-", "");
+   return (u == "US30" || u == "US30CASH" || u == "US30C" || u == "US30M" ||
+           u == "US30R" || u == "US30PRO" || u == "DJ30" || u == "DJ30CASH" ||
+           u == "DJI30" || u == "WS30");
+  }
+
+bool SelectUs30Variant(string &symbol)
+  {
+   string variants[] = {"US30","US30.cash","US30.Cash","US30c","US30.m",
+                        "US30m","US30.r","DJ30","DJ30.cash","DJI30","WS30"};
+   if(symbol != "" && SymbolSelect(symbol, true))
+      return true;
+   for(int i = 0; i < ArraySize(variants); i++)
+     {
+      if(variants[i] == symbol)
+         continue;
+      if(SymbolSelect(variants[i], true))
+        {
+         symbol = variants[i];
+         return true;
+        }
+     }
+   return false;
+  }
+
 bool ResolveSymbol(string &symbol, const long login, const string server)
   {
+   if(IsUs30Family(symbol))
+     {
+      if(SelectUs30Variant(symbol))
+         return true;
+      WriteResult(FailJson("symbol",
+                           "US30 family not in catalog — SymbolSelect failed (tried US30, US30.cash, DJ30, …)",
+                           login, server, GetLastError(), symbol));
+      return false;
+     }
    if(symbol != "EURUSDc" && symbol != "EURUSD")
      {
-      WriteResult(FailJson("symbol", "symbol not allowed — EURUSDc/EURUSD only",
+      WriteResult(FailJson("symbol", "symbol not allowed — EURUSDc/EURUSD or US30 family",
                            login, server, 0, symbol));
       return false;
      }
@@ -287,6 +353,108 @@ bool SendDeal(const string symbol, const ENUM_ORDER_TYPE type, const double volu
    return OrderSend(req, res);
   }
 
+bool TradeRetOk(const uint ret)
+  {
+   return (ret == TRADE_RETCODE_DONE ||
+           ret == TRADE_RETCODE_DONE_PARTIAL ||
+           ret == TRADE_RETCODE_PLACED);
+  }
+
+bool ResolveVolume(const string symbol, const long login, const string server,
+                   double &volume)
+  {
+   const double vmin = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
+   const double vmax = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MAX);
+   const double vstep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
+   if(vmin <= 0.0)
+     {
+      WriteResult(FailJson("volume", "SYMBOL_VOLUME_MIN is 0", login, server, 0, ""));
+      return false;
+     }
+   if(g_use_vmin == 1)
+     {
+      volume = vmin;
+      return true;
+     }
+   if(g_volume <= 0.0)
+     {
+      WriteResult(FailJson("volume", "volume must be greater than 0", login, server, 0, ""));
+      return false;
+     }
+   if(g_volume + 1e-8 < vmin)
+     {
+      WriteResult(FailJson("volume", "requested volume is below SYMBOL_VOLUME_MIN",
+                           login, server, 0,
+                           "requested=" + DoubleToString(g_volume, 2) +
+                           " min=" + DoubleToString(vmin, 2)));
+      return false;
+     }
+   if(vmax > 0.0 && g_volume > vmax + 1e-8)
+     {
+      WriteResult(FailJson("volume", "requested volume exceeds SYMBOL_VOLUME_MAX",
+                           login, server, 0,
+                           "requested=" + DoubleToString(g_volume, 2) +
+                           " max=" + DoubleToString(vmax, 2)));
+      return false;
+     }
+   volume = g_volume;
+   if(vstep > 0.0)
+      volume = vmin + vstep * MathRound((g_volume - vmin) / vstep);
+   if(volume + 1e-8 < vmin)
+      volume = vmin;
+   return true;
+  }
+
+bool SendPending(const string symbol, const ENUM_ORDER_TYPE type, const double volume,
+                 const double price, const double sl, const double tp,
+                 const ENUM_ORDER_TYPE_FILLING filling, const int digits,
+                 const string comment, MqlTradeResult &res)
+  {
+   MqlTradeRequest req;
+   ZeroMemory(req);
+   ZeroMemory(res);
+   req.action = TRADE_ACTION_PENDING;
+   req.symbol = symbol;
+   req.volume = volume;
+   req.type = type;
+   req.price = NormalizeDouble(price, digits);
+   if(sl > 0.0)
+      req.sl = NormalizeDouble(sl, digits);
+   if(tp > 0.0)
+      req.tp = NormalizeDouble(tp, digits);
+   req.magic = g_magic;
+   req.comment = comment;
+   req.type_filling = filling;
+   req.type_time = ORDER_TIME_GTC;
+   ResetLastError();
+   return OrderSend(req, res);
+  }
+
+ulong FindPendingTicket(const string symbol)
+  {
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong t = OrderGetTicket(i);
+      if(t == 0)
+         continue;
+      if(OrderGetString(ORDER_SYMBOL) == symbol &&
+         (int)OrderGetInteger(ORDER_MAGIC) == g_magic)
+         return t;
+     }
+   return 0;
+  }
+
+bool RemovePending(const ulong ticket, MqlTradeResult &res)
+  {
+   MqlTradeRequest req;
+   ZeroMemory(req);
+   ZeroMemory(res);
+   req.action = TRADE_ACTION_REMOVE;
+   req.order = ticket;
+   ResetLastError();
+   return OrderSend(req, res);
+  }
+
 void OnStart()
   {
    if(!ReadRequest())
@@ -360,6 +528,18 @@ void OnStart()
    ResetLastError();
    if(!SymbolInfoInteger(symbol, SYMBOL_SELECT))
       SymbolSelect(symbol, true);
+   StringToLower(g_order_type);
+   const bool pending_type = (g_order_type == "buy_limit" || g_order_type == "sell_limit");
+   if(!WaitSymbolReady(symbol, 20000))
+     {
+      if(!(pending_type && SymbolInfoInteger(symbol, SYMBOL_SELECT)))
+        {
+         WriteResult(FailJson("symbol", "symbol not synchronized — no bid yet",
+                              login, server, GetLastError(), symbol));
+         return;
+        }
+      Print("WsfDeskLiveOrder pending without bid — SymbolSelect ok for ", symbol);
+     }
    Sleep(300);
 
    if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED))
@@ -375,50 +555,119 @@ void OnStart()
       return;
      }
 
-   const double vmin = SymbolInfoDouble(symbol, SYMBOL_VOLUME_MIN);
-   const double vstep = SymbolInfoDouble(symbol, SYMBOL_VOLUME_STEP);
-   if(vmin <= 0.0)
+   StringToUpper(g_side);
+   StringToLower(g_action);
+   const bool want_cancel = (g_action == "cancel");
+   const bool want_open = (g_action == "scratch" || g_action == "open");
+   const bool want_close = (g_action == "scratch" || g_action == "close");
+   if(!want_open && !want_close && !want_cancel)
      {
-      WriteResult(FailJson("volume", "SYMBOL_VOLUME_MIN is 0", login, server, 0, ""));
+      WriteResult(FailJson("action", "action must be scratch, open, close, or cancel",
+                           login, server, 0, g_action));
       return;
      }
-   double volume = vmin;
-   if(g_use_vmin != 1)
+   if(pending_type && g_action == "scratch")
      {
-      if(g_volume <= 0.0 || MathAbs(g_volume - vmin) > 1e-8)
-        {
-         WriteResult(FailJson("volume", "requested volume is not the symbol minimum",
-                              login, server, 0,
-                              "requested=" + DoubleToString(g_volume, 2) +
-                              " min=" + DoubleToString(vmin, 2)));
-         return;
-        }
-      volume = vmin;
-     }
-   if(vstep > 0.0)
-      volume = MathMax(vmin, vstep);
-   if(MathAbs(volume - vmin) > 1e-8 && volume > vmin + 1e-8)
-     {
-      WriteResult(FailJson("volume", "resolved volume exceeds symbol minimum — refusing",
-                           login, server, 0, DoubleToString(volume, 2)));
+      WriteResult(FailJson("action", "scratch is market open+close only",
+                           login, server, 0, g_order_type));
       return;
      }
 
-   StringToUpper(g_side);
-   StringToLower(g_action);
-   const bool want_open = (g_action == "scratch" || g_action == "open");
-   const bool want_close = (g_action == "scratch" || g_action == "close");
-   if(!want_open && !want_close)
+   double volume = 0.0;
+   if(!want_cancel)
      {
-      WriteResult(FailJson("action", "action must be scratch, open, or close",
-                           login, server, 0, g_action));
-      return;
+      if(!ResolveVolume(symbol, login, server, volume))
+         return;
      }
 
    ENUM_ORDER_TYPE_FILLING filling = PickFilling(symbol);
    const int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
    const string comment_open = "7desk-" + g_request_id;
    const string comment_close = "7desk-c-" + g_request_id;
+
+   if(want_cancel)
+     {
+      ulong ticket = g_ticket;
+      if(ticket == 0)
+         ticket = FindPendingTicket(symbol);
+      if(ticket == 0)
+        {
+         WriteResult(FailJson("cancel", "no pending desk order to cancel",
+                              login, server, 0, symbol));
+         return;
+        }
+      MqlTradeResult cres;
+      bool sent = RemovePending(ticket, cres);
+      if(!sent || !TradeRetOk(cres.retcode))
+        {
+         WriteResult(FailJson("cancel", "TRADE_ACTION_REMOVE rejected — not retrying",
+                              login, server, (int)cres.retcode,
+                              cres.comment + " last=" + IntegerToString(GetLastError())));
+         return;
+        }
+      WriteResult(
+         "{\n"
+         "  \"ok\": true,\n"
+         "  \"source\": \"seven-desk\",\n"
+         "  \"request_id\": \"" + JEsc(g_request_id) + "\",\n"
+         "  \"stage\": \"cancelled\",\n"
+         "  \"reason\": \"seven-desk pending cancelled\",\n"
+         "  \"login\": " + IntegerToString(login) + ",\n"
+         "  \"server\": \"" + JEsc(server) + "\",\n"
+         "  \"company\": \"" + JEsc(AccountInfoString(ACCOUNT_COMPANY)) + "\",\n"
+         "  \"symbol\": \"" + JEsc(symbol) + "\",\n"
+         "  \"order_type\": \"" + JEsc(g_order_type) + "\",\n"
+         "  \"order\": " + IntegerToString((long)ticket) + ",\n"
+         "  \"ticket\": " + IntegerToString((long)ticket) + ",\n"
+         "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
+         "}\n");
+      return;
+     }
+
+   if(pending_type && want_open)
+     {
+      if(g_price <= 0.0)
+        {
+         WriteResult(FailJson("price", "pending order requires price > 0",
+                              login, server, 0, ""));
+         return;
+        }
+      ENUM_ORDER_TYPE ptype = (g_order_type == "sell_limit")
+                              ? ORDER_TYPE_SELL_LIMIT : ORDER_TYPE_BUY_LIMIT;
+      MqlTradeResult pres;
+      bool sent = SendPending(symbol, ptype, volume, g_price, g_sl, g_tp,
+                              filling, digits, comment_open, pres);
+      if(!sent || !TradeRetOk(pres.retcode))
+        {
+         WriteResult(FailJson("pending", "OrderSend pending rejected — not retrying",
+                              login, server, (int)pres.retcode,
+                              pres.comment + " last=" + IntegerToString(GetLastError())));
+         return;
+        }
+      WriteResult(
+         "{\n"
+         "  \"ok\": true,\n"
+         "  \"source\": \"seven-desk\",\n"
+         "  \"request_id\": \"" + JEsc(g_request_id) + "\",\n"
+         "  \"stage\": \"pending\",\n"
+         "  \"reason\": \"seven-desk pending placed\",\n"
+         "  \"login\": " + IntegerToString(login) + ",\n"
+         "  \"server\": \"" + JEsc(server) + "\",\n"
+         "  \"company\": \"" + JEsc(AccountInfoString(ACCOUNT_COMPANY)) + "\",\n"
+         "  \"symbol\": \"" + JEsc(symbol) + "\",\n"
+         "  \"volume\": " + DoubleToString(volume, 2) + ",\n"
+         "  \"side\": \"" + JEsc(g_side) + "\",\n"
+         "  \"order_type\": \"" + JEsc(g_order_type) + "\",\n"
+         "  \"price\": " + DoubleToString(g_price, digits) + ",\n"
+         "  \"sl\": " + DoubleToString(g_sl, digits) + ",\n"
+         "  \"tp\": " + DoubleToString(g_tp, digits) + ",\n"
+         "  \"order\": " + IntegerToString((long)pres.order) + ",\n"
+         "  \"ticket\": " + IntegerToString((long)pres.order) + ",\n"
+         "  \"retcode\": " + IntegerToString((int)pres.retcode) + ",\n"
+         "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
+         "}\n");
+      return;
+     }
 
    ulong order_ticket = 0;
    ulong close_order = 0;
@@ -487,6 +736,36 @@ void OnStart()
       position_ticket = FindPositionTicket(symbol);
       if(position_ticket == 0 || !PositionSelectByTicket(position_ticket))
         {
+         ulong pending_ticket = g_ticket;
+         if(pending_ticket == 0)
+            pending_ticket = FindPendingTicket(symbol);
+         if(pending_ticket > 0)
+           {
+            MqlTradeResult cres;
+            bool sent = RemovePending(pending_ticket, cres);
+            if(!sent || !TradeRetOk(cres.retcode))
+              {
+               WriteResult(FailJson("cancel", "TRADE_ACTION_REMOVE rejected — not retrying",
+                                    login, server, (int)cres.retcode,
+                                    cres.comment + " last=" + IntegerToString(GetLastError())));
+               return;
+              }
+            WriteResult(
+               "{\n"
+               "  \"ok\": true,\n"
+               "  \"source\": \"seven-desk\",\n"
+               "  \"request_id\": \"" + JEsc(g_request_id) + "\",\n"
+               "  \"stage\": \"cancelled\",\n"
+               "  \"reason\": \"seven-desk pending cancelled\",\n"
+               "  \"login\": " + IntegerToString(login) + ",\n"
+               "  \"server\": \"" + JEsc(server) + "\",\n"
+               "  \"symbol\": \"" + JEsc(symbol) + "\",\n"
+               "  \"order\": " + IntegerToString((long)pending_ticket) + ",\n"
+               "  \"ticket\": " + IntegerToString((long)pending_ticket) + ",\n"
+               "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
+               "}\n");
+            return;
+           }
          WriteResult(FailJson("close", "no open desk position to close",
                               login, server, 0, symbol));
          return;

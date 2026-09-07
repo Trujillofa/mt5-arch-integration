@@ -30,6 +30,17 @@ A leftover `desk_live_order_request.txt` without a matching result is an
 orphan: in-flight (younger than 90s) refuses a second OrderSend; stale
 orphans are deleted. The one-shot claims `request_id` before OrderSend
 and will not re-process the same id after a restart.
+On wsf / ftmo / fundednext / fundingpips / fortraders (not Alpha / Neomaa),
+`POST /api/{firm}/order` can also place a pending US30 buy/sell limit with
+explicit `price` / `sl` / `tp` / `volume` when `order_type` is `buy_limit`
+or `sell_limit`. Volume above 0.01 requires `volume_confirm: true` (the
+per-firm confirm token is identity, not size intent). Hard max is 10 lots;
+the broker `SYMBOL_VOLUME_MAX` is the second cap. `action: "cancel"` plus
+optional `ticket` removes a pending order (`TRADE_ACTION_REMOVE`). The
+one-shot chart stays EURUSD/EURUSDc so the script still loads when Market
+Watch is FX-only; `ResolveSymbol` runs `SymbolSelect` across US30 / US30.cash
+/ DJ30 / …. Missing catalog → JSON `stage=symbol`, no hang. Paper stays
+the default (`live: true` still required).
 **CLOSE positions** on
 the blotter bar flattens every desk row (live groups first, fail-closed;
 paper after). An already-flat close (`no open … desk position` or
