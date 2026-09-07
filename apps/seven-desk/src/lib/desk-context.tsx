@@ -48,10 +48,11 @@ import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alph
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_CONFIRM, FUNDINGPIPS_LIVE_PENDING } from "@/lib/fundingpips/types";
+import { liveLotsForFirm } from "@/lib/firms";
 import { NEOMAA_LIVE_CONFIRM, NEOMAA_LIVE_PENDING } from "@/lib/neomaa/types";
 import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
-import { LIVE_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
-import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
+import { EA_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
+import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
 import { nudgeQuotes } from "@/lib/quotes";
 import type {
@@ -160,13 +161,13 @@ async function closeLiveGroup(
     if (!row.liveBroker) continue;
     const symbol =
       row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
-    const payload = await postLiveOrder(
-      row.liveBroker,
-      "close",
-      confirmFor(row.liveBroker, refs),
+    const payload = await postLiveOrder(row.liveBroker, row.livePending ? "cancel" : "close", {
+      confirm: confirmFor(row.liveBroker, refs),
       symbol,
-      row.side
-    );
+      side: row.side,
+      ticket: row.liveOrder ?? null,
+      orderType: row.orderType ?? (row.livePending ? (row.side === "sell" ? "sell_limit" : "buy_limit") : "market"),
+    });
     if (liveCloseAlreadyFlat(payload)) {
       flattenPosition(row.id);
     } else {
@@ -179,25 +180,42 @@ async function closeLiveGroup(
 
 async function postLiveOrder(
   broker: LiveBroker,
-  action: "open" | "close",
-  confirm: string,
-  symbol: string,
-  side: string
+  action: "open" | "close" | "cancel",
+  input: {
+    confirm: string;
+    symbol: string;
+    side: string;
+    volume?: number;
+    price?: number | null;
+    sl?: number | null;
+    tp?: number | null;
+    ticket?: number | null;
+    orderType?: LiveOrderType;
+  }
 ): Promise<LiveOrderResult> {
-  const endpoint = endpointFor(broker, action);
+  const endpoint = endpointFor(broker, action === "open" || action === "cancel" ? "open" : "close");
+  const volume = input.volume ?? liveLotsForFirm(broker);
+  const orderType = input.orderType ?? "market";
   try {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
-      signal: AbortSignal.timeout(LIVE_ORDER_CLIENT_BUDGET_MS),
+      signal: AbortSignal.timeout(EA_ORDER_CLIENT_BUDGET_MS),
       body: JSON.stringify({
         live: true,
-        confirm,
+        confirm: input.confirm,
         action,
-        symbol,
-        side,
-        volume_min: true,
+        order_type: action === "open" ? orderType : undefined,
+        symbol: input.symbol,
+        side: input.side,
+        volume: action === "open" ? volume : undefined,
+        volume_confirm: action === "open" && volume > 0.01 + 1e-8,
+        volume_min: action === "open" && volume <= 0.01 + 1e-8,
+        price: action === "open" ? input.price ?? undefined : undefined,
+        sl: input.sl ?? undefined,
+        tp: input.tp ?? undefined,
+        ticket: input.ticket ?? undefined,
       }),
     });
     return (await response.json()) as LiveOrderResult;
@@ -381,13 +399,16 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       const symbol =
         broker === "wsf" && event.symbol === "EURUSD" ? "EURUSDc" : event.symbol;
       try {
-        const payload = await postLiveOrder(
-          broker,
-          "open",
-          confirmFor(broker, refs),
+        const payload = await postLiveOrder(broker, "open", {
+          confirm: confirmFor(broker, refs),
           symbol,
-          event.side
-        );
+          side: event.side,
+          volume: liveLotsForFirm(broker, event.lots),
+          price: event.requestedPrice,
+          sl: event.sl,
+          tp: event.tp,
+          orderType: event.orderType ?? "market",
+        });
         applyLiveCopyResult(event.id, payload, broker);
       } catch (caught) {
         applyLiveCopyResult(
@@ -417,7 +438,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
         return "FTMO live master is armed but FTMO is not the master.";
       }
       if (input.symbol !== "EURUSD" && input.symbol !== "EURUSDc") {
-        return "FTMO live master is EURUSD min-lot only.";
+        return "FTMO live master is EURUSD only.";
       }
       setBusy(true);
       const handle = window.setTimeout(() => {
@@ -426,15 +447,19 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             const liveInput: MasterTradeInput = {
               ...input,
               symbol: "EURUSD",
-              lots: 0.01,
+              lots: liveLotsForFirm("ftmo", input.lots),
+              orderType: input.orderType ?? "market",
             };
-            const payload = await postLiveOrder(
-              "ftmo",
-              "open",
-              ftmoConfirm.current || FTMO_LIVE_CONFIRM,
-              "EURUSD",
-              liveInput.side
-            );
+            const payload = await postLiveOrder("ftmo", "open", {
+              confirm: ftmoConfirm.current || FTMO_LIVE_CONFIRM,
+              symbol: "EURUSD",
+              side: liveInput.side,
+              volume: liveInput.lots,
+              price: liveInput.price,
+              sl: liveInput.sl,
+              tp: liveInput.tp,
+              orderType: liveInput.orderType,
+            });
             const placed = placeLiveMaster(liveInput, payload, "ftmo");
             if (placed.groupId && !placed.error) {
               resolveGroup(placed.groupId);

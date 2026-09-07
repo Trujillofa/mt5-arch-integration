@@ -1,4 +1,4 @@
-import { FIRM_BY_ID } from "@/lib/firms";
+import { DEFAULT_DESK_LOTS, FIRM_BY_ID, defaultLotsForFirm } from "@/lib/firms";
 import { SEED_QUOTES } from "@/lib/quotes";
 import type { CopySettings, DeskState, TradingAccount } from "@/lib/types";
 
@@ -89,7 +89,7 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.wsf,
       enabled: true,
-      lotMultiplier: 0.5,
+      lotMultiplier: defaultLotsForFirm("wsf") / DEFAULT_DESK_LOTS,
       maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
@@ -99,7 +99,7 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.fundednext,
       enabled: true,
-      lotMultiplier: 1,
+      lotMultiplier: defaultLotsForFirm("fundednext") / DEFAULT_DESK_LOTS,
       maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
@@ -109,8 +109,8 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.neomaa,
       enabled: true,
-      lotMultiplier: 0.4,
-      maxLot: 1,
+      lotMultiplier: defaultLotsForFirm("neomaa") / DEFAULT_DESK_LOTS,
+      maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
       reverse: false,
@@ -119,8 +119,8 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.fortraders,
       enabled: true,
-      lotMultiplier: 0.5,
-      maxLot: 1,
+      lotMultiplier: defaultLotsForFirm("fortraders") / DEFAULT_DESK_LOTS,
+      maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
       reverse: false,
@@ -129,8 +129,8 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.fundingpips,
       enabled: true,
-      lotMultiplier: 0.8,
-      maxLot: 1,
+      lotMultiplier: defaultLotsForFirm("fundingpips") / DEFAULT_DESK_LOTS,
+      maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
       reverse: false,
@@ -139,8 +139,8 @@ export function seedCopySettings(): CopySettings[] {
     {
       slaveAccountId: ACCOUNT_IDS.alphacapital,
       enabled: true,
-      lotMultiplier: 0.5,
-      maxLot: 1,
+      lotMultiplier: defaultLotsForFirm("alphacapital") / DEFAULT_DESK_LOTS,
+      maxLot: 2,
       maxSlippagePips: 2,
       copySlTp: true,
       reverse: false,

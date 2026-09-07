@@ -17,7 +17,7 @@ export function WsfLiveCopy() {
   const canArm = ack && confirm === WSF_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. The next master fill copies to WSF 149736 as a min-lot EURUSDc open (not a scratch). Other slaves stay paper unless also armed.";
+      return "Armed. The next master fill copies to WSF 149736 as a 1.4-lot EURUSDc order of the same type (market / limit / stop). Other slaves stay paper unless also armed.";
     }
     if (!ack) return "Tick the acknowledgement. This is a real WSF order on each master fill.";
     if (confirm !== WSF_LIVE_CONFIRM) return `Type ${WSF_LIVE_CONFIRM} exactly.`;
@@ -45,8 +45,8 @@ export function WsfLiveCopy() {
         </p>
         <p className="text-xs text-muted-foreground">
           When armed, Place master trade sends the WSF slave fill through{" "}
-          <span className="font-mono">POST /api/wsf/order</span> (open, min lot,
-          login 149736 only). Paper copy still fans out to the other books.
+          <span className="font-mono">POST /api/wsf/order</span> (same type as the ticket,
+          1.4 lots, login 149736 only). Paper copy still fans out to the other books.
           Starts the WSF terminal in the background if it is down.
         </p>
       </div>
@@ -64,7 +64,7 @@ export function WsfLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live WSF 149736 at 0.01 lot. Not FundedNext,
+          Copy each master fill to live WSF 149736 as a 1.4-lot order of the same type. Not FundedNext,
           not FTMO, not Vantage.
         </span>
       </label>

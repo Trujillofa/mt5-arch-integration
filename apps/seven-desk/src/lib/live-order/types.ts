@@ -2,7 +2,12 @@
 
 export type LiveBroker = "wsf" | "ftmo" | "fundednext" | "alphacapital" | "fundingpips" | "neomaa" | "fortraders";
 export type LiveOrderAction = "scratch" | "open" | "close" | "cancel";
-export type LiveOrderType = "market" | "buy_limit" | "sell_limit";
+export type LiveOrderType =
+  | "market"
+  | "buy_limit"
+  | "sell_limit"
+  | "buy_stop"
+  | "sell_stop";
 
 export interface LiveOrderResult {
   ok: boolean;
@@ -35,6 +40,7 @@ export interface LiveOrderResult {
   winePrefix: string;
   restoreNote?: string;
   stoppedPids?: number[];
+  sendPath?: "ea" | "oneshot";
 }
 
 export interface LiveOrderInput {

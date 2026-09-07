@@ -14,7 +14,7 @@ export async function GET() {
       endpoint: "/api/fundednext/order",
       stage: "method",
       reason:
-        'GET is read-only. Live FundedNext OrderSend requires POST { live: true, confirm: "FN-13981906", action: "open", volume_min: true }.',
+        'GET is read-only. Live FundedNext OrderSend requires POST { live: true, confirm: "FN-13981906", action: "open" }. Default 0.35 lots (market / limit / stop). volume_min: true is the 0.01 prove.',
       winePrefix: ".mt5-fundednext",
     },
     { status: 405 }

@@ -14,7 +14,7 @@ export async function GET() {
       endpoint: "/api/wsf/order",
       stage: "method",
       reason:
-        "GET is read-only. Live WSF OrderSend requires POST { live: true, confirm: \"WSF-149736\", action: \"scratch\", volume_min: true }.",
+        "GET is read-only. Live WSF OrderSend requires POST { live: true, confirm: \"WSF-149736\", action: \"open\" }. Default 1.4 lots (market / limit / stop). Scratch stays volume_min. volume_min: true is the 0.01 prove.",
       winePrefix: ".mt5-wsf",
     },
     { status: 405 }

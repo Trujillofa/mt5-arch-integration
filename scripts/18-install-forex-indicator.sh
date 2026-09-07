@@ -30,6 +30,7 @@ CANDIDATES=(
 SRC_INC=(
   "${ROOT}/mql5/Include/ForexUtils.mqh"
   "${ROOT}/mql5/Include/FxSymbolRegistry.mqh"
+  "${ROOT}/mql5/Include/DeskOrderBridge.mqh"
   "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
   "${ROOT}/mql5/Include/IndexM5Export.mqh"
 )

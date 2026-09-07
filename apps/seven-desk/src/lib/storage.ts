@@ -1,3 +1,4 @@
+import { DEFAULT_DESK_LOTS, defaultLotsForFirm } from "@/lib/firms";
 import { seedDesk } from "@/lib/seed";
 import type { DeskState } from "@/lib/types";
 
@@ -105,6 +106,22 @@ function migrateOperatorLogins(state: DeskState): DeskState {
   };
 }
 
+function migrateCopyLots(state: DeskState): DeskState {
+  return {
+    ...state,
+    copySettings: state.copySettings.map((row) => {
+      const account = state.accounts.find((item) => item.id === row.slaveAccountId);
+      if (!account) return row;
+      const lots = defaultLotsForFirm(account.firmId);
+      return {
+        ...row,
+        lotMultiplier: lots / DEFAULT_DESK_LOTS,
+        maxLot: Math.max(row.maxLot, lots, 2),
+      };
+    }),
+  };
+}
+
 export function loadDesk(): DeskState {
   if (typeof window === "undefined") return seedDesk();
   const raw = window.localStorage.getItem(STORAGE_KEY);
@@ -114,7 +131,7 @@ export function loadDesk(): DeskState {
   if (!Array.isArray(parsed.accounts) || parsed.accounts.length === 0) {
     return fallback;
   }
-  return migrateOperatorLogins({
+  return migrateCopyLots(migrateOperatorLogins({
     accounts: parsed.accounts,
     copySettings: parsed.copySettings ?? fallback.copySettings,
     masterId: parsed.masterId ?? fallback.masterId,
@@ -129,7 +146,7 @@ export function loadDesk(): DeskState {
     fundingpipsLiveCopy: false,
     neomaaLiveCopy: false,
     fortradersLiveCopy: false,
-  });
+  }));
 }
 
 export function saveDesk(state: DeskState): void {

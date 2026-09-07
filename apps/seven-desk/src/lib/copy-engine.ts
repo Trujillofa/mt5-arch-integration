@@ -18,8 +18,10 @@ import { FUNDEDNEXT_LIVE_PENDING, FUNDEDNEXT_LIVE_SYMBOLS } from "@/lib/fundedne
 import { FORTRADERS_LIVE_PENDING, FORTRADERS_LIVE_SYMBOLS } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_PENDING, FUNDINGPIPS_LIVE_SYMBOLS } from "@/lib/fundingpips/types";
 import { NEOMAA_LIVE_PENDING, NEOMAA_LIVE_SYMBOLS } from "@/lib/neomaa/types";
+import { defaultLotsForFirm, liveLotsForFirm } from "@/lib/firms";
 import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
-import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
+import { isAlreadyFlatReason, isPendingOrderType } from "@/lib/live-order/guards";
+import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
 
 export const BLOTTER_LIMIT = 200;
@@ -88,6 +90,9 @@ function refreshEquity(
 
 export function applyQuoteMarks(state: DeskState): DeskState {
   const positions = state.positions.map((position) => {
+    if (position.livePending) {
+      return { ...position, pnl: 0, mark: position.entry };
+    }
     const quote = quoteBySymbol(state.quotes, position.symbol);
     if (!quote) return position;
     const mark = markForSide(quote, position.side);
@@ -113,13 +118,65 @@ export function placeMasterTrade(
   const quote = paperAdapter.getQuote(input.symbol, state.quotes);
   if (!quote) return { state, error: `No paper quote for ${input.symbol}.` };
 
-  const requestedPrice = input.side === "buy" ? quote.ask : quote.bid;
-  const fill = paperAdapter.placeMarket(master, input, state.quotes);
+  const orderType: LiveOrderType = input.orderType ?? "market";
+  const pending = isPendingOrderType(orderType);
+  const requestedPrice =
+    pending && input.price != null && input.price > 0
+      ? input.price
+      : input.side === "buy"
+        ? quote.ask
+        : quote.bid;
+  if (pending && !(input.price != null && input.price > 0)) {
+    return { state, error: "Pending limit/stop needs a price." };
+  }
+
   const groupId = uid("grp");
   const now = Date.now();
 
-  if (!fill.ok) {
-    const event: BlotterEvent = {
+  if (!pending) {
+    const fill = paperAdapter.placeMarket(master, input, state.quotes);
+    if (!fill.ok) {
+      const event: BlotterEvent = {
+        id: uid("blt"),
+        groupId,
+        accountId: master.id,
+        role: "master",
+        symbol: input.symbol,
+        side: input.side,
+        lots: input.lots,
+        requestedPrice,
+        orderType,
+        sl: input.sl,
+        tp: input.tp,
+        status: "error",
+        reason: fill.reason,
+        createdAt: now,
+        updatedAt: now,
+      };
+      return {
+        state: { ...state, blotter: pushBlotter(state.blotter, event) },
+        error: `Master rejected: ${fill.reason}`,
+        groupId,
+      };
+    }
+
+    const masterPosition: Position = {
+      id: uid("pos"),
+      accountId: master.id,
+      symbol: input.symbol,
+      side: input.side,
+      lots: input.lots,
+      entry: fill.fill.price,
+      sl: input.sl,
+      tp: input.tp,
+      openedAt: fill.fill.at,
+      mark: fill.fill.price,
+      pnl: 0,
+      orderType,
+      groupId,
+    };
+
+    const masterEvent: BlotterEvent = {
       id: uid("blt"),
       groupId,
       accountId: master.id,
@@ -128,18 +185,42 @@ export function placeMasterTrade(
       side: input.side,
       lots: input.lots,
       requestedPrice,
+      fillPrice: fill.fill.price,
+      orderType,
       sl: input.sl,
       tp: input.tp,
-      status: "error",
-      reason: fill.reason,
+      status: "filled",
+      reason: `paper fill · ${fill.fill.slippagePips.toFixed(2)} pip slip`,
       createdAt: now,
       updatedAt: now,
     };
-    return {
-      state: { ...state, blotter: pushBlotter(state.blotter, event) },
-      error: `Master rejected: ${fill.reason}`,
-      groupId,
+
+    const slaveEvents: BlotterEvent[] = state.accounts
+      .filter((account) => account.id !== master.id)
+      .map((account) => ({
+        id: uid("blt"),
+        groupId,
+        accountId: account.id,
+        role: "slave" as const,
+        symbol: input.symbol,
+        side: input.side,
+        lots: input.lots,
+        requestedPrice,
+        orderType,
+        sl: input.sl,
+        tp: input.tp,
+        status: "queued" as const,
+        reason: "waiting on copy engine",
+        createdAt: now,
+        updatedAt: now,
+      }));
+
+    const next: DeskState = {
+      ...state,
+      positions: [masterPosition, ...state.positions],
+      blotter: [masterEvent, ...slaveEvents, ...state.blotter].slice(0, BLOTTER_LIMIT),
     };
+    return { state: applyQuoteMarks(next), groupId };
   }
 
   const masterPosition: Position = {
@@ -148,12 +229,14 @@ export function placeMasterTrade(
     symbol: input.symbol,
     side: input.side,
     lots: input.lots,
-    entry: fill.fill.price,
+    entry: requestedPrice,
     sl: input.sl,
     tp: input.tp,
-    openedAt: fill.fill.at,
-    mark: fill.fill.price,
+    openedAt: now,
+    mark: requestedPrice,
     pnl: 0,
+    livePending: true,
+    orderType,
     groupId,
   };
 
@@ -166,11 +249,12 @@ export function placeMasterTrade(
     side: input.side,
     lots: input.lots,
     requestedPrice,
-    fillPrice: fill.fill.price,
+    fillPrice: requestedPrice,
+    orderType,
     sl: input.sl,
     tp: input.tp,
     status: "filled",
-    reason: `paper fill · ${fill.fill.slippagePips.toFixed(2)} pip slip`,
+    reason: `paper ${orderType}`,
     createdAt: now,
     updatedAt: now,
   };
@@ -186,6 +270,7 @@ export function placeMasterTrade(
       side: input.side,
       lots: input.lots,
       requestedPrice,
+      orderType,
       sl: input.sl,
       tp: input.tp,
       status: "queued" as const,
@@ -230,12 +315,14 @@ function resolveOneSlave(
   queued: BlotterEvent
 ): { event: BlotterEvent; position?: Position } {
   const now = Date.now();
+  const orderType: LiveOrderType = master.orderType ?? "market";
   const base: BlotterEvent = {
     ...queued,
     symbol: master.symbol,
     side: master.side,
     lots: master.lots,
     requestedPrice: master.requestedPrice,
+    orderType,
     sl: master.sl,
     tp: master.tp,
     updatedAt: now,
@@ -295,7 +382,8 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
+          orderType,
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -308,7 +396,8 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
+        orderType,
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -325,7 +414,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -338,7 +427,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -355,7 +444,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -368,7 +457,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -385,7 +474,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -398,7 +487,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -415,7 +504,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -428,7 +517,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -445,7 +534,7 @@ function resolveOneSlave(
           ...patchedBase,
           symbol: liveSymbol,
           side,
-          lots: 0.01,
+          lots: liveLotsForFirm(account.firmId, master.lots),
           sl: levels.sl,
           tp: levels.tp,
           status: "skipped",
@@ -458,7 +547,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: liveSymbol,
         side,
-        lots: 0.01,
+        lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
         status: "queued",
@@ -479,6 +568,41 @@ function resolveOneSlave(
         status: "skipped",
         reason: sized.reason,
       },
+    };
+  }
+
+  if (isPendingOrderType(orderType)) {
+    const pendingPrice = master.requestedPrice;
+    const position: Position = {
+      id: uid("pos"),
+      accountId: account.id,
+      symbol: mapped.symbol,
+      side,
+      lots: sized.lots,
+      entry: pendingPrice,
+      sl: levels.sl,
+      tp: levels.tp,
+      openedAt: now,
+      mark: pendingPrice,
+      pnl: 0,
+      livePending: true,
+      orderType,
+      groupId: master.groupId,
+    };
+    return {
+      event: {
+        ...patchedBase,
+        symbol: mapped.symbol,
+        side,
+        lots: sized.lots,
+        orderType,
+        sl: levels.sl,
+        tp: levels.tp,
+        fillPrice: pendingPrice,
+        status: "filled",
+        reason: `paper ${orderType}`,
+      },
+      position,
     };
   }
 
@@ -650,11 +774,7 @@ export function flattenAllTargets(state: DeskState): {
 
 export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
   if (result.ok) return true;
-  const reason = (result.reason ?? "").toLowerCase();
-  return (
-    reason.includes("position vanished") ||
-    /no open\b.*\bdesk position/.test(reason)
-  );
+  return isAlreadyFlatReason(result.reason ?? "");
 }
 
 export function markLiveCloseError(
@@ -705,13 +825,17 @@ export function pendingLiveSlaveEvents(state: DeskState, groupId: string): Blott
 }
 
 function liveFillLabel(broker: LiveBroker, result: LiveOrderResult): string {
-  if (broker === "wsf") return `live WSF 149736 · min lot · order ${result.order ?? "—"}`;
-  if (broker === "ftmo") return `live FTMO 541163357 · min lot · order ${result.order ?? "—"}`;
-  if (broker === "alphacapital") return `live ACG 2765247 · min lot · order ${result.order ?? "—"}`;
-  if (broker === "fundingpips") return `live FundingPips 11669306 · min lot · order ${result.order ?? "—"}`;
-  if (broker === "neomaa") return `live Neomaa 7745107 · min lot · order ${result.order ?? "—"}`;
-  if (broker === "fortraders") return `live Fortraders 737150 · min lot · order ${result.order ?? "—"}`;
-  return `live FN 13981906 · min lot · order ${result.order ?? "—"}`;
+  const pending =
+    result.stage === "pending" || isPendingOrderType(result.orderType);
+  const kind = pending ? `${result.orderType ?? "limit"}` : "fill";
+  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForFirm(broker);
+  if (broker === "wsf") return `live WSF 149736 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  if (broker === "ftmo") return `live FTMO 541163357 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  if (broker === "alphacapital") return `live ACG 2765247 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  if (broker === "fundingpips") return `live FundingPips 11669306 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  if (broker === "neomaa") return `live Neomaa 7745107 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  if (broker === "fortraders") return `live Fortraders 737150 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  return `live FN 13981906 · ${lots} ${kind} · order ${result.order ?? "—"}`;
 }
 
 export function applyLiveFill(
@@ -738,8 +862,11 @@ export function applyLiveFill(
       ),
     };
   }
-  const lots = result.volume && result.volume > 0 ? result.volume : 0.01;
-  const price = result.openPrice ?? event.requestedPrice;
+  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForFirm(broker);
+  const pending =
+    result.stage === "pending" || isPendingOrderType(result.orderType ?? event.orderType);
+  const price = (result.price && result.price > 0 ? result.price : null) ?? result.openPrice ?? event.requestedPrice;
+  const orderType = (result.orderType as LiveOrderType | undefined) ?? event.orderType ?? "market";
   const position: Position = {
     id: uid("pos"),
     accountId: event.accountId,
@@ -754,6 +881,8 @@ export function applyLiveFill(
     pnl: 0,
     liveBroker: broker,
     liveOrder: result.order,
+    livePending: pending,
+    orderType,
     groupId: event.groupId,
   };
   const blotter = state.blotter.map((row) =>
@@ -763,6 +892,7 @@ export function applyLiveFill(
           status: "filled" as const,
           fillPrice: price,
           lots,
+          orderType,
           reason: liveFillLabel(broker, result),
           updatedAt: now,
         }
@@ -793,9 +923,17 @@ export function placeLiveMasterFill(
   if (!master) return { state, error: "No master account selected." };
   const groupId = uid("grp");
   const now = Date.now();
-  const lots = result.volume && result.volume > 0 ? result.volume : 0.01;
-  const fillPrice = result.openPrice && result.openPrice > 0 ? result.openPrice : 0;
-  if (!result.ok || fillPrice <= 0) {
+  const lots =
+    result.volume && result.volume > 0 ? result.volume : liveLotsForFirm(broker, input.lots);
+  const pending =
+    result.stage === "pending" || isPendingOrderType(result.orderType ?? input.orderType);
+  const orderType: LiveOrderType =
+    (result.orderType as LiveOrderType | undefined) ?? input.orderType ?? "market";
+  const fillPrice =
+    (result.price && result.price > 0 ? result.price : 0) ||
+    (result.openPrice && result.openPrice > 0 ? result.openPrice : 0) ||
+    (input.price && input.price > 0 ? input.price : 0);
+  if (!result.ok || (fillPrice <= 0 && !result.order)) {
     const event: BlotterEvent = {
       id: uid("blt"),
       groupId,
@@ -803,8 +941,9 @@ export function placeLiveMasterFill(
       role: "master",
       symbol: input.symbol,
       side: input.side,
-      lots: 0.01,
+      lots,
       requestedPrice: fillPrice || 0,
+      orderType,
       sl: input.sl,
       tp: input.tp,
       status: "error",
@@ -833,6 +972,8 @@ export function placeLiveMasterFill(
     pnl: 0,
     liveBroker: broker,
     liveOrder: result.order,
+    livePending: pending,
+    orderType,
     groupId,
   };
   const masterEvent: BlotterEvent = {
@@ -845,6 +986,7 @@ export function placeLiveMasterFill(
     lots,
     requestedPrice: fillPrice,
     fillPrice,
+    orderType,
     sl: input.sl,
     tp: input.tp,
     status: "filled",
@@ -863,6 +1005,7 @@ export function placeLiveMasterFill(
       side: input.side,
       lots,
       requestedPrice: fillPrice,
+      orderType,
       sl: input.sl,
       tp: input.tp,
       status: "queued" as const,
@@ -883,7 +1026,7 @@ export function defaultCopySettings(slaveAccountId: string): CopySettings {
     slaveAccountId,
     enabled: true,
     lotMultiplier: 1,
-    maxLot: 2,
+    maxLot: defaultLotsForFirm("ftmo"),
     maxSlippagePips: 2,
     copySlTp: true,
     reverse: false,

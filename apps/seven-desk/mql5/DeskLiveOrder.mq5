@@ -585,7 +585,8 @@ void OnStart()
    if(!SymbolInfoInteger(symbol, SYMBOL_SELECT))
       SymbolSelect(symbol, true);
    StringToLower(g_order_type);
-   const bool pending_type = (g_order_type == "buy_limit" || g_order_type == "sell_limit");
+   const bool pending_type = (g_order_type == "buy_limit" || g_order_type == "sell_limit" ||
+                              g_order_type == "buy_stop" || g_order_type == "sell_stop");
    if(!WaitSymbolReady(symbol, 20000))
      {
       if(!(pending_type && SymbolInfoInteger(symbol, SYMBOL_SELECT)))
@@ -688,8 +689,13 @@ void OnStart()
                               login, server, 0, ""));
          return;
         }
-      ENUM_ORDER_TYPE ptype = (g_order_type == "sell_limit")
-                              ? ORDER_TYPE_SELL_LIMIT : ORDER_TYPE_BUY_LIMIT;
+      ENUM_ORDER_TYPE ptype = ORDER_TYPE_BUY_LIMIT;
+      if(g_order_type == "sell_limit")
+         ptype = ORDER_TYPE_SELL_LIMIT;
+      else if(g_order_type == "buy_stop")
+         ptype = ORDER_TYPE_BUY_STOP;
+      else if(g_order_type == "sell_stop")
+         ptype = ORDER_TYPE_SELL_STOP;
       MqlTradeResult pres;
       bool sent = SendPending(symbol, ptype, volume, g_price, g_sl, g_tp,
                               filling, digits, comment_open, pres);

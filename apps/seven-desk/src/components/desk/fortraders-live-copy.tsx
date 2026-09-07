@@ -17,7 +17,7 @@ export function FortradersLiveCopy() {
   const canArm = ack && confirm === FORTRADERS_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to Fortraders 737150 as 0.01 EURUSD.";
+      return "Armed. Each master fill copies to Fortraders 737150 as a 1.4-lot EURUSD order of the same type.";
     }
     if (!ack) return "Tick the acknowledgement. This is a real Fortraders order on each master fill.";
     if (confirm !== FORTRADERS_LIVE_CONFIRM) return `Type ${FORTRADERS_LIVE_CONFIRM} exactly.`;
@@ -59,7 +59,7 @@ export function FortradersLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live Fortraders 737150 at 0.01 lot. Not
+          Copy each master fill to live Fortraders 737150 as a 1.4-lot order of the same type. Not
           FTMO, not FP Markets, not FundingPips.
         </span>
       </label>

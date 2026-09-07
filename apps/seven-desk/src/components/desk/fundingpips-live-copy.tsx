@@ -17,7 +17,7 @@ export function FundingPipsLiveCopy() {
   const canArm = ack && confirm === FUNDINGPIPS_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to FundingPips 11669306 as 0.01 EURUSD.";
+      return "Armed. Each master fill copies to FundingPips 11669306 as a 0.8-lot EURUSD order of the same type.";
     }
     if (!ack) return "Tick the acknowledgement. This is a real FundingPips order on each master fill.";
     if (confirm !== FUNDINGPIPS_LIVE_CONFIRM) return `Type ${FUNDINGPIPS_LIVE_CONFIRM} exactly.`;
@@ -59,7 +59,7 @@ export function FundingPipsLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live FundingPips 11669306 at 0.01 lot. Not
+          Copy each master fill to live FundingPips 11669306 as a 0.8-lot order of the same type. Not
           Vantage, not FP Markets.
         </span>
       </label>

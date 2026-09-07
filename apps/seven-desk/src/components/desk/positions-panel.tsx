@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
+import { pendingKind } from "@/lib/live-order/guards";
 import { formatLots, formatMoney, formatPnl, formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +67,14 @@ export function PositionsPanel() {
                   </p>
                 </div>
               </TableCell>
-              <TableCell className="font-mono text-xs">{position.symbol}</TableCell>
+              <TableCell className="font-mono text-xs">
+                {position.symbol}
+                {position.livePending ? (
+                  <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-200 uppercase">
+                    {pendingKind(position.orderType) ?? "pending"}
+                  </span>
+                ) : null}
+              </TableCell>
               <TableCell>
                 <SidePill side={position.side} />
               </TableCell>
@@ -96,7 +104,7 @@ export function PositionsPanel() {
                   disabled={busy}
                   onClick={() => flatten(position.id)}
                 >
-                  {position.liveBroker ? "Close live" : "Close"}
+                  {position.livePending ? "Cancel pending" : position.liveBroker ? "Close live" : "Close"}
                 </Button>
               </TableCell>
             </TableRow>
