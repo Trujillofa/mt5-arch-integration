@@ -37,13 +37,15 @@ SYMBOL = {
 # Alpha quotes-first tries BTCUSD first. ACG's live names are often *.pro;
 # bare BTCUSD/EURUSD charts stay blank (symbol sync timeout) while AUDCAD.pro
 # already has history. Allow those so 21 can attach Mt5ArchBridge.
+# EURUSD.pro must sit before bare EURUSD: quotes_ready("EURUSD") also matches
+# EURUSD.pro/*.hcc, and attaching the EA on blank EURUSD times out (build 6180).
 ALPHA_QUOTE_SYMBOLS = (
     "BTCUSD",
     "BTCUSDc",
     "BTCUSD.r",
     "BTCUSD.pro",
-    "EURUSD",
     "EURUSD.pro",
+    "EURUSD",
     "AUDCAD.pro",
 )
 DEFAULT_FRESH_SEC = 60

@@ -134,6 +134,21 @@ def test_quotes_ready_audcad_pro_counts_for_alphacapital(tmp_path: Path) -> None
     assert any(inject.quotes_ready(term_dir, symbol) for symbol in inject.ALPHA_QUOTE_SYMBOLS)
 
 
+def test_alpha_ready_prefers_eurusd_pro_over_bare_eurusd(tmp_path: Path) -> None:
+    """EURUSD.pro history must not attach Mt5ArchBridge on blank EURUSD."""
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
+    hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "EURUSD.pro" / "2026.hcc"
+    hcc.parent.mkdir(parents=True, exist_ok=True)
+    hcc.write_bytes(b"hcc")
+    assert inject.quotes_ready(term_dir, "EURUSD.pro") is True
+    assert inject.quotes_ready(term_dir, "EURUSD") is True
+    assert inject.alpha_ready_symbol(term_dir) == "EURUSD.pro"
+    written = inject.inject_charts("alphacapital", term_dir, with_expert=True)
+    text = _chart_text(written[0])
+    assert "symbol=EURUSD.pro" in text
+    assert "symbol=EURUSD\r\n" not in text and "symbol=EURUSD\n" not in text
+
+
 def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
     hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "AUDCAD.pro" / "2026.hcc"
