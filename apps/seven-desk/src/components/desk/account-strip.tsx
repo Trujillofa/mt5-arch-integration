@@ -10,7 +10,7 @@ export function AccountStrip() {
   const { state, selectAccount } = useDesk();
 
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-7">
+    <div className="desk-hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 xl:grid-cols-7">
       {state.accounts.map((account) => {
         const firm = FIRM_BY_ID[account.firmId];
         const selected = state.selectedAccountId === account.id;

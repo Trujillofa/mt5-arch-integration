@@ -64,3 +64,26 @@ orchestrates Wine / `scripts/21` / file-bridge on the host. It leaves :3847
 alone if HTTP 200 is already up. After reboot it comes back when user linger
 is on (`WantedBy=default.target`). A Cursor PTY `npm run dev` dies with the
 session.
+
+## Install as a full-screen “app” (PWA, not Electron)
+
+The desk is a standalone web app: `display: standalone` in
+`apps/seven-desk/src/app/manifest.ts`, `viewport-fit=cover`, and `100dvh`
+plus `safe-area-inset` padding. That is not a native rewrite.
+
+**This Linux box.** Symlink the launcher (Chromium `--app=` via
+`omarchy-launch-webapp`, same as ChatGPT / Discord):
+
+```bash
+ln -sfn ~/Projects/trading/mt5-arch-integration/apps/seven-desk/seven-desk.desktop \
+  ~/.local/share/applications/seven-desk.desktop
+```
+
+Then open **Seven Desk** from the app launcher. That window hides the tab
+strip. A normal tab at http://127.0.0.1:3847 still shows browser chrome.
+
+**Phone on Tailscale.** In Safari (iOS) or Chrome (Android) open
+http://100.95.218.24:3847 or this host’s MagicDNS `*.ts.net` URL on port
+3847. Share → **Add to Home Screen**. Installed mode drops browser chrome;
+the system status bar stays (`standalone`, not `fullscreen`). Use the
+home-screen icon, not a leftover Safari tab.

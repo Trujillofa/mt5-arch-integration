@@ -215,7 +215,7 @@ export function TradeTicket() {
           </Select>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <Field
             id="lots"
             label="Lots"
@@ -267,7 +267,7 @@ export function TradeTicket() {
             <Button
               type="button"
               disabled={busy}
-              className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+              className="min-h-11 bg-emerald-500 text-zinc-950 hover:bg-emerald-400 sm:min-h-8"
               onClick={() => submit("buy")}
             >
               Buy
@@ -275,21 +275,45 @@ export function TradeTicket() {
             <Button
               type="button"
               disabled={busy}
-              className="bg-rose-500 text-zinc-50 hover:bg-rose-400"
+              className="min-h-11 bg-rose-500 text-zinc-50 hover:bg-rose-400 sm:min-h-8"
               onClick={() => submit("sell")}
             >
               Sell
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("buy_limit")}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              className="min-h-11 sm:min-h-8"
+              onClick={() => submit("buy_limit")}
+            >
               Buy limit
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("sell_limit")}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              className="min-h-11 sm:min-h-8"
+              onClick={() => submit("sell_limit")}
+            >
               Sell limit
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("buy_stop")}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              className="min-h-11 sm:min-h-8"
+              onClick={() => submit("buy_stop")}
+            >
               Buy stop
             </Button>
-            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("sell_stop")}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              className="min-h-11 sm:min-h-8"
+              onClick={() => submit("sell_stop")}
+            >
               Sell stop
             </Button>
           </div>

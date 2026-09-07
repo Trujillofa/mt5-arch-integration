@@ -121,14 +121,25 @@
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-  }
   html {
     @apply font-sans;
     color-scheme: dark;
+    height: 100dvh;
+    overscroll-behavior: none;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100dvh;
+    overscroll-behavior: none;
   }
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+  .desk-hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .desk-hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }
