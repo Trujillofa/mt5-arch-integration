@@ -18,7 +18,11 @@ def bridge_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("MT5_BACKEND", "file")
     monkeypatch.setenv("MT5_BRIDGE_DIR", str(bridge))
     monkeypatch.setenv("MT5_BRIDGE_MAX_AGE", "60")
-    # Avoid ambient credentials noise in config
+    # Settings() reads repo .env. WSF is in the registry with no maps, so an
+    # ambient MT5_BROKER=wsf fail-closes symbols/candles on fixture EURUSD files.
+    # Empty string overrides .env (delenv alone does not).
+    monkeypatch.setenv("MT5_BROKER", "")
+    monkeypatch.setenv("BROKER", "")
     monkeypatch.delenv("MT5_PASSWORD", raising=False)
     return bridge
 
