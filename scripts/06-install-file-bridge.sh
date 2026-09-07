@@ -10,12 +10,18 @@ export_wine_env
 require_cmd wine
 
 SRC="$REPO_ROOT/mql5/Mt5ArchBridge.mq5"
-EXPERTS="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Experts"
+TERM="$(find_terminal64 || true)"
+if [[ -n "$TERM" ]]; then
+  TERM_DIR="$(cd "$(dirname "$TERM")" && pwd)"
+else
+  TERM_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
+fi
+EXPERTS="$TERM_DIR/MQL5/Experts"
 # Case can vary by installer (MetaEditor64.exe vs metaeditor64.exe)
 METAEDITOR=""
 for cand in \
-  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MetaEditor64.exe" \
-  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/metaeditor64.exe"
+  "$TERM_DIR/MetaEditor64.exe" \
+  "$TERM_DIR/metaeditor64.exe"
 do
   if [[ -f "$cand" ]]; then METAEDITOR="$cand"; break; fi
 done
@@ -23,14 +29,14 @@ done
 [[ -f "$SRC" ]] || die "missing $SRC"
 # Create Experts dir if prefix exists but tree incomplete
 if [[ ! -d "$EXPERTS" ]]; then
-  if [[ -d "$WINEPREFIX/drive_c/Program Files/MetaTrader 5" ]]; then
+  if [[ -d "$TERM_DIR" ]]; then
     mkdir -p "$EXPERTS"
   else
     die "Experts dir missing — install MT5 first (./scripts/mt5linux-arch.sh or 02-install-mt5.sh)"
   fi
 fi
 
-INCLUDE_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include"
+INCLUDE_DIR="$TERM_DIR/MQL5/Include"
 mkdir -p "$EXPERTS" "$INCLUDE_DIR"
 cp -f "$REPO_ROOT/mql5/Include/FxSymbolRegistry.mqh" \
   "$INCLUDE_DIR/FxSymbolRegistry.mqh"
@@ -62,6 +68,12 @@ if ! grep -q 'terminal_connected' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
 fi
 if ! grep -q 'DeskOrderProcessIfRequested' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing DeskOrderProcessIfRequested (in-process desk limits)"
+fi
+if ! grep -q 'WriteOrders' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
+  die "FileBridgeSnapshots.mqh missing WriteOrders (OrdersTotal dump)"
+fi
+if ! grep -q 'orders.json' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
+  die "FileBridgeSnapshots.mqh missing orders.json"
 fi
 if [[ ! -f "$INCLUDE_DIR/DeskOrderBridge.mqh" ]]; then
   die "DeskOrderBridge.mqh missing from Include/"
@@ -106,7 +118,7 @@ else
   [[ -f "$LOG" ]] && { info "compile log:"; iconv -f UTF-16 -t UTF-8 "$LOG" 2>/dev/null | tail -30 || tr -d '\000' <"$LOG" | tail -30; }
 fi
 # Ensure output dir exists for EA
-mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_arch"/{orders_in,orders_out}
+mkdir -p "$TERM_DIR/MQL5/Files/mt5_arch"/{orders_in,orders_out}
 
 cat <<'EOF'
 

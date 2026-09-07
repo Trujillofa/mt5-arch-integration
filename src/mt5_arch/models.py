@@ -71,6 +71,21 @@ class TerminalInfo:
 
 
 @dataclass(frozen=True, slots=True)
+class PendingOrder:
+    """One working pending from Mt5ArchBridge orders.json (OrdersTotal)."""
+
+    ticket: int
+    symbol: str
+    type: str
+    side: str
+    volume: float
+    price_open: float
+    stop_loss: float
+    take_profit: float
+    status: str = "pending"
+
+
+@dataclass(frozen=True, slots=True)
 class Deal:
     """One closed deal from Mt5ArchBridge deals_export.csv (14-day window).
 

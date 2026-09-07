@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { PendingOrdersBlock } from "@/components/desk/pending-orders-block";
 import { Button } from "@/components/ui/button";
 import { useDesk } from "@/lib/desk-context";
+import { useLiveProbePoll } from "@/lib/use-live-probe-poll";
 import {
   NEOMAA_EXPECTED_LOGIN,
   NEOMAA_EXPECTED_SERVER,
@@ -14,16 +16,18 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: NeomaaLiveReport | null = null;
 
 export function NeomaaLiveProbe() {
-  const { updateAccount } = useDesk();
+  const { updateAccount, ingestBridgePendings } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<NeomaaLiveReport | null>(lastReport);
 
-  async function run() {
+  const run = useCallback(async (poll = false) => {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/neomaa/probe", { cache: "no-store" });
+      const response = await fetch(poll ? "/api/neomaa/probe?poll=1" : "/api/neomaa/probe", {
+        cache: "no-store",
+      });
       if (!response.ok) {
         throw new Error(`Probe failed (${response.status})`);
       }
@@ -31,12 +35,15 @@ export function NeomaaLiveProbe() {
       lastReport = next;
       setReport(next);
       applyToDesk(next, updateAccount);
+      ingestBridgePendings(ACCOUNT_IDS.neomaa, "neomaa", next.pendingOrders ?? []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }
+  }, [updateAccount, ingestBridgePendings]);
+
+  useLiveProbePoll(() => run(true), busy);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -64,7 +71,7 @@ export function NeomaaLiveProbe() {
             is the Neomaa live copy control below.
           </p>
         </div>
-        <Button type="button" size="sm" disabled={busy} onClick={run}>
+        <Button type="button" size="sm" disabled={busy} onClick={() => void run(false)}>
           {busy ? "Fetching…" : "Fetch Neomaa"}
         </Button>
       </div>
@@ -177,6 +184,7 @@ function ReportView({ report }: { report: NeomaaLiveReport }) {
       <p className="rounded-md border border-sky-500/20 bg-background/40 px-2 py-1.5 text-sky-100/90">
         {report.bookHonesty}
       </p>
+      <PendingOrdersBlock orders={report.pendingOrders ?? []} />
       {report.fetchNotes.length ? (
         <ul className="space-y-1 text-muted-foreground">
           {report.fetchNotes.map((note) => (

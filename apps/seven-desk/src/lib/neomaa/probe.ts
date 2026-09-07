@@ -16,6 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
+import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { NeomaaConnectionStatus, NeomaaLiveReport } from "@/lib/neomaa/types";
 
 interface Snapshot {
@@ -156,7 +157,7 @@ function deriveStatus(input: {
   });
 }
 
-export function probeNeomaaLive(): NeomaaLiveReport {
+export function probeNeomaaLive(opts?: { poll?: boolean }): NeomaaLiveReport {
   const env = readNeomaaEnv();
   const usedOperator = Boolean(env.mt5Login || env.hasMt5Password);
   const winePrefixPresent = existsSync(env.winePrefix);
@@ -189,8 +190,10 @@ export function probeNeomaaLive(): NeomaaLiveReport {
     }
   } else {
     notes.push("No readable Neomaa account.json yet.");
-    snapshot = probeMt5ArchCli(env, preferredBridge);
-    if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Neomaa prefix.");
+    if (!opts?.poll) {
+      snapshot = probeMt5ArchCli(env, preferredBridge);
+      if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Neomaa prefix.");
+    }
   }
 
   if (snapshot?.login && snapshot.login !== NEOMAA_EXPECTED_LOGIN) {
@@ -254,6 +257,7 @@ export function probeNeomaaLive(): NeomaaLiveReport {
     hasPassword: env.hasMt5Password,
     bookHonesty,
     fetchNotes: notes,
+    pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : connectionStatus === "disconnected"

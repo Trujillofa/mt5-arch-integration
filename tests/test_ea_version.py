@@ -48,6 +48,11 @@ def test_heartbeat_writes_the_version_field() -> None:
     assert '" readonly=" + (BRIDGE_READONLY ? "true" : "false")' in snapshots
     assert "OrderSend(" not in snapshots
     assert "#include <DeskOrderBridge" not in snapshots
+    assert "void WriteOrders()" in snapshots
+    write_all = snapshots.index("void WriteAll()")
+    assert snapshots.index("WriteOrders();", write_all) < snapshots.index(
+        'Put(g_dir + "\\\\heartbeat.txt"', write_all
+    )
 
 
 def test_readonly_ea_is_snapshot_only() -> None:

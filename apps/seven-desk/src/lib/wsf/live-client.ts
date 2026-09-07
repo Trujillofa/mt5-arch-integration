@@ -853,7 +853,74 @@ function personalMt5Book(
   };
 }
 
-export async function probeWsfLive(): Promise<WsfLiveReport> {
+function probeWsfFilePoll(): WsfLiveReport {
+  const operator = readOperatorEnv();
+  const useOperator = operatorEnvPresent(operator);
+  const fileSnap = readMt5FileBackend(operator);
+  if (fileSnap.book && !canReportConnected(fileSnap.freshness)) {
+    const reject = freshnessRejectNote(fileSnap.freshness);
+    if (reject) fileSnap.note = `${fileSnap.note} ${reject}`.trim();
+    fileSnap.book = {
+      ...fileSnap.book,
+      balance: null,
+      equity: null,
+    };
+    fileSnap.positions = [];
+    fileSnap.pendingOrders = [];
+    fileSnap.deals = [];
+  }
+  const winePrefixPresent = winePrefixExists(operator);
+  const fileBridgePresent = fileSnap.freshness.fileBridgePresent;
+  const live = Boolean(fileSnap.book && canReportConnected(fileSnap.freshness));
+  const connectionStatus = deriveConnectionStatus({
+    liveBalance: live,
+    usedOperator: useOperator,
+    hasPassword: operator.hasMt5Password,
+    winePrefixPresent,
+    fileBridgePresent,
+  });
+  const login = fileSnap.book?.login || operator.mt5Login;
+  const server = fileSnap.book?.broker || operator.mt5Server;
+  return {
+    source: "file-poll",
+    fetchedAt: new Date().toISOString(),
+    homepageOk: false,
+    usedOfficialDemoCard: false,
+    usedOperatorEnv: useOperator,
+    email: null,
+    identity: {
+      email: null,
+      nickname: null,
+      host: server || WSF_MT5_SERVER,
+      login,
+      server,
+      platform: "MT5",
+      hasPassword: operator.hasMt5Password,
+      credentialSource: useOperator ? "operator-env" : "none",
+    },
+    platforms: [],
+    books: fileSnap.book ? [fileSnap.book] : [],
+    openPositions: fileSnap.positions,
+    pendingOrders: fileSnap.pendingOrders,
+    recentDeals: fileSnap.deals,
+    fetchNotes: [fileSnap.note, "Poll is file-bridge only — no Wine/CLI."].filter(Boolean),
+    bookHonesty: fileSnap.note,
+    ordersPlaced: false,
+    portal: WSF_PORTAL,
+    nextSecretNeeded: live ? null : "A fresh WSF file-bridge heartbeat.",
+    winePrefixPresent,
+    fileBridgePresent,
+    connectionStatus,
+    login,
+    server,
+    balance: live ? fileSnap.book?.balance ?? null : null,
+    equity: live ? fileSnap.book?.equity ?? null : null,
+    currency: live ? fileSnap.book?.currency ?? null : null,
+  };
+}
+
+export async function probeWsfLive(opts?: { poll?: boolean }): Promise<WsfLiveReport> {
+  if (opts?.poll) return probeWsfFilePoll();
   const operator = readOperatorEnv();
   const useOperator = operatorEnvPresent(operator);
   const { card, homepageOk } = useOperator
@@ -876,6 +943,7 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
       equity: null,
     };
     fileSnap.positions = [];
+    fileSnap.pendingOrders = [];
     fileSnap.deals = [];
   }
   const archCli = probeMt5ArchCli();
@@ -1029,6 +1097,7 @@ export async function probeWsfLive(): Promise<WsfLiveReport> {
     platforms: [mt5, ctrader.probe, matchTrader],
     books,
     openPositions,
+    pendingOrders: fileSnap.pendingOrders,
     recentDeals,
     fetchNotes,
     bookHonesty,

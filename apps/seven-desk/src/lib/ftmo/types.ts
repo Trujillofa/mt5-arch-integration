@@ -1,4 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/ftmo/env` from the browser. */
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
 export const FTMO_EXPECTED_LOGIN = "541163357";
 export const FTMO_EXPECTED_SERVER = "FTMO-Server4";
 export const FTMO_SERVER_NEEDLE = "FTMO";
@@ -36,4 +37,5 @@ export interface FtmoLiveReport {
   bookHonesty: string;
   fetchNotes: string[];
   nextSecretNeeded: string | null;
+  pendingOrders: BridgePendingOrder[];
 }

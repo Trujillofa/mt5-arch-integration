@@ -6,12 +6,14 @@ import {
   type BridgeFreshness,
 } from "@/lib/bridge-freshness";
 import { WSF_EXPECTED_LOGIN } from "@/lib/wsf/constants";
+import { parsePendingOrders, type BridgePendingOrder } from "@/lib/bridge-orders";
 import type { WsfDealRow, WsfFetchedAccount, WsfPositionRow } from "@/lib/wsf/types";
 import type { WsfOperatorEnv } from "@/lib/wsf/env";
 
 export interface Mt5FileSnapshot {
   book: WsfFetchedAccount | null;
   positions: WsfPositionRow[];
+  pendingOrders: BridgePendingOrder[];
   deals: WsfDealRow[];
   note: string;
   freshness: BridgeFreshness;
@@ -160,6 +162,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
     return {
       book: null,
       positions: [],
+      pendingOrders: [],
       deals: [],
       note: `MT5_BACKEND=${env.mt5Backend} is not a file snapshot — skipped.`,
       freshness,
@@ -177,6 +180,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
       if (login !== WSF_EXPECTED_LOGIN) continue;
       const dir = path.endsWith("account.json") ? path.slice(0, -"account.json".length) : "";
       let positions = parsePositions(raw.positions, login);
+      let pendingOrders: BridgePendingOrder[] = [];
       let deals: WsfDealRow[] = [];
       if (dir && isFile(join(dir, "positions.json"))) {
         positions = parsePositions(
@@ -184,16 +188,22 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
           login
         );
       }
+      if (dir && isFile(join(dir, "orders.json"))) {
+        pendingOrders = parsePendingOrders(
+          JSON.parse(readFileSync(join(dir, "orders.json"), "utf8"))
+        );
+      }
       const dealsCsv = dir ? join(dir, "deals_export.csv") : "";
       if (dealsCsv && isFile(dealsCsv) && isFile(join(dir, "dump_deals.done"))) {
         deals = parseDealsCsv(readFileSync(dealsCsv, "utf8"), login);
       }
-      if (book || positions.length || deals.length) {
+      if (book || positions.length || pendingOrders.length || deals.length) {
         return {
           book,
           positions,
+          pendingOrders,
           deals,
-          note: `Read Mt5ArchBridge snapshot (${positions.length} position(s), ${deals.length} deal(s)). Pending orders are not exported (positions.json is PositionsTotal only). Path not printed.`,
+          note: `Read Mt5ArchBridge snapshot (${positions.length} position(s), ${pendingOrders.length} pending(s), ${deals.length} deal(s)). orders.json is OrdersTotal; positions.json is PositionsTotal. Path not printed.`,
           freshness,
         };
       }
@@ -206,6 +216,7 @@ export function readMt5FileBackend(env: WsfOperatorEnv): Mt5FileSnapshot {
   return {
     book: null,
     positions: [],
+    pendingOrders: [],
     deals: [],
     note: env.mt5Backend === "file"
       ? anyBridge

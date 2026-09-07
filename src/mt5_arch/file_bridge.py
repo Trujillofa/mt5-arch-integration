@@ -15,7 +15,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from mt5_arch.models import AccountInfo, Candle, CandlesResult, Deal, SymbolInfo, TerminalInfo
+from mt5_arch.models import (
+    AccountInfo,
+    Candle,
+    CandlesResult,
+    Deal,
+    PendingOrder,
+    SymbolInfo,
+    TerminalInfo,
+)
 from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 
 # Must match Settings.mt5_bridge_max_age (MT5_BRIDGE_MAX_AGE) and AGENTS.md.
@@ -285,6 +293,18 @@ class FileBridgeClient:
                 raise FileBridgeError(f"{path.name}: bad candle {i}: {exc}") from exc
         return CandlesResult(symbol=symbol, timeframe=tf, candles=candles)
 
+    def orders(self) -> list[PendingOrder]:
+        """Read orders.json (OrdersTotal working pendings). Missing file is empty.
+
+        History is not this dump. Stale heartbeat still fails via ensure_alive().
+        """
+        self.ensure_alive()
+        path = self.bridge_dir / "orders.json"
+        if not path.exists():
+            return []
+        data = self._read_json("orders.json")
+        return parse_pending_orders(data)
+
     def deals(self) -> list[Deal]:
         """Read deals_export.csv. Completeness is dump_deals.done only — not heartbeat.
 
@@ -396,6 +416,46 @@ def _read_bridge_text(path: Path, *, label: str) -> str:
         return raw.decode("utf-8")
     except UnicodeDecodeError:
         return raw.decode("cp1252", errors="replace")
+
+
+def parse_pending_orders(raw: object) -> list[PendingOrder]:
+    """Parse EA orders.json. History is not accepted as a substitute."""
+    if raw is None:
+        return []
+    rows: list[object]
+    if isinstance(raw, list):
+        rows = raw
+    elif isinstance(raw, dict):
+        inner = raw.get("orders", [])
+        if not isinstance(inner, list):
+            raise FileBridgeError("orders.json: 'orders' is not a list")
+        rows = inner
+    else:
+        raise FileBridgeError("orders.json is not an object or list")
+    out: list[PendingOrder] = []
+    for i, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise FileBridgeError(f"orders.json: order {i} is not an object")
+        try:
+            ticket = int(row["ticket"])
+            volume = float(row.get("volume", 0) or 0)
+            price = float(row.get("price_open", row.get("price", 0)) or 0)
+            out.append(
+                PendingOrder(
+                    ticket=ticket,
+                    symbol=str(row.get("symbol", "") or ""),
+                    type=str(row.get("type", "") or ""),
+                    side=str(row.get("side", "") or ""),
+                    volume=volume,
+                    price_open=price,
+                    stop_loss=float(row.get("stop_loss", 0) or 0),
+                    take_profit=float(row.get("take_profit", 0) or 0),
+                    status=str(row.get("status", "pending") or "pending"),
+                )
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise FileBridgeError(f"orders.json: bad order {i}: {exc}") from exc
+    return out
 
 
 def _parse_dump_deals_done(text: str) -> int:

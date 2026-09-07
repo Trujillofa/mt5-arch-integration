@@ -1,4 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/neomaa/env` from the browser. */
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
 export const NEOMAA_EXPECTED_LOGIN = "7745107";
 export const NEOMAA_EXPECTED_SERVER = "Neomaaa-global";
 export const NEOMAA_SERVER_NEEDLE = "Neomaaa";
@@ -36,4 +37,5 @@ export interface NeomaaLiveReport {
   bookHonesty: string;
   fetchNotes: string[];
   nextSecretNeeded: string | null;
+  pendingOrders: BridgePendingOrder[];
 }

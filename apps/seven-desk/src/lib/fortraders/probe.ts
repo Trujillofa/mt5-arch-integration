@@ -16,6 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
+import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { FortradersConnectionStatus, FortradersLiveReport } from "@/lib/fortraders/types";
 
 interface Snapshot {
@@ -156,7 +157,7 @@ function deriveStatus(input: {
   });
 }
 
-export function probeFortradersLive(): FortradersLiveReport {
+export function probeFortradersLive(opts?: { poll?: boolean }): FortradersLiveReport {
   const env = readFortradersEnv();
   const usedOperator = Boolean(env.mt5Login || env.hasMt5Password);
   const winePrefixPresent = existsSync(env.winePrefix);
@@ -187,8 +188,10 @@ export function probeFortradersLive(): FortradersLiveReport {
     }
   } else {
     notes.push("No readable Fortraders account.json yet.");
-    snapshot = probeMt5ArchCli(env, preferredBridge);
-    if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Fortraders prefix.");
+    if (!opts?.poll) {
+      snapshot = probeMt5ArchCli(env, preferredBridge);
+      if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Fortraders prefix.");
+    }
   }
 
   if (snapshot?.login && snapshot.login !== FORTRADERS_EXPECTED_LOGIN) {
@@ -250,6 +253,7 @@ export function probeFortradersLive(): FortradersLiveReport {
     hasPassword: env.hasMt5Password,
     bookHonesty,
     fetchNotes: notes,
+    pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : env.hasMt5Password

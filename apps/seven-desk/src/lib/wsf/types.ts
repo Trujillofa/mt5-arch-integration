@@ -1,3 +1,5 @@
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
+
 export interface WsfPlatformProbe {
   platform: "mt5" | "ctrader" | "match-trader";
   endpoint: string;
@@ -74,6 +76,7 @@ export interface WsfLiveReport {
   platforms: WsfPlatformProbe[];
   books: WsfFetchedAccount[];
   openPositions: WsfPositionRow[];
+  pendingOrders: BridgePendingOrder[];
   recentDeals: WsfDealRow[];
   fetchNotes: string[];
   bookHonesty: string;
