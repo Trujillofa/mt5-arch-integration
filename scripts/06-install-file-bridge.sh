@@ -30,11 +30,14 @@ if [[ ! -d "$EXPERTS" ]]; then
   fi
 fi
 
-mkdir -p "$EXPERTS" "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include"
+INCLUDE_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include"
+mkdir -p "$EXPERTS" "$INCLUDE_DIR"
 cp -f "$REPO_ROOT/mql5/Include/FxSymbolRegistry.mqh" \
-  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/FxSymbolRegistry.mqh"
+  "$INCLUDE_DIR/FxSymbolRegistry.mqh"
+cp -f "$REPO_ROOT/mql5/Include/FileBridgeSnapshots.mqh" \
+  "$INCLUDE_DIR/FileBridgeSnapshots.mqh"
 cp -f "$REPO_ROOT/mql5/Include/DeskOrderBridge.mqh" \
-  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/DeskOrderBridge.mqh"
+  "$INCLUDE_DIR/DeskOrderBridge.mqh"
 cp -f "$SRC" "$EXPERTS/Mt5ArchBridge.mq5"
 info "Copied EA source to $EXPERTS/Mt5ArchBridge.mq5"
 # Verify deploy (gating for install path)
@@ -45,20 +48,26 @@ fi
 if ! grep -q 'OnTick' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing OnTick backup path"
 fi
-if ! grep -q 'terminal_connected' "$EXPERTS/Mt5ArchBridge.mq5"; then
-  die "deployed EA missing terminal_connected account field"
+if ! grep -q 'FileBridgeSnapshots.mqh' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing FileBridgeSnapshots.mqh include"
 fi
-if ! grep -q 'FxResolveSymbol' "$EXPERTS/Mt5ArchBridge.mq5"; then
-  die "deployed EA missing FxResolveSymbol (explicit registry)"
+if ! grep -q 'FxResolveSymbol' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
+  die "FileBridgeSnapshots.mqh missing FxResolveSymbol (explicit registry)"
 fi
-if ! grep -q 'IsEffectivelyConnected' "$EXPERTS/Mt5ArchBridge.mq5"; then
-  die "deployed EA missing IsEffectivelyConnected (Wine TERMINAL_CONNECTED fallback)"
+if ! grep -q 'IsEffectivelyConnected' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
+  die "FileBridgeSnapshots.mqh missing IsEffectivelyConnected (Wine TERMINAL_CONNECTED fallback)"
+fi
+if ! grep -q 'terminal_connected' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
+  die "FileBridgeSnapshots.mqh missing terminal_connected account field"
 fi
 if ! grep -q 'DeskOrderProcessIfRequested' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing DeskOrderProcessIfRequested (in-process desk limits)"
 fi
-if [[ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/DeskOrderBridge.mqh" ]]; then
+if [[ ! -f "$INCLUDE_DIR/DeskOrderBridge.mqh" ]]; then
   die "DeskOrderBridge.mqh missing from Include/"
+fi
+if [[ ! -f "$INCLUDE_DIR/FileBridgeSnapshots.mqh" ]]; then
+  die "FileBridgeSnapshots.mqh missing from Include/"
 fi
 info "Deployed EA has timer + OnTick + connection fields"
 

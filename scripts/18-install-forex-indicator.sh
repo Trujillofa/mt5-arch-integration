@@ -31,6 +31,7 @@ SRC_INC=(
   "${ROOT}/mql5/Include/ForexUtils.mqh"
   "${ROOT}/mql5/Include/FxSymbolRegistry.mqh"
   "${ROOT}/mql5/Include/DeskOrderBridge.mqh"
+  "${ROOT}/mql5/Include/FileBridgeSnapshots.mqh"
   "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
   "${ROOT}/mql5/Include/IndexM5Export.mqh"
 )
@@ -45,6 +46,7 @@ SRC_EA=(
   "${ROOT}/mql5/Experts/ForexHtfFibTester.mq5"
   "${ROOT}/mql5/Experts/TradeTransactionJournal.mq5"
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
+  "${ROOT}/mql5/Mt5ArchBridgeReadOnly.mq5"
 )
 SRC_SCRIPTS=(
   "${ROOT}/mql5/Scripts/ExportHtfFibParityFixture.mq5"

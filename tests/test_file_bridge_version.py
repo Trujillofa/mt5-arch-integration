@@ -18,6 +18,7 @@ from mt5_arch.file_bridge import (
     MIN_DEAL_DUMP_VERSION,
     FileBridgeClient,
     FileBridgeError,
+    parse_bridge_readonly,
     parse_bridge_version,
 )
 
@@ -47,6 +48,30 @@ def _set_heartbeat(bridge: Path, text: str) -> None:
 )
 def test_parse_bridge_version(text: str, expected: tuple[int, ...] | None) -> None:
     assert parse_bridge_version(text) == expected
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        (f"{_LIVE_HEARTBEAT} version=1.25 readonly=true", True),
+        (f"{_LIVE_HEARTBEAT} version=1.25 readonly=false", False),
+        (f"{_LIVE_HEARTBEAT} version=1.25", False),
+        (_LIVE_HEARTBEAT, False),
+        ("", False),
+        ("123 connected=1 symbol=XREADONLY=true", False),
+    ],
+)
+def test_parse_bridge_readonly(text: str, expected: bool) -> None:
+    assert parse_bridge_readonly(text) is expected
+
+
+def test_bridge_readonly_reads_live_format(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    _set_heartbeat(bridge, f"{_LIVE_HEARTBEAT} version=1.25 readonly=true")
+    assert _client(bridge).bridge_readonly() is True
+    _set_heartbeat(bridge, f"{_LIVE_HEARTBEAT} version=1.25")
+    assert _client(bridge).bridge_readonly() is False
 
 
 def test_bridge_version_reads_live_format(tmp_path: Path) -> None:

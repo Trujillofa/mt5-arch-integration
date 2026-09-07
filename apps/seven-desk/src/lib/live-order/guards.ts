@@ -542,6 +542,11 @@ export function parseBridgeVersion(text: string): number[] | null {
   return match[1].split(".").map((part) => Number(part));
 }
 
+/** True only for an explicit `readonly=true` heartbeat field. Missing = trading. */
+export function parseBridgeReadonly(text: string): boolean {
+  return /(?:^|\s)readonly=true(?:\s|$)/i.test(text);
+}
+
 export function versionAtLeast(got: number[] | null, min: readonly number[]): boolean {
   if (!got || got.length === 0) return false;
   const n = Math.max(got.length, min.length);
@@ -620,9 +625,13 @@ export function eaNotReadyReason(input: {
   version: number[] | null;
   tradeAllowed: boolean | null;
   algoAllowed: boolean | null;
+  readonly?: boolean;
 }): string | null {
   if (!input.heartbeatFresh) {
     return "Mt5ArchBridge heartbeat is stale — refusing OrderSend (no wine one-shot fallback)";
+  }
+  if (input.readonly) {
+    return "read-only bridge — refusing OrderSend (no wine one-shot fallback)";
   }
   if (!versionAtLeast(input.version, MIN_DESK_ORDER_VERSION)) {
     const shown = input.version ? input.version.join(".") : "unknown";

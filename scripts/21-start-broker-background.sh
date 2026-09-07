@@ -6,8 +6,9 @@
 #
 # Does not load repo .env (that pins WSF). Does not print passwords.
 # Refuses vantage / fpmarkets / exness so those live books stay put.
-# For wsf / ftmo / fundednext / alphacapital / fundingpips / neomaa / fortraders, writes Mt5ArchBridge onto the
-# branded Default chart (portable loads MQL5/Profiles/Charts/Default). A stale
+# For wsf / ftmo / fundednext / fundingpips / neomaa / fortraders, writes trading
+# Mt5ArchBridge onto the branded Default chart. Alpha attaches Mt5ArchBridgeReadOnly
+# (no OrderSend). Portable loads MQL5/Profiles/Charts/Default. A stale
 # heartbeat restarts only that prefix's branded terminal64 — never a generic
 # Program Files/MetaTrader 5 tree.
 set -euo pipefail
@@ -99,11 +100,11 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" --no-expert --allow-missing-ex5 \
           || die "failed to write quotes-first Default chart for $broker"
-        info "$broker has no quotes/history yet — starting without Mt5ArchBridge so BTC/FX can sync"
+        info "$broker has no quotes/history yet — starting without the file-bridge EA so BTC/FX can sync"
       else
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" \
-          || die "failed to inject Mt5ArchBridge on $broker Default chart"
+          || die "failed to inject file-bridge EA on $broker Default chart"
       fi
       if [[ "$running" -eq 1 ]]; then
         if [[ "$quotes_first" -eq 0 ]] && python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
@@ -112,7 +113,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
           park_prefix_terminals_background "$WINEPREFIX" "$BG_WS"
           continue
         fi
-        info "$broker branded terminal is up but Mt5ArchBridge heartbeat is stale — restarting that book only"
+        info "$broker branded terminal is up but file-bridge heartbeat is stale — restarting that book only"
         python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
           --broker "$broker" --term-dir "$term_dir" --stop-branded \
           || die "failed to stop stale $broker branded terminal"
@@ -134,7 +135,7 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
   start_terminal64_detached "$term" /portable "${extra[@]}"
   if [[ "$broker" == "alphacapital" && "${quotes_first:-0}" -eq 1 ]]; then
     term_dir="$(cd "$(dirname "$term")" && pwd)"
-    info "waiting up to 90s for ACG BTC/FX history before attaching Mt5ArchBridge"
+    info "waiting up to 90s for ACG BTC/FX history before attaching Mt5ArchBridgeReadOnly"
     quotes_ok=0
     for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18; do
       sleep 5
@@ -145,10 +146,10 @@ raise SystemExit(0 if list_terminal64_pids(wineprefix=os.environ["WINEPREFIX"]) 
       fi
     done
     if [[ "$quotes_ok" -eq 1 ]]; then
-      info "ACG quotes/history is present — attaching Mt5ArchBridge and restarting that book only"
+      info "ACG quotes/history is present — attaching Mt5ArchBridgeReadOnly and restarting that book only"
       python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
         --broker alphacapital --term-dir "$term_dir" \
-        || die "failed to inject Mt5ArchBridge after quotes"
+        || die "failed to inject Mt5ArchBridgeReadOnly after quotes"
       python3 "$SCRIPT_DIR/inject_branded_bridge_chart.py" \
         --broker alphacapital --term-dir "$term_dir" --stop-branded \
         || die "failed to stop ACG for post-quotes attach"

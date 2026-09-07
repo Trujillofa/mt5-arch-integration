@@ -22,6 +22,7 @@ export interface AlphaCapitalLiveReport {
   ordersPlaced: false;
   winePrefixPresent: boolean;
   fileBridgePresent: boolean;
+  bridgeReadonly: boolean | null;
   connectionStatus: AlphaCapitalConnectionStatus;
   login: string | null;
   server: string | null;

@@ -17,9 +17,10 @@ SPEC.loader.exec_module(inject)
 def _brand_tree(tmp_path: Path, name: str, *, with_ex5: bool = True) -> Path:
     term_dir = tmp_path / "Program Files" / name
     if with_ex5:
-        ex5 = term_dir / "MQL5" / "Experts" / "Mt5ArchBridge.ex5"
-        ex5.parent.mkdir(parents=True, exist_ok=True)
-        ex5.write_bytes(b"ex5")
+        experts = term_dir / "MQL5" / "Experts"
+        experts.mkdir(parents=True, exist_ok=True)
+        (experts / "Mt5ArchBridge.ex5").write_bytes(b"ex5")
+        (experts / "Mt5ArchBridgeReadOnly.ex5").write_bytes(b"ex5")
     return term_dir
 
 
@@ -48,6 +49,9 @@ def test_inject_alphacapital_writes_inpbroker(tmp_path: Path) -> None:
     assert "symbol=BTCUSD" in text
     assert "InpDumpHistory=false" in text
     assert "InpSymbols=BTCUSD,BTCUSDc,BTCUSD.r,EURUSD" in text
+    assert "Mt5ArchBridgeReadOnly" in text
+    assert "Experts\\Mt5ArchBridgeReadOnly.ex5" in text
+    assert "Experts\\Mt5ArchBridge.ex5" not in text
 
 
 def test_inject_alphacapital_quotes_first_omits_expert(tmp_path: Path) -> None:
@@ -135,7 +139,7 @@ def test_quotes_ready_audcad_pro_counts_for_alphacapital(tmp_path: Path) -> None
 
 
 def test_alpha_ready_prefers_eurusd_pro_over_bare_eurusd(tmp_path: Path) -> None:
-    """EURUSD.pro history must not attach Mt5ArchBridge on blank EURUSD."""
+    """EURUSD.pro history must not attach the file-bridge EA on blank EURUSD."""
     term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal")
     hcc = term_dir / "Bases" / "ACGMarkets-Main" / "history" / "EURUSD.pro" / "2026.hcc"
     hcc.parent.mkdir(parents=True, exist_ok=True)
@@ -160,7 +164,8 @@ def test_inject_alphacapital_expert_uses_ready_pro_symbol(tmp_path: Path) -> Non
     written = inject.inject_charts("alphacapital", term_dir, with_expert=True)
     text = _chart_text(written[0])
     assert "symbol=AUDCAD.pro" in text
-    assert "Mt5ArchBridge" in text
+    assert "Mt5ArchBridgeReadOnly" in text
+    assert "Experts\\Mt5ArchBridge.ex5" not in text
     assert not extra.exists()
 
 
@@ -231,6 +236,15 @@ def test_missing_ex5_fails_closed(tmp_path: Path) -> None:
     term_dir = _brand_tree(tmp_path, "FundedNext MT5 Terminal", with_ex5=False)
     with pytest.raises(inject.InjectError, match="Mt5ArchBridge.ex5 missing"):
         inject.inject_charts("fundednext", term_dir)
+
+
+def test_missing_readonly_ex5_fails_closed_on_alpha(tmp_path: Path) -> None:
+    term_dir = _brand_tree(tmp_path, "ACG Markets MT5 Terminal", with_ex5=False)
+    trading = term_dir / "MQL5" / "Experts" / "Mt5ArchBridge.ex5"
+    trading.parent.mkdir(parents=True, exist_ok=True)
+    trading.write_bytes(b"ex5")
+    with pytest.raises(inject.InjectError, match="Mt5ArchBridgeReadOnly.ex5 missing"):
+        inject.inject_charts("alphacapital", term_dir)
 
 
 def test_heartbeat_freshness(tmp_path: Path) -> None:
