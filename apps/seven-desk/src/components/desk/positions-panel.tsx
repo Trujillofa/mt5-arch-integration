@@ -22,10 +22,10 @@ export function PositionsPanel() {
   if (state.positions.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
-        <p className="text-sm font-medium">No open positions</p>
+        <p className="text-sm font-medium">No open positions or working limits</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Copied fills land here. Equity on each account card tracks floating
-          P&amp;L from the paper book.
+          Copied fills and open limits/stops land here. Fetch/poll reads
+          orders.json. Equity tracks floating P&amp;L from the paper book.
         </p>
       </div>
     );

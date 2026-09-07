@@ -1,13 +1,17 @@
 [Unit]
 Description=Seven Desk (host Next.js on :3847)
 # Host next, not Podman — the desk orchestrates Wine / scripts/21 / file-bridge.
+# RestartSec=3 vs the default 5-in-10s start limit never trips (5×3s > 10s), so
+# EADDRINUSE used to restart forever. Cap retries; do not restart on clean exit.
+StartLimitIntervalSec=90
+StartLimitBurst=5
 
 [Service]
 Type=simple
 WorkingDirectory=%h/Projects/trading/mt5-arch-integration/apps/seven-desk
 Environment=PATH=%h/.local/share/mise/installs/node/latest/bin:%h/.local/bin:%h/.local/share/mise/shims:/usr/local/bin:/usr/bin
 ExecStart=%h/Projects/trading/mt5-arch-integration/scripts/20-seven-desk.sh --foreground
-Restart=always
+Restart=on-failure
 RestartSec=3
 
 [Install]

@@ -16,6 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
+import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { FundedNextConnectionStatus, FundedNextLiveReport } from "@/lib/fundednext/types";
 
 interface Snapshot {
@@ -156,7 +157,7 @@ function deriveStatus(input: {
   });
 }
 
-export function probeFundedNextLive(): FundedNextLiveReport {
+export function probeFundedNextLive(opts?: { poll?: boolean }): FundedNextLiveReport {
   const env = readFundedNextEnv();
   const usedOperator = Boolean(env.mt5Login || env.hasMt5Password);
   const winePrefixPresent = existsSync(env.winePrefix);
@@ -187,8 +188,10 @@ export function probeFundedNextLive(): FundedNextLiveReport {
     }
   } else {
     notes.push("No readable FundedNext account.json yet.");
-    snapshot = probeMt5ArchCli(env, preferredBridge);
-    if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the FundedNext prefix.");
+    if (!opts?.poll) {
+      snapshot = probeMt5ArchCli(env, preferredBridge);
+      if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the FundedNext prefix.");
+    }
   }
 
   if (snapshot?.login && snapshot.login !== FUNDEDNEXT_EXPECTED_LOGIN) {
@@ -250,6 +253,7 @@ export function probeFundedNextLive(): FundedNextLiveReport {
     hasPassword: env.hasMt5Password,
     bookHonesty,
     fetchNotes: notes,
+    pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : env.hasMt5Password

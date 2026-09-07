@@ -1,4 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/fortraders/env` from the browser. */
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
 export const FORTRADERS_EXPECTED_LOGIN = "737150";
 export const FORTRADERS_EXPECTED_SERVER = "FTTrading-Server";
 export const FORTRADERS_SERVER_NEEDLE = "FTTrading";
@@ -36,4 +37,5 @@ export interface FortradersLiveReport {
   bookHonesty: string;
   fetchNotes: string[];
   nextSecretNeeded: string | null;
+  pendingOrders: BridgePendingOrder[];
 }

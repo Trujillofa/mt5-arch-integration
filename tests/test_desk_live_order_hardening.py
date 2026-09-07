@@ -173,7 +173,10 @@ def test_us30_pending_contract_is_opt_in() -> None:
     assert '"DJ30.c"' in mql
     assert '"DJ30.c"' in wsf
     assert wsf.index('"DJ30.c"') < wsf.index('"US30.cash"')
-    assert "positions.json is PositionsTotal only" in WSF_FILE.read_text(encoding="utf-8")
+    wsf_file = WSF_FILE.read_text(encoding="utf-8")
+    assert "orders.json is OrdersTotal" in wsf_file
+    assert "positions.json is PositionsTotal" in wsf_file
+    assert "Pending orders are not exported" not in wsf_file
     assert "oneshotChartSymbol" in runner
     assert "isUs30Family(parsed.symbol)" in runner
     assert "TRADE_ACTION_PENDING" in mql
@@ -184,9 +187,78 @@ def test_us30_pending_contract_is_opt_in() -> None:
     assert "use_volume_min" in runner
 
 
+FANOUT_UNIT = ROOT / "tests" / "test_desk_copy_fanout.ts"
+FANOUT_ALIAS = ROOT / "tests" / "desk-alias-register.mjs"
+
+CLIENT_NO_ENV = [
+    DESK / "src" / "lib" / "copy-engine.ts",
+    DESK / "src" / "lib" / "copy-fanout.ts",
+    DESK / "src" / "lib" / "bridge-orders.ts",
+    DESK / "src" / "lib" / "desk-context.tsx",
+    DESK / "src" / "lib" / "desk-store.ts",
+    DESK / "src" / "lib" / "use-live-probe-poll.ts",
+    DESK / "src" / "components" / "desk" / "trade-ticket.tsx",
+    DESK / "src" / "components" / "desk" / "blotter-table.tsx",
+    DESK / "src" / "components" / "desk" / "positions-panel.tsx",
+    DESK / "src" / "components" / "desk" / "pending-orders-block.tsx",
+]
+
+
+def test_client_modules_do_not_import_env() -> None:
+    for path in CLIENT_NO_ENV:
+        text = path.read_text(encoding="utf-8")
+        assert '/env"' not in text, path
+        assert "/env'" not in text, path
+
+
+def test_confirm_tokens_unchanged() -> None:
+    assert 'FTMO_LIVE_CONFIRM = "FTMO-541163357"' in (DESK / "src" / "lib" / "ftmo" / "types.ts").read_text()
+    assert 'WSF_LIVE_CONFIRM = "WSF-149736"' in (DESK / "src" / "lib" / "wsf" / "constants.ts").read_text()
+    assert 'FUNDEDNEXT_LIVE_CONFIRM = "FN-13981906"' in (DESK / "src" / "lib" / "fundednext" / "types.ts").read_text()
+    assert 'FUNDINGPIPS_LIVE_CONFIRM = "FUNDINGPIPS-11669306"' in (
+        DESK / "src" / "lib" / "fundingpips" / "types.ts"
+    ).read_text()
+    assert 'FORTRADERS_LIVE_CONFIRM = "FORTRADERS-737150"' in (
+        DESK / "src" / "lib" / "fortraders" / "types.ts"
+    ).read_text()
+    assert 'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"' in (DESK / "src" / "lib" / "neomaa" / "types.ts").read_text()
+    assert 'ALPHACAPITAL_LIVE_CONFIRM = "ACG-2765247"' in (
+        DESK / "src" / "lib" / "alphacapital" / "types.ts"
+    ).read_text()
+
+
+def test_fanout_skips_alpha_and_confirms_size() -> None:
+    fanout = (DESK / "src" / "lib" / "copy-fanout.ts").read_text(encoding="utf-8")
+    context = CONTEXT.read_text(encoding="utf-8")
+    engine = (DESK / "src" / "lib" / "copy-engine.ts").read_text(encoding="utf-8")
+    assert 'COPY_FANOUT_SKIP = new Set<LiveBroker>(["alphacapital"])' in fanout
+    assert "needsSizeConfirm" in fanout
+    assert "Promise.all" in context
+    assert "alpha capital is fetch-only — not copied" in engine
+    assert "alpha capital is fetch-only — not copied" in context
+    assert 'httpAction: "send"' in engine
+    assert 'httpAction: row.livePending ? "cancel" : "close"' in context
+
+
 def test_guards_node_unit() -> None:
     result = subprocess.run(
         ["node", "--experimental-strip-types", str(GUARDS_UNIT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_copy_fanout_node_unit() -> None:
+    result = subprocess.run(
+        [
+            "node",
+            "--experimental-strip-types",
+            "--import",
+            str(FANOUT_ALIAS),
+            str(FANOUT_UNIT),
+        ],
         check=False,
         capture_output=True,
         text=True,

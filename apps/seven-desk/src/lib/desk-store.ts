@@ -7,8 +7,11 @@ import {
   markLiveCloseError,
   placeLiveMasterFill,
   placeMasterTrade,
+  recordHttpBlotter,
   resolveQueuedCopies,
+  upsertSnapshotPendings,
 } from "@/lib/copy-engine";
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { seedDesk } from "@/lib/seed";
 import { clearDesk, loadDesk, saveDesk } from "@/lib/storage";
@@ -235,6 +238,20 @@ export function flattenPosition(positionId: string): string | null {
 
 export function markLiveCloseFailed(positionId: string, reason: string) {
   persist(markLiveCloseError(desk, positionId, reason));
+}
+
+export function recordLiveHttpBlotter(
+  input: Parameters<typeof recordHttpBlotter>[1]
+) {
+  persist(recordHttpBlotter(desk, input));
+}
+
+export function ingestBridgePendings(
+  accountId: string,
+  broker: LiveBroker,
+  orders: BridgePendingOrder[]
+) {
+  persist(upsertSnapshotPendings(desk, accountId, broker, orders));
 }
 
 export function resetDemo() {

@@ -20,10 +20,10 @@ export function BlotterTable() {
   if (rows.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
-        <p className="text-sm font-medium">No fills yet</p>
+        <p className="text-sm font-medium">No orders yet</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Place a master trade to see the paper book and every child order —
-          queued, copied, skipped, or rejected — with the reason.
+          Place or cancel through the desk to record HTTP sends. Working
+          limits/stops also land on Positions after Fetch.
         </p>
       </div>
     );
@@ -38,8 +38,11 @@ export function BlotterTable() {
           <TableHead>Role</TableHead>
           <TableHead>Symbol</TableHead>
           <TableHead>Side</TableHead>
+          <TableHead>Type</TableHead>
           <TableHead className="text-right">Lots</TableHead>
           <TableHead className="text-right">Fill</TableHead>
+          <TableHead className="text-right">Ticket</TableHead>
+          <TableHead className="text-right">ms</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Reason</TableHead>
         </TableRow>
@@ -68,6 +71,9 @@ export function BlotterTable() {
               <TableCell>
                 <SidePill side={event.side} />
               </TableCell>
+              <TableCell className="font-mono text-[11px] text-muted-foreground">
+                {event.httpAction ?? event.orderType ?? "—"}
+              </TableCell>
               <TableCell className="text-right font-mono text-xs tabular-nums">
                 {formatLots(event.lots)}
               </TableCell>
@@ -75,6 +81,12 @@ export function BlotterTable() {
                 {event.fillPrice != null
                   ? formatPrice(event.symbol, event.fillPrice)
                   : "—"}
+              </TableCell>
+              <TableCell className="text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                {event.liveTicket ?? "—"}
+              </TableCell>
+              <TableCell className="text-right font-mono text-[11px] tabular-nums text-muted-foreground">
+                {event.latencyMs != null ? Math.round(event.latencyMs) : "—"}
               </TableCell>
               <TableCell>
                 <CopyStatusPill status={event.status} />

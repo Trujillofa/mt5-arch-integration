@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseBridgeReadonly } from "@/lib/live-order/guards";
+import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import {
   ALPHACAPITAL_EXPECTED_LOGIN,
   ALPHACAPITAL_EXPECTED_SERVER,
@@ -160,7 +161,7 @@ function deriveStatus(input: {
   });
 }
 
-export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
+export function probeAlphaCapitalLive(opts?: { poll?: boolean }): AlphaCapitalLiveReport {
   const env = readAlphaCapitalEnv();
   const usedOperator = Boolean(env.mt5Login || env.hasMt5Password);
   const winePrefixPresent = existsSync(env.winePrefix);
@@ -208,8 +209,10 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
     }
   } else {
     notes.push("No readable Alpha Capital account.json yet.");
-    snapshot = probeMt5ArchCli(env, preferredBridge);
-    if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Alpha Capital prefix.");
+    if (!opts?.poll) {
+      snapshot = probeMt5ArchCli(env, preferredBridge);
+      if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the Alpha Capital prefix.");
+    }
   }
 
   if (snapshot?.login && snapshot.login !== ALPHACAPITAL_EXPECTED_LOGIN) {
@@ -276,6 +279,7 @@ export function probeAlphaCapitalLive(): AlphaCapitalLiveReport {
     hasPassword: env.hasMt5Password,
     bookHonesty,
     fetchNotes: notes,
+    pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : env.hasMt5Password

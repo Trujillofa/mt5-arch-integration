@@ -7,7 +7,7 @@
 #define FILE_BRIDGE_SNAPSHOTS_MQH
 
 #ifndef BRIDGE_VERSION
-#define BRIDGE_VERSION "1.25"
+#define BRIDGE_VERSION "1.26"
 #endif
 #ifndef BRIDGE_READONLY
 #define BRIDGE_READONLY false
@@ -326,6 +326,51 @@ void WritePositions()
    Put(g_dir + "\\positions.json", j);
   }
 
+string OrderTypeName(const long t)
+  {
+   if(t == ORDER_TYPE_BUY) return "buy";
+   if(t == ORDER_TYPE_SELL) return "sell";
+   if(t == ORDER_TYPE_BUY_LIMIT) return "buy_limit";
+   if(t == ORDER_TYPE_SELL_LIMIT) return "sell_limit";
+   if(t == ORDER_TYPE_BUY_STOP) return "buy_stop";
+   if(t == ORDER_TYPE_SELL_STOP) return "sell_stop";
+   if(t == ORDER_TYPE_BUY_STOP_LIMIT) return "buy_stop_limit";
+   if(t == ORDER_TYPE_SELL_STOP_LIMIT) return "sell_stop_limit";
+   return IntegerToString(t);
+  }
+
+// Working pendings only (OrdersTotal). HistoryOrders is not this dump.
+void WriteOrders()
+  {
+   string j = "{\"orders\":[";
+   bool first = true;
+   int total = OrdersTotal();
+   for(int i=0; i<total; i++)
+     {
+      ulong ticket = OrderGetTicket(i);
+      if(ticket == 0) continue;
+      if(!first) j += ",";
+      first = false;
+      long otype = OrderGetInteger(ORDER_TYPE);
+      string side = (otype == ORDER_TYPE_BUY || otype == ORDER_TYPE_BUY_LIMIT ||
+                     otype == ORDER_TYPE_BUY_STOP || otype == ORDER_TYPE_BUY_STOP_LIMIT)
+                    ? "buy" : "sell";
+      j += "{";
+      j += "\"ticket\":" + IntegerToString((long)ticket) + ",";
+      j += "\"symbol\":\"" + Esc(OrderGetString(ORDER_SYMBOL)) + "\",";
+      j += "\"type\":\"" + OrderTypeName(otype) + "\",";
+      j += "\"side\":\"" + side + "\",";
+      j += "\"volume\":" + DoubleToString(OrderGetDouble(ORDER_VOLUME_CURRENT), 4) + ",";
+      j += "\"price_open\":" + DoubleToString(OrderGetDouble(ORDER_PRICE_OPEN), 8) + ",";
+      j += "\"stop_loss\":" + DoubleToString(OrderGetDouble(ORDER_SL), 8) + ",";
+      j += "\"take_profit\":" + DoubleToString(OrderGetDouble(ORDER_TP), 8) + ",";
+      j += "\"status\":\"pending\"";
+      j += "}";
+     }
+   j += "]}";
+   Put(g_dir + "\\orders.json", j);
+  }
+
 void WriteAll()
   {
    g_last_write = TimeLocal();
@@ -334,6 +379,7 @@ void WriteAll()
    WriteSymbols();
    WriteCandles();
    WritePositions();
+   WriteOrders();
    // version= last: appended so any older parser reading leading fields is
    // unaffected. readonly= tells the desk this build will never OrderSend.
    Put(g_dir + "\\heartbeat.txt",

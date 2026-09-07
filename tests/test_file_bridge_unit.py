@@ -16,6 +16,7 @@ from mt5_arch.file_bridge import (
     FileBridgeClient,
     FileBridgeError,
     default_bridge_dir,
+    parse_pending_orders,
 )
 
 
@@ -230,6 +231,62 @@ def test_non_ascii_account_json_does_not_leak_unicode_error(tmp_path: Path) -> N
     )
     info = FileBridgeClient(bridge, max_age_seconds=30.0).account_info()
     assert info.company == "Caf\u00e9 Markets"
+
+
+def test_orders_json_parses_working_pendings(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "orders.json").write_text(
+        json.dumps(
+            {
+                "orders": [
+                    {
+                        "ticket": 88001,
+                        "symbol": "EURUSD",
+                        "type": "buy_limit",
+                        "side": "buy",
+                        "volume": 0.01,
+                        "price_open": 1.08001,
+                        "stop_loss": 0.0,
+                        "take_profit": 0.0,
+                        "status": "pending",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    rows = FileBridgeClient(bridge, max_age_seconds=30.0).orders()
+    assert len(rows) == 1
+    assert rows[0].ticket == 88001
+    assert rows[0].type == "buy_limit"
+    assert rows[0].side == "buy"
+    assert rows[0].volume == 0.01
+    assert rows[0].price_open == 1.08001
+
+
+def test_orders_json_missing_is_empty_not_error(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    assert FileBridgeClient(bridge, max_age_seconds=30.0).orders() == []
+
+
+def test_parse_pending_orders_rejects_history_shaped_object() -> None:
+    parsed = parse_pending_orders({"orders": []})
+    assert parsed == []
+    with pytest.raises(FileBridgeError, match="not a list"):
+        parse_pending_orders({"orders": {"ticket": 1}})
+    with pytest.raises(FileBridgeError, match="bad order"):
+        parse_pending_orders({"orders": [{"symbol": "EURUSD"}]})
+
+
+def test_stale_bridge_refuses_orders(tmp_path: Path) -> None:
+    bridge = tmp_path / "stale"
+    write_bridge_fixture(bridge, age_seconds=120.0)
+    (bridge / "orders.json").write_text('{"orders":[]}', encoding="utf-8")
+    client = FileBridgeClient(bridge, max_age_seconds=10.0)
+    with pytest.raises(FileBridgeError, match="stale"):
+        client.orders()
 
 
 def test_non_ascii_symbol_json_does_not_leak_unicode_error(tmp_path: Path) -> None:

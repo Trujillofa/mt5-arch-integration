@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { PendingOrdersBlock } from "@/components/desk/pending-orders-block";
 import { Button } from "@/components/ui/button";
 import { useDesk } from "@/lib/desk-context";
+import { useLiveProbePoll } from "@/lib/use-live-probe-poll";
 import {
   FUNDINGPIPS_EXPECTED_LOGIN,
   FUNDINGPIPS_EXPECTED_SERVER,
@@ -14,16 +16,19 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: FundingPipsLiveReport | null = null;
 
 export function FundingPipsLiveProbe() {
-  const { updateAccount } = useDesk();
+  const { updateAccount, ingestBridgePendings } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<FundingPipsLiveReport | null>(lastReport);
 
-  async function run() {
+  const run = useCallback(async (poll = false) => {
     setBusy(true);
     setError(null);
     try {
-      const response = await fetch("/api/fundingpips/probe", { cache: "no-store" });
+      const response = await fetch(
+        poll ? "/api/fundingpips/probe?poll=1" : "/api/fundingpips/probe",
+        { cache: "no-store" }
+      );
       if (!response.ok) {
         throw new Error(`Probe failed (${response.status})`);
       }
@@ -31,12 +36,15 @@ export function FundingPipsLiveProbe() {
       lastReport = next;
       setReport(next);
       applyToDesk(next, updateAccount);
+      ingestBridgePendings(ACCOUNT_IDS.fundingpips, "fundingpips", next.pendingOrders ?? []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }
+  }, [updateAccount, ingestBridgePendings]);
+
+  useLiveProbePoll(() => run(true), busy);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -64,7 +72,7 @@ export function FundingPipsLiveProbe() {
             is the FundingPips live copy control below.
           </p>
         </div>
-        <Button type="button" size="sm" disabled={busy} onClick={run}>
+        <Button type="button" size="sm" disabled={busy} onClick={() => void run(false)}>
           {busy ? "Fetching…" : "Fetch FundingPips"}
         </Button>
       </div>
@@ -165,6 +173,7 @@ function ReportView({ report }: { report: FundingPipsLiveReport }) {
       <p className="rounded-md border border-sky-500/20 bg-background/40 px-2 py-1.5 text-sky-100/90">
         {report.bookHonesty}
       </p>
+      <PendingOrdersBlock orders={report.pendingOrders ?? []} />
       {report.fetchNotes.length ? (
         <ul className="space-y-1 text-muted-foreground">
           {report.fetchNotes.map((note) => (

@@ -16,6 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
+import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { FtmoConnectionStatus, FtmoLiveReport } from "@/lib/ftmo/types";
 
 interface Snapshot {
@@ -156,7 +157,7 @@ function deriveStatus(input: {
   });
 }
 
-export function probeFtmoLive(): FtmoLiveReport {
+export function probeFtmoLive(opts?: { poll?: boolean }): FtmoLiveReport {
   const env = readFtmoEnv();
   const usedOperator = Boolean(env.mt5Login || env.hasMt5Password);
   const winePrefixPresent = existsSync(env.winePrefix);
@@ -185,8 +186,10 @@ export function probeFtmoLive(): FtmoLiveReport {
     }
   } else {
     notes.push("No readable FTMO account.json yet.");
-    snapshot = probeMt5ArchCli(env, preferredBridge);
-    if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the FTMO prefix.");
+    if (!opts?.poll) {
+      snapshot = probeMt5ArchCli(env, preferredBridge);
+      if (snapshot?.login) notes.push("mt5-arch account --json succeeded under the FTMO prefix.");
+    }
   }
 
   if (snapshot?.login && snapshot.login !== FTMO_EXPECTED_LOGIN) {
@@ -248,6 +251,7 @@ export function probeFtmoLive(): FtmoLiveReport {
     hasPassword: env.hasMt5Password,
     bookHonesty,
     fetchNotes: notes,
+    pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: live
       ? null
       : env.hasMt5Password

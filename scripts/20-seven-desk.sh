@@ -65,6 +65,10 @@ prepare_app() {
 
 run_foreground() {
   prepare_app
+  if port_listening; then
+    info "port ${PORT} already in use (HTTP $(http_code)); not binding a second Next.js"
+    exit 1
+  fi
   info "Seven Desk on $URL (paper copy default; WSF live order is opt-in)"
   exec npm run dev
 }

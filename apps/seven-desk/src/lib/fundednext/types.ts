@@ -1,4 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/fundednext/env` from the browser. */
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
 export const FUNDEDNEXT_EXPECTED_LOGIN = "13981906";
 export const FUNDEDNEXT_EXPECTED_SERVER = "FundedNext-Server 2";
 export const FUNDEDNEXT_SERVER_NEEDLE = "FundedNext";
@@ -36,4 +37,5 @@ export interface FundedNextLiveReport {
   bookHonesty: string;
   fetchNotes: string[];
   nextSecretNeeded: string | null;
+  pendingOrders: BridgePendingOrder[];
 }

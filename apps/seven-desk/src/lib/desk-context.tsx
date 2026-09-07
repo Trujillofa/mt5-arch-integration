@@ -23,9 +23,11 @@ import {
   getDeskSnapshot,
   getPersistError,
   getServerDeskSnapshot,
+  ingestBridgePendings as ingestBridgePendingsStore,
   markLiveCloseFailed,
   placeLiveMaster,
   placeTrade as placeTradeStore,
+  recordLiveHttpBlotter,
   resetDemo as resetDemoStore,
   resolveGroup,
   selectAccount as selectAccountStore,
@@ -44,6 +46,8 @@ import {
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
@@ -88,6 +92,11 @@ interface DeskApi {
   setFundingpipsLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setNeomaaLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFortradersLiveCopy: (enabled: boolean, confirm: string) => string | null;
+  ingestBridgePendings: (
+    accountId: string,
+    broker: LiveBroker,
+    orders: BridgePendingOrder[]
+  ) => void;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
@@ -127,6 +136,7 @@ function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
   if (reason === FUNDINGPIPS_LIVE_PENDING) return "fundingpips";
   if (reason === NEOMAA_LIVE_PENDING) return "neomaa";
   if (reason === FORTRADERS_LIVE_PENDING) return "fortraders";
+  if (reason === ALPHACAPITAL_LIVE_PENDING) return null;
   return null;
 }
 
@@ -168,6 +178,25 @@ async function closeLiveGroup(
       ticket: row.liveOrder ?? null,
       orderType: row.orderType ?? (row.livePending ? (row.side === "sell" ? "sell_limit" : "buy_limit") : "market"),
     });
+    const ms = payload.holdMs;
+    const ticket = payload.order ?? payload.ticket ?? row.liveOrder;
+    recordLiveHttpBlotter({
+      accountId: row.accountId,
+      role: "slave",
+      symbol,
+      side: row.side,
+      lots: row.lots,
+      price: row.entry,
+      orderType: row.orderType,
+      status: liveCloseAlreadyFlat(payload) ? "filled" : "error",
+      reason: liveCloseAlreadyFlat(payload)
+        ? `HTTP ${row.livePending ? "cancel" : "close"} · ticket ${ticket ?? "—"} · ${ms ?? "—"}ms`
+        : payload.reason || `${row.liveBroker} live close failed`,
+      liveTicket: ticket ?? undefined,
+      latencyMs: ms,
+      httpAction: row.livePending ? "cancel" : "close",
+      groupId: row.groupId,
+    });
     if (liveCloseAlreadyFlat(payload)) {
       flattenPosition(row.id);
     } else {
@@ -193,6 +222,21 @@ async function postLiveOrder(
     orderType?: LiveOrderType;
   }
 ): Promise<LiveOrderResult> {
+  const started = Date.now();
+  if (COPY_FANOUT_SKIP.has(broker)) {
+    return {
+      ok: false,
+      source: "seven-desk",
+      endpoint: endpointFor(broker, "open"),
+      requestId: "",
+      stage: "skip",
+      reason: "alpha capital is fetch-only — not copied",
+      login: null,
+      server: null,
+      winePrefix: winePrefixFor(broker),
+      holdMs: 0,
+    };
+  }
   const endpoint = endpointFor(broker, action === "open" || action === "cancel" ? "open" : "close");
   const volume = input.volume ?? liveLotsForFirm(broker);
   const orderType = input.orderType ?? "market";
@@ -218,7 +262,8 @@ async function postLiveOrder(
         ticket: input.ticket ?? undefined,
       }),
     });
-    return (await response.json()) as LiveOrderResult;
+    const payload = (await response.json()) as LiveOrderResult;
+    return { ...payload, holdMs: payload.holdMs ?? Date.now() - started };
   } catch (caught) {
     const timedOut =
       caught instanceof Error && (caught.name === "TimeoutError" || caught.name === "AbortError");
@@ -236,6 +281,7 @@ async function postLiveOrder(
       login: null,
       server: null,
       winePrefix: winePrefixFor(broker),
+      holdMs: Date.now() - started,
     };
   }
 }
@@ -373,6 +419,13 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const ingestBridgePendings = useCallback(
+    (accountId: string, broker: LiveBroker, orders: BridgePendingOrder[]) => {
+      ingestBridgePendingsStore(accountId, broker, orders);
+    },
+    []
+  );
+
   const setFortradersLiveCopy = useCallback((enabled: boolean, confirm: string) => {
     if (enabled && confirm !== FORTRADERS_LIVE_CONFIRM) {
       return `Type ${FORTRADERS_LIVE_CONFIRM} to arm Fortraders live copy.`;
@@ -393,41 +446,43 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       ftt: fttConfirm.current,
     };
     const pending = pendingLiveSlaveEvents(getDeskSnapshot(), groupId);
-    for (const event of pending) {
-      const broker = brokerForPendingReason(event.reason);
-      if (!broker) continue;
-      const symbol =
-        broker === "wsf" && event.symbol === "EURUSD" ? "EURUSDc" : event.symbol;
-      try {
-        const payload = await postLiveOrder(broker, "open", {
-          confirm: confirmFor(broker, refs),
-          symbol,
-          side: event.side,
-          volume: liveLotsForFirm(broker, event.lots),
-          price: event.requestedPrice,
-          sl: event.sl,
-          tp: event.tp,
-          orderType: event.orderType ?? "market",
-        });
-        applyLiveCopyResult(event.id, payload, broker);
-      } catch (caught) {
-        applyLiveCopyResult(
-          event.id,
-          {
-            ok: false,
-            source: "seven-desk",
-            endpoint: endpointFor(broker, "open"),
-            requestId: "",
-            stage: "copy",
-            reason: caught instanceof Error ? caught.message : `${broker} live copy failed`,
-            login: null,
-            server: null,
-            winePrefix: winePrefixFor(broker),
-          },
-          broker
-        );
-      }
-    }
+    await Promise.all(
+      pending.map(async (event) => {
+        const broker = brokerForPendingReason(event.reason);
+        if (!broker || COPY_FANOUT_SKIP.has(broker)) return;
+        const symbol =
+          broker === "wsf" && event.symbol === "EURUSD" ? "EURUSDc" : event.symbol;
+        try {
+          const payload = await postLiveOrder(broker, "open", {
+            confirm: confirmFor(broker, refs),
+            symbol,
+            side: event.side,
+            volume: liveLotsForFirm(broker, event.lots),
+            price: event.requestedPrice,
+            sl: event.sl,
+            tp: event.tp,
+            orderType: event.orderType ?? "market",
+          });
+          applyLiveCopyResult(event.id, payload, broker);
+        } catch (caught) {
+          applyLiveCopyResult(
+            event.id,
+            {
+              ok: false,
+              source: "seven-desk",
+              endpoint: endpointFor(broker, "open"),
+              requestId: "",
+              stage: "copy",
+              reason: caught instanceof Error ? caught.message : `${broker} live copy failed`,
+              login: null,
+              server: null,
+              winePrefix: winePrefixFor(broker),
+            },
+            broker
+          );
+        }
+      })
+    );
   }, []);
 
   const placeTrade = useCallback((input: MasterTradeInput) => {
@@ -607,6 +662,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFundingpipsLiveCopy,
       setNeomaaLiveCopy,
       setFortradersLiveCopy,
+      ingestBridgePendings,
     }),
     [
       persistError,
@@ -630,6 +686,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFundingpipsLiveCopy,
       setNeomaaLiveCopy,
       setFortradersLiveCopy,
+      ingestBridgePendings,
     ]
   );
 

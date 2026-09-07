@@ -13,6 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { armedCopyBrokers, needsSizeConfirm, sizeConfirmLines } from "@/lib/copy-fanout";
 import { useDesk } from "@/lib/desk-context";
 import { DEFAULT_DESK_LOTS, FIRM_BY_ID, defaultLotsForFirm } from "@/lib/firms";
 import { formatPrice } from "@/lib/format";
@@ -23,7 +32,7 @@ import {
 } from "@/lib/live-order/guards";
 import type { LiveOrderType } from "@/lib/live-order/types";
 import { MASTER_SYMBOLS, quoteBySymbol } from "@/lib/quotes";
-import type { Side } from "@/lib/types";
+import type { MasterTradeInput, Side } from "@/lib/types";
 
 type TicketAction = "buy" | "sell" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
 
@@ -44,6 +53,7 @@ export function TradeTicket() {
   const [sl, setSl] = useState("");
   const [tp, setTp] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingInput, setPendingInput] = useState<MasterTradeInput | null>(null);
 
   const master = state.accounts.find((account) => account.id === state.masterId);
   const quote = quoteBySymbol(state.quotes, symbol);
@@ -127,7 +137,7 @@ export function TradeTicket() {
       setFormError("Pending limit/stop needs a price or a paper quote for the 50-point offset.");
       return;
     }
-    const error = placeTrade({
+    const input: MasterTradeInput = {
       symbol,
       side,
       lots: parsedLots,
@@ -135,14 +145,26 @@ export function TradeTicket() {
       tp: parsedTp,
       price: isPendingOrderType(orderType) ? sendPrice : null,
       orderType,
-    });
+    };
+    if (needsSizeConfirm(parsedLots)) {
+      setPendingInput(input);
+      return;
+    }
+    sendTrade(input);
+  }
+
+  function sendTrade(input: MasterTradeInput) {
+    const error = placeTrade(input);
     if (error) {
       setFormError(error);
       toast.error(error);
       return;
     }
-    const label = orderType === "market" ? side.toUpperCase() : orderType.replace("_", " ").toUpperCase();
-    toast.success(`${label} ${parsedLots.toFixed(2)} ${symbol}`);
+    const label =
+      (input.orderType ?? "market") === "market"
+        ? input.side.toUpperCase()
+        : (input.orderType ?? "limit").replace("_", " ").toUpperCase();
+    toast.success(`${label} ${input.lots.toFixed(2)} ${input.symbol}`);
   }
 
   return (
@@ -274,7 +296,73 @@ export function TradeTicket() {
         </div>
         <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>
       </CardContent>
+      <SizeConfirmDialog
+        open={pendingInput != null}
+        lots={pendingInput?.lots ?? 0}
+        includeMaster={state.ftmoLiveMaster}
+        armed={armedCopyBrokers(state)}
+        onCancel={() => setPendingInput(null)}
+        onConfirm={() => {
+          if (!pendingInput) return;
+          const input = pendingInput;
+          setPendingInput(null);
+          sendTrade(input);
+        }}
+      />
     </Card>
+  );
+}
+
+function SizeConfirmDialog({
+  open,
+  lots,
+  includeMaster,
+  armed,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  lots: number;
+  includeMaster: boolean;
+  armed: ReturnType<typeof armedCopyBrokers>;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const lines = sizeConfirmLines(lots, armed, includeMaster);
+  return (
+    <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirm size {lots.toFixed(2)}</DialogTitle>
+          <DialogDescription>
+            Ticket is not 0.01. Each armed book will send the lot below — not a
+            silent 1.4.
+          </DialogDescription>
+        </DialogHeader>
+        <ul className="space-y-1 font-mono text-sm">
+          {lines.length === 0 ? (
+            <li>Paper only · {lots.toFixed(2)}</li>
+          ) : (
+            lines.map((row) => (
+              <li key={row.id}>
+                {row.name}: {row.lots.toFixed(2)}
+              </li>
+            ))
+          )}
+        </ul>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={onConfirm}>
+            Send{" "}
+            {lines.length
+              ? lines.map((row) => `${row.lots.toFixed(2)}`).join(" · ")
+              : lots.toFixed(2)}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -10,10 +10,7 @@ import type {
   Side,
   TradingAccount,
 } from "@/lib/types";
-import {
-  ALPHACAPITAL_LIVE_PENDING,
-  ALPHACAPITAL_LIVE_SYMBOLS,
-} from "@/lib/alphacapital/types";
+import { ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_PENDING, FUNDEDNEXT_LIVE_SYMBOLS } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_PENDING, FORTRADERS_LIVE_SYMBOLS } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_PENDING, FUNDINGPIPS_LIVE_SYMBOLS } from "@/lib/fundingpips/types";
@@ -23,6 +20,8 @@ import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
 import { isAlreadyFlatReason, isPendingOrderType } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
+import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -436,32 +435,17 @@ function resolveOneSlave(
     };
   }
 
-  if (state.alphacapitalLiveCopy && account.firmId === "alphacapital") {
-    const liveSymbol = mapped.symbol === "EURUSDc" ? "EURUSD" : mapped.symbol;
-    if (!ALPHACAPITAL_LIVE_SYMBOLS.includes(liveSymbol as (typeof ALPHACAPITAL_LIVE_SYMBOLS)[number])) {
-      return {
-        event: {
-          ...patchedBase,
-          symbol: liveSymbol,
-          side,
-          lots: liveLotsForFirm(account.firmId, master.lots),
-          sl: levels.sl,
-          tp: levels.tp,
-          status: "skipped",
-          reason: "symbol not on Alpha Capital live path (EURUSD/BTCUSD only)",
-        },
-      };
-    }
+  if (account.firmId === "alphacapital") {
     return {
       event: {
         ...patchedBase,
-        symbol: liveSymbol,
+        symbol: mapped.symbol === "EURUSDc" ? "EURUSD" : mapped.symbol,
         side,
         lots: liveLotsForFirm(account.firmId, master.lots),
         sl: levels.sl,
         tp: levels.tp,
-        status: "queued",
-        reason: ALPHACAPITAL_LIVE_PENDING,
+        status: "skipped",
+        reason: "alpha capital is fetch-only — not copied",
       },
     };
   }
@@ -814,10 +798,10 @@ export function pendingLiveSlaveEvents(state: DeskState, groupId: string): Blott
       event.groupId === groupId &&
       event.role === "slave" &&
       event.status === "queued" &&
+      event.reason !== ALPHACAPITAL_LIVE_PENDING &&
       (event.reason === WSF_LIVE_PENDING ||
         event.reason === FUNDEDNEXT_LIVE_PENDING ||
         event.reason === FTMO_LIVE_PENDING ||
-        event.reason === ALPHACAPITAL_LIVE_PENDING ||
         event.reason === FUNDINGPIPS_LIVE_PENDING ||
         event.reason === NEOMAA_LIVE_PENDING ||
         event.reason === FORTRADERS_LIVE_PENDING)
@@ -829,13 +813,14 @@ function liveFillLabel(broker: LiveBroker, result: LiveOrderResult): string {
     result.stage === "pending" || isPendingOrderType(result.orderType);
   const kind = pending ? `${result.orderType ?? "limit"}` : "fill";
   const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForFirm(broker);
-  if (broker === "wsf") return `live WSF 149736 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  if (broker === "ftmo") return `live FTMO 541163357 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  if (broker === "alphacapital") return `live ACG 2765247 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  if (broker === "fundingpips") return `live FundingPips 11669306 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  if (broker === "neomaa") return `live Neomaa 7745107 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  if (broker === "fortraders") return `live Fortraders 737150 · ${lots} ${kind} · order ${result.order ?? "—"}`;
-  return `live FN 13981906 · ${lots} ${kind} · order ${result.order ?? "—"}`;
+  const ms = result.holdMs != null && result.holdMs >= 0 ? ` · ${Math.round(result.holdMs)}ms` : "";
+  if (broker === "wsf") return `HTTP send · live WSF 149736 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  if (broker === "ftmo") return `HTTP send · live FTMO 541163357 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  if (broker === "alphacapital") return `HTTP send · live ACG 2765247 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  if (broker === "fundingpips") return `HTTP send · live FundingPips 11669306 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  if (broker === "neomaa") return `HTTP send · live Neomaa 7745107 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  if (broker === "fortraders") return `HTTP send · live Fortraders 737150 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
+  return `HTTP send · live FN 13981906 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
 }
 
 export function applyLiveFill(
@@ -894,6 +879,9 @@ export function applyLiveFill(
           lots,
           orderType,
           reason: liveFillLabel(broker, result),
+          liveTicket: result.order ?? result.ticket,
+          latencyMs: result.holdMs,
+          httpAction: "send" as const,
           updatedAt: now,
         }
       : row
@@ -993,6 +981,9 @@ export function placeLiveMasterFill(
     reason: liveFillLabel(broker, result),
     createdAt: now,
     updatedAt: now,
+    liveTicket: result.order ?? result.ticket,
+    latencyMs: result.holdMs,
+    httpAction: "send",
   };
   const slaveEvents: BlotterEvent[] = state.accounts
     .filter((account) => account.id !== master.id)
@@ -1019,6 +1010,107 @@ export function placeLiveMasterFill(
     blotter: [masterEvent, ...slaveEvents, ...state.blotter].slice(0, BLOTTER_LIMIT),
   };
   return { state: applyQuoteMarks(next), groupId };
+}
+
+export function recordHttpBlotter(
+  state: DeskState,
+  input: {
+    accountId: string;
+    role: BlotterEvent["role"];
+    symbol: string;
+    side: Side;
+    lots: number;
+    price: number;
+    orderType?: LiveOrderType;
+    status: BlotterEvent["status"];
+    reason: string;
+    liveTicket?: number;
+    latencyMs?: number;
+    httpAction: "send" | "cancel" | "close";
+    groupId?: string;
+  }
+): DeskState {
+  const now = Date.now();
+  const event: BlotterEvent = {
+    id: uid("blt"),
+    groupId: input.groupId ?? uid("http"),
+    accountId: input.accountId,
+    role: input.role,
+    symbol: input.symbol,
+    side: input.side,
+    lots: input.lots,
+    requestedPrice: input.price,
+    fillPrice: input.httpAction === "send" ? input.price : undefined,
+    orderType: input.orderType,
+    sl: null,
+    tp: null,
+    status: input.status,
+    reason: input.reason,
+    createdAt: now,
+    updatedAt: now,
+    liveTicket: input.liveTicket,
+    latencyMs: input.latencyMs,
+    httpAction: input.httpAction,
+  };
+  return { ...state, blotter: pushBlotter(state.blotter, event) };
+}
+
+function asLiveOrderType(type: string): LiveOrderType {
+  if (
+    type === "buy_limit" ||
+    type === "sell_limit" ||
+    type === "buy_stop" ||
+    type === "sell_stop"
+  ) {
+    return type;
+  }
+  return "market";
+}
+
+export function upsertSnapshotPendings(
+  state: DeskState,
+  accountId: string,
+  broker: LiveBroker,
+  orders: BridgePendingOrder[]
+): DeskState {
+  if (COPY_FANOUT_SKIP.has(broker) && broker === "alphacapital") {
+    // Still show Alpha RO pendings on the book; do not treat them as copy legs.
+  }
+  const keep = state.positions.filter((row) => {
+    if (row.accountId !== accountId) return true;
+    if (!row.fromSnapshot) return true;
+    return false;
+  });
+  const existingTickets = new Set(
+    keep
+      .filter((row) => row.accountId === accountId && row.liveOrder)
+      .map((row) => row.liveOrder)
+  );
+  const now = Date.now();
+  const added: Position[] = [];
+  for (const order of orders) {
+    if (existingTickets.has(order.ticket)) continue;
+    const orderType = asLiveOrderType(order.type);
+    added.push({
+      id: uid("pos"),
+      accountId,
+      symbol: order.symbol,
+      side: order.side === "sell" ? "sell" : "buy",
+      lots: order.volume ?? 0,
+      entry: order.price ?? 0,
+      sl: order.sl,
+      tp: order.tp,
+      openedAt: now,
+      mark: order.price ?? 0,
+      pnl: 0,
+      liveBroker: broker,
+      liveOrder: order.ticket,
+      livePending: isPendingOrderType(orderType) || order.status === "pending",
+      fromSnapshot: true,
+      orderType,
+    });
+  }
+  return applyQuoteMarks({ ...state, positions: [...added, ...keep] });
 }
 
 export function defaultCopySettings(slaveAccountId: string): CopySettings {
