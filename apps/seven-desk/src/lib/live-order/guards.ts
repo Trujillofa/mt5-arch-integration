@@ -56,6 +56,29 @@ export function us30SelectVariantsForFirm(firmId: string): readonly string[] {
   ];
 }
 
+export function isPendingOrderType(orderType: string | null | undefined): boolean {
+  return (
+    orderType === "buy_limit" ||
+    orderType === "sell_limit" ||
+    orderType === "buy_stop" ||
+    orderType === "sell_stop"
+  );
+}
+
+export function isBuyPending(orderType: string | null | undefined): boolean {
+  return orderType === "buy_limit" || orderType === "buy_stop";
+}
+
+export function isSellPending(orderType: string | null | undefined): boolean {
+  return orderType === "sell_limit" || orderType === "sell_stop";
+}
+
+export function pendingKind(orderType: string | null | undefined): "limit" | "stop" | null {
+  if (orderType === "buy_limit" || orderType === "sell_limit") return "limit";
+  if (orderType === "buy_stop" || orderType === "sell_stop") return "stop";
+  return null;
+}
+
 export function us30AllowedForFirm(firmId: string): boolean {
   return (
     firmId === "wsf" ||
@@ -67,16 +90,16 @@ export function us30AllowedForFirm(firmId: string): boolean {
 }
 
 export function symbolAllowedForFirm(firmId: string, symbol: string): boolean {
-  if (symbol === "EURUSD" || symbol === "EURUSDc") return true;
+  if (symbol === "EURUSD" || symbol === "EURUSDc" || symbol === "EURUSD.pro") return true;
   if (firmId === "alphacapital") {
-    return symbol === "BTCUSD" || symbol === "BTCUSDc" || symbol === "BTCUSD.r";
+    return symbol === "BTCUSD" || symbol === "BTCUSDc" || symbol === "BTCUSD.r" || symbol === "BTCUSD.pro";
   }
   if (!us30AllowedForFirm(firmId)) return false;
   return isUs30Family(symbol);
 }
 
 export function allowedSymbolHint(firmId: string): string {
-  if (firmId === "alphacapital") return "EURUSD/EURUSDc or BTCUSD/BTCUSDc/BTCUSD.r";
+  if (firmId === "alphacapital") return "EURUSD/EURUSDc/EURUSD.pro or BTCUSD/BTCUSDc/BTCUSD.r";
   if (firmId === "neomaa") return "EURUSD/EURUSDc only";
   if (firmId === "wsf") {
     return "EURUSD/EURUSDc or US30 family (DJ30.c, US30, …)";
@@ -143,7 +166,9 @@ export function parseLiveOrderRequest(input: {
     return { ok: false, status: 403, stage: "confirm", reason: `confirm must be exactly ${expectedConfirm}` };
   }
 
-  const orderTypeRaw = asString(body.order_type).toLowerCase() || "market";
+  const actionRaw = asString(body.action).toLowerCase();
+  const orderTypeRaw = asString(body.order_type).toLowerCase();
+  const sideHint = asString(body.side).toLowerCase();
   let orderType: LiveOrderType;
   if (orderTypeRaw === "market") {
     orderType = "market";
@@ -151,28 +176,36 @@ export function parseLiveOrderRequest(input: {
     orderType = "buy_limit";
   } else if (orderTypeRaw === "sell_limit") {
     orderType = "sell_limit";
+  } else if (orderTypeRaw === "buy_stop") {
+    orderType = "buy_stop";
+  } else if (orderTypeRaw === "sell_stop") {
+    orderType = "sell_stop";
   } else if (orderTypeRaw === "limit") {
-    orderType = "buy_limit";
+    orderType = sideHint === "sell" ? "sell_limit" : "buy_limit";
+  } else if (orderTypeRaw === "stop") {
+    orderType = sideHint === "sell" ? "sell_stop" : "buy_stop";
+  } else if (orderTypeRaw === "") {
+    orderType = "market";
   } else {
     return {
       ok: false,
       status: 400,
       stage: "order_type",
-      reason: "order_type must be market, buy_limit, sell_limit, or limit",
+      reason: "order_type must be market, buy_limit, sell_limit, buy_stop, sell_stop, limit, or stop",
     };
   }
 
-  const pending = orderType === "buy_limit" || orderType === "sell_limit";
-  const actionRaw = asString(body.action).toLowerCase() || (pending ? "open" : "scratch");
+  const pending = isPendingOrderType(orderType);
+  const actionResolved = actionRaw || (pending ? "open" : "scratch");
   if (
-    actionRaw !== "scratch" &&
-    actionRaw !== "open" &&
-    actionRaw !== "close" &&
-    actionRaw !== "cancel"
+    actionResolved !== "scratch" &&
+    actionResolved !== "open" &&
+    actionResolved !== "close" &&
+    actionResolved !== "cancel"
   ) {
     return { ok: false, status: 400, stage: "action", reason: "action must be scratch, open, close, or cancel" };
   }
-  const action: LiveOrderAction = actionRaw;
+  const action: LiveOrderAction = actionResolved;
   if (pending && action === "scratch") {
     return {
       ok: false,
@@ -195,18 +228,16 @@ export function parseLiveOrderRequest(input: {
     return { ok: false, status: 400, stage: "symbol", reason: `symbol not allowed — ${allowedSymbolHint(firmId)}` };
   }
 
-  const sideRaw = asString(body.side).toLowerCase() || (orderType === "sell_limit" ? "sell" : "buy");
+  const sideRaw =
+    asString(body.side).toLowerCase() || (isSellPending(orderType) ? "sell" : "buy");
   if (sideRaw !== "buy" && sideRaw !== "sell") {
     return { ok: false, status: 400, stage: "side", reason: "side must be buy or sell" };
   }
-  if (orderTypeRaw === "limit") {
-    orderType = sideRaw === "sell" ? "sell_limit" : "buy_limit";
+  if (isBuyPending(orderType) && sideRaw === "sell") {
+    return { ok: false, status: 400, stage: "side", reason: `${orderType} requires side=buy` };
   }
-  if (orderType === "buy_limit" && sideRaw === "sell") {
-    return { ok: false, status: 400, stage: "side", reason: "order_type=buy_limit requires side=buy" };
-  }
-  if (orderType === "sell_limit" && sideRaw === "buy") {
-    return { ok: false, status: 400, stage: "side", reason: "order_type=sell_limit requires side=sell" };
+  if (isSellPending(orderType) && sideRaw === "buy") {
+    return { ok: false, status: 400, stage: "side", reason: `${orderType} requires side=sell` };
   }
   const side: "BUY" | "SELL" = sideRaw === "sell" ? "SELL" : "BUY";
 
@@ -224,8 +255,8 @@ export function parseLiveOrderRequest(input: {
   }
 
   if (pending && action === "open") {
-    if (priceField.value == null || priceField.value <= 0) {
-      return { ok: false, status: 400, stage: "price", reason: "pending order requires price > 0" };
+    if (priceField.value != null && priceField.value <= 0) {
+      return { ok: false, status: 400, stage: "price", reason: "pending order requires price > 0 when set" };
     }
     if (slField.value != null && slField.value <= 0) {
       return { ok: false, status: 400, stage: "sl", reason: "sl must be greater than 0 when set" };
@@ -233,29 +264,31 @@ export function parseLiveOrderRequest(input: {
     if (tpField.value != null && tpField.value <= 0) {
       return { ok: false, status: 400, stage: "tp", reason: "tp must be greater than 0 when set" };
     }
-    if (orderType === "buy_limit") {
-      if (slField.value != null && slField.value >= priceField.value) {
-        return { ok: false, status: 400, stage: "sl", reason: "buy_limit requires sl < price" };
-      }
-      if (tpField.value != null && tpField.value <= priceField.value) {
-        return { ok: false, status: 400, stage: "tp", reason: "buy_limit requires tp > price" };
-      }
-    } else {
-      if (slField.value != null && slField.value <= priceField.value) {
-        return { ok: false, status: 400, stage: "sl", reason: "sell_limit requires sl > price" };
-      }
-      if (tpField.value != null && tpField.value >= priceField.value) {
-        return { ok: false, status: 400, stage: "tp", reason: "sell_limit requires tp < price" };
+    if (priceField.value != null) {
+      if (isBuyPending(orderType)) {
+        if (slField.value != null && slField.value >= priceField.value) {
+          return { ok: false, status: 400, stage: "sl", reason: `${orderType} requires sl < price` };
+        }
+        if (tpField.value != null && tpField.value <= priceField.value) {
+          return { ok: false, status: 400, stage: "tp", reason: `${orderType} requires tp > price` };
+        }
+      } else {
+        if (slField.value != null && slField.value <= priceField.value) {
+          return { ok: false, status: 400, stage: "sl", reason: `${orderType} requires sl > price` };
+        }
+        if (tpField.value != null && tpField.value >= priceField.value) {
+          return { ok: false, status: 400, stage: "tp", reason: `${orderType} requires tp < price` };
+        }
       }
     }
   }
 
-  const volumeMinFlag = body.volume_min === true || body.volume === undefined || body.volume === null;
+  const volumeMinFlag = body.volume_min === true;
   const volumeConfirm = asJsonBool(body.volume_confirm) === true;
   const volumeField = parseNumberField(body.volume, "volume");
   if (!volumeField.ok) return { ok: false, status: 400, stage: "volume", reason: volumeField.reason };
   let volume = volumeField.value;
-  let useVolumeMin = volumeMinFlag || volume == null;
+  let useVolumeMin = volumeMinFlag;
   if (volume != null) {
     if (volume <= 0) {
       return { ok: false, status: 400, stage: "volume", reason: "volume must be greater than 0" };
@@ -307,7 +340,7 @@ export function parseLiveOrderRequest(input: {
     ok: true,
     fields: {
       action,
-      orderType: pending ? orderType : "market",
+      orderType,
       symbol,
       side,
       useVolumeMin,
@@ -325,8 +358,16 @@ export function parseLiveOrderRequest(input: {
 export const LIVE_ORDER_HTTP_BUDGET_MS = 70_000;
 /** One-shot wine/terminal64 wall clock. Must stay under the HTTP budget. */
 export const WINE_ONESHOT_BUDGET_MS = 50_000;
+/** In-process EA poll budget. Heartbeat must already be fresh. */
+export const EA_ORDER_BUDGET_MS = 12_000;
+export const EA_ORDER_POLL_MS = 100;
 /** Browser / desk-context AbortSignal. Slightly above the server budget. */
 export const LIVE_ORDER_CLIENT_BUDGET_MS = 75_000;
+/** Client wait for the in-process EA path (seconds, not a one-shot). */
+export const EA_ORDER_CLIENT_BUDGET_MS = 20_000;
+/** 50 points = 5.0 pips on 5-digit FX. Auto limit stays on the passive side. */
+export const LIMIT_OFFSET_POINTS = 50;
+export const MIN_DESK_ORDER_VERSION = [1, 25] as const;
 /**
  * Orphan request without a matching result is stale after this TTL.
  * In-flight leftovers (script died mid-restart) must not be OrderSent again.
@@ -493,6 +534,110 @@ export async function withDeadline<T>(
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+export function parseBridgeVersion(text: string): number[] | null {
+  const match = /(?:^|\s)version=(\d+(?:\.\d+)*)/.exec(text);
+  if (!match) return null;
+  return match[1].split(".").map((part) => Number(part));
+}
+
+export function versionAtLeast(got: number[] | null, min: readonly number[]): boolean {
+  if (!got || got.length === 0) return false;
+  const n = Math.max(got.length, min.length);
+  for (let i = 0; i < n; i += 1) {
+    const a = got[i] ?? 0;
+    const b = min[i] ?? 0;
+    if (a > b) return true;
+    if (a < b) return false;
+  }
+  return true;
+}
+
+export function resolvePendingPrice(input: {
+  orderType: LiveOrderType;
+  explicitPrice: number | null;
+  bid: number | null;
+  ask: number | null;
+  point?: number;
+}): { ok: true; price: number; source: "explicit" | "offset" } | { ok: false; reason: string } {
+  if (!isPendingOrderType(input.orderType)) {
+    return { ok: false, reason: "resolvePendingPrice is for buy/sell limit or stop" };
+  }
+  if (input.explicitPrice != null && input.explicitPrice > 0) {
+    return { ok: true, price: input.explicitPrice, source: "explicit" };
+  }
+  const bid = input.bid;
+  const ask = input.ask;
+  const point = input.point && input.point > 0 ? input.point : 0.00001;
+  if (bid == null || ask == null || bid <= 0 || ask <= 0) {
+    return { ok: false, reason: "pending order needs price or bid/ask for the 50-point offset" };
+  }
+  const offset = LIMIT_OFFSET_POINTS * point;
+  let price = 0;
+  if (input.orderType === "buy_limit") price = bid - offset;
+  else if (input.orderType === "sell_limit") price = ask + offset;
+  else if (input.orderType === "buy_stop") price = ask + offset;
+  else price = bid - offset;
+  if (input.orderType === "buy_limit" && price >= ask) {
+    return { ok: false, reason: "auto buy_limit would market (price >= ask) — refusing" };
+  }
+  if (input.orderType === "sell_limit" && price <= bid) {
+    return { ok: false, reason: "auto sell_limit would market (price <= bid) — refusing" };
+  }
+  if (input.orderType === "buy_stop" && price <= ask) {
+    return { ok: false, reason: "auto buy_stop would trigger immediately (price <= ask) — refusing" };
+  }
+  if (input.orderType === "sell_stop" && price >= bid) {
+    return { ok: false, reason: "auto sell_stop would trigger immediately (price >= bid) — refusing" };
+  }
+  return { ok: true, price, source: "offset" };
+}
+
+export function resolveLimitPrice(input: {
+  orderType: LiveOrderType;
+  explicitPrice: number | null;
+  bid: number | null;
+  ask: number | null;
+  point?: number;
+}): { ok: true; price: number; source: "explicit" | "offset" } | { ok: false; reason: string } {
+  return resolvePendingPrice(input);
+}
+
+export function isAlreadyFlatReason(reason: string): boolean {
+  const text = reason.toLowerCase();
+  return (
+    text.includes("position vanished") ||
+    /no open\b.*\bdesk position/.test(text) ||
+    text.includes("no pending desk order to cancel") ||
+    text.includes("already-flat") ||
+    text.includes("already flat")
+  );
+}
+
+export function eaNotReadyReason(input: {
+  heartbeatFresh: boolean;
+  version: number[] | null;
+  tradeAllowed: boolean | null;
+  algoAllowed: boolean | null;
+}): string | null {
+  if (!input.heartbeatFresh) {
+    return "Mt5ArchBridge heartbeat is stale — refusing OrderSend (no wine one-shot fallback)";
+  }
+  if (!versionAtLeast(input.version, MIN_DESK_ORDER_VERSION)) {
+    const shown = input.version ? input.version.join(".") : "unknown";
+    return (
+      `Mt5ArchBridge v${shown} cannot in-process OrderSend — compile v1.25+ and reattach; ` +
+      "not falling back to wine one-shot"
+    );
+  }
+  if (input.tradeAllowed === false) {
+    return "TERMINAL_TRADE_ALLOWED is false (Algo Trading off) — refusing OrderSend";
+  }
+  if (input.algoAllowed === false) {
+    return "MQL_TRADE_ALLOWED is false — EA cannot OrderSend";
+  }
+  return null;
 }
 
 export function asJsonBool(value: unknown): boolean | null {

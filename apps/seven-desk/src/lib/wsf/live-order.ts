@@ -2,15 +2,20 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
+import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
+import { defaultLotsForFirm } from "@/lib/firms";
 import {
+  EA_ORDER_BUDGET_MS,
   LIVE_ORDER_HTTP_BUDGET_MS,
   MIN_LIVE_LOT,
   WINE_ONESHOT_BUDGET_MS,
   asJsonBool,
   classifyOrphanRequest,
   disconnectedOrderReason,
+  eaNotReadyReason,
   inFlightOrphanReason,
   oneshotChartSymbol,
+  parseBridgeVersion,
   parseLiveOrderRequest,
   parseRequestFields,
   remainingMs,
@@ -173,9 +178,19 @@ function readBridgeIdentity(accountJson: string): {
   company: string | null;
   balance: number | null;
   terminalConnected: boolean | null;
+  tradeAllowed: boolean | null;
+  algoAllowed: boolean | null;
 } {
   if (!existsSync(accountJson)) {
-    return { login: null, server: null, company: null, balance: null, terminalConnected: null };
+    return {
+      login: null,
+      server: null,
+      company: null,
+      balance: null,
+      terminalConnected: null,
+      tradeAllowed: null,
+      algoAllowed: null,
+    };
   }
   try {
     const raw = JSON.parse(readFileSync(accountJson, "utf8")) as Record<string, unknown>;
@@ -185,9 +200,19 @@ function readBridgeIdentity(accountJson: string): {
       company: raw.company != null ? String(raw.company) : null,
       balance: typeof raw.balance === "number" ? raw.balance : null,
       terminalConnected: asJsonBool(raw.terminal_connected),
+      tradeAllowed: asJsonBool(raw.trade_allowed),
+      algoAllowed: asJsonBool(raw.algo_allowed),
     };
   } catch {
-    return { login: null, server: null, company: null, balance: null, terminalConnected: null };
+    return {
+      login: null,
+      server: null,
+      company: null,
+      balance: null,
+      terminalConnected: null,
+      tradeAllowed: null,
+      algoAllowed: null,
+    };
   }
 }
 
@@ -340,7 +365,7 @@ function writeRequest(paths: ReturnType<typeof wsfPaths>, parsed: GuardOk, reque
     `symbol=${parsed.symbol}`,
     `side=${parsed.side}`,
     `confirm=${parsed.confirm}`,
-    `volume=${parsed.volume ?? MIN_LIVE_LOT}`,
+    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForFirm("wsf"))}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `order_type=${parsed.orderType}`,
     `price=${parsed.price ?? 0}`,
@@ -349,9 +374,17 @@ function writeRequest(paths: ReturnType<typeof wsfPaths>, parsed: GuardOk, reque
     `ticket=${parsed.ticket ?? 0}`,
     `magic=${WSF_LIVE_MAGIC}`,
     `issued_at=${Math.floor(Date.now() / 1000)}`,
+    `expect_login=${WSF_EXPECTED_LOGIN}`,
+    `expect_confirm=${WSF_LIVE_CONFIRM}`,
+    `expect_needle=${WSF_SERVER_NEEDLE}`,
     "",
   ].join("\n");
   writeFileSync(paths.requestFile, body, { encoding: "utf8" });
+  writeFileSync(join(paths.bridgeDir, "desk_live_order_request.txt"), body, { encoding: "utf8" });
+}
+
+function wsfEaResultFile(paths: ReturnType<typeof wsfPaths>): string {
+  return join(paths.bridgeDir, "desk_live_order_result.json");
 }
 
 function wsfClaimFile(paths: ReturnType<typeof wsfPaths>): string {
@@ -579,6 +612,7 @@ function newRequestId(): string {
 export interface WsfLiveOrderOptions {
   requestId?: string;
   deadlineMs?: number;
+  allowOneshot?: boolean;
 }
 
 export async function executeWsfLiveOrder(
@@ -650,10 +684,103 @@ export async function executeWsfLiveOrder(
     };
   }
 
-  // One-shot logs in via wsf_desk_order.ini. A stale Mt5ArchBridge heartbeat
-  // must not block — restore terminals often never rewrite the snapshot.
-  // Identity above already pinned login 149736 @ WSFmarkets-Server.
-  // Explicit terminal_connected=false above is the disconnected fail-closed.
+  if (!parsed.useVolumeMin && parsed.volume == null && parsed.action !== "cancel" && parsed.action !== "close") {
+    parsed.volume = defaultLotsForFirm("wsf");
+  }
+
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs: [paths.bridgeDir],
+    winePrefix: paths.prefix,
+  });
+  const hbFile = join(paths.bridgeDir, "heartbeat.txt");
+  const version = existsSync(hbFile) ? parseBridgeVersion(readFileSync(hbFile, "utf8")) : null;
+  const eaBlocked = eaNotReadyReason({
+    heartbeatFresh: freshness.heartbeatFresh,
+    version,
+    tradeAllowed: identity.tradeAllowed,
+    algoAllowed: identity.algoAllowed,
+  });
+  if (eaBlocked) {
+    return {
+      status: 409,
+      result: fail(409, "ea", eaBlocked, {
+        requestId,
+        endpoint,
+        login: Number(identity.login),
+        server: identity.server,
+        sendPath: "ea",
+      }).result,
+    };
+  }
+
+  writeRequest(paths, parsed, requestId);
+  const eaDeadline = Date.now() + Math.min(EA_ORDER_BUDGET_MS, Math.max(500, remainingMs(deadlineMs) - 1000));
+  while (Date.now() < eaDeadline) {
+    for (const resultFile of [wsfEaResultFile(paths), paths.resultFile]) {
+      if (!existsSync(resultFile)) continue;
+      const fromFile = parseResultJson(readFileSync(resultFile, "utf8"));
+      if (!resultMatchesRequest(fromFile.requestId, requestId)) continue;
+      const status = fromFile.ok === true ? 200 : fromFile.stage === "timeout" ? 504 : 409;
+      return {
+        status,
+        result: {
+          ok: fromFile.ok === true,
+          source: "seven-desk",
+          endpoint,
+          requestId,
+          stage: fromFile.stage || "unknown",
+          reason: fromFile.reason || "",
+          login: fromFile.login ?? Number(identity.login),
+          server: fromFile.server ?? identity.server,
+          company: fromFile.company ?? identity.company ?? undefined,
+          symbol: fromFile.symbol ?? parsed.symbol,
+          volume: fromFile.volume ?? parsed.volume ?? undefined,
+          side: fromFile.side ?? parsed.side,
+          orderType: fromFile.orderType ?? parsed.orderType,
+          price: fromFile.price ?? parsed.price ?? undefined,
+          sl: fromFile.sl ?? parsed.sl ?? undefined,
+          tp: fromFile.tp ?? parsed.tp ?? undefined,
+          order: fromFile.order,
+          ticket: fromFile.ticket ?? fromFile.order,
+          position: fromFile.position,
+          dealOpen: fromFile.dealOpen,
+          dealClose: fromFile.dealClose,
+          openPrice: fromFile.openPrice,
+          closePrice: fromFile.closePrice,
+          profit: fromFile.profit,
+          holdMs: fromFile.holdMs,
+          balanceAfter: fromFile.balanceAfter,
+          closeRetcode: fromFile.closeRetcode,
+          winePrefix: ".mt5-wsf",
+          restoreNote: "ea path — terminal left running",
+          sendPath: "ea",
+        },
+      };
+    }
+    await sleep(100);
+  }
+  try {
+    unlinkSync(join(paths.bridgeDir, "desk_live_order_request.txt"));
+  } catch {
+    // gone
+  }
+  if (!options.allowOneshot) {
+    return {
+      status: 409,
+      result: fail(
+        409,
+        "ea",
+        "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
+        {
+          requestId,
+          endpoint,
+          login: Number(identity.login),
+          server: identity.server,
+          sendPath: "ea",
+        }
+      ).result,
+    };
+  }
 
   const compileError = compileScript(paths);
   if (compileError) {

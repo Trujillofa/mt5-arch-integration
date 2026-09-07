@@ -76,6 +76,9 @@ export interface Position {
   /** Set when the fill was a real OrderSend, not paper. */
   liveBroker?: "wsf" | "ftmo" | "fundednext" | "alphacapital" | "fundingpips" | "neomaa" | "fortraders";
   liveOrder?: number;
+  /** Working pending limit/stop — flatten sends cancel, not a market close. */
+  livePending?: boolean;
+  orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
   /** Copy-group id so flatten can close sibling live books. */
   groupId?: string;
 }
@@ -90,6 +93,7 @@ export interface BlotterEvent {
   lots: number;
   requestedPrice: number;
   fillPrice?: number;
+  orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
   sl: number | null;
   tp: number | null;
   status: CopyStatus;
@@ -104,6 +108,8 @@ export interface MasterTradeInput {
   lots: number;
   sl: number | null;
   tp: number | null;
+  price?: number | null;
+  orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
 }
 
 export interface DeskState {

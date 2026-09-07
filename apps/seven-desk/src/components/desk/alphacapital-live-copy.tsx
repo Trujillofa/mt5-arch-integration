@@ -17,7 +17,7 @@ export function AlphaCapitalLiveCopy() {
   const canArm = ack && confirm === ALPHACAPITAL_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to Alpha Capital 2765247 as 0.01 EURUSD.";
+      return "Armed. Each master fill copies to Alpha Capital 2765247 as a 1.4-lot EURUSD order of the same type.";
     }
     if (!ack) return "Tick the acknowledgement. This is a real Alpha Capital order on each master fill.";
     if (confirm !== ALPHACAPITAL_LIVE_CONFIRM) return `Type ${ALPHACAPITAL_LIVE_CONFIRM} exactly.`;
@@ -59,7 +59,7 @@ export function AlphaCapitalLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live Alpha Capital 2765247 at 0.01 lot. Not
+          Copy each master fill to live Alpha Capital 2765247 as a 1.4-lot order of the same type. Not
           Vantage, not FP.
         </span>
       </label>

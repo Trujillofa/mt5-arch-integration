@@ -2,7 +2,11 @@ import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
+import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
+import { defaultLotsForFirm } from "@/lib/firms";
 import {
+  EA_ORDER_BUDGET_MS,
+  EA_ORDER_POLL_MS,
   LIVE_ORDER_HTTP_BUDGET_MS,
   MIN_LIVE_LOT,
   WINE_ONESHOT_BUDGET_MS,
@@ -10,10 +14,12 @@ import {
   classifyOrphanRequest,
   deadlineExceeded,
   disconnectedOrderReason,
+  eaNotReadyReason,
   httpTimeoutResult,
   inFlightOrphanReason,
   isUs30Family,
   oneshotChartSymbol,
+  parseBridgeVersion,
   parseLiveOrderRequest,
   parseRequestFields,
   quotesPathMatchesSymbol,
@@ -89,6 +95,7 @@ interface FirmSpec {
   server: string;
   magic: number;
   defaultSymbol: string;
+  defaultLots: number;
   restoreArg: DeskLiveFirm;
 }
 
@@ -103,6 +110,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: FTMO_EXPECTED_SERVER,
     magic: 20263848,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("ftmo"),
     restoreArg: "ftmo",
   },
   fundednext: {
@@ -115,6 +123,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: FUNDEDNEXT_EXPECTED_SERVER,
     magic: 20263849,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("fundednext"),
     restoreArg: "fundednext",
   },
   alphacapital: {
@@ -127,6 +136,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: ALPHACAPITAL_EXPECTED_SERVER,
     magic: 20263850,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("alphacapital"),
     restoreArg: "alphacapital",
   },
   fundingpips: {
@@ -139,6 +149,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: FUNDINGPIPS_EXPECTED_SERVER,
     magic: 20263851,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("fundingpips"),
     restoreArg: "fundingpips",
   },
   neomaa: {
@@ -151,6 +162,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: NEOMAA_EXPECTED_SERVER,
     magic: 20263852,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("neomaa"),
     restoreArg: "neomaa",
   },
   fortraders: {
@@ -163,6 +175,7 @@ const FIRMS: Record<DeskLiveFirm, FirmSpec> = {
     server: FORTRADERS_EXPECTED_SERVER,
     magic: 20263853,
     defaultSymbol: "EURUSD",
+    defaultLots: defaultLotsForFirm("fortraders"),
     restoreArg: "fortraders",
   },
 };
@@ -503,7 +516,7 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `expect_confirm=${firm.confirm}`,
     `expect_login=${firm.login}`,
     `expect_needle=${firm.needle}`,
-    `volume=${parsed.volume ?? MIN_LIVE_LOT}`,
+    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : firm.defaultLots)}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `order_type=${parsed.orderType}`,
     `price=${parsed.price ?? 0}`,
@@ -564,9 +577,18 @@ function readBridgeIdentity(accountJson: string): {
   server: string | null;
   company: string | null;
   terminalConnected: boolean | null;
+  tradeAllowed: boolean | null;
+  algoAllowed: boolean | null;
 } {
   if (!existsSync(accountJson)) {
-    return { login: null, server: null, company: null, terminalConnected: null };
+    return {
+      login: null,
+      server: null,
+      company: null,
+      terminalConnected: null,
+      tradeAllowed: null,
+      algoAllowed: null,
+    };
   }
   try {
     const raw = JSON.parse(readFileSync(accountJson, "utf8")) as Record<string, unknown>;
@@ -575,10 +597,32 @@ function readBridgeIdentity(accountJson: string): {
       server: raw.server != null ? String(raw.server) : null,
       company: raw.company != null ? String(raw.company) : null,
       terminalConnected: asJsonBool(raw.terminal_connected),
+      tradeAllowed: asJsonBool(raw.trade_allowed),
+      algoAllowed: asJsonBool(raw.algo_allowed),
     };
   } catch {
-    return { login: null, server: null, company: null, terminalConnected: null };
+    return {
+      login: null,
+      server: null,
+      company: null,
+      terminalConnected: null,
+      tradeAllowed: null,
+      algoAllowed: null,
+    };
   }
+}
+
+function readHeartbeatVersion(paths: ReturnType<typeof pathsFor>): number[] | null {
+  const files = [
+    join(paths.bridgeDir, "heartbeat.txt"),
+    ...paths.extraBridgeDirs.map((dir) => join(dir, "heartbeat.txt")),
+  ];
+  for (const file of files) {
+    if (!existsSync(file)) continue;
+    const version = parseBridgeVersion(readFileSync(file, "utf8"));
+    if (version) return version;
+  }
+  return null;
 }
 
 function parseResultJson(text: string): Partial<LiveOrderResult> {
@@ -610,6 +654,7 @@ function parseResultJson(text: string): Partial<LiveOrderResult> {
       holdMs: typeof raw.hold_ms === "number" ? raw.hold_ms : undefined,
       balanceAfter: typeof raw.balance_after === "number" ? raw.balance_after : undefined,
       closeRetcode: typeof raw.close_retcode === "number" ? raw.close_retcode : undefined,
+      sendPath: raw.path === "oneshot" ? "oneshot" : raw.path === "ea" ? "ea" : undefined,
     };
   } catch {
     return { ok: false, stage: "result", reason: "result JSON parse failed" };
@@ -737,7 +782,7 @@ async function waitResult(
       }
       return parsed;
     }
-    await sleep(250);
+    await sleep(EA_ORDER_POLL_MS);
   }
   return {
     ok: false,
@@ -755,6 +800,8 @@ function newRequestId(firm: DeskLiveFirm): string {
 export interface DeskLiveOrderOptions {
   requestId?: string;
   deadlineMs?: number;
+  /** Last-resort wine one-shot. HTTP never sets this — EA path is the happy path. */
+  allowOneshot?: boolean;
 }
 
 export async function executeDeskLiveOrder(
@@ -825,6 +872,122 @@ export async function executeDeskLiveOrder(
     };
   }
 
+  if (!parsed.useVolumeMin && parsed.volume == null && parsed.action !== "cancel" && parsed.action !== "close") {
+    parsed.volume = firm.defaultLots;
+  }
+
+  const freshness = inspectBridgeFreshness({
+    bridgeDirs: [paths.bridgeDir, ...paths.extraBridgeDirs],
+    winePrefix: firm.prefix,
+  });
+  const eaBlocked = eaNotReadyReason({
+    heartbeatFresh: freshness.heartbeatFresh,
+    version: readHeartbeatVersion(paths),
+    tradeAllowed: identity.tradeAllowed,
+    algoAllowed: identity.algoAllowed,
+  });
+  if (eaBlocked) {
+    return {
+      status: 409,
+      result: fail(firm, 409, "ea", eaBlocked, {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+        sendPath: "ea",
+      }).result,
+    };
+  }
+
+  const orphan = inspectOrphanRequest(paths);
+  if (orphan.class === "in_flight") {
+    return {
+      status: 409,
+      result: fail(firm, 409, "orphan", inFlightOrphanReason(orphan.requestId), {
+        requestId,
+        endpoint,
+        login: identity.login ? Number(identity.login) : null,
+        server: identity.server,
+      }).result,
+    };
+  }
+
+  dropBridgeFiles(resultCandidates(paths));
+  writeRequest(firm, paths, parsed, requestId);
+  const eaWaitMs = Math.min(EA_ORDER_BUDGET_MS, Math.max(500, remainingMs(deadlineMs) - 1000));
+  const eaDeadline = Date.now() + eaWaitMs;
+  let parsedResult = await waitResult(paths, eaWaitMs, requestId);
+  if (parsedResult.ok !== true && Date.now() < eaDeadline) {
+    parsedResult = (await waitResult(paths, 400, requestId)) ?? parsedResult;
+  }
+  if (tryReadMatchingResult(paths, requestId)) {
+    parsedResult = tryReadMatchingResult(paths, requestId) ?? parsedResult;
+  }
+  const eaHit = tryReadMatchingResult(paths, requestId);
+  if (eaHit) {
+    const result: LiveOrderResult = {
+      ok: eaHit.ok === true,
+      source: "seven-desk",
+      endpoint,
+      requestId,
+      stage: eaHit.stage || "unknown",
+      reason: eaHit.reason || "",
+      login: eaHit.login ?? (identity.login ? Number(identity.login) : null),
+      server: eaHit.server ?? identity.server,
+      company: eaHit.company ?? identity.company ?? undefined,
+      symbol: eaHit.symbol ?? parsed.symbol,
+      volume: eaHit.volume ?? parsed.volume ?? undefined,
+      side: eaHit.side ?? parsed.side,
+      orderType: eaHit.orderType ?? parsed.orderType,
+      price: eaHit.price ?? parsed.price ?? undefined,
+      sl: eaHit.sl ?? parsed.sl ?? undefined,
+      tp: eaHit.tp ?? parsed.tp ?? undefined,
+      order: eaHit.order,
+      ticket: eaHit.ticket ?? eaHit.order,
+      position: eaHit.position,
+      dealOpen: eaHit.dealOpen,
+      dealClose: eaHit.dealClose,
+      openPrice: eaHit.openPrice,
+      closePrice: eaHit.closePrice,
+      profit: eaHit.profit,
+      holdMs: eaHit.holdMs,
+      balanceAfter: eaHit.balanceAfter,
+      closeRetcode: eaHit.closeRetcode,
+      winePrefix: winePrefixLabel(firm.prefix),
+      restoreNote: "ea path — terminal left running",
+      sendPath: "ea",
+    };
+    if (result.login != null && Number(result.login) !== Number(firm.login)) {
+      result.ok = false;
+      result.stage = "account";
+      result.reason = `result login is not ${firm.login}`;
+    }
+    const status = result.ok ? 200 : result.stage === "timeout" ? 504 : 409;
+    return { status, result };
+  }
+
+  dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
+  if (!options.allowOneshot) {
+    return {
+      status: 409,
+      result: fail(
+        firm,
+        409,
+        "ea",
+        parsedResult.reason?.includes("request_id")
+          ? parsedResult.reason
+          : "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
+        {
+          requestId,
+          endpoint,
+          login: identity.login ? Number(identity.login) : null,
+          server: identity.server,
+          sendPath: "ea",
+        }
+      ).result,
+    };
+  }
+
   if (deadlineExceeded(deadlineMs) || remainingMs(deadlineMs) < 8000) {
     return {
       status: 504,
@@ -842,19 +1005,6 @@ export async function executeDeskLiveOrder(
     return {
       status: 500,
       result: fail(firm, 500, "compile", compileError, {
-        requestId,
-        endpoint,
-        login: identity.login ? Number(identity.login) : null,
-        server: identity.server,
-      }).result,
-    };
-  }
-
-  const orphan = inspectOrphanRequest(paths);
-  if (orphan.class === "in_flight") {
-    return {
-      status: 409,
-      result: fail(firm, 409, "orphan", inFlightOrphanReason(orphan.requestId), {
         requestId,
         endpoint,
         login: identity.login ? Number(identity.login) : null,
@@ -887,7 +1037,7 @@ export async function executeDeskLiveOrder(
   writeRequest(firm, paths, parsed, requestId);
 
   let stopped: number[] = [];
-  let parsedResult: Partial<LiveOrderResult> = {};
+  let oneshotResult: Partial<LiveOrderResult> = {};
   try {
     stopped = await stopPrefix(firm.prefix);
     const wineDeadline = Math.min(deadlineMs - 2000, Date.now() + WINE_ONESHOT_BUDGET_MS);
@@ -902,15 +1052,15 @@ export async function executeDeskLiveOrder(
       },
     });
 
-    parsedResult =
+    oneshotResult =
       tryReadMatchingResult(paths, requestId) ??
       (await waitResult(paths, wine.timedOut ? 400 : 1500, requestId));
-    if (!parsedResult.ok && parsedResult.stage === "timeout") {
+    if (!oneshotResult.ok && oneshotResult.stage === "timeout") {
       if (wine.timedOut) {
-        parsedResult.reason =
+        oneshotResult.reason =
           "wine one-shot exceeded deadline — no matching result json (orphan request cleaned; no hang without JSON)";
       } else if (wine.exitCode != null) {
-        parsedResult.reason = `${parsedResult.reason} (wine status ${wine.exitCode})`;
+        oneshotResult.reason = `${oneshotResult.reason} (wine status ${wine.exitCode})`;
       }
     }
   } finally {
@@ -920,36 +1070,37 @@ export async function executeDeskLiveOrder(
   }
 
   const result: LiveOrderResult = {
-    ok: parsedResult.ok === true,
+    ok: oneshotResult.ok === true,
     source: "seven-desk",
     endpoint,
     requestId,
-    stage: parsedResult.stage || "unknown",
-    reason: parsedResult.reason || "",
-    login: parsedResult.login ?? (identity.login ? Number(identity.login) : null),
-    server: parsedResult.server ?? identity.server,
-    company: parsedResult.company ?? identity.company ?? undefined,
-    symbol: parsedResult.symbol ?? parsed.symbol,
-    volume: parsedResult.volume,
-    side: parsedResult.side ?? parsed.side,
-    orderType: parsedResult.orderType ?? parsed.orderType,
-    price: parsedResult.price ?? parsed.price ?? undefined,
-    sl: parsedResult.sl ?? parsed.sl ?? undefined,
-    tp: parsedResult.tp ?? parsed.tp ?? undefined,
-    order: parsedResult.order,
-    ticket: parsedResult.ticket ?? parsedResult.order,
-    position: parsedResult.position,
-    dealOpen: parsedResult.dealOpen,
-    dealClose: parsedResult.dealClose,
-    openPrice: parsedResult.openPrice,
-    closePrice: parsedResult.closePrice,
-    profit: parsedResult.profit,
-    holdMs: parsedResult.holdMs,
-    balanceAfter: parsedResult.balanceAfter,
-    closeRetcode: parsedResult.closeRetcode,
+    stage: oneshotResult.stage || "unknown",
+    reason: oneshotResult.reason || "",
+    login: oneshotResult.login ?? (identity.login ? Number(identity.login) : null),
+    server: oneshotResult.server ?? identity.server,
+    company: oneshotResult.company ?? identity.company ?? undefined,
+    symbol: oneshotResult.symbol ?? parsed.symbol,
+    volume: oneshotResult.volume,
+    side: oneshotResult.side ?? parsed.side,
+    orderType: oneshotResult.orderType ?? parsed.orderType,
+    price: oneshotResult.price ?? parsed.price ?? undefined,
+    sl: oneshotResult.sl ?? parsed.sl ?? undefined,
+    tp: oneshotResult.tp ?? parsed.tp ?? undefined,
+    order: oneshotResult.order,
+    ticket: oneshotResult.ticket ?? oneshotResult.order,
+    position: oneshotResult.position,
+    dealOpen: oneshotResult.dealOpen,
+    dealClose: oneshotResult.dealClose,
+    openPrice: oneshotResult.openPrice,
+    closePrice: oneshotResult.closePrice,
+    profit: oneshotResult.profit,
+    holdMs: oneshotResult.holdMs,
+    balanceAfter: oneshotResult.balanceAfter,
+    closeRetcode: oneshotResult.closeRetcode,
     winePrefix: winePrefixLabel(firm.prefix),
     stoppedPids: stopped,
     restoreNote: "",
+    sendPath: "oneshot",
   };
 
   result.restoreNote = restoreTerminal(firm);

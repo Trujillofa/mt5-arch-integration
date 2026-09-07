@@ -124,4 +124,5 @@ export interface WsfLiveOrderResult {
   journalClose?: string;
   stoppedWsfPids?: number[];
   restoreNote?: string;
+  sendPath?: "ea" | "oneshot";
 }

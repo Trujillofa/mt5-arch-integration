@@ -26,6 +26,8 @@ def test_http_budget_is_bounded_and_shared() -> None:
     wine = WINE.read_text(encoding="utf-8")
     assert "LIVE_ORDER_HTTP_BUDGET_MS = 70_000" in guards
     assert "WINE_ONESHOT_BUDGET_MS = 50_000" in guards
+    assert "EA_ORDER_BUDGET_MS = 12_000" in guards
+    assert "not falling back to wine one-shot" in guards
     assert "withDeadline" in guards
     assert "LIVE_ORDER_HTTP_BUDGET_MS" in runner
     assert "runWineUntil" in runner
@@ -115,8 +117,34 @@ def test_order_routes_max_duration_is_90() -> None:
 
 def test_client_fetch_has_abort_deadline() -> None:
     text = CONTEXT.read_text(encoding="utf-8")
-    assert "AbortSignal.timeout(LIVE_ORDER_CLIENT_BUDGET_MS)" in text
+    assert "AbortSignal.timeout(EA_ORDER_CLIENT_BUDGET_MS)" in text
     assert "client deadline — live order route returned no JSON" in text
+
+
+def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
+    runner = RUNNER.read_text(encoding="utf-8")
+    firms = (DESK / "src" / "lib" / "firms.ts").read_text(encoding="utf-8")
+    ticket = (DESK / "src" / "components" / "desk" / "trade-ticket.tsx").read_text(
+        encoding="utf-8"
+    )
+    ea = (ROOT / "mql5" / "Mt5ArchBridge.mq5").read_text(encoding="utf-8")
+    include = (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(encoding="utf-8")
+    assert "DeskOrderProcessIfRequested" in ea
+    assert "ORDER_TYPE_BUY_LIMIT" in include
+    assert "DESK_LIMIT_OFFSET_POINTS 50" in include
+    assert "not falling back to wine one-shot" in runner
+    assert "eaNotReadyReason" in runner
+    assert "DEFAULT_DESK_LOTS = 1.4" in firms
+    assert "FUNDEDNEXT_DEFAULT_LOTS = 0.35" in firms
+    assert "FUNDINGPIPS_DEFAULT_LOTS = 0.8" in firms
+    assert "Buy limit" in ticket
+    assert "Sell limit" in ticket
+    assert "Buy stop" in ticket
+    assert "Sell stop" in ticket
+    assert "submit(\"buy\")" in ticket
+    assert "submit(\"sell\")" in ticket
+    assert "ORDER_TYPE_BUY_STOP" in include
+    assert "ORDER_TYPE_SELL_STOP" in include
 
 
 def test_live_is_not_the_default() -> None:

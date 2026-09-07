@@ -33,6 +33,8 @@ fi
 mkdir -p "$EXPERTS" "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include"
 cp -f "$REPO_ROOT/mql5/Include/FxSymbolRegistry.mqh" \
   "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/FxSymbolRegistry.mqh"
+cp -f "$REPO_ROOT/mql5/Include/DeskOrderBridge.mqh" \
+  "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/DeskOrderBridge.mqh"
 cp -f "$SRC" "$EXPERTS/Mt5ArchBridge.mq5"
 info "Copied EA source to $EXPERTS/Mt5ArchBridge.mq5"
 # Verify deploy (gating for install path)
@@ -51,6 +53,12 @@ if ! grep -q 'FxResolveSymbol' "$EXPERTS/Mt5ArchBridge.mq5"; then
 fi
 if ! grep -q 'IsEffectivelyConnected' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing IsEffectivelyConnected (Wine TERMINAL_CONNECTED fallback)"
+fi
+if ! grep -q 'DeskOrderProcessIfRequested' "$EXPERTS/Mt5ArchBridge.mq5"; then
+  die "deployed EA missing DeskOrderProcessIfRequested (in-process desk limits)"
+fi
+if [[ ! -f "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/MQL5/Include/DeskOrderBridge.mqh" ]]; then
+  die "DeskOrderBridge.mqh missing from Include/"
 fi
 info "Deployed EA has timer + OnTick + connection fields"
 

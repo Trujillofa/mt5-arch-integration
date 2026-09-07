@@ -14,7 +14,7 @@ export async function GET() {
       endpoint: "/api/fortraders/order",
       stage: "method",
       reason:
-        'GET is read-only. Live Fortraders OrderSend requires POST { live: true, confirm: "FORTRADERS-737150", action: "open", volume_min: true }.',
+        'GET is read-only. Live Fortraders OrderSend requires POST { live: true, confirm: "FORTRADERS-737150", action: "open" }. Default 1.4 lots (market / limit / stop). volume_min: true is the 0.01 prove.',
       winePrefix: ".mt5-fortraders",
     },
     { status: 405 }

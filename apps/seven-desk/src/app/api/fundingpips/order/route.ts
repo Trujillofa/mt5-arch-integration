@@ -14,7 +14,7 @@ export async function GET() {
       endpoint: "/api/fundingpips/order",
       stage: "method",
       reason:
-        'GET is read-only. Live FundingPips OrderSend requires POST { live: true, confirm: "FUNDINGPIPS-11669306", action: "open", volume_min: true }.',
+        'GET is read-only. Live FundingPips OrderSend requires POST { live: true, confirm: "FUNDINGPIPS-11669306", action: "open" }. Default 0.8 lots (market / limit / stop). volume_min: true is the 0.01 prove.',
       winePrefix: ".mt5-fundingpips",
     },
     { status: 405 }

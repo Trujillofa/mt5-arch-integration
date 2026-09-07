@@ -14,16 +14,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useDesk } from "@/lib/desk-context";
-import { FIRM_BY_ID } from "@/lib/firms";
+import { DEFAULT_DESK_LOTS, FIRM_BY_ID, defaultLotsForFirm } from "@/lib/firms";
 import { formatPrice } from "@/lib/format";
+import {
+  LIMIT_OFFSET_POINTS,
+  isPendingOrderType,
+  resolvePendingPrice,
+} from "@/lib/live-order/guards";
+import type { LiveOrderType } from "@/lib/live-order/types";
 import { MASTER_SYMBOLS, quoteBySymbol } from "@/lib/quotes";
 import type { Side } from "@/lib/types";
+
+type TicketAction = "buy" | "sell" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
+
+function actionToOrder(action: TicketAction): { side: Side; orderType: LiveOrderType } {
+  if (action === "buy") return { side: "buy", orderType: "market" };
+  if (action === "sell") return { side: "sell", orderType: "market" };
+  if (action === "buy_limit") return { side: "buy", orderType: "buy_limit" };
+  if (action === "sell_limit") return { side: "sell", orderType: "sell_limit" };
+  if (action === "buy_stop") return { side: "buy", orderType: "buy_stop" };
+  return { side: "sell", orderType: "sell_stop" };
+}
 
 export function TradeTicket() {
   const { state, busy, placeTrade } = useDesk();
   const [symbol, setSymbol] = useState<string>("EURUSD");
-  const [side, setSide] = useState<Side>("buy");
-  const [lots, setLots] = useState("1.00");
+  const [lots, setLots] = useState(DEFAULT_DESK_LOTS.toFixed(2));
+  const [price, setPrice] = useState("");
   const [sl, setSl] = useState("");
   const [tp, setTp] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
@@ -37,10 +54,10 @@ export function TradeTicket() {
       return "NAS100 is unmapped on FundingPips — that child should skip.";
     }
     if (Number(lots) >= 2) {
-      return "2.00 lots × FundingPips 0.8 exceeds its 1.00 max lot — expect a skip.";
+      return `2.00 lots × FundingPips ${defaultLotsForFirm("fundingpips")} may exceed a stale 1.00 max lot — bump max lot.`;
     }
     if (state.ftmoLiveMaster) {
-      return `FTMO live master is armed. Ticket becomes 0.01 EURUSD on 541163357 before any copy. ${enabledSlaves} slaves will attempt a fill.`;
+      return `FTMO live master is armed. The button you press (market / limit / stop) is what 541163357 sends at the lots in this form (default ${DEFAULT_DESK_LOTS}). ${enabledSlaves} slaves copy the same type.`;
     }
     if (
       state.wsfLiveCopy ||
@@ -50,13 +67,13 @@ export function TradeTicket() {
       state.neomaaLiveCopy ||
       state.fortradersLiveCopy
     ) {
-      return `Live copy armed: ${[
-        state.wsfLiveCopy ? "WSF 0.01 EURUSDc" : null,
-        state.fundednextLiveCopy ? "FN 0.01 EURUSD" : null,
-        state.alphacapitalLiveCopy ? "ACG 0.01 EURUSD" : null,
-        state.fundingpipsLiveCopy ? "FundingPips 0.01 EURUSD" : null,
-        state.neomaaLiveCopy ? "Neomaa 0.01 EURUSD" : null,
-        state.fortradersLiveCopy ? "Fortraders 0.01 EURUSD" : null,
+      return `Live copy armed (same type as the ticket): ${[
+        state.wsfLiveCopy ? `WSF ${defaultLotsForFirm("wsf")} EURUSDc` : null,
+        state.fundednextLiveCopy ? `FN ${defaultLotsForFirm("fundednext")} EURUSD` : null,
+        state.alphacapitalLiveCopy ? `ACG ${defaultLotsForFirm("alphacapital")} EURUSD` : null,
+        state.fundingpipsLiveCopy ? `FundingPips ${defaultLotsForFirm("fundingpips")} EURUSD` : null,
+        state.neomaaLiveCopy ? `Neomaa ${defaultLotsForFirm("neomaa")} EURUSD` : null,
+        state.fortradersLiveCopy ? `Fortraders ${defaultLotsForFirm("fortraders")} EURUSD` : null,
       ]
         .filter(Boolean)
         .join(" · ")}. ${enabledSlaves} slaves will attempt a fill.`;
@@ -64,7 +81,7 @@ export function TradeTicket() {
     return `${enabledSlaves} slaves will attempt a fill. Live OrderSend stays off until you arm a card.`;
   }, [symbol, lots, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy, state.fundingpipsLiveCopy, state.neomaaLiveCopy, state.fortradersLiveCopy]);
 
-  function submit() {
+  function submit(action: TicketAction) {
     setFormError(null);
     const parsedLots = Number(lots);
     if (!Number.isFinite(parsedLots) || parsedLots < 0.01) {
@@ -81,6 +98,7 @@ export function TradeTicket() {
     }
     const parsedSl = sl.trim() === "" ? null : Number(sl);
     const parsedTp = tp.trim() === "" ? null : Number(tp);
+    const parsedPrice = price.trim() === "" ? null : Number(price);
     if (parsedSl !== null && !Number.isFinite(parsedSl)) {
       setFormError("Stop loss must be a number.");
       return;
@@ -89,19 +107,42 @@ export function TradeTicket() {
       setFormError("Take profit must be a number.");
       return;
     }
+    if (parsedPrice !== null && (!Number.isFinite(parsedPrice) || parsedPrice <= 0)) {
+      setFormError("Pending price must be greater than 0.");
+      return;
+    }
+    const { side, orderType } = actionToOrder(action);
+    let sendPrice = parsedPrice;
+    if (isPendingOrderType(orderType) && sendPrice == null && quote) {
+      const resolved = resolvePendingPrice({
+        orderType,
+        explicitPrice: null,
+        bid: quote.bid,
+        ask: quote.ask,
+        point: quote.pip / 10,
+      });
+      if (resolved.ok) sendPrice = resolved.price;
+    }
+    if (isPendingOrderType(orderType) && (sendPrice == null || sendPrice <= 0)) {
+      setFormError("Pending limit/stop needs a price or a paper quote for the 50-point offset.");
+      return;
+    }
     const error = placeTrade({
       symbol,
       side,
       lots: parsedLots,
       sl: parsedSl,
       tp: parsedTp,
+      price: isPendingOrderType(orderType) ? sendPrice : null,
+      orderType,
     });
     if (error) {
       setFormError(error);
       toast.error(error);
       return;
     }
-    toast.success(`${side.toUpperCase()} ${parsedLots.toFixed(2)} ${symbol} on master`);
+    const label = orderType === "market" ? side.toUpperCase() : orderType.replace("_", " ").toUpperCase();
+    toast.success(`${label} ${parsedLots.toFixed(2)} ${symbol}`);
   }
 
   return (
@@ -109,17 +150,21 @@ export function TradeTicket() {
       <CardHeader className="border-b">
         <CardTitle>Place master trade</CardTitle>
         <p className="text-xs text-muted-foreground">
-          {state.ftmoLiveMaster ? "Live FTMO master fill on " : "Paper fill on "}
+          Market <span className="font-medium text-foreground">Buy / Sell</span> stay available.
+          Limit and stop are extra. Default lots {DEFAULT_DESK_LOTS} (FN{" "}
+          {defaultLotsForFirm("fundednext")}, FundingPips {defaultLotsForFirm("fundingpips")}).
+          Empty pending price uses a {LIMIT_OFFSET_POINTS}-point offset from bid/ask.
+          {state.ftmoLiveMaster ? " Live FTMO master on " : " Paper book on "}
           <span className="text-foreground">
             {master ? FIRM_BY_ID[master.firmId].name : "—"}
           </span>
           , then fan out through the copy engine.
-          {state.wsfLiveCopy ? " WSF slave is live min-lot." : ""}
-          {state.fundednextLiveCopy ? " FundedNext slave is live min-lot." : ""}
-          {state.alphacapitalLiveCopy ? " Alpha Capital slave is live min-lot." : ""}
-          {state.fundingpipsLiveCopy ? " FundingPips slave is live min-lot." : ""}
-          {state.neomaaLiveCopy ? " Neomaa slave is live min-lot." : ""}
-          {state.fortradersLiveCopy ? " Fortraders slave is live min-lot." : ""}
+          {state.wsfLiveCopy ? ` WSF slave is live ${defaultLotsForFirm("wsf")} lots.` : ""}
+          {state.fundednextLiveCopy ? ` FundedNext slave is live ${defaultLotsForFirm("fundednext")} lots.` : ""}
+          {state.alphacapitalLiveCopy ? ` Alpha Capital slave is live ${defaultLotsForFirm("alphacapital")} lots.` : ""}
+          {state.fundingpipsLiveCopy ? ` FundingPips slave is live ${defaultLotsForFirm("fundingpips")} lots.` : ""}
+          {state.neomaaLiveCopy ? ` Neomaa slave is live ${defaultLotsForFirm("neomaa")} lots.` : ""}
+          {state.fortradersLiveCopy ? ` Fortraders slave is live ${defaultLotsForFirm("fortraders")} lots.` : ""}
           {!state.wsfLiveCopy &&
           !state.fundednextLiveCopy &&
           !state.alphacapitalLiveCopy &&
@@ -132,60 +177,36 @@ export function TradeTicket() {
         </p>
       </CardHeader>
       <CardContent className="space-y-4 pt-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="symbol">Symbol</Label>
-            <Select value={symbol} onValueChange={(value) => setSymbol(String(value))}>
-              <SelectTrigger id="symbol" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MASTER_SYMBOLS.map((item) => (
-                  <SelectItem key={item} value={item}>
-                    {item}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Side</Label>
-            <div className="grid grid-cols-2 gap-1.5">
-              <Button
-                type="button"
-                variant={side === "buy" ? "default" : "outline"}
-                className={
-                  side === "buy"
-                    ? "bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
-                    : undefined
-                }
-                onClick={() => setSide("buy")}
-              >
-                Buy
-              </Button>
-              <Button
-                type="button"
-                variant={side === "sell" ? "default" : "outline"}
-                className={
-                  side === "sell"
-                    ? "bg-rose-500 text-zinc-50 hover:bg-rose-400"
-                    : undefined
-                }
-                onClick={() => setSide("sell")}
-              >
-                Sell
-              </Button>
-            </div>
-          </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="symbol">Symbol</Label>
+          <Select value={symbol} onValueChange={(value) => setSymbol(String(value))}>
+            <SelectTrigger id="symbol" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {MASTER_SYMBOLS.map((item) => (
+                <SelectItem key={item} value={item}>
+                  {item}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 gap-3">
           <Field
             id="lots"
             label="Lots"
             value={lots}
             onChange={setLots}
-            placeholder="1.00"
+            placeholder={DEFAULT_DESK_LOTS.toFixed(2)}
+          />
+          <Field
+            id="pending-price"
+            label="Pending price"
+            value={price}
+            onChange={setPrice}
+            placeholder={quote ? formatPrice(symbol, quote.bid) : "offset"}
           />
           <Field
             id="sl"
@@ -218,14 +239,39 @@ export function TradeTicket() {
           </p>
         ) : null}
 
-        <Button
-          type="button"
-          className="w-full"
-          disabled={busy}
-          onClick={submit}
-        >
-          {busy ? "Copying…" : `Send ${side} to ${enabledSlaves} slaves`}
-        </Button>
+        <div className="space-y-1.5">
+          <Label>Send</Label>
+          <div className="grid grid-cols-2 gap-1.5">
+            <Button
+              type="button"
+              disabled={busy}
+              className="bg-emerald-500 text-zinc-950 hover:bg-emerald-400"
+              onClick={() => submit("buy")}
+            >
+              Buy
+            </Button>
+            <Button
+              type="button"
+              disabled={busy}
+              className="bg-rose-500 text-zinc-50 hover:bg-rose-400"
+              onClick={() => submit("sell")}
+            >
+              Sell
+            </Button>
+            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("buy_limit")}>
+              Buy limit
+            </Button>
+            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("sell_limit")}>
+              Sell limit
+            </Button>
+            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("buy_stop")}>
+              Buy stop
+            </Button>
+            <Button type="button" variant="outline" disabled={busy} onClick={() => submit("sell_stop")}>
+              Sell stop
+            </Button>
+          </div>
+        </div>
         <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>
       </CardContent>
     </Card>

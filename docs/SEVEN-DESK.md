@@ -10,16 +10,19 @@ path `POST /api/wsf/order` can send a min-lot scratch on WSF 149736 only when
 the body has `{ "live": true, "confirm": "WSF-149736" }`. Arm **WSF live copy**
 or **FundedNext live copy** or **Alpha Capital live copy** or **FundingPips live copy**
 or **Neomaa live copy** or **Fortraders live copy** on those cards
-for min-lot slave opens. Arm
-**FTMO live master** so Place master trade is a real 0.01 EURUSD on 541163357
-before any copy. Other books stay paper. One-shots restore the branded
+so slaves copy the **same type** as the ticket (market / limit / stop). Arm
+**FTMO live master** so Place master trade is a real EURUSD send
+on 541163357 (default **1.4** lots; FundedNext **0.35**; FundingPips **0.8**)
+before any copy. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
+`Mt5ArchBridge` v1.25 polling `desk_live_order_request.txt` (seconds).
+One-shots restore the branded
 terminal in the background and refuse a generic `Program Files/MetaTrader 5`
 tree inside those prefixes (that leftover can carry another company’s
 `account.json`). Restore writes `Mt5ArchBridge` onto the branded Default
 chart (`InpBroker=wsf|ftmo|fundednext|alphacapital|fundingpips|neomaa|fortraders`) and restarts that book when
 `heartbeat.txt` is stale, so fetch/probe can see a fresh snapshot again.
-A stale heartbeat does not block a live one-shot — login/server identity
-on the last branded `account.json` does. Fetch/probe still fail closed on
+A stale heartbeat **blocks** the live EA path (JSON 409, no one-shot
+fallback). Fetch/probe still fail closed on
 a stale snapshot. An explicit `terminal_connected=false` (weekend FX /
 Neomaaa-global down) refuses OrderSend immediately with JSON 409 — it does
 not launch Wine. Live order HTTP handlers return JSON within ~70s even
@@ -28,24 +31,23 @@ when a one-shot is silent; they no longer `spawnSync` wine for up to
 body). Alpha one-shots log into `ACGMarkets-Main` (not `ACGMarkets`).
 A leftover `desk_live_order_request.txt` without a matching result is an
 orphan: in-flight (younger than 90s) refuses a second OrderSend; stale
-orphans are deleted. The one-shot claims `request_id` before OrderSend
+orphans are deleted. The EA claims `request_id` before OrderSend
 and will not re-process the same id after a restart.
-On wsf / ftmo / fundednext / fundingpips / fortraders (not Alpha / Neomaa),
-`POST /api/{firm}/order` can also place a pending US30 buy/sell limit with
-explicit `price` / `sl` / `tp` / `volume` when `order_type` is `buy_limit`
-or `sell_limit`. Volume above 0.01 requires `volume_confirm: true` (the
-per-firm confirm token is identity, not size intent). Hard max is 10 lots;
-the broker `SYMBOL_VOLUME_MAX` is the second cap. `action: "cancel"` plus
-optional `ticket` removes a pending order (`TRADE_ACTION_REMOVE`). The
-one-shot chart stays EURUSD/EURUSDc so the script still loads when Market
-Watch is FX-only; `ResolveSymbol` runs `SymbolSelect` across US30 / US30.cash
-/ DJ30 / …. Missing catalog → JSON `stage=symbol`, no hang. Paper stays
-the default (`live: true` still required).
-**CLOSE positions** on
-the blotter bar flattens every desk row (live groups first, fail-closed;
-paper after). An already-flat close (`no open … desk position` or
-`position vanished`) drops the desk row the same as `ok`. It never talks
-to Vantage, FP, or official MCP on :22346.
+Omit `order_type` and the send is **market**. Pending types are
+`buy_limit` / `sell_limit` / `buy_stop` / `sell_stop`. Omit `price` on a
+pending and the EA uses a **50-point** offset from bid/ask (5.0 pips on
+5-digit FX) so a limit stays passive and a stop stays on the trigger side.
+An explicit typed price is sent even if it is on the wrong side of the
+market. Volume above 0.01 requires `volume_confirm: true`.
+Default lots are **1.4** except FundedNext **0.35** and FundingPips **0.8**.
+`volume_min: true` is the explicit 0.01 override. Hard max is 10 lots.
+`action: "cancel"` plus optional `ticket` removes a pending order
+(`TRADE_ACTION_REMOVE`). CLOSE / flatten cancels working limits, not only
+positions. Already-flat (`no open … desk position`, `no pending desk order
+to cancel`, or `position vanished`) drops the desk row the same as `ok`.
+If the EA heartbeat is stale, trade is not allowed, or the build is older
+than v1.25, the route returns JSON **409** and does **not** fall back to a
+wine one-shot. It never talks to Vantage, FP, or official MCP on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

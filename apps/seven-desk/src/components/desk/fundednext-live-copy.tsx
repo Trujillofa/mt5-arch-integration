@@ -17,7 +17,7 @@ export function FundedNextLiveCopy() {
   const canArm = ack && confirm === FUNDEDNEXT_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to FundedNext 13981906 as 0.01 EURUSD.";
+      return "Armed. Each master fill copies to FundedNext 13981906 as a 0.35-lot EURUSD order of the same type.";
     }
     if (!ack) return "Tick the acknowledgement. This is a real FundedNext order on each master fill.";
     if (confirm !== FUNDEDNEXT_LIVE_CONFIRM) return `Type ${FUNDEDNEXT_LIVE_CONFIRM} exactly.`;
@@ -43,8 +43,8 @@ export function FundedNextLiveCopy() {
         </p>
         <p className="text-xs text-muted-foreground">
           When armed, Place master trade sends the FundedNext slave through{" "}
-          <span className="font-mono">POST /api/fundednext/order</span> (open, min
-          lot, login 13981906). Other non-armed slaves stay paper.
+          <span className="font-mono">POST /api/fundednext/order</span> (same type,
+          0.35 lots, login 13981906). Other non-armed slaves stay paper.
         </p>
       </div>
 
@@ -59,7 +59,7 @@ export function FundedNextLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live FundedNext 13981906 at 0.01 lot. Not
+          Copy each master fill to live FundedNext 13981906 as a 0.35-lot order of the same type. Not
           Vantage, not FP.
         </span>
       </label>

@@ -3,6 +3,11 @@ import {
   LIVE_ORDER_VOLUME_HARD_MAX,
   alphaStartupChartSymbol,
   classifyOrphanRequest,
+  eaNotReadyReason,
+  isAlreadyFlatReason,
+  parseBridgeVersion,
+  resolveLimitPrice,
+  versionAtLeast,
   deadlineExceeded,
   disconnectedOrderReason,
   httpTimeoutResult,
@@ -22,6 +27,11 @@ import {
   us30SelectVariantsForFirm,
   withDeadline,
 } from "../apps/seven-desk/src/lib/live-order/guards.ts";
+import {
+  DEFAULT_DESK_LOTS,
+  defaultLotsForFirm,
+  liveLotsForFirm,
+} from "../apps/seven-desk/src/lib/firms.ts";
 
 assert.equal(isTradeServerDisconnected(false), true);
 assert.equal(isTradeServerDisconnected(true), false);
@@ -180,6 +190,7 @@ assert.equal(symbolAllowedForFirm("alphacapital", "US30"), false);
 assert.equal(symbolAllowedForFirm("neomaa", "US30"), false);
 assert.equal(symbolAllowedForFirm("alphacapital", "BTCUSD"), true);
 assert.equal(symbolAllowedForFirm("ftmo", "EURUSD"), true);
+assert.equal(symbolAllowedForFirm("alphacapital", "EURUSD.pro"), true);
 assert.equal(oneshotChartSymbol("ftmo", "US30"), "EURUSD");
 assert.equal(oneshotChartSymbol("wsf", "US30.cash"), "EURUSDc");
 assert.equal(oneshotChartSymbol("alphacapital", "EURUSD"), "EURUSD.pro");
@@ -187,7 +198,7 @@ assert.equal(oneshotChartSymbol("alphacapital", "EURUSD"), "EURUSD.pro");
 const base = { live: true as const, confirm: "FTMO-541163357" };
 
 const market = parseLiveOrderRequest({
-  body: { ...base, action: "open", volume_min: true },
+  body: { ...base, action: "open", order_type: "market", volume_min: true },
   expectedConfirm: "FTMO-541163357",
   defaultSymbol: "EURUSD",
   firmId: "ftmo",
@@ -274,8 +285,54 @@ const noPrice = parseLiveOrderRequest({
   defaultSymbol: "EURUSD",
   firmId: "ftmo",
 });
-assert.equal(noPrice.ok, false);
-if (!noPrice.ok) assert.equal(noPrice.stage, "price");
+assert.equal(noPrice.ok, true);
+if (noPrice.ok) assert.equal(noPrice.fields.price, null);
+
+const defaultMarket = parseLiveOrderRequest({
+  body: { ...base, action: "open", volume_min: true },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(defaultMarket.ok, true);
+if (defaultMarket.ok) {
+  assert.equal(defaultMarket.fields.orderType, "market");
+  assert.equal(defaultMarket.fields.action, "open");
+}
+
+const omittedVolume = parseLiveOrderRequest({
+  body: { ...base, action: "open", order_type: "market" },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(omittedVolume.ok, true);
+if (omittedVolume.ok) {
+  assert.equal(omittedVolume.fields.volume, null);
+  assert.equal(omittedVolume.fields.useVolumeMin, false);
+}
+
+const buyStop = parseLiveOrderRequest({
+  body: {
+    ...base,
+    action: "open",
+    order_type: "buy_stop",
+    side: "buy",
+    symbol: "EURUSD",
+    price: 1.09,
+    volume: 1.4,
+    volume_confirm: true,
+  },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(buyStop.ok, true);
+if (buyStop.ok) {
+  assert.equal(buyStop.fields.orderType, "buy_stop");
+  assert.equal(buyStop.fields.side, "BUY");
+  assert.equal(buyStop.fields.volume, 1.4);
+}
 
 const slWrong = parseLiveOrderRequest({
   body: {
@@ -436,5 +493,85 @@ const closePending = parseLiveOrderRequest({
 });
 assert.equal(closePending.ok, false);
 if (!closePending.ok) assert.match(closePending.reason, /action=cancel/);
+
+const offsetBuy = resolveLimitPrice({
+  orderType: "buy_limit",
+  explicitPrice: null,
+  bid: 1.08512,
+  ask: 1.08518,
+  point: 0.00001,
+});
+assert.equal(offsetBuy.ok, true);
+if (offsetBuy.ok) {
+  assert.equal(offsetBuy.source, "offset");
+  assert.ok(offsetBuy.price < 1.08512);
+  assert.ok(offsetBuy.price < 1.08518);
+}
+const typedWrongSide = resolveLimitPrice({
+  orderType: "buy_limit",
+  explicitPrice: 1.09,
+  bid: 1.08512,
+  ask: 1.08518,
+});
+assert.equal(typedWrongSide.ok, true);
+if (typedWrongSide.ok) {
+  assert.equal(typedWrongSide.source, "explicit");
+  assert.equal(typedWrongSide.price, 1.09);
+}
+
+const offsetStop = resolveLimitPrice({
+  orderType: "buy_stop",
+  explicitPrice: null,
+  bid: 1.08512,
+  ask: 1.08518,
+  point: 0.00001,
+});
+assert.equal(offsetStop.ok, true);
+if (offsetStop.ok) {
+  assert.equal(offsetStop.source, "offset");
+  assert.ok(offsetStop.price > 1.08518);
+}
+
+assert.notEqual(DEFAULT_DESK_LOTS, 1);
+assert.notEqual(DEFAULT_DESK_LOTS, 4);
+assert.equal(DEFAULT_DESK_LOTS, 1.4);
+assert.equal(defaultLotsForFirm("ftmo"), 1.4);
+assert.equal(defaultLotsForFirm("wsf"), 1.4);
+assert.equal(defaultLotsForFirm("alphacapital"), 1.4);
+assert.equal(defaultLotsForFirm("neomaa"), 1.4);
+assert.equal(defaultLotsForFirm("fortraders"), 1.4);
+assert.equal(defaultLotsForFirm("fundednext"), 0.35);
+assert.equal(defaultLotsForFirm("fundingpips"), 0.8);
+assert.equal(liveLotsForFirm("ftmo", 0.01), 0.01);
+assert.equal(liveLotsForFirm("fundednext", 1.4), 0.35);
+assert.equal(liveLotsForFirm("fundingpips", 1.4), 0.8);
+assert.equal(liveLotsForFirm("wsf", 1.4), 1.4);
+
+assert.equal(isAlreadyFlatReason("no open desk position to close"), true);
+assert.equal(isAlreadyFlatReason("no pending desk order to cancel"), true);
+assert.equal(isAlreadyFlatReason("position vanished before close"), true);
+assert.equal(isAlreadyFlatReason("OrderSend pending rejected"), false);
+
+assert.deepEqual(parseBridgeVersion("1 connected=1 symbol=EURUSD version=1.25"), [1, 25]);
+assert.equal(versionAtLeast([1, 25], [1, 25]), true);
+assert.equal(versionAtLeast([1, 24], [1, 25]), false);
+assert.match(
+  eaNotReadyReason({
+    heartbeatFresh: false,
+    version: [1, 25],
+    tradeAllowed: true,
+    algoAllowed: true,
+  }) ?? "",
+  /heartbeat is stale/
+);
+assert.match(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 24],
+    tradeAllowed: true,
+    algoAllowed: true,
+  }) ?? "",
+  /not falling back to wine one-shot/
+);
 
 console.log("test_desk_live_order_guards.ts ok");
