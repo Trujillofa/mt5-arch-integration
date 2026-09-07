@@ -46,9 +46,9 @@ export function Terminal() {
   const float = state.positions.reduce((sum, position) => sum + position.pnl, 0);
 
   return (
-    <div className="flex min-h-full flex-col">
-      <header className="border-b border-foreground/10 bg-card/70 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-3 px-4 py-3 md:flex-row md:items-center md:justify-between">
+    <div className="flex min-h-dvh flex-col">
+      <header className="border-b border-foreground/10 bg-card/70 pt-[env(safe-area-inset-top)] backdrop-blur">
+        <div className="mx-auto flex w-full flex-col gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 pr-[max(1rem,env(safe-area-inset-right))] md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-8 items-center justify-center rounded-md bg-foreground text-background">
               <span className="font-mono text-xs font-bold">7D</span>
@@ -112,7 +112,7 @@ export function Terminal() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4">
+      <main className="mx-auto flex w-full flex-1 flex-col gap-4 px-[max(1rem,env(safe-area-inset-left))] py-4 pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))]">
         {hydrateError ? (
           <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
             {hydrateError}

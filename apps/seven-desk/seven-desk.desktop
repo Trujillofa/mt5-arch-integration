@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Seven Desk
+Comment=Multi-account copy terminal (standalone Chromium --app=)
+Exec=omarchy-launch-webapp http://127.0.0.1:3847
+Icon=/home/yderf/Projects/trading/mt5-arch-integration/apps/seven-desk/public/icon-512.png
+Terminal=false
+Categories=Office;Finance;
+Keywords=mt5;copy;trading;desk;
+StartupNotify=true

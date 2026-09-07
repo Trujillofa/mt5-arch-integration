@@ -61,6 +61,12 @@ npm run dev
 
 The dev script binds **0.0.0.0:3847** (not 3000). Open [http://127.0.0.1:3847](http://127.0.0.1:3847).
 
+Installable PWA (not Electron): `display: standalone`, `viewport-fit=cover`.
+On this box, symlink `seven-desk.desktop` into `~/.local/share/applications/`
+and launch **Seven Desk** (`omarchy-launch-webapp` → Chromium `--app=`).
+On a phone on the tailnet, open `:3847` and **Add to Home Screen**. See
+[docs/SEVEN-DESK.md](../../docs/SEVEN-DESK.md).
+
 ```bash
 npm run build
 npm start
