@@ -540,8 +540,8 @@ function resolveOneSlave(
     };
   }
 
-  const sized = sizeLots(master.lots, settings.lotMultiplier, settings.maxLot);
-  if (!sized.ok) {
+  const lots = liveLotsForFirm(account.firmId, master.lots);
+  if (lots - settings.maxLot > 1e-9) {
     return {
       event: {
         ...patchedBase,
@@ -550,7 +550,7 @@ function resolveOneSlave(
         sl: levels.sl,
         tp: levels.tp,
         status: "skipped",
-        reason: sized.reason,
+        reason: "max lot",
       },
     };
   }
@@ -562,7 +562,7 @@ function resolveOneSlave(
       accountId: account.id,
       symbol: mapped.symbol,
       side,
-      lots: sized.lots,
+      lots: lots,
       entry: pendingPrice,
       sl: levels.sl,
       tp: levels.tp,
@@ -578,7 +578,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: mapped.symbol,
         side,
-        lots: sized.lots,
+        lots: lots,
         orderType,
         sl: levels.sl,
         tp: levels.tp,
@@ -595,7 +595,7 @@ function resolveOneSlave(
     {
       symbol: mapped.symbol,
       side,
-      lots: sized.lots,
+      lots: lots,
       sl: levels.sl,
       tp: levels.tp,
     },
@@ -608,7 +608,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: mapped.symbol,
         side,
-        lots: sized.lots,
+        lots: lots,
         sl: levels.sl,
         tp: levels.tp,
         status: "error",
@@ -623,7 +623,7 @@ function resolveOneSlave(
         ...patchedBase,
         symbol: mapped.symbol,
         side,
-        lots: sized.lots,
+        lots: lots,
         sl: levels.sl,
         tp: levels.tp,
         fillPrice: result.fill.price,
@@ -638,7 +638,7 @@ function resolveOneSlave(
     accountId: account.id,
     symbol: mapped.symbol,
     side,
-    lots: sized.lots,
+    lots: lots,
     entry: result.fill.price,
     sl: levels.sl,
     tp: levels.tp,
@@ -653,7 +653,7 @@ function resolveOneSlave(
       ...patchedBase,
       symbol: mapped.symbol,
       side,
-      lots: sized.lots,
+      lots: lots,
       sl: levels.sl,
       tp: levels.tp,
       fillPrice: result.fill.price,

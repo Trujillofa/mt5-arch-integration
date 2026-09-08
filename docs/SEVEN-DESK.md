@@ -12,7 +12,7 @@ or **FundedNext live copy** or **Alpha Capital live copy** or **FundingPips live
 or **Neomaa live copy** or **Fortraders live copy** on those cards
 so slaves copy the **same type** as the ticket (market / limit / stop). Arm
 **FTMO live master** so Place master trade is a real EURUSD send
-on 541163357 (default **1.4** lots; FundedNext **0.35**; FundingPips **0.8**)
+on 541163357 (standard **4** lots; FundedNext ×**0.1**; FundingPips ×**0.2**)
 before any copy. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
 `Mt5ArchBridge` v1.27 polling `desk_live_order_request.txt` (seconds).
 `action: "modify"` plus `ticket` and `sl`/`tp` is `TRADE_ACTION_SLTP` on that
@@ -46,7 +46,7 @@ pending and the EA uses a **50-point** offset from bid/ask (5.0 pips on
 5-digit FX) so a limit stays passive and a stop stays on the trigger side.
 An explicit typed price is sent even if it is on the wrong side of the
 market. Volume above 0.01 requires `volume_confirm: true`.
-Default lots are **1.4** except FundedNext **0.35** and FundingPips **0.8**.
+Default lots are the **standard lot (4)** scaled per firm: FundedNext ×**0.1**, FundingPips ×**0.2**, everyone else ×**1.0**. An explicit **0.01** prove is not scaled.
 `volume_min: true` is the explicit 0.01 override. Hard max is 10 lots.
 `action: "cancel"` plus optional `ticket` removes a pending order
 (`TRADE_ACTION_REMOVE`). Close positions is pinned to the bottom of the

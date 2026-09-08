@@ -21,6 +21,11 @@ import {
   sizeConfirmLines,
   worstLegMs,
 } from "../apps/seven-desk/src/lib/copy-fanout.ts";
+import {
+  defaultLotsForFirm,
+  liveLotsForFirm,
+  planLiveLots,
+} from "../apps/seven-desk/src/lib/firms.ts";
 import { seedDesk } from "../apps/seven-desk/src/lib/seed.ts";
 import { ACCOUNT_IDS } from "../apps/seven-desk/src/lib/seed.ts";
 
@@ -46,8 +51,18 @@ assert.equal(parsePendingOrders({ history: [] }).length, 0);
 assert.equal(parsePendingOrders(null).length, 0);
 
 assert.equal(needsSizeConfirm(0.01), false);
-assert.equal(needsSizeConfirm(1.4), true);
-assert.equal(needsSizeConfirm(0.35), true);
+assert.equal(needsSizeConfirm(4), true);
+assert.equal(needsSizeConfirm(0.4), true);
+assert.equal(liveLotsForFirm("fundednext", 4), 0.4);
+assert.equal(liveLotsForFirm("fundingpips", 4), 0.8);
+assert.equal(liveLotsForFirm("wsf", 4), 4);
+assert.equal(liveLotsForFirm("fundednext", 2), 0.2);
+assert.equal(liveLotsForFirm("fundingpips", 2), 0.4);
+assert.equal(liveLotsForFirm("fundednext", 0.01), 0.01);
+assert.equal(liveLotsForFirm("fundingpips", 0.01), 0.01);
+assert.equal(liveLotsForFirm("wsf", 0.01), 0.01);
+assert.equal(defaultLotsForFirm("fundednext", 2), 0.2);
+assert.equal(planLiveLots("fundednext", 0.03).roundedUp, true);
 assert.equal(COPY_FANOUT_SKIP.has("alphacapital"), true);
 
 let desk = seedDesk();
@@ -65,11 +80,18 @@ const armed = armedCopyBrokers(desk);
 assert.deepEqual(armed.sort(), ["fortraders", "fundednext", "fundingpips", "neomaa", "wsf"].sort());
 assert.equal(armed.includes("alphacapital"), false);
 
-const lines = sizeConfirmLines(1.4, armed, true);
-assert.equal(lines.some((row) => row.id === "ftmo" && row.lots === 1.4), true);
-assert.equal(lines.some((row) => row.id === "fundednext" && row.lots === 0.35), true);
+const lines = sizeConfirmLines(4, armed, true);
+assert.equal(lines.some((row) => row.id === "ftmo" && row.lots === 4), true);
+assert.equal(lines.some((row) => row.id === "fundednext" && row.lots === 0.4), true);
 assert.equal(lines.some((row) => row.id === "fundingpips" && row.lots === 0.8), true);
+assert.equal(lines.some((row) => row.id === "wsf" && row.lots === 4), true);
 assert.equal(lines.some((row) => row.id === "alphacapital"), false);
+const linesAtTwo = sizeConfirmLines(2, armed, true);
+assert.equal(linesAtTwo.some((row) => row.id === "fundednext" && row.lots === 0.2), true);
+assert.equal(linesAtTwo.some((row) => row.id === "fundingpips" && row.lots === 0.4), true);
+assert.equal(linesAtTwo.some((row) => row.id === "wsf" && row.lots === 2), true);
+const proveLines = sizeConfirmLines(0.01, armed, true);
+assert.equal(proveLines.every((row) => row.lots === 0.01), true);
 
 const placed = placeMasterTrade(desk, {
   symbol: "EURUSD",
@@ -90,6 +112,31 @@ assert.equal(
 );
 assert.ok(pending.some((row) => row.accountId === ACCOUNT_IDS.wsf));
 assert.ok(pending.some((row) => row.accountId === ACCOUNT_IDS.fundednext));
+assert.equal(pending.find((row) => row.accountId === ACCOUNT_IDS.wsf)?.lots, 0.01);
+assert.equal(pending.find((row) => row.accountId === ACCOUNT_IDS.fundednext)?.lots, 0.01);
+assert.equal(pending.find((row) => row.accountId === ACCOUNT_IDS.fundingpips)?.lots, 0.01);
+
+const placedStd = placeMasterTrade(desk, {
+  symbol: "EURUSD",
+  side: "buy",
+  lots: 4,
+  sl: null,
+  tp: null,
+  price: 1.08,
+  orderType: "buy_limit",
+});
+assert.ok(placedStd.groupId);
+const resolvedStd = resolveQueuedCopies(placedStd.state, placedStd.groupId!);
+const pendingStd = pendingLiveSlaveEvents(resolvedStd, placedStd.groupId!);
+assert.equal(pendingStd.find((row) => row.accountId === ACCOUNT_IDS.wsf)?.lots, 4);
+assert.equal(pendingStd.find((row) => row.accountId === ACCOUNT_IDS.fundednext)?.lots, 0.4);
+assert.equal(pendingStd.find((row) => row.accountId === ACCOUNT_IDS.fundingpips)?.lots, 0.8);
+assert.equal(pendingStd.find((row) => row.accountId === ACCOUNT_IDS.neomaa)?.lots, 4);
+assert.equal(pendingStd.find((row) => row.accountId === ACCOUNT_IDS.fortraders)?.lots, 4);
+assert.equal(
+  pendingStd.some((row) => row.accountId === ACCOUNT_IDS.alphacapital),
+  false
+);
 
 const alphaEvent = resolved.blotter.find((row) => row.accountId === ACCOUNT_IDS.alphacapital);
 assert.ok(alphaEvent);

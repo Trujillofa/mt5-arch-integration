@@ -98,7 +98,7 @@ Select the FundedNext card and click **Fetch FundedNext**, or:
 - `GET /api/fundednext/probe` — fail-closed file-bridge snapshot
 - `GET /api/fundednext/account` — sanitized account snapshot only
 
-Uses `FUNDEDNEXT_MT5_*` from the gitignored repo `.env` (login `13981906`, server `FundedNext-Server 2`, prefix `~/.mt5-fundednext`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a FundedNext add-on risk the operator accepted for the snapshot. Arm **FundedNext live copy** on the same card to send each master fill through `POST /api/fundednext/order` (`confirm: "FN-13981906"`, 0.35 lots, same type as the ticket).
+Uses `FUNDEDNEXT_MT5_*` from the gitignored repo `.env` (login `13981906`, server `FundedNext-Server 2`, prefix `~/.mt5-fundednext`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a FundedNext add-on risk the operator accepted for the snapshot. Arm **FundedNext live copy** on the same card to send each master fill through `POST /api/fundednext/order` (`confirm: "FN-13981906"`, ticket × 0.1, same type as the ticket).
 
 ## FTMO live fetch (read-only)
 
@@ -107,7 +107,7 @@ Select the FTMO card and click **Fetch FTMO**, or:
 - `GET /api/ftmo/probe` — fail-closed file-bridge snapshot
 - `GET /api/ftmo/account` — sanitized account snapshot only
 
-Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot. Arm **FTMO live master** on the FTMO card (`confirm: "FTMO-541163357"`) so Place master trade is a real EURUSD `POST /api/ftmo/order` (default 1.4 lots; market / limit / stop). Copies wait until that send.
+Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot. Arm **FTMO live master** on the FTMO card (`confirm: "FTMO-541163357"`) so Place master trade is a real EURUSD `POST /api/ftmo/order` (standard 4 lots; market / limit / stop). Copies wait until that send.
 
 ## Alpha Capital live fetch (read-only)
 
@@ -116,7 +116,7 @@ Select the Alpha Capital card and click **Fetch Alpha Capital**, or:
 - `GET /api/alphacapital/probe` — fail-closed file-bridge snapshot
 - `GET /api/alphacapital/account` — sanitized account snapshot only
 
-Uses `ALPHA_MT5_*` from the gitignored repo `.env` (login `2765247`, server `ACGMarkets-Main`, prefix `~/.mt5-alphacapital`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is an Alpha Capital add-on risk the operator accepted for the snapshot. Arm **Alpha Capital live copy** on the same card to send each master fill through `POST /api/alphacapital/order` (`confirm: "ACG-2765247"`, 1.4 lots, same type as the ticket). Live order routes return JSON within a 70s HTTP budget — they do not hang on a silent Wine one-shot.
+Uses `ALPHA_MT5_*` from the gitignored repo `.env` (login `2765247`, server `ACGMarkets-Main`, prefix `~/.mt5-alphacapital`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is an Alpha Capital add-on risk the operator accepted for the snapshot. Arm **Alpha Capital live copy** on the same card only as a fetch switch — Alpha stays skip / no POST. Live order routes return JSON within a 70s HTTP budget — they do not hang on a silent Wine one-shot.
 
 ## FundingPips live fetch (read-only)
 
@@ -134,7 +134,7 @@ Select the Neomaa card and click **Fetch Neomaa**, or:
 - `GET /api/neomaa/probe` — fail-closed file-bridge snapshot
 - `GET /api/neomaa/account` — sanitized account snapshot only
 
-Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-global`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, 1.4 lots, same type as the ticket). The paper card stays until that switch is armed. One-shots return 409 if `terminal_connected=false` (weekend FX / Neomaaa-global down — not auth) or if EURUSD has no history/ticks yet.
+Uses `NEOMAA_MT5_*` from the gitignored repo `.env` (login `7745107`, server `Neomaaa-global`, prefix `~/.mt5-neomaa`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Attaching `Mt5ArchBridge` is a Neomaa add-on risk the operator accepted for the snapshot. Arm **Neomaa live copy** on the same card to send each master fill through `POST /api/neomaa/order` (`confirm: "NEOMAA-7745107"`, ticket × 1.0, same type as the ticket). The paper card stays until that switch is armed. One-shots return 409 if `terminal_connected=false` (weekend FX / Neomaaa-global down — not auth) or if EURUSD has no history/ticks yet.
 
 ## Fortraders live fetch (read-only)
 
@@ -143,7 +143,7 @@ Select the Fortraders card and click **Fetch Fortraders**, or:
 - `GET /api/fortraders/probe` — fail-closed file-bridge snapshot
 - `GET /api/fortraders/account` — sanitized account snapshot only
 
-Uses `FORTRADERS_MT5_*` from the gitignored repo `.env` (login `737150`, server `FTTrading-Server`, prefix `~/.mt5-fortraders`). It does **not** read WSF `MT5_*` / `WINEPREFIX`, and it is not FTMO (`~/.mt5-ftmo`), FP Markets, or FundingPips. This challenge is **MT5**, not TradeLocker. Attaching `Mt5ArchBridge` is a Fortraders add-on risk the operator accepted for the snapshot. Arm **Fortraders live copy** on the same card to send each master fill through `POST /api/fortraders/order` (`confirm: "FORTRADERS-737150"`, 1.4 lots, same type as the ticket). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
+Uses `FORTRADERS_MT5_*` from the gitignored repo `.env` (login `737150`, server `FTTrading-Server`, prefix `~/.mt5-fortraders`). It does **not** read WSF `MT5_*` / `WINEPREFIX`, and it is not FTMO (`~/.mt5-ftmo`), FP Markets, or FundingPips. This challenge is **MT5**, not TradeLocker. Attaching `Mt5ArchBridge` is a Fortraders add-on risk the operator accepted for the snapshot. Arm **Fortraders live copy** on the same card to send each master fill through `POST /api/fortraders/order` (`confirm: "FORTRADERS-737150"`, ticket × 1.0, same type as the ticket). The paper card stays until that switch is armed. One-shots return 409 if EURUSD has no history/ticks yet.
 
 ## WSF live order (opt-in, fail-closed)
 
@@ -162,7 +162,7 @@ POST /api/wsf/order/close
 { "live": true, "confirm": "WSF-149736" }
 ```
 
-Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as the same **BUY LIMIT / SELL LIMIT** at the firm default lots (**1.4**, except FundedNext **0.35** and FundingPips **0.8**). Other slaves stay paper unless their own live-copy switch is armed. The happy path writes `desk_live_order_request.txt` for the already-running `Mt5ArchBridge` v1.27 (seconds). A stale heartbeat, Algo Trading off, or an EA older than v1.25 (v1.27 for SL/TP modify) returns **409** and does **not** fall back to a wine one-shot. **Close positions** is pinned to the bottom of the desk (always visible, including when the book is flat). It cancels working limits too. It does **not** mass-close broker leftovers (including leftover US30/DJ30 4.0s) — those appear on the Positions tab as leftover and can be modified or closed per-row. This-session desk US30/DJ30 rows still flatten; snapshot orphans stay leftover even if they still carry desk magic. Per-row **Set SL/TP** confirms, then sends `action=modify` on that ticket only (no slave fan-out). Alpha Capital is read-only — modify is **409**. An already-flat close (`no open … desk position` / `no pending desk order to cancel` / `position vanished`) drops the desk row.
+Arm **WSF live copy** on the same card (ack + `WSF-149736`) so each **Place master trade** copies the WSF slave as the same **BUY LIMIT / SELL LIMIT** at ticket × firm scale (standard **4**, FundedNext ×**0.1**, FundingPips ×**0.2**). Other slaves stay paper unless their own live-copy switch is armed. The happy path writes `desk_live_order_request.txt` for the already-running `Mt5ArchBridge` v1.27 (seconds). A stale heartbeat, Algo Trading off, or an EA older than v1.25 (v1.27 for SL/TP modify) returns **409** and does **not** fall back to a wine one-shot. **Close positions** is pinned to the bottom of the desk (always visible, including when the book is flat). It cancels working limits too. It does **not** mass-close broker leftovers (including leftover US30/DJ30 4.0s) — those appear on the Positions tab as leftover and can be modified or closed per-row. This-session desk US30/DJ30 rows still flatten; snapshot orphans stay leftover even if they still carry desk magic. Per-row **Set SL/TP** confirms, then sends `action=modify` on that ticket only (no slave fan-out). Alpha Capital is read-only — modify is **409**. An already-flat close (`no open … desk position` / `no pending desk order to cancel` / `position vanished`) drops the desk row.
 
 The WSF route resolves `WINEPREFIX` to `~/.mt5-wsf` only. FTMO, FundedNext, Alpha Capital, FundingPips, Neomaa, and Fortraders live orders use the same request file on their branded prefixes. Omit `price` and the EA places a **50-point** offset from bid/ask (5.0 pips on 5-digit FX) so the limit does not instantly market. `volume_min: true` is the explicit 0.01 override for a small prove. `src/mt5_arch` CLI/MCP stays read-only. Vantage and FP Markets are never used.
 
@@ -196,7 +196,7 @@ POST /api/{firm}/order
 { "live": true, "confirm": "<token>", "action": "cancel", "ticket": 123456789 }
 ```
 
-`POST /api/{firm}/order/close` still closes a filled position. If no position exists it will `TRADE_ACTION_REMOVE` a matching pending ticket. `{ volume_min: true }` is the explicit 0.01 override. Default live size is 1.4 (FundedNext 0.35, FundingPips 0.8) and requires `volume_confirm: true` when above 0.01. Copy-engine live switches send the same pending type at those lots.
+`POST /api/{firm}/order/close` still closes a filled position. If no position exists it will `TRADE_ACTION_REMOVE` a matching pending ticket. `{ volume_min: true }` is the explicit 0.01 override (not scaled). Default live size is the standard lot (4) times firm scale (FundedNext 0.1, FundingPips 0.2) and requires `volume_confirm: true` when above 0.01. Copy-engine live switches send the same pending type at those lots.
 
 Optional overrides (not committed; never put secrets in git):
 

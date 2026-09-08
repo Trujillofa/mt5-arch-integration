@@ -1,3 +1,4 @@
+import { defaultLotsForFirm } from "@/lib/firms";
 import { handleLiveOrderPost } from "@/lib/live-order/runner";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function GET() {
       endpoint: "/api/fundingpips/order",
       stage: "method",
       reason:
-        'GET is read-only. Live FundingPips OrderSend requires POST { live: true, confirm: "FUNDINGPIPS-11669306", action: "open" }. Default 0.8 lots (market / limit / stop). volume_min: true is the 0.01 prove.',
+        `GET is read-only. Live FundingPips OrderSend requires POST { live: true, confirm: "FUNDINGPIPS-11669306", action: "open" }. Default ${defaultLotsForFirm("fundingpips")} lots (market / limit / stop). volume_min: true is the 0.01 prove.`,
       winePrefix: ".mt5-fundingpips",
     },
     { status: 405 }

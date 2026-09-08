@@ -32,8 +32,12 @@ import {
 } from "../apps/seven-desk/src/lib/live-order/guards.ts";
 import {
   DEFAULT_DESK_LOTS,
+  FUNDEDNEXT_SCALE,
+  FUNDINGPIPS_SCALE,
+  STANDARD_LOT,
   defaultLotsForFirm,
   liveLotsForFirm,
+  planLiveLots,
 } from "../apps/seven-desk/src/lib/firms.ts";
 
 assert.equal(isTradeServerDisconnected(false), true);
@@ -602,20 +606,34 @@ if (offsetStop.ok) {
   assert.ok(offsetStop.price > 1.08518);
 }
 
-assert.notEqual(DEFAULT_DESK_LOTS, 1);
-assert.notEqual(DEFAULT_DESK_LOTS, 4);
-assert.equal(DEFAULT_DESK_LOTS, 1.4);
-assert.equal(defaultLotsForFirm("ftmo"), 1.4);
-assert.equal(defaultLotsForFirm("wsf"), 1.4);
-assert.equal(defaultLotsForFirm("alphacapital"), 1.4);
-assert.equal(defaultLotsForFirm("neomaa"), 1.4);
-assert.equal(defaultLotsForFirm("fortraders"), 1.4);
-assert.equal(defaultLotsForFirm("fundednext"), 0.35);
+assert.equal(STANDARD_LOT, 4);
+assert.equal(DEFAULT_DESK_LOTS, STANDARD_LOT);
+assert.equal(FUNDEDNEXT_SCALE, 0.1);
+assert.equal(FUNDINGPIPS_SCALE, 0.2);
+assert.equal(defaultLotsForFirm("ftmo"), 4);
+assert.equal(defaultLotsForFirm("wsf"), 4);
+assert.equal(defaultLotsForFirm("alphacapital"), 4);
+assert.equal(defaultLotsForFirm("neomaa"), 4);
+assert.equal(defaultLotsForFirm("fortraders"), 4);
+assert.equal(defaultLotsForFirm("fundednext"), 0.4);
 assert.equal(defaultLotsForFirm("fundingpips"), 0.8);
+assert.equal(defaultLotsForFirm("fundednext", 2), 0.2);
+assert.equal(defaultLotsForFirm("fundingpips", 2), 0.4);
+assert.equal(defaultLotsForFirm("wsf", 2), 2);
 assert.equal(liveLotsForFirm("ftmo", 0.01), 0.01);
-assert.equal(liveLotsForFirm("fundednext", 1.4), 0.35);
-assert.equal(liveLotsForFirm("fundingpips", 1.4), 0.8);
-assert.equal(liveLotsForFirm("wsf", 1.4), 1.4);
+assert.equal(liveLotsForFirm("fundednext", 0.01), 0.01);
+assert.equal(liveLotsForFirm("fundingpips", 0.01), 0.01);
+assert.equal(liveLotsForFirm("wsf", 0.01), 0.01);
+assert.equal(liveLotsForFirm("fundednext", 4), 0.4);
+assert.equal(liveLotsForFirm("fundingpips", 4), 0.8);
+assert.equal(liveLotsForFirm("wsf", 4), 4);
+assert.equal(liveLotsForFirm("fundednext", 2), 0.2);
+assert.equal(liveLotsForFirm("fundingpips", 2), 0.4);
+assert.equal(liveLotsForFirm("fundednext"), 0.4);
+assert.equal(planLiveLots("fundednext", 0.03).lots, 0.01);
+assert.equal(planLiveLots("fundednext", 0.03).roundedUp, true);
+assert.equal(planLiveLots("fundednext", 0.01).prove, true);
+assert.equal(planLiveLots("fundednext", 0.01).lots, 0.01);
 
 assert.equal(isAlreadyFlatReason("no open desk position to close"), true);
 assert.equal(isAlreadyFlatReason("no pending desk order to cancel"), true);

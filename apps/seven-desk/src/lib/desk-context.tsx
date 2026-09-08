@@ -50,7 +50,7 @@ import {
 } from "@/lib/desk-store";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import { alphaModifyBlocked } from "@/lib/live-order/guards";
-import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
+import { COPY_FANOUT_SKIP, masterLotsForGroup } from "@/lib/copy-fanout";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
@@ -465,7 +465,9 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       neo: neoConfirm.current,
       ftt: fttConfirm.current,
     };
-    const pending = pendingLiveSlaveEvents(getDeskSnapshot(), groupId);
+    const snapshot = getDeskSnapshot();
+    const masterLots = masterLotsForGroup(snapshot, groupId);
+    const pending = pendingLiveSlaveEvents(snapshot, groupId);
     await Promise.all(
       pending.map(async (event) => {
         const broker = brokerForPendingReason(event.reason);
@@ -477,7 +479,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             confirm: confirmFor(broker, refs),
             symbol,
             side: event.side,
-            volume: liveLotsForFirm(broker, event.lots),
+            volume: liveLotsForFirm(broker, masterLots),
             price: event.requestedPrice,
             sl: event.sl,
             tp: event.tp,

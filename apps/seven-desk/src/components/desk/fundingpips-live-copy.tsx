@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDesk } from "@/lib/desk-context";
+import { defaultLotsForFirm } from "@/lib/firms";
 import { FUNDINGPIPS_LIVE_CONFIRM } from "@/lib/fundingpips/types";
 
 export function FundingPipsLiveCopy() {
@@ -17,7 +18,7 @@ export function FundingPipsLiveCopy() {
   const canArm = ack && confirm === FUNDINGPIPS_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to FundingPips 11669306 as a 0.8-lot EURUSD order of the same type.";
+      return `Armed. Each master fill copies to FundingPips 11669306 as a ${defaultLotsForFirm("fundingpips")}-lot EURUSD order of the same type.`;
     }
     if (!ack) return "Tick the acknowledgement. This is a real FundingPips order on each master fill.";
     if (confirm !== FUNDINGPIPS_LIVE_CONFIRM) return `Type ${FUNDINGPIPS_LIVE_CONFIRM} exactly.`;
@@ -59,7 +60,8 @@ export function FundingPipsLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live FundingPips 11669306 as a 0.8-lot order of the same type. Not
+          Copy each master fill to live FundingPips 11669306 as a {defaultLotsForFirm("fundingpips")}-lot
+          order of the same type. Not
           Vantage, not FP Markets.
         </span>
       </label>

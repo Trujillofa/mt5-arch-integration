@@ -1,3 +1,4 @@
+import { defaultLotsForFirm } from "@/lib/firms";
 import { handleLiveOrderPost } from "@/lib/live-order/runner";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export async function GET() {
       endpoint: "/api/ftmo/order",
       stage: "method",
       reason:
-        'GET is read-only. Live FTMO OrderSend requires POST { live: true, confirm: "FTMO-541163357", action: "open" }. Default 1.4 lots (market / limit / stop). volume_min: true is the 0.01 prove.',
+        `GET is read-only. Live FTMO OrderSend requires POST { live: true, confirm: "FTMO-541163357", action: "open" }. Default ${defaultLotsForFirm("ftmo")} lots (market / limit / stop). volume_min: true is the 0.01 prove.`,
       winePrefix: ".mt5-ftmo",
     },
     { status: 405 }

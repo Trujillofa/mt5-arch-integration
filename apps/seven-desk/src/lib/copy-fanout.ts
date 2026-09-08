@@ -1,4 +1,8 @@
-import { defaultLotsForFirm, liveLotsForFirm } from "@/lib/firms";
+import {
+  FUNDEDNEXT_SCALE,
+  FUNDINGPIPS_SCALE,
+  planLiveLots,
+} from "@/lib/firms";
 import type { LiveBroker } from "@/lib/live-order/types";
 import type { DeskState } from "@/lib/types";
 
@@ -21,23 +25,30 @@ export function armedCopyBrokers(state: DeskState): LiveBroker[] {
   return out.filter((broker) => !COPY_FANOUT_SKIP.has(broker));
 }
 
+export function masterLotsForGroup(state: DeskState, groupId: string): number | null {
+  const master = state.blotter.find((row) => row.groupId === groupId && row.role === "master");
+  return master && Number.isFinite(master.lots) ? master.lots : null;
+}
+
 export function sizeConfirmLines(
   ticketLots: number,
   armed: LiveBroker[],
   includeMaster: boolean
-): { id: string; name: string; lots: number }[] {
-  const rows: { id: string; name: string; lots: number }[] = [];
+): { id: string; name: string; lots: number; roundedUp: boolean }[] {
+  const rows: { id: string; name: string; lots: number; roundedUp: boolean }[] = [];
   if (includeMaster) {
+    const plan = planLiveLots("ftmo", ticketLots);
     rows.push({
       id: "ftmo",
       name: "FTMO master",
-      lots: liveLotsForFirm("ftmo", ticketLots),
+      lots: plan.lots,
+      roundedUp: plan.roundedUp,
     });
   }
   const names: Record<LiveBroker, string> = {
     wsf: "WSF",
-    fundednext: `FN (default ${defaultLotsForFirm("fundednext")})`,
-    fundingpips: `FundingPips (default ${defaultLotsForFirm("fundingpips")})`,
+    fundednext: `FN ×${FUNDEDNEXT_SCALE}`,
+    fundingpips: `FundingPips ×${FUNDINGPIPS_SCALE}`,
     neomaa: "Neomaa",
     fortraders: "Fortraders",
     ftmo: "FTMO",
@@ -45,10 +56,12 @@ export function sizeConfirmLines(
   };
   for (const broker of armed) {
     if (COPY_FANOUT_SKIP.has(broker)) continue;
+    const plan = planLiveLots(broker, ticketLots);
     rows.push({
       id: broker,
       name: names[broker],
-      lots: liveLotsForFirm(broker, ticketLots),
+      lots: plan.lots,
+      roundedUp: plan.roundedUp,
     });
   }
   return rows;

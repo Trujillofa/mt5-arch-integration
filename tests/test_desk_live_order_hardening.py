@@ -138,9 +138,11 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     assert "readHeartbeatReadonly" in runner
     assert "parseBridgeReadonly" in runner
     assert "read-only bridge" in GUARDS.read_text(encoding="utf-8")
-    assert "DEFAULT_DESK_LOTS = 1.4" in firms
-    assert "FUNDEDNEXT_DEFAULT_LOTS = 0.35" in firms
-    assert "FUNDINGPIPS_DEFAULT_LOTS = 0.8" in firms
+    assert "STANDARD_LOT = 4" in firms
+    assert "FUNDEDNEXT_SCALE = 0.1" in firms
+    assert "FUNDINGPIPS_SCALE = 0.2" in firms
+    assert "isMinLotProve" in firms
+    assert "planLiveLots" in firms
     assert "Buy limit" in ticket
     assert "Sell limit" in ticket
     assert "Buy stop" in ticket
@@ -246,6 +248,8 @@ def test_fanout_skips_alpha_and_confirms_size() -> None:
     assert 'COPY_FANOUT_SKIP = new Set<LiveBroker>(["alphacapital"])' in fanout
     assert "needsSizeConfirm" in fanout
     assert "Promise.all" in context
+    assert "masterLotsForGroup" in context
+    assert "liveLotsForFirm(broker, masterLots)" in context
     assert "alpha capital is fetch-only — not copied" in engine
     assert "alpha capital is fetch-only — not copied" in context
     assert 'httpAction: "send"' in engine

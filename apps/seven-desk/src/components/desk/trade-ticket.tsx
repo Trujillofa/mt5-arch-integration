@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,7 +23,13 @@ import {
 } from "@/components/ui/dialog";
 import { armedCopyBrokers, needsSizeConfirm, sizeConfirmLines } from "@/lib/copy-fanout";
 import { useDesk } from "@/lib/desk-context";
-import { DEFAULT_DESK_LOTS, FIRM_BY_ID, defaultLotsForFirm } from "@/lib/firms";
+import {
+  DEFAULT_DESK_LOTS,
+  FIRM_BY_ID,
+  FIRMS,
+  STANDARD_LOT,
+  defaultLotsForFirm,
+} from "@/lib/firms";
 import { formatPrice } from "@/lib/format";
 import {
   LIMIT_OFFSET_POINTS,
@@ -56,18 +62,28 @@ export function TradeTicket() {
   const [pendingInput, setPendingInput] = useState<MasterTradeInput | null>(null);
 
   const master = state.accounts.find((account) => account.id === state.masterId);
+  const selected = state.accounts.find((account) => account.id === state.selectedAccountId);
+  const ticketFirmId = selected?.firmId ?? master?.firmId ?? "ftmo";
+  const ticketDefault = defaultLotsForFirm(ticketFirmId);
   const quote = quoteBySymbol(state.quotes, symbol);
   const enabledSlaves = state.copySettings.filter((row) => row.enabled).length;
+
+  useEffect(() => {
+    setLots((prev) => {
+      const n = Number(prev);
+      if (prev.trim() === "" || !Number.isFinite(n)) return ticketDefault.toFixed(2);
+      const known = [STANDARD_LOT, ...FIRMS.map((firm) => defaultLotsForFirm(firm.id))];
+      if (known.some((def) => Math.abs(n - def) < 1e-8)) return ticketDefault.toFixed(2);
+      return prev;
+    });
+  }, [ticketFirmId, ticketDefault]);
 
   const hint = useMemo(() => {
     if (symbol === "NAS100") {
       return "NAS100 is unmapped on FundingPips — that child should skip.";
     }
-    if (Number(lots) >= 2) {
-      return `2.00 lots × FundingPips ${defaultLotsForFirm("fundingpips")} may exceed a stale 1.00 max lot — bump max lot.`;
-    }
     if (state.ftmoLiveMaster) {
-      return `FTMO live master is armed. The button you press (market / limit / stop) is what 541163357 sends at the lots in this form (default ${DEFAULT_DESK_LOTS}). ${enabledSlaves} slaves copy the same type.`;
+      return `FTMO live master is armed. The button you press (market / limit / stop) is what 541163357 sends at the lots in this form (standard ${STANDARD_LOT}; FN ×0.1, FundingPips ×0.2). ${enabledSlaves} slaves copy the same type.`;
     }
     if (
       state.wsfLiveCopy ||
@@ -93,7 +109,7 @@ export function TradeTicket() {
 
   function submit(action: TicketAction) {
     setFormError(null);
-    const parsedLots = Number(lots);
+    const parsedLots = lots.trim() === "" ? STANDARD_LOT : Number(lots);
     if (!Number.isFinite(parsedLots) || parsedLots < 0.01) {
       setFormError("Lots must be at least 0.01.");
       return;
@@ -173,8 +189,9 @@ export function TradeTicket() {
         <CardTitle>Place master trade</CardTitle>
         <p className="text-xs text-muted-foreground">
           Market <span className="font-medium text-foreground">Buy / Sell</span> stay available.
-          Limit and stop are extra. Default lots {DEFAULT_DESK_LOTS} (FN{" "}
-          {defaultLotsForFirm("fundednext")}, FundingPips {defaultLotsForFirm("fundingpips")}).
+          Limit and stop are extra. Standard lot {STANDARD_LOT} (FN ×0.1 →{" "}
+          {defaultLotsForFirm("fundednext")}, FundingPips ×0.2 →{" "}
+          {defaultLotsForFirm("fundingpips")}).
           Empty pending price uses a {LIMIT_OFFSET_POINTS}-point offset from bid/ask.
           {state.ftmoLiveMaster ? " Live FTMO master on " : " Paper book on "}
           <span className="text-foreground">
@@ -221,7 +238,7 @@ export function TradeTicket() {
             label="Lots"
             value={lots}
             onChange={setLots}
-            placeholder={DEFAULT_DESK_LOTS.toFixed(2)}
+            placeholder={ticketDefault.toFixed(2)}
           />
           <Field
             id="pending-price"
@@ -359,8 +376,8 @@ function SizeConfirmDialog({
         <DialogHeader>
           <DialogTitle>Confirm size {lots.toFixed(2)}</DialogTitle>
           <DialogDescription>
-            Ticket is not 0.01. Each armed book will send the lot below — not a
-            silent 1.4.
+            Ticket is not 0.01. Each armed book will send the computed lot
+            below (ticket × firm scale). 0.01 prove stays 0.01.
           </DialogDescription>
         </DialogHeader>
         <ul className="space-y-1 font-mono text-sm">
@@ -370,6 +387,7 @@ function SizeConfirmDialog({
             lines.map((row) => (
               <li key={row.id}>
                 {row.name}: {row.lots.toFixed(2)}
+                {row.roundedUp ? " · rounded up to broker min 0.01" : ""}
               </li>
             ))
           )}

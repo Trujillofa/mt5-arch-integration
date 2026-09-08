@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDesk } from "@/lib/desk-context";
+import { defaultLotsForFirm } from "@/lib/firms";
 import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
 
 export function FtmoLiveMaster() {
@@ -20,7 +21,7 @@ export function FtmoLiveMaster() {
   const hint = useMemo(() => {
     if (!ftmoIsMaster) return "Make FTMO the master before arming a live master fill.";
     if (armed) {
-      return "Armed. Place master trade sends the ticket type (market / limit / stop) on FTMO 541163357 at the ticket lots (default 1.4). Copies wait until that send is accepted.";
+      return `Armed. Place master trade sends the ticket type (market / limit / stop) on FTMO 541163357 at the ticket lots (default ${defaultLotsForFirm("ftmo")}). Copies wait until that send is accepted.`;
     }
     if (!ack) return "Tick the acknowledgement. This is a real FTMO order.";
     if (confirm !== FTMO_LIVE_CONFIRM) return `Type ${FTMO_LIVE_CONFIRM} exactly.`;
@@ -47,7 +48,8 @@ export function FtmoLiveMaster() {
         <p className="text-xs text-muted-foreground">
           When armed, Place master trade is a real{" "}
           <span className="font-mono">POST /api/ftmo/order</span> on login 541163357
-          (default 1.4 lots). Market, limit, and stop stay available. Slaves copy the same type. Not Vantage, not FP.
+          (default {defaultLotsForFirm("ftmo")} lots). Market, limit, and stop stay available. Slaves
+          copy the same type. Not Vantage, not FP.
         </p>
       </div>
 
@@ -61,7 +63,10 @@ export function FtmoLiveMaster() {
             if (!event.target.checked && armed) setFtmoLiveMaster(false, "");
           }}
         />
-        <span>Send the master ticket live on FTMO 541163357 (default 1.4 lots; market / limit / stop).</span>
+        <span>
+          Send the master ticket live on FTMO 541163357 (default {defaultLotsForFirm("ftmo")} lots;
+          market / limit / stop).
+        </span>
       </label>
 
       <div className="space-y-1.5">
