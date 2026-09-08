@@ -255,16 +255,40 @@ assert.ok(leftoverRow);
 assert.equal(leftoverRow.leftover, true);
 assert.equal(leftoverRow.lots, 4);
 assert.ok(deskRow);
-assert.equal(deskRow.leftover, false);
+assert.equal(deskRow.leftover, true);
 assert.equal(deskRow.sl, 1.07);
 const ingestedFlatten = flattenAllTargets(ingestedLive);
 assert.equal(ingestedFlatten.liveRepIds.includes(leftoverRow.id), false);
-assert.equal(ingestedFlatten.liveRepIds.includes(deskRow.id), true);
+assert.equal(ingestedFlatten.liveRepIds.includes(deskRow.id), false);
 const ingestedAgain = upsertSnapshotPositions(ingestedLive, ACCOUNT_IDS.wsf, "wsf", parsedPos);
 assert.equal(
   ingestedAgain.positions.find((row) => row.liveOrder === 77001)?.id,
   leftoverRow.id,
   "leftover ticket must keep the same desk row across probe polls"
 );
+const deskMagicUs30 = upsertSnapshotPositions(
+  seedDesk(),
+  ACCOUNT_IDS.ftmo,
+  "ftmo",
+  parseOpenPositions({
+    positions: [
+      {
+        ticket: 165085534,
+        symbol: "US30.cash",
+        side: "buy",
+        volume: 4,
+        open_price: 52500,
+        stop_loss: 52500,
+        take_profit: 53300,
+        profit: 0,
+        magic: DESK_MAGIC.ftmo,
+      },
+    ],
+  })
+);
+const orphan = deskMagicUs30.positions.find((row) => row.liveOrder === 165085534);
+assert.ok(orphan);
+assert.equal(orphan.leftover, true);
+assert.equal(flattenAllTargets(deskMagicUs30).liveRepIds.includes(orphan.id), false);
 
 console.log("test_desk_copy_fanout ok");

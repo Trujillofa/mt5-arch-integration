@@ -18,9 +18,10 @@ before any copy. Market Buy/Sell stay available; limit and stop are extra. Other
 `action: "modify"` plus `ticket` and `sl`/`tp` is `TRADE_ACTION_SLTP` on that
 book only (no slave fan-out). Alpha Capital stays read-only — modify returns
 JSON **409**. The Positions tab ingests live `positions.json` (PositionsTotal)
-and tags **desk** vs **leftover**. Flatten stays desk-only; leftover US30/DJ30
-4.0s can appear and be modified/closed per-row, but Close positions will not
-mass-close them.
+and tags **desk** vs **leftover**. Flatten stays this-session desk-only;
+snapshot orphans (including leftover US30/DJ30 4.0s, even when they still
+carry desk magic) can appear and be modified/closed per-row, but Close
+positions will not mass-close them.
 One-shots restore the branded
 terminal in the background and refuse a generic `Program Files/MetaTrader 5`
 tree inside those prefixes (that leftover can carry another company’s
@@ -51,7 +52,8 @@ Default lots are **1.4** except FundedNext **0.35** and FundingPips **0.8**.
 (`TRADE_ACTION_REMOVE`). Close positions is pinned to the bottom of the
 desk and cancels working limits, not only positions. Broker leftovers
 (including leftover US30/DJ30 4.0s) can appear on the Positions tab; flatten
-does not mass-close them. US30/DJ30 desk rows still flatten. Already-flat
+does not mass-close them. This-session US30/DJ30 desk rows still flatten.
+Already-flat
 (`no open … desk position`, `no pending desk order to cancel`, or
 `position vanished`) drops the desk row the same as `ok`.
 If the EA heartbeat is stale, trade is not allowed, or the build is older
