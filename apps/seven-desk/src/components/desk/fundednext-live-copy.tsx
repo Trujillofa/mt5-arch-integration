@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDesk } from "@/lib/desk-context";
+import { defaultLotsForFirm } from "@/lib/firms";
 import { FUNDEDNEXT_LIVE_CONFIRM } from "@/lib/fundednext/types";
 
 export function FundedNextLiveCopy() {
@@ -17,7 +18,7 @@ export function FundedNextLiveCopy() {
   const canArm = ack && confirm === FUNDEDNEXT_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to FundedNext 13981906 as a 0.35-lot EURUSD order of the same type.";
+      return `Armed. Each master fill copies to FundedNext 13981906 as a ${defaultLotsForFirm("fundednext")}-lot EURUSD order of the same type.`;
     }
     if (!ack) return "Tick the acknowledgement. This is a real FundedNext order on each master fill.";
     if (confirm !== FUNDEDNEXT_LIVE_CONFIRM) return `Type ${FUNDEDNEXT_LIVE_CONFIRM} exactly.`;
@@ -44,7 +45,7 @@ export function FundedNextLiveCopy() {
         <p className="text-xs text-muted-foreground">
           When armed, Place master trade sends the FundedNext slave through{" "}
           <span className="font-mono">POST /api/fundednext/order</span> (same type,
-          0.35 lots, login 13981906). Other non-armed slaves stay paper.
+          {defaultLotsForFirm("fundednext")} lots, login 13981906). Other non-armed slaves stay paper.
         </p>
       </div>
 
@@ -59,7 +60,8 @@ export function FundedNextLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live FundedNext 13981906 as a 0.35-lot order of the same type. Not
+          Copy each master fill to live FundedNext 13981906 as a {defaultLotsForFirm("fundednext")}-lot
+          order of the same type. Not
           Vantage, not FP.
         </span>
       </label>

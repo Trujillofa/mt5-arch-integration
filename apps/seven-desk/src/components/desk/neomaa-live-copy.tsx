@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useDesk } from "@/lib/desk-context";
+import { defaultLotsForFirm } from "@/lib/firms";
 import { NEOMAA_LIVE_CONFIRM } from "@/lib/neomaa/types";
 
 export function NeomaaLiveCopy() {
@@ -17,7 +18,7 @@ export function NeomaaLiveCopy() {
   const canArm = ack && confirm === NEOMAA_LIVE_CONFIRM;
   const hint = useMemo(() => {
     if (armed) {
-      return "Armed. Each master fill copies to Neomaa 7745107 as a 1.4-lot EURUSD order of the same type.";
+      return `Armed. Each master fill copies to Neomaa 7745107 as a ${defaultLotsForFirm("neomaa")}-lot EURUSD order of the same type.`;
     }
     if (!ack) return "Tick the acknowledgement. This is a real Neomaa order on each master fill.";
     if (confirm !== NEOMAA_LIVE_CONFIRM) return `Type ${NEOMAA_LIVE_CONFIRM} exactly.`;
@@ -59,7 +60,8 @@ export function NeomaaLiveCopy() {
           }}
         />
         <span>
-          Copy each master fill to live Neomaa 7745107 as a 1.4-lot order of the same type. Not
+          Copy each master fill to live Neomaa 7745107 as a {defaultLotsForFirm("neomaa")}-lot order of
+          the same type. Not
           Vantage, not FP Markets.
         </span>
       </label>

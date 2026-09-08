@@ -116,7 +116,7 @@ function migrateCopyLots(state: DeskState): DeskState {
       return {
         ...row,
         lotMultiplier: lots / DEFAULT_DESK_LOTS,
-        maxLot: Math.max(row.maxLot, lots, 2),
+        maxLot: Math.max(row.maxLot, lots, DEFAULT_DESK_LOTS),
       };
     }),
   };
