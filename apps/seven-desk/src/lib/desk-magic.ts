@@ -16,7 +16,8 @@ export function deskMagicFor(broker: LiveBroker): number {
   return DESK_MAGIC[broker];
 }
 
-/** Snapshot row is desk-originated when magic matches this book's live OrderSend. */
+/** True when magic matches this book's live OrderSend. Snapshot ingest still
+ *  treats unknown tickets as leftovers — flatten is this-session desk rows only. */
 export function isDeskMagic(broker: LiveBroker, magic: number | null | undefined): boolean {
   if (magic == null || !Number.isFinite(magic) || magic === 0) return false;
   return magic === DESK_MAGIC[broker];

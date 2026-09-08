@@ -22,7 +22,6 @@ import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-orde
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
-import { isDeskMagic } from "@/lib/desk-magic";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -1179,7 +1178,6 @@ export function upsertSnapshotPositions(
   const added: Position[] = [];
   for (const pos of positions) {
     const existing = byTicket.get(pos.ticket);
-    const leftover = !existing && !isDeskMagic(broker, pos.magic);
     if (existing) continue;
     added.push({
       id: uid("pos"),
@@ -1197,7 +1195,7 @@ export function upsertSnapshotPositions(
       liveOrder: pos.ticket,
       livePending: false,
       fromSnapshot: true,
-      leftover,
+      leftover: true,
       magic: pos.magic,
       orderType: "market",
     });
@@ -1217,7 +1215,7 @@ export function upsertSnapshotPositions(
       mark: live.price ?? row.mark,
       pnl: live.profit ?? row.pnl,
       magic: live.magic ?? row.magic,
-      leftover: Boolean(row.leftover) && !row.groupId && !isDeskMagic(broker, live.magic),
+      leftover: row.leftover === false ? false : isBrokerLeftover(row),
     };
   });
   return applyQuoteMarks({ ...state, positions: [...added, ...merged] });
