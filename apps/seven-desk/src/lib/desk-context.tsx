@@ -19,11 +19,13 @@ import {
 } from "@/lib/copy-engine";
 import {
   applyLiveCopyResult,
+  applyPositionModify,
   flattenPosition,
   getDeskSnapshot,
   getPersistError,
   getServerDeskSnapshot,
   ingestBridgePendings as ingestBridgePendingsStore,
+  ingestBridgePositions as ingestBridgePositionsStore,
   markLiveCloseFailed,
   placeLiveMaster,
   placeTrade as placeTradeStore,
@@ -46,7 +48,8 @@ import {
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
-import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
+import { alphaModifyBlocked } from "@/lib/live-order/guards";
 import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
@@ -83,6 +86,7 @@ interface DeskApi {
   placeTrade: (input: MasterTradeInput) => string | null;
   flatten: (positionId: string) => string | null;
   flattenAll: () => string | null;
+  modifyPosition: (positionId: string, sl: number | null, tp: number | null) => string | null;
   actionError: string | null;
   resetDemo: () => void;
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
@@ -97,11 +101,16 @@ interface DeskApi {
     broker: LiveBroker,
     orders: BridgePendingOrder[]
   ) => void;
+  ingestBridgePositions: (
+    accountId: string,
+    broker: LiveBroker,
+    positions: BridgeOpenPosition[]
+  ) => void;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
 
-function endpointFor(broker: LiveBroker, action: "open" | "close"): string {
+function endpointFor(broker: LiveBroker, action: "open" | "close" | "modify"): string {
   if (broker === "wsf") return action === "close" ? "/api/wsf/order/close" : "/api/wsf/order";
   if (broker === "ftmo") return action === "close" ? "/api/ftmo/order/close" : "/api/ftmo/order";
   if (broker === "alphacapital") {
@@ -209,7 +218,7 @@ async function closeLiveGroup(
 
 async function postLiveOrder(
   broker: LiveBroker,
-  action: "open" | "close" | "cancel",
+  action: "open" | "close" | "cancel" | "modify",
   input: {
     confirm: string;
     symbol: string;
@@ -224,20 +233,24 @@ async function postLiveOrder(
 ): Promise<LiveOrderResult> {
   const started = Date.now();
   if (COPY_FANOUT_SKIP.has(broker)) {
+    const blocked = alphaModifyBlocked(broker, action);
     return {
       ok: false,
       source: "seven-desk",
-      endpoint: endpointFor(broker, "open"),
+      endpoint: endpointFor(broker, action === "modify" ? "modify" : "open"),
       requestId: "",
-      stage: "skip",
-      reason: "alpha capital is fetch-only — not copied",
+      stage: blocked?.stage ?? "skip",
+      reason: blocked?.reason ?? "alpha capital is fetch-only — not copied",
       login: null,
       server: null,
       winePrefix: winePrefixFor(broker),
       holdMs: 0,
     };
   }
-  const endpoint = endpointFor(broker, action === "open" || action === "cancel" ? "open" : "close");
+  const endpoint = endpointFor(
+    broker,
+    action === "open" || action === "cancel" || action === "modify" ? "open" : "close"
+  );
   const volume = input.volume ?? liveLotsForFirm(broker);
   const orderType = input.orderType ?? "market";
   try {
@@ -257,8 +270,8 @@ async function postLiveOrder(
         volume_confirm: action === "open" && volume > 0.01 + 1e-8,
         volume_min: action === "open" && volume <= 0.01 + 1e-8,
         price: action === "open" ? input.price ?? undefined : undefined,
-        sl: input.sl ?? undefined,
-        tp: input.tp ?? undefined,
+        sl: action === "modify" ? input.sl ?? 0 : input.sl ?? undefined,
+        tp: action === "modify" ? input.tp ?? 0 : input.tp ?? undefined,
         ticket: input.ticket ?? undefined,
       }),
     });
@@ -426,6 +439,13 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const ingestBridgePositions = useCallback(
+    (accountId: string, broker: LiveBroker, positions: BridgeOpenPosition[]) => {
+      ingestBridgePositionsStore(accountId, broker, positions);
+    },
+    []
+  );
+
   const setFortradersLiveCopy = useCallback((enabled: boolean, confirm: string) => {
     if (enabled && confirm !== FORTRADERS_LIVE_CONFIRM) {
       return `Type ${FORTRADERS_LIVE_CONFIRM} to arm Fortraders live copy.`;
@@ -544,6 +564,73 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return result.error;
   }, [fanOutLiveSlaves]);
 
+  const modifyPosition = useCallback((positionId: string, sl: number | null, tp: number | null) => {
+    const snapshot = getDeskSnapshot();
+    const position = snapshot.positions.find((row) => row.id === positionId);
+    if (!position) return "Position already closed.";
+    const broker = position.liveBroker;
+    if (!broker) {
+      applyPositionModify(positionId, sl, tp);
+      return null;
+    }
+    const refs = {
+      wsf: wsfConfirm.current,
+      ftmo: ftmoConfirm.current,
+      fn: fnConfirm.current,
+      acg: acgConfirm.current,
+      fpips: fpipsConfirm.current,
+      neo: neoConfirm.current,
+      ftt: fttConfirm.current,
+    };
+    setActionError(null);
+    setBusy(true);
+    void (async () => {
+      const symbol =
+        broker === "wsf" && position.symbol === "EURUSD" ? "EURUSDc" : position.symbol;
+      try {
+        const payload = await postLiveOrder(broker, "modify", {
+          confirm: confirmFor(broker, refs),
+          symbol,
+          side: position.side,
+          sl,
+          tp,
+          ticket: position.liveOrder ?? null,
+          orderType: "market",
+        });
+        const ms = payload.holdMs;
+        const ticket = payload.ticket ?? payload.position ?? position.liveOrder;
+        recordLiveHttpBlotter({
+          accountId: position.accountId,
+          role: "slave",
+          symbol,
+          side: position.side,
+          lots: position.lots,
+          price: position.entry,
+          orderType: position.orderType,
+          status: payload.ok ? "filled" : "error",
+          reason: payload.ok
+            ? `HTTP modify · ticket ${ticket ?? "—"} · SL ${sl ?? 0} · TP ${tp ?? 0} · ${ms ?? "—"}ms`
+            : payload.reason || `${broker} modify failed`,
+          liveTicket: ticket ?? undefined,
+          latencyMs: ms,
+          httpAction: "modify",
+          groupId: position.groupId,
+        });
+        if (payload.ok) {
+          applyPositionModify(positionId, sl, tp);
+          setActionError(null);
+        } else {
+          setActionError(payload.reason || `${broker} modify failed`);
+        }
+      } catch (caught) {
+        setActionError(caught instanceof Error ? caught.message : "modify failed");
+      } finally {
+        setBusy(false);
+      }
+    })();
+    return null;
+  }, []);
+
   const flatten = useCallback((positionId: string) => {
     const snapshot = getDeskSnapshot();
     const position = snapshot.positions.find((row) => row.id === positionId);
@@ -654,6 +741,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       placeTrade,
       flatten,
       flattenAll,
+      modifyPosition,
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,
@@ -663,6 +751,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setNeomaaLiveCopy,
       setFortradersLiveCopy,
       ingestBridgePendings,
+      ingestBridgePositions,
     }),
     [
       persistError,
@@ -678,6 +767,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       placeTrade,
       flatten,
       flattenAll,
+      modifyPosition,
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,
@@ -687,6 +777,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setNeomaaLiveCopy,
       setFortradersLiveCopy,
       ingestBridgePendings,
+      ingestBridgePositions,
     ]
   );
 

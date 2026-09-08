@@ -6,7 +6,7 @@ import {
   type BridgeFreshness,
 } from "@/lib/bridge-freshness";
 import { WSF_EXPECTED_LOGIN } from "@/lib/wsf/constants";
-import { parsePendingOrders, type BridgePendingOrder } from "@/lib/bridge-orders";
+import { parseOpenPositions, parsePendingOrders, type BridgePendingOrder } from "@/lib/bridge-orders";
 import type { WsfDealRow, WsfFetchedAccount, WsfPositionRow } from "@/lib/wsf/types";
 import type { WsfOperatorEnv } from "@/lib/wsf/env";
 
@@ -109,22 +109,18 @@ function parseBook(
 }
 
 function parsePositions(raw: unknown, login: string): WsfPositionRow[] {
-  const list = Array.isArray(raw)
-    ? raw
-    : raw && typeof raw === "object" && Array.isArray((raw as { positions?: unknown }).positions)
-      ? (raw as { positions: unknown[] }).positions
-      : [];
-  return list.map((row) => {
-    const item = row as Record<string, unknown>;
-    return {
-      accountLogin: login,
-      symbol: asString(item.symbol) || "unknown",
-      side: asString(item.side ?? item.type) || "unknown",
-      volume: asNumber(item.volume ?? item.lots),
-      entry: asNumber(item.entry ?? item.open_price ?? item.priceOpen),
-      pnl: asNumber(item.pnl ?? item.profit),
-    };
-  });
+  return parseOpenPositions(raw).map((row) => ({
+    accountLogin: login,
+    symbol: row.symbol,
+    side: row.side,
+    volume: row.volume,
+    entry: row.price,
+    pnl: row.profit,
+    ticket: row.ticket,
+    sl: row.sl,
+    tp: row.tp,
+    magic: row.magic,
+  }));
 }
 
 function parseDealsCsv(text: string, login: string): WsfDealRow[] {

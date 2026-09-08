@@ -16,7 +16,7 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: FundedNextLiveReport | null = null;
 
 export function FundedNextLiveProbe() {
-  const { updateAccount, ingestBridgePendings } = useDesk();
+  const { updateAccount, ingestBridgePendings, ingestBridgePositions } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<FundedNextLiveReport | null>(lastReport);
@@ -37,12 +37,13 @@ export function FundedNextLiveProbe() {
       setReport(next);
       applyToDesk(next, updateAccount);
       ingestBridgePendings(ACCOUNT_IDS.fundednext, "fundednext", next.pendingOrders ?? []);
+      ingestBridgePositions(ACCOUNT_IDS.fundednext, "fundednext", next.openPositions ?? []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }, [updateAccount, ingestBridgePendings]);
+  }, [updateAccount, ingestBridgePendings, ingestBridgePositions]);
 
   useLiveProbePoll(() => run(true), busy);
 

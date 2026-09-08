@@ -9,9 +9,11 @@ import {
   placeMasterTrade,
   recordHttpBlotter,
   resolveQueuedCopies,
+  applyLiveModify,
   upsertSnapshotPendings,
+  upsertSnapshotPositions,
 } from "@/lib/copy-engine";
-import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
 import { seedDesk } from "@/lib/seed";
 import { clearDesk, loadDesk, saveDesk } from "@/lib/storage";
@@ -252,6 +254,22 @@ export function ingestBridgePendings(
   orders: BridgePendingOrder[]
 ) {
   persist(upsertSnapshotPendings(desk, accountId, broker, orders));
+}
+
+export function ingestBridgePositions(
+  accountId: string,
+  broker: LiveBroker,
+  positions: BridgeOpenPosition[]
+) {
+  persist(upsertSnapshotPositions(desk, accountId, broker, positions));
+}
+
+export function applyPositionModify(
+  positionId: string,
+  sl: number | null,
+  tp: number | null
+) {
+  persist(applyLiveModify(desk, positionId, sl, tp));
 }
 
 export function resetDemo() {

@@ -16,7 +16,7 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: NeomaaLiveReport | null = null;
 
 export function NeomaaLiveProbe() {
-  const { updateAccount, ingestBridgePendings } = useDesk();
+  const { updateAccount, ingestBridgePendings, ingestBridgePositions } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<NeomaaLiveReport | null>(lastReport);
@@ -36,12 +36,13 @@ export function NeomaaLiveProbe() {
       setReport(next);
       applyToDesk(next, updateAccount);
       ingestBridgePendings(ACCOUNT_IDS.neomaa, "neomaa", next.pendingOrders ?? []);
+      ingestBridgePositions(ACCOUNT_IDS.neomaa, "neomaa", next.openPositions ?? []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }, [updateAccount, ingestBridgePendings]);
+  }, [updateAccount, ingestBridgePendings, ingestBridgePositions]);
 
   useLiveProbePoll(() => run(true), busy);
 

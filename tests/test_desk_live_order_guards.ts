@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import {
   LIVE_ORDER_VOLUME_HARD_MAX,
+  MIN_DESK_MODIFY_VERSION,
+  alphaModifyBlocked,
   alphaStartupChartSymbol,
   classifyOrphanRequest,
   eaNotReadyReason,
@@ -474,6 +476,73 @@ if (wsfUs30Resolves.ok) {
   assert.equal(wsfUs30Resolves.fields.symbol, "US30");
 }
 
+const modify = parseLiveOrderRequest({
+  body: {
+    ...base,
+    action: "modify",
+    symbol: "DJ30.c",
+    side: "buy",
+    ticket: 77001,
+    sl: 38000,
+    tp: 41000,
+  },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(modify.ok, true);
+if (modify.ok) {
+  assert.equal(modify.fields.action, "modify");
+  assert.equal(modify.fields.ticket, 77001);
+  assert.equal(modify.fields.sl, 38000);
+  assert.equal(modify.fields.tp, 41000);
+  assert.equal(modify.fields.volume, null);
+}
+
+const modifyNoTicket = parseLiveOrderRequest({
+  body: { ...base, action: "modify", sl: 38000 },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(modifyNoTicket.ok, false);
+if (!modifyNoTicket.ok) assert.equal(modifyNoTicket.stage, "ticket");
+
+const modifyClear = parseLiveOrderRequest({
+  body: { ...base, action: "modify", ticket: 77001, sl: 0, tp: 0 },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(modifyClear.ok, true);
+if (modifyClear.ok) {
+  assert.equal(modifyClear.fields.sl, 0);
+  assert.equal(modifyClear.fields.tp, 0);
+}
+
+const alphaModify = parseLiveOrderRequest({
+  body: {
+    live: true,
+    confirm: "ACG-2765247",
+    action: "modify",
+    ticket: 77001,
+    sl: 1.07,
+    tp: 1.09,
+  },
+  expectedConfirm: "ACG-2765247",
+  defaultSymbol: "EURUSD",
+  firmId: "alphacapital",
+});
+assert.equal(alphaModify.ok, false);
+if (!alphaModify.ok) {
+  assert.equal(alphaModify.status, 409);
+  assert.equal(alphaModify.stage, "readonly");
+  assert.match(alphaModify.reason, /Alpha Capital refuses position modify/);
+}
+assert.ok(alphaModifyBlocked("alphacapital", "modify"));
+assert.equal(alphaModifyBlocked("ftmo", "modify"), null);
+assert.deepEqual(MIN_DESK_MODIFY_VERSION, [1, 27]);
+
 const cancel = parseLiveOrderRequest({
   body: { ...base, action: "cancel", ticket: 123456 },
   expectedConfirm: "FTMO-541163357",
@@ -594,6 +663,26 @@ assert.equal(
     tradeAllowed: true,
     algoAllowed: true,
     readonly: false,
+  }),
+  null
+);
+assert.match(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 26],
+    tradeAllowed: true,
+    algoAllowed: true,
+    action: "modify",
+  }) ?? "",
+  /v1.27/
+);
+assert.equal(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 27],
+    tradeAllowed: true,
+    algoAllowed: true,
+    action: "modify",
   }),
   null
 );

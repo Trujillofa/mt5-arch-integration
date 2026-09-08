@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { parseBridgeReadonly } from "@/lib/live-order/guards";
-import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
+import { readOpenPositionsFromDirs, readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import {
   ALPHACAPITAL_EXPECTED_LOGIN,
   ALPHACAPITAL_EXPECTED_SERVER,
@@ -280,6 +280,7 @@ export function probeAlphaCapitalLive(opts?: { poll?: boolean }): AlphaCapitalLi
     bookHonesty,
     fetchNotes: notes,
     pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
+    openPositions: readOpenPositionsFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : env.hasMt5Password

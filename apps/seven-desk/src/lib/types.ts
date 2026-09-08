@@ -78,8 +78,12 @@ export interface Position {
   liveOrder?: number;
   /** Working pending limit/stop — flatten sends cancel, not a market close. */
   livePending?: boolean;
-  /** True when the row came from file-bridge orders.json, not Place. */
+  /** True when the row came from file-bridge orders.json / positions.json, not Place. */
   fromSnapshot?: boolean;
+  /** Broker PositionsTotal row that never entered the desk book (e.g. leftover US30 4.0). */
+  leftover?: boolean;
+  /** EA POSITION_MAGIC from positions.json when known. */
+  magic?: number | null;
   orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
   /** Copy-group id so flatten can close sibling live books. */
   groupId?: string;
@@ -104,7 +108,7 @@ export interface BlotterEvent {
   updatedAt: number;
   liveTicket?: number;
   latencyMs?: number;
-  httpAction?: "send" | "cancel" | "close";
+  httpAction?: "send" | "cancel" | "close" | "modify";
 }
 
 export interface MasterTradeInput {

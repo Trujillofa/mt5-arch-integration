@@ -1,5 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/alphacapital/env` from the browser. */
-import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 export const ALPHACAPITAL_EXPECTED_LOGIN = "2765247";
 export const ALPHACAPITAL_EXPECTED_SERVER = "ACGMarkets-Main";
 export const ALPHACAPITAL_SERVER_NEEDLE = "ACG";
@@ -39,4 +39,5 @@ export interface AlphaCapitalLiveReport {
   fetchNotes: string[];
   nextSecretNeeded: string | null;
   pendingOrders: BridgePendingOrder[];
+  openPositions: BridgeOpenPosition[];
 }

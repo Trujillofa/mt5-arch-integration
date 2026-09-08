@@ -201,11 +201,21 @@ export function parseLiveOrderRequest(input: {
     actionResolved !== "scratch" &&
     actionResolved !== "open" &&
     actionResolved !== "close" &&
-    actionResolved !== "cancel"
+    actionResolved !== "cancel" &&
+    actionResolved !== "modify"
   ) {
-    return { ok: false, status: 400, stage: "action", reason: "action must be scratch, open, close, or cancel" };
+    return {
+      ok: false,
+      status: 400,
+      stage: "action",
+      reason: "action must be scratch, open, close, cancel, or modify",
+    };
   }
   const action: LiveOrderAction = actionResolved;
+  const alphaModify = alphaModifyBlocked(firmId, action);
+  if (alphaModify) {
+    return { ok: false, status: 409, stage: alphaModify.stage, reason: alphaModify.reason };
+  }
   if (pending && action === "scratch") {
     return {
       ok: false,
@@ -220,6 +230,14 @@ export function parseLiveOrderRequest(input: {
       status: 400,
       stage: "action",
       reason: "close is for positions — use action=cancel to remove a pending order",
+    };
+  }
+  if (pending && action === "modify") {
+    return {
+      ok: false,
+      status: 400,
+      stage: "action",
+      reason: "modify is TRADE_ACTION_SLTP on an open position — not a pending",
     };
   }
 
@@ -252,6 +270,20 @@ export function parseLiveOrderRequest(input: {
   if (!ticketField.ok) return { ok: false, status: 400, stage: "ticket", reason: ticketField.reason };
   if (ticketField.value != null && (ticketField.value <= 0 || !Number.isInteger(ticketField.value))) {
     return { ok: false, status: 400, stage: "ticket", reason: "ticket must be a positive integer" };
+  }
+  if (action === "modify") {
+    if (ticketField.value == null) {
+      return { ok: false, status: 400, stage: "ticket", reason: "modify requires ticket" };
+    }
+    if (slField.value == null && tpField.value == null) {
+      return { ok: false, status: 400, stage: "sl", reason: "modify requires sl and/or tp (0 clears)" };
+    }
+    if (slField.value != null && slField.value < 0) {
+      return { ok: false, status: 400, stage: "sl", reason: "sl must be >= 0 (0 clears)" };
+    }
+    if (tpField.value != null && tpField.value < 0) {
+      return { ok: false, status: 400, stage: "tp", reason: "tp must be >= 0 (0 clears)" };
+    }
   }
 
   if (pending && action === "open") {
@@ -324,6 +356,25 @@ export function parseLiveOrderRequest(input: {
       useVolumeMin = false;
     }
   }
+  if (action === "modify") {
+    return {
+      ok: true,
+      fields: {
+        action,
+        orderType,
+        symbol,
+        side,
+        useVolumeMin: false,
+        volume: null,
+        price: null,
+        sl: slField.value,
+        tp: tpField.value,
+        ticket: ticketField.value,
+        confirm,
+      },
+    };
+  }
+
   if (action === "scratch") {
     if (volume != null && volume > MIN_LIVE_LOT + 1e-8) {
       return {
@@ -368,6 +419,20 @@ export const EA_ORDER_CLIENT_BUDGET_MS = 20_000;
 /** 50 points = 5.0 pips on 5-digit FX. Auto limit stays on the passive side. */
 export const LIMIT_OFFSET_POINTS = 50;
 export const MIN_DESK_ORDER_VERSION = [1, 25] as const;
+/** TRADE_ACTION_SLTP / action=modify needs the v1.27 request schema. */
+export const MIN_DESK_MODIFY_VERSION = [1, 27] as const;
+
+export function alphaModifyBlocked(
+  firmId: string,
+  action: LiveOrderAction | string
+): { stage: string; reason: string } | null {
+  if (firmId !== "alphacapital") return null;
+  if (action !== "modify") return null;
+  return {
+    stage: "readonly",
+    reason: "read-only — Alpha Capital refuses position modify",
+  };
+}
 /**
  * Orphan request without a matching result is stale after this TTL.
  * In-flight leftovers (script died mid-restart) must not be OrderSent again.
@@ -626,6 +691,7 @@ export function eaNotReadyReason(input: {
   tradeAllowed: boolean | null;
   algoAllowed: boolean | null;
   readonly?: boolean;
+  action?: LiveOrderAction | string;
 }): string | null {
   if (!input.heartbeatFresh) {
     return "Mt5ArchBridge heartbeat is stale — refusing OrderSend (no wine one-shot fallback)";
@@ -633,10 +699,13 @@ export function eaNotReadyReason(input: {
   if (input.readonly) {
     return "read-only bridge — refusing OrderSend (no wine one-shot fallback)";
   }
-  if (!versionAtLeast(input.version, MIN_DESK_ORDER_VERSION)) {
+  const minVersion =
+    input.action === "modify" ? MIN_DESK_MODIFY_VERSION : MIN_DESK_ORDER_VERSION;
+  if (!versionAtLeast(input.version, minVersion)) {
     const shown = input.version ? input.version.join(".") : "unknown";
+    const need = minVersion.join(".");
     return (
-      `Mt5ArchBridge v${shown} cannot in-process OrderSend — compile v1.25+ and reattach; ` +
+      `Mt5ArchBridge v${shown} cannot in-process OrderSend — compile v${need}+ and reattach; ` +
       "not falling back to wine one-shot"
     );
   }

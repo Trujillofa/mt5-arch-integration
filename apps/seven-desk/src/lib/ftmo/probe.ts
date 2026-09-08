@@ -16,7 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
-import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
+import { readOpenPositionsFromDirs, readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { FtmoConnectionStatus, FtmoLiveReport } from "@/lib/ftmo/types";
 
 interface Snapshot {
@@ -252,6 +252,7 @@ export function probeFtmoLive(opts?: { poll?: boolean }): FtmoLiveReport {
     bookHonesty,
     fetchNotes: notes,
     pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
+    openPositions: readOpenPositionsFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: live
       ? null
       : env.hasMt5Password

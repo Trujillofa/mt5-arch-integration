@@ -87,7 +87,7 @@ def assert_branded_term_dir(broker: str, term_dir: Path) -> Path:
 
 
 def expert_stem(broker: str) -> str:
-    """Alpha attaches the email-safe read-only EA. Other restore books stay on v1.25 trading."""
+    """Alpha attaches the email-safe read-only EA. Other restore books stay on v1.27 trading."""
     return "Mt5ArchBridgeReadOnly" if broker == "alphacapital" else "Mt5ArchBridge"
 
 

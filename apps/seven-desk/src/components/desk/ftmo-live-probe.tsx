@@ -16,7 +16,7 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: FtmoLiveReport | null = null;
 
 export function FtmoLiveProbe() {
-  const { updateAccount, ingestBridgePendings } = useDesk();
+  const { updateAccount, ingestBridgePendings, ingestBridgePositions } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<FtmoLiveReport | null>(lastReport);
@@ -36,12 +36,13 @@ export function FtmoLiveProbe() {
       setReport(next);
       applyToDesk(next, updateAccount);
       ingestBridgePendings(ACCOUNT_IDS.ftmo, "ftmo", next.pendingOrders ?? []);
+      ingestBridgePositions(ACCOUNT_IDS.ftmo, "ftmo", next.openPositions ?? []);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }, [updateAccount, ingestBridgePendings]);
+  }, [updateAccount, ingestBridgePendings, ingestBridgePositions]);
 
   useLiveProbePoll(() => run(true), busy);
 

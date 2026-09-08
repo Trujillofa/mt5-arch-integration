@@ -489,6 +489,34 @@ bool DeskOrdRemovePending(const ulong ticket, MqlTradeResult &res)
    return OrderSend(req, res);
   }
 
+bool DeskOrdSendSltp(const ulong ticket, const double sl, const double tp,
+                     const int digits, MqlTradeResult &res)
+  {
+   if(!PositionSelectByTicket(ticket))
+      return false;
+   MqlTradeRequest req;
+   ZeroMemory(req);
+   ZeroMemory(res);
+   req.action = TRADE_ACTION_SLTP;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.sl = sl > 0.0 ? NormalizeDouble(sl, digits) : 0.0;
+   req.tp = tp > 0.0 ? NormalizeDouble(tp, digits) : 0.0;
+   ResetLastError();
+   return OrderSend(req, res);
+  }
+
+ulong DeskOrdResolvePositionTicket(const string symbol)
+  {
+   if(g_desk_ticket > 0)
+     {
+      if(PositionSelectByTicket(g_desk_ticket))
+         return g_desk_ticket;
+      return 0;
+     }
+   return DeskOrdFindPosition(symbol);
+  }
+
 bool DeskOrdIsNetting()
   {
    return (AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_NETTING);
@@ -584,11 +612,12 @@ void DeskOrdProcessRequest()
    const bool pending_type = (g_desk_order_type == "buy_limit" || g_desk_order_type == "sell_limit" ||
                               g_desk_order_type == "buy_stop" || g_desk_order_type == "sell_stop");
    const bool want_cancel = (g_desk_action == "cancel");
+   const bool want_modify = (g_desk_action == "modify");
    const bool want_open = (g_desk_action == "scratch" || g_desk_action == "open");
    const bool want_close = (g_desk_action == "scratch" || g_desk_action == "close");
-   if(!want_open && !want_close && !want_cancel)
+   if(!want_open && !want_close && !want_cancel && !want_modify)
      {
-      DeskOrdWriteResult(DeskOrdFail("action", "action must be scratch, open, close, or cancel",
+      DeskOrdWriteResult(DeskOrdFail("action", "action must be scratch, open, close, cancel, or modify",
                            login, server, 0, g_desk_action));
       return;
      }
@@ -600,7 +629,7 @@ void DeskOrdProcessRequest()
      }
 
    double volume = 0.0;
-   if(!want_cancel)
+   if(!want_cancel && !want_modify)
      {
       if(!DeskOrdResolveVolume(symbol, login, server, volume))
          return;
@@ -610,6 +639,49 @@ void DeskOrdProcessRequest()
    const int digits = (int)SymbolInfoInteger(symbol, SYMBOL_DIGITS);
    const string comment_open = "7desk-" + g_desk_request_id;
    const string comment_close = "7desk-c-" + g_desk_request_id;
+
+   if(want_modify)
+     {
+      ulong ticket = DeskOrdResolvePositionTicket(symbol);
+      if(ticket == 0 || !PositionSelectByTicket(ticket))
+        {
+         DeskOrdWriteResult(DeskOrdFail("modify", "no open position to modify",
+                              login, server, 0, symbol));
+         return;
+        }
+      string pos_symbol = PositionGetString(POSITION_SYMBOL);
+      double open_price = PositionGetDouble(POSITION_PRICE_OPEN);
+      MqlTradeResult mres;
+      bool sent = DeskOrdSendSltp(ticket, g_desk_sl, g_desk_tp, digits, mres);
+      if(!sent || !DeskOrdTradeRetOk(mres.retcode))
+        {
+         DeskOrdWriteResult(DeskOrdFail("modify", "TRADE_ACTION_SLTP rejected — not retrying",
+                              login, server, (int)mres.retcode,
+                              mres.comment + " last=" + IntegerToString(GetLastError())));
+         return;
+        }
+      DeskOrdWriteResult(
+         "{\n"
+         "  \"ok\": true,\n"
+         "  \"source\": \"seven-desk\",\n"
+         "  \"path\": \"ea\",\n"
+         "  \"request_id\": \"" + DeskOrdEsc(g_desk_request_id) + "\",\n"
+         "  \"stage\": \"modified\",\n"
+         "  \"reason\": \"seven-desk position sl/tp modified\",\n"
+         "  \"login\": " + IntegerToString(login) + ",\n"
+         "  \"server\": \"" + DeskOrdEsc(server) + "\",\n"
+         "  \"symbol\": \"" + DeskOrdEsc(pos_symbol) + "\",\n"
+         "  \"sl\": " + DoubleToString(g_desk_sl, digits) + ",\n"
+         "  \"tp\": " + DoubleToString(g_desk_tp, digits) + ",\n"
+         "  \"order\": " + IntegerToString((long)ticket) + ",\n"
+         "  \"ticket\": " + IntegerToString((long)ticket) + ",\n"
+         "  \"position\": " + IntegerToString((long)ticket) + ",\n"
+         "  \"open_price\": " + DoubleToString(open_price, digits) + ",\n"
+         "  \"retcode\": " + IntegerToString((int)mres.retcode) + ",\n"
+         "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
+         "}\n");
+      return;
+     }
 
    if(want_cancel)
      {
@@ -704,7 +776,7 @@ void DeskOrdProcessRequest()
 
    if(want_close && !want_open)
      {
-      ulong position_ticket = DeskOrdFindPosition(symbol);
+      ulong position_ticket = DeskOrdResolvePositionTicket(symbol);
       if(position_ticket == 0 || !PositionSelectByTicket(position_ticket))
         {
          ulong pending_ticket = g_desk_ticket;

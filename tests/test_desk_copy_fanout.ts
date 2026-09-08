@@ -4,12 +4,16 @@ import {
   applyLiveFill,
   describeFlattenTargets,
   flattenAllTargets,
+  isBrokerLeftover,
   pendingLiveSlaveEvents,
   placeMasterTrade,
   recordHttpBlotter,
   resolveQueuedCopies,
   upsertSnapshotPendings,
+  upsertSnapshotPositions,
 } from "../apps/seven-desk/src/lib/copy-engine.ts";
+import { parseOpenPositions } from "../apps/seven-desk/src/lib/bridge-orders.ts";
+import { DESK_MAGIC } from "../apps/seven-desk/src/lib/desk-magic.ts";
 import {
   COPY_FANOUT_SKIP,
   armedCopyBrokers,
@@ -145,6 +149,7 @@ const snap = ingested.positions.find((row) => row.liveOrder === 88001);
 assert.ok(snap);
 assert.equal(snap.livePending, true);
 assert.equal(snap.fromSnapshot, true);
+assert.equal(snap.leftover, true);
 assert.equal(snap.orderType, "buy_limit");
 
 assert.equal(worstLegMs([12, 40, 9]), 40);
@@ -153,6 +158,7 @@ assert.equal(worstLegMs([]), null);
 const emptyFlatten = describeFlattenTargets(seedDesk());
 assert.equal(emptyFlatten.filled, 0);
 assert.equal(emptyFlatten.pending, 0);
+assert.equal(emptyFlatten.leftovers, 0);
 assert.equal(emptyFlatten.us30Rows.length, 0);
 
 const us30LeftoverDesk = {
@@ -173,17 +179,92 @@ const us30LeftoverDesk = {
       liveBroker: "wsf" as const,
       livePending: true,
       fromSnapshot: true,
+      leftover: true,
       orderType: "buy_limit" as const,
     },
   ],
 };
 const us30Flatten = describeFlattenTargets(us30LeftoverDesk);
-assert.equal(us30Flatten.pending, 1);
+assert.equal(us30Flatten.pending, 0);
 assert.equal(us30Flatten.filled, 0);
-assert.equal(us30Flatten.us30Rows.length, 1);
-assert.equal(us30Flatten.us30Rows[0]?.lots, 4);
+assert.equal(us30Flatten.leftovers, 1);
+assert.equal(us30Flatten.us30Rows.length, 0);
+assert.equal(isBrokerLeftover(us30LeftoverDesk.positions[0]!), true);
 const us30Targets = flattenAllTargets(us30LeftoverDesk);
-assert.deepEqual(us30Targets.liveRepIds, ["pos_us30_leftover"]);
+assert.deepEqual(us30Targets.liveRepIds, []);
 assert.deepEqual(us30Targets.paperIds, []);
+
+const deskUs30 = {
+  ...seedDesk(),
+  positions: [
+    {
+      id: "pos_us30_desk",
+      accountId: ACCOUNT_IDS.wsf,
+      symbol: "DJ30.c",
+      side: "buy" as const,
+      lots: 1.4,
+      entry: 39000,
+      sl: null,
+      tp: null,
+      openedAt: 1,
+      mark: 39000,
+      pnl: 0,
+      liveBroker: "wsf" as const,
+      leftover: false,
+      groupId: "grp_desk",
+      orderType: "market" as const,
+    },
+  ],
+};
+const deskFlatten = describeFlattenTargets(deskUs30);
+assert.equal(deskFlatten.filled, 1);
+assert.equal(deskFlatten.us30Rows[0]?.lots, 1.4);
+assert.deepEqual(flattenAllTargets(deskUs30).liveRepIds, ["pos_us30_desk"]);
+
+const parsedPos = parseOpenPositions({
+  positions: [
+    {
+      ticket: 77001,
+      symbol: "DJ30.c",
+      side: "buy",
+      volume: 4,
+      open_price: 39000,
+      stop_loss: 0,
+      take_profit: 0,
+      profit: -12,
+      magic: 0,
+    },
+    {
+      ticket: 77002,
+      symbol: "EURUSDc",
+      side: "buy",
+      volume: 1.4,
+      open_price: 1.08,
+      stop_loss: 1.07,
+      take_profit: 1.09,
+      profit: 2,
+      magic: DESK_MAGIC.wsf,
+    },
+  ],
+});
+assert.equal(parsedPos.length, 2);
+const ingestedLive = upsertSnapshotPositions(seedDesk(), ACCOUNT_IDS.wsf, "wsf", parsedPos);
+const leftoverRow = ingestedLive.positions.find((row) => row.liveOrder === 77001);
+const deskRow = ingestedLive.positions.find((row) => row.liveOrder === 77002);
+assert.ok(leftoverRow);
+assert.equal(leftoverRow.leftover, true);
+assert.equal(leftoverRow.lots, 4);
+assert.ok(deskRow);
+assert.equal(deskRow.leftover, false);
+assert.equal(deskRow.sl, 1.07);
+const ingestedFlatten = flattenAllTargets(ingestedLive);
+assert.equal(ingestedFlatten.liveRepIds.includes(leftoverRow.id), false);
+assert.equal(ingestedFlatten.liveRepIds.includes(deskRow.id), true);
+const ingestedAgain = upsertSnapshotPositions(ingestedLive, ACCOUNT_IDS.wsf, "wsf", parsedPos);
+assert.equal(
+  ingestedAgain.positions.find((row) => row.liveOrder === 77001)?.id,
+  leftoverRow.id,
+  "leftover ticket must keep the same desk row across probe polls"
+);
 
 console.log("test_desk_copy_fanout ok");

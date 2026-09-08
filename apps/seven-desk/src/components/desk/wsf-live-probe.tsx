@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useDesk } from "@/lib/desk-context";
 import { useLiveProbePoll } from "@/lib/use-live-probe-poll";
 import { ACCOUNT_IDS } from "@/lib/seed";
+import { toBridgeOpenPositions } from "@/lib/bridge-orders";
 import type {
   WsfConnectionStatus,
   WsfDealRow,
@@ -18,7 +19,7 @@ import type {
 let lastReport: WsfLiveReport | null = null;
 
 export function WsfLiveProbe() {
-  const { updateAccount, ingestBridgePendings } = useDesk();
+  const { updateAccount, ingestBridgePendings, ingestBridgePositions } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<WsfLiveReport | null>(lastReport);
@@ -38,12 +39,13 @@ export function WsfLiveProbe() {
       setReport(next);
       applyToDesk(next, updateAccount);
       ingestBridgePendings(ACCOUNT_IDS.wsf, "wsf", next.pendingOrders ?? []);
+      ingestBridgePositions(ACCOUNT_IDS.wsf, "wsf", toBridgeOpenPositions(next.openPositions ?? []));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }, [updateAccount, ingestBridgePendings]);
+  }, [updateAccount, ingestBridgePendings, ingestBridgePositions]);
 
   useLiveProbePoll(() => run(true), busy);
 

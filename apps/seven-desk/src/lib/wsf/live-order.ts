@@ -685,7 +685,13 @@ export async function executeWsfLiveOrder(
     };
   }
 
-  if (!parsed.useVolumeMin && parsed.volume == null && parsed.action !== "cancel" && parsed.action !== "close") {
+  if (
+    !parsed.useVolumeMin &&
+    parsed.volume == null &&
+    parsed.action !== "cancel" &&
+    parsed.action !== "close" &&
+    parsed.action !== "modify"
+  ) {
     parsed.volume = defaultLotsForFirm("wsf");
   }
 
@@ -702,6 +708,7 @@ export async function executeWsfLiveOrder(
     tradeAllowed: identity.tradeAllowed,
     algoAllowed: identity.algoAllowed,
     readonly: parseBridgeReadonly(hbText),
+    action: parsed.action,
   });
   if (eaBlocked) {
     return {

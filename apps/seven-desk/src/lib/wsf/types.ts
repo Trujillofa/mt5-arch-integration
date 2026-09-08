@@ -34,6 +34,10 @@ export interface WsfPositionRow {
   volume: number | null;
   entry: number | null;
   pnl: number | null;
+  ticket?: number | null;
+  sl?: number | null;
+  tp?: number | null;
+  magic?: number | null;
 }
 
 export interface WsfDealRow {
@@ -92,7 +96,7 @@ export interface WsfLiveReport {
   currency: string | null;
 }
 
-export type WsfLiveOrderAction = "scratch" | "open" | "close" | "cancel";
+export type WsfLiveOrderAction = "scratch" | "open" | "close" | "cancel" | "modify";
 
 export interface WsfLiveOrderResult {
   ok: boolean;

@@ -69,6 +69,9 @@ fi
 if ! grep -q 'DeskOrderProcessIfRequested' "$EXPERTS/Mt5ArchBridge.mq5"; then
   die "deployed EA missing DeskOrderProcessIfRequested (in-process desk limits)"
 fi
+if ! grep -q 'TRADE_ACTION_SLTP' "$INCLUDE_DIR/DeskOrderBridge.mqh"; then
+  die "DeskOrderBridge.mqh missing TRADE_ACTION_SLTP (position modify)"
+fi
 if ! grep -q 'WriteOrders' "$INCLUDE_DIR/FileBridgeSnapshots.mqh"; then
   die "FileBridgeSnapshots.mqh missing WriteOrders (OrdersTotal dump)"
 fi

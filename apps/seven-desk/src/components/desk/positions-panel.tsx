@@ -1,7 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import { SidePill } from "@/components/desk/status-pills";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -10,22 +20,38 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { isBrokerLeftover } from "@/lib/copy-engine";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { pendingKind } from "@/lib/live-order/guards";
 import { formatLots, formatMoney, formatPnl, formatPrice } from "@/lib/format";
+import type { Position } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+function levelText(value: number | null | undefined): string {
+  if (value == null || value <= 0) return "";
+  return String(value);
+}
+
+function parseLevel(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return 0;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
 export function PositionsPanel() {
-  const { state, flatten, busy, actionError } = useDesk();
+  const { state, flatten, busy, actionError, modifyPosition } = useDesk();
 
   if (state.positions.length === 0) {
     return (
       <div className="px-4 py-10 text-center">
         <p className="text-sm font-medium">No open positions or working limits</p>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Copied fills and open limits/stops land here. Fetch/poll reads
-          orders.json. Equity tracks floating P&amp;L from the paper book.
+          Desk fills, working limits, and live PositionsTotal (including broker
+          leftovers) land here. Flatten stays desk-only unless you close a leftover
+          row yourself.
         </p>
       </div>
     );
@@ -46,8 +72,9 @@ export function PositionsPanel() {
           <TableHead>Side</TableHead>
           <TableHead className="text-right">Lots</TableHead>
           <TableHead className="text-right">Entry</TableHead>
-          <TableHead className="text-right">Mark</TableHead>
-          <TableHead className="text-right">P&amp;L</TableHead>
+          <TableHead className="text-right">SL</TableHead>
+          <TableHead className="text-right">TP</TableHead>
+          <TableHead className="text-right">uPnL</TableHead>
           <TableHead />
         </TableRow>
       </TableHeader>
@@ -58,61 +85,205 @@ export function PositionsPanel() {
           );
           const firm = account ? FIRM_BY_ID[account.firmId].name : "—";
           return (
-            <TableRow key={position.id}>
-              <TableCell>
-                <div className="leading-tight">
-                  <p className="text-sm">{firm}</p>
-                  <p className="font-mono text-[11px] text-muted-foreground">
-                    {account?.login ?? position.accountId}
-                  </p>
-                </div>
-              </TableCell>
-              <TableCell className="font-mono text-xs">
-                {position.symbol}
-                {position.livePending ? (
-                  <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-200 uppercase">
-                    {pendingKind(position.orderType) ?? "pending"}
-                  </span>
-                ) : null}
-              </TableCell>
-              <TableCell>
-                <SidePill side={position.side} />
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs tabular-nums">
-                {formatLots(position.lots)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs tabular-nums">
-                {formatPrice(position.symbol, position.entry)}
-              </TableCell>
-              <TableCell className="text-right font-mono text-xs tabular-nums">
-                {formatPrice(position.symbol, position.mark)}
-              </TableCell>
-              <TableCell
-                className={cn(
-                  "text-right font-mono text-xs tabular-nums",
-                  position.pnl > 0 && "text-emerald-400",
-                  position.pnl < 0 && "text-rose-400"
-                )}
-              >
-                {formatPnl(position.pnl)}
-              </TableCell>
-              <TableCell className="text-right">
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => flatten(position.id)}
-                >
-                  {position.livePending ? "Cancel pending" : position.liveBroker ? "Close live" : "Close"}
-                </Button>
-              </TableCell>
-            </TableRow>
+            <PositionRow
+              key={`${position.id}-${position.sl}-${position.tp}-${isBrokerLeftover(position) ? "L" : "D"}`}
+              position={position}
+              firm={firm}
+              login={account?.login ?? position.accountId}
+              firmId={account?.firmId}
+              busy={busy}
+              onFlatten={() => flatten(position.id)}
+              onModify={(sl, tp) => modifyPosition(position.id, sl, tp)}
+            />
           );
         })}
       </TableBody>
     </Table>
     </div>
+  );
+}
+
+function PositionRow({
+  position,
+  firm,
+  login,
+  firmId,
+  busy,
+  onFlatten,
+  onModify,
+}: {
+  position: Position;
+  firm: string;
+  login: string;
+  firmId?: string;
+  busy: boolean;
+  onFlatten: () => void;
+  onModify: (sl: number | null, tp: number | null) => void;
+}) {
+  const leftover = isBrokerLeftover(position);
+  const [slDraft, setSlDraft] = useState(levelText(position.sl));
+  const [tpDraft, setTpDraft] = useState(levelText(position.tp));
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const alpha = firmId === "alphacapital";
+  const canModify = !position.livePending && !alpha;
+  const slParsed = parseLevel(slDraft);
+  const tpParsed = parseLevel(tpDraft);
+  const levelsOk = slParsed != null && tpParsed != null;
+
+  return (
+    <TableRow>
+      <TableCell>
+        <div className="leading-tight">
+          <p className="text-sm">{firm}</p>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            {login}
+            {position.liveOrder ? ` · #${position.liveOrder}` : ""}
+          </p>
+        </div>
+      </TableCell>
+      <TableCell className="font-mono text-xs">
+        {position.symbol}
+        {leftover ? (
+          <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-200 uppercase">
+            leftover
+          </span>
+        ) : (
+          <span className="ml-2 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-emerald-200 uppercase">
+            desk
+          </span>
+        )}
+        {position.livePending ? (
+          <span className="ml-2 rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-200 uppercase">
+            {pendingKind(position.orderType) ?? "pending"}
+          </span>
+        ) : null}
+      </TableCell>
+      <TableCell>
+        <SidePill side={position.side} />
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums">
+        {formatLots(position.lots)}
+      </TableCell>
+      <TableCell className="text-right font-mono text-xs tabular-nums">
+        {formatPrice(position.symbol, position.entry)}
+      </TableCell>
+      <TableCell className="min-w-[7rem]">
+        {position.livePending ? (
+          <span className="block text-right font-mono text-xs tabular-nums">
+            {position.sl && position.sl > 0 ? formatPrice(position.symbol, position.sl) : "—"}
+          </span>
+        ) : (
+          <Input
+            inputMode="decimal"
+            aria-label={`Stop loss for ${position.symbol} ticket ${position.liveOrder ?? ""}`}
+            className="min-h-11 h-11 text-right font-mono text-xs tabular-nums"
+            value={slDraft}
+            disabled={busy || alpha}
+            placeholder={position.sl && position.sl > 0 ? formatPrice(position.symbol, position.sl) : "none"}
+            onChange={(event) => setSlDraft(event.target.value)}
+          />
+        )}
+      </TableCell>
+      <TableCell className="min-w-[7rem]">
+        {position.livePending ? (
+          <span className="block text-right font-mono text-xs tabular-nums">
+            {position.tp && position.tp > 0 ? formatPrice(position.symbol, position.tp) : "—"}
+          </span>
+        ) : (
+          <Input
+            inputMode="decimal"
+            aria-label={`Take profit for ${position.symbol} ticket ${position.liveOrder ?? ""}`}
+            className="min-h-11 h-11 text-right font-mono text-xs tabular-nums"
+            value={tpDraft}
+            disabled={busy || alpha}
+            placeholder={position.tp && position.tp > 0 ? formatPrice(position.symbol, position.tp) : "none"}
+            onChange={(event) => setTpDraft(event.target.value)}
+          />
+        )}
+      </TableCell>
+      <TableCell
+        className={cn(
+          "text-right font-mono text-xs tabular-nums",
+          position.pnl > 0 && "text-emerald-400",
+          position.pnl < 0 && "text-rose-400"
+        )}
+      >
+        {formatPnl(position.pnl)}
+      </TableCell>
+      <TableCell className="text-right">
+        <div className="flex flex-col items-end gap-1.5">
+          {canModify ? (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={busy || !levelsOk}
+              className="min-h-11 h-11 px-3"
+              onClick={() => setConfirmOpen(true)}
+            >
+              Set SL/TP
+            </Button>
+          ) : alpha ? (
+            <span className="text-[10px] text-muted-foreground">Alpha read-only</span>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={busy}
+            className="min-h-11 h-11 px-3"
+            onClick={() => onFlatten()}
+          >
+            {position.livePending ? "Cancel pending" : position.liveBroker ? "Close live" : "Close"}
+          </Button>
+        </div>
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm SL/TP</DialogTitle>
+              <DialogDescription>
+                {leftover
+                  ? "This is a broker leftover. Modify applies only to this ticket — flatten will not mass-close it."
+                  : "Sends TRADE_ACTION_SLTP on this book only. Tickets differ across slaves — no fan-out."}
+              </DialogDescription>
+            </DialogHeader>
+            <p className="font-mono text-sm">
+              {firm} {position.symbol} {position.side.toUpperCase()} {formatLots(position.lots)}
+              {position.liveOrder ? ` · ticket ${position.liveOrder}` : ""}
+            </p>
+            <p className="text-sm">
+              SL {slParsed === 0 ? "clear" : slParsed} → was{" "}
+              {position.sl && position.sl > 0 ? position.sl : "none"}
+              <br />
+              TP {tpParsed === 0 ? "clear" : tpParsed} → was{" "}
+              {position.tp && position.tp > 0 ? position.tp : "none"}
+            </p>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 h-11"
+                onClick={() => setConfirmOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                className="min-h-11 h-11"
+                disabled={!levelsOk || busy}
+                onClick={() => {
+                  if (slParsed == null || tpParsed == null) return;
+                  onModify(slParsed, tpParsed);
+                  setConfirmOpen(false);
+                }}
+              >
+                Send SL/TP
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </TableCell>
+    </TableRow>
   );
 }
 

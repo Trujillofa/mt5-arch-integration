@@ -149,6 +149,17 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     assert "submit(\"sell\")" in ticket
     assert "ORDER_TYPE_BUY_STOP" in include
     assert "ORDER_TYPE_SELL_STOP" in include
+    assert "TRADE_ACTION_SLTP" in include
+    assert 'g_desk_action == "modify"' in include
+    resolver = include[
+        include.index("ulong DeskOrdResolvePositionTicket") : include.index("bool DeskOrdIsNetting")
+    ]
+    assert "if(g_desk_ticket > 0)" in resolver
+    assert resolver.index("return 0;") < resolver.index("DeskOrdFindPosition")
+    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(
+        encoding="utf-8"
+    )
+    assert "POSITION_MAGIC" in snapshots
 
 
 def test_live_is_not_the_default() -> None:
@@ -193,6 +204,7 @@ FANOUT_ALIAS = ROOT / "tests" / "desk-alias-register.mjs"
 CLIENT_NO_ENV = [
     DESK / "src" / "lib" / "copy-engine.ts",
     DESK / "src" / "lib" / "copy-fanout.ts",
+    DESK / "src" / "lib" / "desk-magic.ts",
     DESK / "src" / "lib" / "bridge-orders.ts",
     DESK / "src" / "lib" / "desk-context.tsx",
     DESK / "src" / "lib" / "desk-store.ts",
@@ -253,6 +265,17 @@ def test_flatten_bar_is_always_visible() -> None:
     assert "fixed inset-x-0 bottom-0" in bar
     assert "describeFlattenTargets" in engine
     assert "isUs30Family" in engine
+    assert "isBrokerLeftover" in engine
+    assert "upsertSnapshotPositions" in engine
+    panel = (DESK / "src" / "components" / "desk" / "positions-panel.tsx").read_text(
+        encoding="utf-8"
+    )
+    assert "Set SL/TP" in panel
+    assert "min-h-11" in panel
+    assert "leftover" in panel
+    assert "modifyPosition" in CONTEXT.read_text(encoding="utf-8")
+    assert "alphaModifyBlocked" in GUARDS.read_text(encoding="utf-8")
+    assert "MIN_DESK_MODIFY_VERSION = [1, 27]" in GUARDS.read_text(encoding="utf-8")
 
 
 def test_guards_node_unit() -> None:

@@ -884,7 +884,13 @@ export async function executeDeskLiveOrder(
     };
   }
 
-  if (!parsed.useVolumeMin && parsed.volume == null && parsed.action !== "cancel" && parsed.action !== "close") {
+  if (
+    !parsed.useVolumeMin &&
+    parsed.volume == null &&
+    parsed.action !== "cancel" &&
+    parsed.action !== "close" &&
+    parsed.action !== "modify"
+  ) {
     parsed.volume = firm.defaultLots;
   }
 
@@ -898,6 +904,7 @@ export async function executeDeskLiveOrder(
     tradeAllowed: identity.tradeAllowed,
     algoAllowed: identity.algoAllowed,
     readonly: readHeartbeatReadonly(paths),
+    action: parsed.action,
   });
   if (eaBlocked) {
     return {
