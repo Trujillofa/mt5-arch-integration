@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { AccountStrip } from "@/components/desk/account-strip";
 import { BlotterTable } from "@/components/desk/blotter-table";
 import { CopyPanel } from "@/components/desk/copy-panel";
+import { FlattenBar } from "@/components/desk/flatten-bar";
 import { ExposurePanel, PositionsPanel } from "@/components/desk/positions-panel";
 import { TradeTicket } from "@/components/desk/trade-ticket";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ function subscribeReady(listener: () => void) {
 }
 
 export function Terminal() {
-  const { hydration, hydrateError, actionError, state, busy, setMaster, resetDemo, flattenAll } =
+  const { hydration, hydrateError, actionError, state, setMaster, resetDemo } =
     useDesk();
   const mounted = useSyncExternalStore(subscribeReady, () => clientReady, () => false);
   const master = state.accounts.find((account) => account.id === state.masterId);
@@ -46,7 +47,7 @@ export function Terminal() {
   const float = state.positions.reduce((sum, position) => sum + position.pnl, 0);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh flex-col pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <header className="border-b border-foreground/10 bg-card/70 pt-[env(safe-area-inset-top)] backdrop-blur">
         <div className="mx-auto flex w-full flex-col gap-3 px-[max(1rem,env(safe-area-inset-left))] py-3 pr-[max(1rem,env(safe-area-inset-right))] md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
@@ -158,17 +159,6 @@ export function Terminal() {
                 <TabsTrigger value="positions">Positions</TabsTrigger>
                 <TabsTrigger value="exposure">Exposure</TabsTrigger>
               </TabsList>
-              {state.positions.length > 0 ? (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => flattenAll()}
-                >
-                  {busy ? "Closing…" : "CLOSE positions"}
-                </Button>
-              ) : null}
             </div>
             <TabsContent value="blotter">
               <BlotterTable />
@@ -182,6 +172,7 @@ export function Terminal() {
           </Tabs>
         </section>
       </main>
+      <FlattenBar />
     </div>
   );
 }
