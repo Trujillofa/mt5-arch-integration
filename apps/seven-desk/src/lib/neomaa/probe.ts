@@ -16,7 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
-import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
+import { readOpenPositionsFromDirs, readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { NeomaaConnectionStatus, NeomaaLiveReport } from "@/lib/neomaa/types";
 
 interface Snapshot {
@@ -258,6 +258,7 @@ export function probeNeomaaLive(opts?: { poll?: boolean }): NeomaaLiveReport {
     bookHonesty,
     fetchNotes: notes,
     pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
+    openPositions: readOpenPositionsFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : connectionStatus === "disconnected"

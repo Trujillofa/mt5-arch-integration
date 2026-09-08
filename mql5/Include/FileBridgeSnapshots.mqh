@@ -319,6 +319,7 @@ void WritePositions()
       j += "\"stop_loss\":" + DoubleToString(PositionGetDouble(POSITION_SL), 8) + ",";
       j += "\"take_profit\":" + DoubleToString(PositionGetDouble(POSITION_TP), 8) + ",";
       j += "\"profit\":" + DoubleToString(PositionGetDouble(POSITION_PROFIT), 2) + ",";
+      j += "\"magic\":" + IntegerToString(PositionGetInteger(POSITION_MAGIC)) + ",";
       j += "\"status\":\"open\"";
       j += "}";
      }

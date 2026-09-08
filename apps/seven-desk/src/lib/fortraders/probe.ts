@@ -16,7 +16,7 @@ import {
   freshnessRejectNote,
   inspectBridgeFreshness,
 } from "@/lib/bridge-freshness";
-import { readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
+import { readOpenPositionsFromDirs, readPendingOrdersFromDirs } from "@/lib/bridge-orders-read";
 import type { FortradersConnectionStatus, FortradersLiveReport } from "@/lib/fortraders/types";
 
 interface Snapshot {
@@ -254,6 +254,7 @@ export function probeFortradersLive(opts?: { poll?: boolean }): FortradersLiveRe
     bookHonesty,
     fetchNotes: notes,
     pendingOrders: readPendingOrdersFromDirs(bridgeDirs, freshness),
+    openPositions: readOpenPositionsFromDirs(bridgeDirs, freshness),
     nextSecretNeeded: liveBalance
       ? null
       : env.hasMt5Password

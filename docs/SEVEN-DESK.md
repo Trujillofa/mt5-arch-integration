@@ -14,7 +14,13 @@ so slaves copy the **same type** as the ticket (market / limit / stop). Arm
 **FTMO live master** so Place master trade is a real EURUSD send
 on 541163357 (default **1.4** lots; FundedNext **0.35**; FundingPips **0.8**)
 before any copy. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
-`Mt5ArchBridge` v1.25 polling `desk_live_order_request.txt` (seconds).
+`Mt5ArchBridge` v1.27 polling `desk_live_order_request.txt` (seconds).
+`action: "modify"` plus `ticket` and `sl`/`tp` is `TRADE_ACTION_SLTP` on that
+book only (no slave fan-out). Alpha Capital stays read-only — modify returns
+JSON **409**. The Positions tab ingests live `positions.json` (PositionsTotal)
+and tags **desk** vs **leftover**. Flatten stays desk-only; leftover US30/DJ30
+4.0s can appear and be modified/closed per-row, but Close positions will not
+mass-close them.
 One-shots restore the branded
 terminal in the background and refuse a generic `Program Files/MetaTrader 5`
 tree inside those prefixes (that leftover can carry another company’s
@@ -43,14 +49,15 @@ Default lots are **1.4** except FundedNext **0.35** and FundingPips **0.8**.
 `volume_min: true` is the explicit 0.01 override. Hard max is 10 lots.
 `action: "cancel"` plus optional `ticket` removes a pending order
 (`TRADE_ACTION_REMOVE`). Close positions is pinned to the bottom of the
-desk and cancels working limits, not only positions. It does not close
-MT5 leftovers that never entered the desk book; US30/DJ30 desk rows
-(including 4.0 leftovers) will flatten. Already-flat (`no open … desk
-position`, `no pending desk order to cancel`, or `position vanished`)
-drops the desk row the same as `ok`.
+desk and cancels working limits, not only positions. Broker leftovers
+(including leftover US30/DJ30 4.0s) can appear on the Positions tab; flatten
+does not mass-close them. US30/DJ30 desk rows still flatten. Already-flat
+(`no open … desk position`, `no pending desk order to cancel`, or
+`position vanished`) drops the desk row the same as `ok`.
 If the EA heartbeat is stale, trade is not allowed, or the build is older
-than v1.25, the route returns JSON **409** and does **not** fall back to a
-wine one-shot. It never talks to Vantage, FP, or official MCP on :22346.
+than v1.25 (v1.27 for modify), the route returns JSON **409** and does **not**
+fall back to a wine one-shot. It never talks to Vantage, FP, or official MCP
+on :22346.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

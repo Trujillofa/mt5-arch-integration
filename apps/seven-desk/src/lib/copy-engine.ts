@@ -20,8 +20,9 @@ import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
 import { isAlreadyFlatReason, isPendingOrderType, isUs30Family } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
-import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
+import { isDeskMagic } from "@/lib/desk-magic";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -725,6 +726,12 @@ export function closePosition(
   return { state: applyQuoteMarks(next) };
 }
 
+export function isBrokerLeftover(row: Position): boolean {
+  if (row.leftover === true) return true;
+  if (row.leftover === false) return false;
+  return Boolean(row.fromSnapshot && !row.groupId);
+}
+
 export function liveGroupPositions(state: DeskState, positionId: string): Position[] {
   const target = state.positions.find((row) => row.id === positionId);
   if (!target) return [];
@@ -744,6 +751,7 @@ export function flattenAllTargets(state: DeskState): {
   const liveRepIds: string[] = [];
   const paperIds: string[] = [];
   for (const row of state.positions) {
+    if (isBrokerLeftover(row)) continue;
     if (row.liveBroker) {
       const key = row.groupId ?? row.id;
       if (seen.has(key)) continue;
@@ -760,12 +768,18 @@ export function flattenAllTargets(state: DeskState): {
 export function describeFlattenTargets(state: DeskState): {
   filled: number;
   pending: number;
+  leftovers: number;
   us30Rows: { symbol: string; lots: number; pending: boolean }[];
 } {
   let filled = 0;
   let pending = 0;
+  let leftovers = 0;
   const us30Rows: { symbol: string; lots: number; pending: boolean }[] = [];
   for (const row of state.positions) {
+    if (isBrokerLeftover(row)) {
+      leftovers += 1;
+      continue;
+    }
     if (row.livePending) pending += 1;
     else filled += 1;
     if (isUs30Family(row.symbol)) {
@@ -776,7 +790,7 @@ export function describeFlattenTargets(state: DeskState): {
       });
     }
   }
-  return { filled, pending, us30Rows };
+  return { filled, pending, leftovers, us30Rows };
 }
 
 export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
@@ -890,6 +904,7 @@ export function applyLiveFill(
     liveBroker: broker,
     liveOrder: result.order,
     livePending: pending,
+    leftover: false,
     orderType,
     groupId: event.groupId,
   };
@@ -984,6 +999,7 @@ export function placeLiveMasterFill(
     liveBroker: broker,
     liveOrder: result.order,
     livePending: pending,
+    leftover: false,
     orderType,
     groupId,
   };
@@ -1049,7 +1065,7 @@ export function recordHttpBlotter(
     reason: string;
     liveTicket?: number;
     latencyMs?: number;
-    httpAction: "send" | "cancel" | "close";
+    httpAction: "send" | "cancel" | "close" | "modify";
     groupId?: string;
   }
 ): DeskState {
@@ -1102,6 +1118,7 @@ export function upsertSnapshotPendings(
   const keep = state.positions.filter((row) => {
     if (row.accountId !== accountId) return true;
     if (!row.fromSnapshot) return true;
+    if (!row.livePending) return true;
     return false;
   });
   const existingTickets = new Set(
@@ -1130,10 +1147,116 @@ export function upsertSnapshotPendings(
       liveOrder: order.ticket,
       livePending: isPendingOrderType(orderType) || order.status === "pending",
       fromSnapshot: true,
+      leftover: true,
       orderType,
     });
   }
   return applyQuoteMarks({ ...state, positions: [...added, ...keep] });
+}
+
+export function upsertSnapshotPositions(
+  state: DeskState,
+  accountId: string,
+  broker: LiveBroker,
+  positions: BridgeOpenPosition[]
+): DeskState {
+  const incomingTickets = new Set(positions.map((pos) => pos.ticket));
+  const keep = state.positions.filter((row) => {
+    if (row.accountId !== accountId) return true;
+    if (row.livePending) return true;
+    if (row.fromSnapshot && row.leftover) {
+      return Boolean(row.liveOrder && incomingTickets.has(row.liveOrder));
+    }
+    return true;
+  });
+  const byTicket = new Map<number, Position>();
+  for (const row of keep) {
+    if (row.accountId === accountId && row.liveOrder) {
+      byTicket.set(row.liveOrder, row);
+    }
+  }
+  const now = Date.now();
+  const added: Position[] = [];
+  for (const pos of positions) {
+    const existing = byTicket.get(pos.ticket);
+    const leftover = !existing && !isDeskMagic(broker, pos.magic);
+    if (existing) continue;
+    added.push({
+      id: uid("pos"),
+      accountId,
+      symbol: pos.symbol,
+      side: pos.side === "sell" ? "sell" : "buy",
+      lots: pos.volume ?? 0,
+      entry: pos.price ?? 0,
+      sl: pos.sl != null && pos.sl > 0 ? pos.sl : null,
+      tp: pos.tp != null && pos.tp > 0 ? pos.tp : null,
+      openedAt: now,
+      mark: pos.price ?? 0,
+      pnl: pos.profit ?? 0,
+      liveBroker: broker,
+      liveOrder: pos.ticket,
+      livePending: false,
+      fromSnapshot: true,
+      leftover,
+      magic: pos.magic,
+      orderType: "market",
+    });
+  }
+  const merged = keep.map((row) => {
+    if (row.accountId !== accountId || !row.liveOrder || row.livePending) return row;
+    const live = positions.find((pos) => pos.ticket === row.liveOrder);
+    if (!live) return row;
+    return {
+      ...row,
+      symbol: live.symbol || row.symbol,
+      side: live.side === "sell" ? "sell" : live.side === "buy" ? "buy" : row.side,
+      lots: live.volume ?? row.lots,
+      entry: live.price ?? row.entry,
+      sl: live.sl != null && live.sl > 0 ? live.sl : live.sl === 0 ? null : row.sl,
+      tp: live.tp != null && live.tp > 0 ? live.tp : live.tp === 0 ? null : row.tp,
+      mark: live.price ?? row.mark,
+      pnl: live.profit ?? row.pnl,
+      magic: live.magic ?? row.magic,
+      leftover: Boolean(row.leftover) && !row.groupId && !isDeskMagic(broker, live.magic),
+    };
+  });
+  return applyQuoteMarks({ ...state, positions: [...added, ...merged] });
+}
+
+export function applyLiveModify(
+  state: DeskState,
+  positionId: string,
+  sl: number | null,
+  tp: number | null
+): DeskState {
+  const position = state.positions.find((row) => row.id === positionId);
+  if (!position) return state;
+  const now = Date.now();
+  const nextSl = sl != null && sl > 0 ? sl : null;
+  const nextTp = tp != null && tp > 0 ? tp : null;
+  return {
+    ...state,
+    positions: state.positions.map((row) =>
+      row.id === positionId ? { ...row, sl: nextSl, tp: nextTp } : row
+    ),
+    blotter: pushBlotter(state.blotter, {
+      id: uid("blt"),
+      groupId: uid("mod"),
+      accountId: position.accountId,
+      role: "slave",
+      symbol: position.symbol,
+      side: position.side,
+      lots: position.lots,
+      requestedPrice: position.entry,
+      sl: nextSl,
+      tp: nextTp,
+      status: "filled",
+      reason: `HTTP modify · SL ${nextSl ?? "—"} · TP ${nextTp ?? "—"}`,
+      createdAt: now,
+      updatedAt: now,
+      httpAction: "modify",
+    }),
+  };
 }
 
 export function defaultCopySettings(slaveAccountId: string): CopySettings {

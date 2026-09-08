@@ -17,7 +17,7 @@ export function FlattenBar() {
 
   const title = [
     "Closes every desk position (market close) and cancels working limits/stops.",
-    "Does not close MT5 leftovers that never entered this book.",
+    "Does not mass-close broker leftovers (including leftover US30/DJ30 4.0s) — close those rows explicitly.",
     us30Warn ?? "No US30/DJ30 desk rows in this flatten.",
   ].join(" ");
 
@@ -40,13 +40,15 @@ export function FlattenBar() {
               {summary.pending
                 ? ` · ${summary.pending} working limit${summary.pending === 1 ? "" : "s"}`
                 : ""}
-              · not MT5 leftovers off this book
+              {summary.leftovers
+                ? ` · ${summary.leftovers} leftover${summary.leftovers === 1 ? "" : "s"} visible, not flattened`
+                : " · leftovers not flattened"}
             </p>
           )
         ) : (
           <p className="text-center text-[11px] font-medium text-amber-300">
-            No desk positions or working limits. Live fetch leftovers (including US30/DJ30
-            4.0 on the terminal) stay on MT5 — this does not close them.
+            No desk positions or working limits. Leftover US30/DJ30 4.0s can appear
+            in Positions — this does not mass-close them.
           </p>
         )}
         <Button

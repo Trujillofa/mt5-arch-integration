@@ -1,5 +1,5 @@
 /** Client-safe identity. Do not import `@/lib/fundingpips/env` from the browser. */
-import type { BridgePendingOrder } from "@/lib/bridge-orders";
+import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 export const FUNDINGPIPS_EXPECTED_LOGIN = "11669306";
 export const FUNDINGPIPS_EXPECTED_SERVER = "FundingPips2-SIM";
 export const FUNDINGPIPS_SERVER_NEEDLE = "FundingPips";
@@ -38,4 +38,5 @@ export interface FundingPipsLiveReport {
   fetchNotes: string[];
   nextSecretNeeded: string | null;
   pendingOrders: BridgePendingOrder[];
+  openPositions: BridgeOpenPosition[];
 }
