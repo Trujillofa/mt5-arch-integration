@@ -42,9 +42,12 @@ market. Volume above 0.01 requires `volume_confirm: true`.
 Default lots are **1.4** except FundedNext **0.35** and FundingPips **0.8**.
 `volume_min: true` is the explicit 0.01 override. Hard max is 10 lots.
 `action: "cancel"` plus optional `ticket` removes a pending order
-(`TRADE_ACTION_REMOVE`). CLOSE / flatten cancels working limits, not only
-positions. Already-flat (`no open … desk position`, `no pending desk order
-to cancel`, or `position vanished`) drops the desk row the same as `ok`.
+(`TRADE_ACTION_REMOVE`). Close positions is pinned to the bottom of the
+desk and cancels working limits, not only positions. It does not close
+MT5 leftovers that never entered the desk book; US30/DJ30 desk rows
+(including 4.0 leftovers) will flatten. Already-flat (`no open … desk
+position`, `no pending desk order to cancel`, or `position vanished`)
+drops the desk row the same as `ok`.
 If the EA heartbeat is stale, trade is not allowed, or the build is older
 than v1.25, the route returns JSON **409** and does **not** fall back to a
 wine one-shot. It never talks to Vantage, FP, or official MCP on :22346.

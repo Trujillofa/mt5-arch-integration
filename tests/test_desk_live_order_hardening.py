@@ -240,6 +240,21 @@ def test_fanout_skips_alpha_and_confirms_size() -> None:
     assert 'httpAction: row.livePending ? "cancel" : "close"' in context
 
 
+def test_flatten_bar_is_always_visible() -> None:
+    terminal = (DESK / "src" / "components" / "desk" / "terminal.tsx").read_text(encoding="utf-8")
+    bar = (DESK / "src" / "components" / "desk" / "flatten-bar.tsx").read_text(encoding="utf-8")
+    engine = (DESK / "src" / "lib" / "copy-engine.ts").read_text(encoding="utf-8")
+    assert "FlattenBar" in terminal
+    assert "flattenAll" not in terminal
+    assert 'state.positions.length > 0' not in bar
+    assert "Close positions" in bar
+    assert "cancel pendings" in bar
+    assert "min-h-11" in bar
+    assert "fixed inset-x-0 bottom-0" in bar
+    assert "describeFlattenTargets" in engine
+    assert "isUs30Family" in engine
+
+
 def test_guards_node_unit() -> None:
     result = subprocess.run(
         ["node", "--experimental-strip-types", str(GUARDS_UNIT)],

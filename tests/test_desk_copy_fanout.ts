@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { parsePendingOrders } from "../apps/seven-desk/src/lib/bridge-orders.ts";
 import {
   applyLiveFill,
+  describeFlattenTargets,
+  flattenAllTargets,
   pendingLiveSlaveEvents,
   placeMasterTrade,
   recordHttpBlotter,
@@ -147,5 +149,41 @@ assert.equal(snap.orderType, "buy_limit");
 
 assert.equal(worstLegMs([12, 40, 9]), 40);
 assert.equal(worstLegMs([]), null);
+
+const emptyFlatten = describeFlattenTargets(seedDesk());
+assert.equal(emptyFlatten.filled, 0);
+assert.equal(emptyFlatten.pending, 0);
+assert.equal(emptyFlatten.us30Rows.length, 0);
+
+const us30LeftoverDesk = {
+  ...seedDesk(),
+  positions: [
+    {
+      id: "pos_us30_leftover",
+      accountId: ACCOUNT_IDS.wsf,
+      symbol: "DJ30.c",
+      side: "buy" as const,
+      lots: 4,
+      entry: 39000,
+      sl: null,
+      tp: null,
+      openedAt: 1,
+      mark: 39000,
+      pnl: 0,
+      liveBroker: "wsf" as const,
+      livePending: true,
+      fromSnapshot: true,
+      orderType: "buy_limit" as const,
+    },
+  ],
+};
+const us30Flatten = describeFlattenTargets(us30LeftoverDesk);
+assert.equal(us30Flatten.pending, 1);
+assert.equal(us30Flatten.filled, 0);
+assert.equal(us30Flatten.us30Rows.length, 1);
+assert.equal(us30Flatten.us30Rows[0]?.lots, 4);
+const us30Targets = flattenAllTargets(us30LeftoverDesk);
+assert.deepEqual(us30Targets.liveRepIds, ["pos_us30_leftover"]);
+assert.deepEqual(us30Targets.paperIds, []);
 
 console.log("test_desk_copy_fanout ok");

@@ -17,7 +17,7 @@ import { FUNDINGPIPS_LIVE_PENDING, FUNDINGPIPS_LIVE_SYMBOLS } from "@/lib/fundin
 import { NEOMAA_LIVE_PENDING, NEOMAA_LIVE_SYMBOLS } from "@/lib/neomaa/types";
 import { defaultLotsForFirm, liveLotsForFirm } from "@/lib/firms";
 import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
-import { isAlreadyFlatReason, isPendingOrderType } from "@/lib/live-order/guards";
+import { isAlreadyFlatReason, isPendingOrderType, isUs30Family } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
 import type { BridgePendingOrder } from "@/lib/bridge-orders";
@@ -754,6 +754,29 @@ export function flattenAllTargets(state: DeskState): {
     }
   }
   return { liveRepIds, paperIds };
+}
+
+/** Counts for the always-visible flatten bar. US30/DJ30 desk rows are included. */
+export function describeFlattenTargets(state: DeskState): {
+  filled: number;
+  pending: number;
+  us30Rows: { symbol: string; lots: number; pending: boolean }[];
+} {
+  let filled = 0;
+  let pending = 0;
+  const us30Rows: { symbol: string; lots: number; pending: boolean }[] = [];
+  for (const row of state.positions) {
+    if (row.livePending) pending += 1;
+    else filled += 1;
+    if (isUs30Family(row.symbol)) {
+      us30Rows.push({
+        symbol: row.symbol,
+        lots: row.lots,
+        pending: Boolean(row.livePending),
+      });
+    }
+  }
+  return { filled, pending, us30Rows };
 }
 
 export function liveCloseAlreadyFlat(result: LiveOrderResult): boolean {
