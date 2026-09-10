@@ -1,0 +1,15 @@
+; ForexSignalLogger — gold session observe (no orders)
+; Load from EA Inputs tab after attaching to XAUUSD M5 / M15.
+; Overlay family stays frozen xau_london_orb_overlap_vwap_ema_flat.
+; promote=no
+InpIndicatorName=GoldSessionScalp
+InpSignalBuffer=8
+InpSignalShift=1
+InpMaxSpreadPips=0.0
+InpOnlyNewBar=true
+InpWriteCsv=true
+InpCsvDir=forex_signals
+InpAlertPopup=false
+InpAlertPush=false
+InpAlertSound=false
+InpSoundFile=alert.wav

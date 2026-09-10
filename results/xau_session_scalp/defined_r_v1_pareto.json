@@ -1,0 +1,785 @@
+{
+  "family_id": "xau_london_defined_r_be_flat_v1",
+  "promote": false,
+  "live_go": false,
+  "lock": "results/xau_session_scalp/defined_r_v1_lock.json",
+  "score": {
+    "window": "select",
+    "eligible": "n>=40 and pf>=1.0 and payoff>=0.22 and wr_not_degenerate",
+    "payoff": "avg_win / abs(avg_loss)",
+    "degenerate": "payoff<0.22 (one loser wipes >=5 winners) unless pf>1.2 and max_dd bounded \u2014 still reject payoff<0.20",
+    "rank": "max wr among eligible",
+    "if_none_eligible": "no 80pct winner; honest_book = max pf among n>=30; do not pick by confirm or holdout"
+  },
+  "select_end": "2025-10-31",
+  "holdout_start": "2026-01-01",
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 100.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 40.0
+  },
+  "data": {
+    "source": "/home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/XAUUSD.r/cache/M5.hc",
+    "timeframe": "M5",
+    "sha256": "f98e19f1da90148dbde65f0550f4b65592da3c8a9c27c7d161fe111fecdcccd0",
+    "bars": 100190,
+    "start": "2025-04-03 02:35:00+00:00",
+    "end": "2026-09-01 17:15:00+00:00",
+    "selection_cutoff": "2026-01-01",
+    "holdout_sealed": true,
+    "server_utc_offset_sec": 0
+  },
+  "grid": [
+    {
+      "id": "tpr0.35_be0_ts0",
+      "params": {
+        "id": "tpr0.35_be0_ts0",
+        "tp_r": 0.35,
+        "be_r": 0.0,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 168,
+        "wins": 117,
+        "losses": 51,
+        "win_rate": 0.6964285714285714,
+        "net_pnl": -7357.0643049182145,
+        "avg_trade": -43.79204943403699,
+        "profit_factor": 0.6002347224402277,
+        "max_dd": -8143.336289157209,
+        "expectancy": -43.79204943403699,
+        "longs": 85,
+        "shorts": 83,
+        "median_mae": 1.4100000000000819,
+        "median_mfe": 1.665000000000191,
+        "avg_win": 94.41363863240616,
+        "avg_loss": -360.8521573511713,
+        "payoff": 0.26164077644830436,
+        "exits": {
+          "tp": 117,
+          "sl": 45,
+          "sl_tp_same_bar": 6
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1209.594201723151,
+        "median_risk_lots": 0.1692181744437654
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.35_be0_ts6",
+      "params": {
+        "id": "tpr0.35_be0_ts6",
+        "tp_r": 0.35,
+        "be_r": 0.0,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 168,
+        "wins": 117,
+        "losses": 51,
+        "win_rate": 0.6964285714285714,
+        "net_pnl": -7357.0643049182145,
+        "avg_trade": -43.79204943403699,
+        "profit_factor": 0.6002347224402277,
+        "max_dd": -8143.336289157209,
+        "expectancy": -43.79204943403699,
+        "longs": 85,
+        "shorts": 83,
+        "median_mae": 1.4100000000000819,
+        "median_mfe": 1.665000000000191,
+        "avg_win": 94.41363863240616,
+        "avg_loss": -360.8521573511713,
+        "payoff": 0.26164077644830436,
+        "exits": {
+          "tp": 117,
+          "sl": 45,
+          "sl_tp_same_bar": 6
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1209.594201723151,
+        "median_risk_lots": 0.1692181744437654
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.35_be0.4_ts0",
+      "params": {
+        "id": "tpr0.35_be0.4_ts0",
+        "tp_r": 0.35,
+        "be_r": 0.4,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 168,
+        "wins": 18,
+        "losses": 150,
+        "win_rate": 0.10714285714285714,
+        "net_pnl": -15453.392360777872,
+        "avg_trade": -91.98447833796352,
+        "profit_factor": 0.10547888979939819,
+        "max_dd": -15521.954721498814,
+        "expectancy": -91.98447833796352,
+        "longs": 85,
+        "shorts": 83,
+        "median_mae": 1.4100000000000819,
+        "median_mfe": 1.665000000000191,
+        "avg_win": 101.23397320655073,
+        "avg_loss": -115.17069252330523,
+        "payoff": 0.8789907483283184,
+        "exits": {
+          "tp": 18,
+          "sl": 45,
+          "sl_tp_same_bar": 105
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -2297.9475030822937,
+        "median_risk_lots": 0.1692181744437654
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.35_be0.4_ts6",
+      "params": {
+        "id": "tpr0.35_be0.4_ts6",
+        "tp_r": 0.35,
+        "be_r": 0.4,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 168,
+        "wins": 18,
+        "losses": 150,
+        "win_rate": 0.10714285714285714,
+        "net_pnl": -15453.392360777872,
+        "avg_trade": -91.98447833796352,
+        "profit_factor": 0.10547888979939819,
+        "max_dd": -15521.954721498814,
+        "expectancy": -91.98447833796352,
+        "longs": 85,
+        "shorts": 83,
+        "median_mae": 1.4100000000000819,
+        "median_mfe": 1.665000000000191,
+        "avg_win": 101.23397320655073,
+        "avg_loss": -115.17069252330523,
+        "payoff": 0.8789907483283184,
+        "exits": {
+          "tp": 18,
+          "sl": 45,
+          "sl_tp_same_bar": 105
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -2297.9475030822937,
+        "median_risk_lots": 0.1692181744437654
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.5_be0_ts0",
+      "params": {
+        "id": "tpr0.5_be0_ts0",
+        "tp_r": 0.5,
+        "be_r": 0.0,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 220,
+        "wins": 147,
+        "losses": 73,
+        "win_rate": 0.6681818181818182,
+        "net_pnl": -6119.146990772675,
+        "avg_trade": -27.814304503512158,
+        "profit_factor": 0.748963310925022,
+        "max_dd": -7970.286361319411,
+        "expectancy": -27.814304503512158,
+        "longs": 116,
+        "shorts": 104,
+        "median_mae": 1.2949999999998454,
+        "median_mfe": 1.6700000000000728,
+        "avg_win": 124.19293658626856,
+        "avg_loss": -333.91107765690623,
+        "payoff": 0.3719341612076639,
+        "exits": {
+          "tp": 147,
+          "sl": 69,
+          "sl_tp_same_bar": 4
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1053.5401580573366,
+        "median_risk_lots": 0.1877964125169037
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.5_be0_ts6",
+      "params": {
+        "id": "tpr0.5_be0_ts6",
+        "tp_r": 0.5,
+        "be_r": 0.0,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 220,
+        "wins": 145,
+        "losses": 75,
+        "win_rate": 0.6590909090909091,
+        "net_pnl": -6446.191053705776,
+        "avg_trade": -29.300868425935345,
+        "profit_factor": 0.7333457111977716,
+        "max_dd": -7782.006533364263,
+        "expectancy": -29.300868425935345,
+        "longs": 116,
+        "shorts": 104,
+        "median_mae": 1.2949999999998454,
+        "median_mfe": 1.6600000000000819,
+        "avg_win": 122.26308619145807,
+        "avg_loss": -322.32451401956257,
+        "payoff": 0.37931674717126124,
+        "exits": {
+          "tp": 144,
+          "sl": 68,
+          "sl_tp_same_bar": 4,
+          "time_stop": 4
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1078.0589423844433,
+        "median_risk_lots": 0.1877964125169037
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.5_be0.4_ts0",
+      "params": {
+        "id": "tpr0.5_be0.4_ts0",
+        "tp_r": 0.5,
+        "be_r": 0.4,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 220,
+        "wins": 13,
+        "losses": 207,
+        "win_rate": 0.05909090909090909,
+        "net_pnl": -20288.852408339222,
+        "avg_trade": -92.22205640154192,
+        "profit_factor": 0.048783119120632254,
+        "max_dd": -20398.370066512027,
+        "expectancy": -92.22205640154192,
+        "longs": 116,
+        "shorts": 104,
+        "median_mae": 1.240000000000009,
+        "median_mfe": 1.4800000000000182,
+        "avg_win": 80.03945939404282,
+        "avg_loss": -103.04041246599893,
+        "payoff": 0.7767773583054521,
+        "exits": {
+          "tp": 7,
+          "sl": 62,
+          "sl_tp_same_bar": 126,
+          "be": 25
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3239.035386826351,
+        "median_risk_lots": 0.1877964125169037
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.5_be0.4_ts6",
+      "params": {
+        "id": "tpr0.5_be0.4_ts6",
+        "tp_r": 0.5,
+        "be_r": 0.4,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 220,
+        "wins": 13,
+        "losses": 207,
+        "win_rate": 0.05909090909090909,
+        "net_pnl": -20340.852408339222,
+        "avg_trade": -92.45842003790554,
+        "profit_factor": 0.048664477389894566,
+        "max_dd": -20450.370066512027,
+        "expectancy": -92.45842003790554,
+        "longs": 116,
+        "shorts": 104,
+        "median_mae": 1.240000000000009,
+        "median_mfe": 1.4750000000001364,
+        "avg_win": 80.03945939404282,
+        "avg_loss": -103.29162019546753,
+        "payoff": 0.7748882169006289,
+        "exits": {
+          "tp": 7,
+          "sl": 62,
+          "sl_tp_same_bar": 125,
+          "be": 25,
+          "time_stop": 1
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3246.8044919057297,
+        "median_risk_lots": 0.1877964125169037
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.7_be0_ts0",
+      "params": {
+        "id": "tpr0.7_be0_ts0",
+        "tp_r": 0.7,
+        "be_r": 0.0,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 135,
+        "losses": 95,
+        "win_rate": 0.5869565217391305,
+        "net_pnl": -6760.408470626548,
+        "avg_trade": -29.393080307071944,
+        "profit_factor": 0.7810236397486475,
+        "max_dd": -9415.48392812225,
+        "expectancy": -29.393080307071944,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.75,
+        "median_mfe": 1.7650000000001,
+        "avg_win": 178.6101417304904,
+        "avg_loss": -324.97660636045,
+        "payoff": 0.5496092279712705,
+        "exits": {
+          "tp": 135,
+          "sl": 93,
+          "sl_tp_same_bar": 2
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1201.0964690082947,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.7_be0_ts6",
+      "params": {
+        "id": "tpr0.7_be0_ts6",
+        "tp_r": 0.7,
+        "be_r": 0.0,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 134,
+        "losses": 96,
+        "win_rate": 0.5826086956521739,
+        "net_pnl": -6725.906501389776,
+        "avg_trade": -29.24307174517294,
+        "profit_factor": 0.7762563897195339,
+        "max_dd": -8717.528511641933,
+        "expectancy": -29.24307174517294,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.75,
+        "median_mfe": 1.7300000000000182,
+        "avg_win": 174.14081553006045,
+        "avg_loss": -313.13308106685287,
+        "payoff": 0.5561239806945916,
+        "exits": {
+          "tp": 132,
+          "sl": 89,
+          "time_stop": 7,
+          "sl_tp_same_bar": 2
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1114.1390139252749,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.7_be0.4_ts0",
+      "params": {
+        "id": "tpr0.7_be0.4_ts0",
+        "tp_r": 0.7,
+        "be_r": 0.4,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 14,
+        "losses": 216,
+        "win_rate": 0.06086956521739131,
+        "net_pnl": -20095.525906206018,
+        "avg_trade": -87.37185176611311,
+        "profit_factor": 0.06458325552279856,
+        "max_dd": -20259.650627647894,
+        "expectancy": -87.37185176611311,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.2049999999999272,
+        "median_mfe": 1.4649999999999181,
+        "avg_win": 99.10284771299393,
+        "avg_loss": -99.45817488049968,
+        "payoff": 0.9964273709231777,
+        "exits": {
+          "tp": 6,
+          "sl": 63,
+          "sl_tp_same_bar": 83,
+          "be": 78
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3259.385470742778,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr0.7_be0.4_ts6",
+      "params": {
+        "id": "tpr0.7_be0.4_ts6",
+        "tp_r": 0.7,
+        "be_r": 0.4,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 14,
+        "losses": 216,
+        "win_rate": 0.06086956521739131,
+        "net_pnl": -20147.525906206014,
+        "avg_trade": -87.59793872263485,
+        "profit_factor": 0.06442730778076822,
+        "max_dd": -20311.650627647894,
+        "expectancy": -87.59793872263485,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.2049999999999272,
+        "median_mfe": 1.4600000000000364,
+        "avg_win": 99.10284771299393,
+        "avg_loss": -99.6989156212404,
+        "payoff": 0.9940213200461382,
+        "exits": {
+          "tp": 6,
+          "sl": 63,
+          "sl_tp_same_bar": 82,
+          "be": 78,
+          "time_stop": 1
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3267.1545758221564,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr1_be0_ts0",
+      "params": {
+        "id": "tpr1_be0_ts0",
+        "tp_r": 1.0,
+        "be_r": 0.0,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 110,
+        "losses": 120,
+        "win_rate": 0.4782608695652174,
+        "net_pnl": -6446.745137889506,
+        "avg_trade": -28.02932668647611,
+        "profit_factor": 0.826963990552112,
+        "max_dd": -10619.845497745444,
+        "expectancy": -28.02932668647611,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 2.270000000000209,
+        "median_mfe": 2.084999999999809,
+        "avg_win": 280.0902068835299,
+        "avg_loss": -310.47223245898164,
+        "payoff": 0.9021425351477586,
+        "exits": {
+          "tp": 110,
+          "sl": 119,
+          "sl_tp_same_bar": 1
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1676.0964690082358,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr1_be0_ts6",
+      "params": {
+        "id": "tpr1_be0_ts6",
+        "tp_r": 1.0,
+        "be_r": 0.0,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 110,
+        "losses": 120,
+        "win_rate": 0.4782608695652174,
+        "net_pnl": -5886.136784557542,
+        "avg_trade": -25.591899063293663,
+        "profit_factor": 0.8322250462921718,
+        "max_dd": -9173.58936263701,
+        "expectancy": -25.591899063293663,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 2.1549999999999727,
+        "median_mfe": 1.9950000000001182,
+        "avg_win": 265.4308020547523,
+        "avg_loss": -292.3627084215025,
+        "payoff": 0.9078818686823692,
+        "exits": {
+          "tp": 105,
+          "sl": 109,
+          "time_stop": 16
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -1400.0393887636378,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr1_be0.4_ts0",
+      "params": {
+        "id": "tpr1_be0.4_ts0",
+        "tp_r": 1.0,
+        "be_r": 0.4,
+        "time_stop_bars": 0,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 14,
+        "losses": 216,
+        "win_rate": 0.06086956521739131,
+        "net_pnl": -19436.19453421375,
+        "avg_trade": -84.5051936270163,
+        "profit_factor": 0.09527414703762198,
+        "max_dd": -19682.22985055932,
+        "expectancy": -84.5051936270163,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.2049999999999272,
+        "median_mfe": 1.4649999999999181,
+        "avg_win": 146.1979457124415,
+        "avg_loss": -99.45817488049968,
+        "payoff": 1.4699439828661673,
+        "exits": {
+          "tp": 6,
+          "sl": 63,
+          "be": 120,
+          "sl_tp_same_bar": 41
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3169.385470742773,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    },
+    {
+      "id": "tpr1_be0.4_ts6",
+      "params": {
+        "id": "tpr1_be0.4_ts6",
+        "tp_r": 1.0,
+        "be_r": 0.4,
+        "time_stop_bars": 6,
+        "sl_atr": 1.0
+      },
+      "select": {
+        "trades": 230,
+        "wins": 14,
+        "losses": 216,
+        "win_rate": 0.06086956521739131,
+        "net_pnl": -19488.194534213748,
+        "avg_trade": -84.73128058353804,
+        "profit_factor": 0.09504409068657385,
+        "max_dd": -19734.22985055932,
+        "expectancy": -84.73128058353804,
+        "longs": 121,
+        "shorts": 109,
+        "median_mae": 1.2049999999999272,
+        "median_mfe": 1.4600000000000364,
+        "avg_win": 146.1979457124415,
+        "avg_loss": -99.6989156212404,
+        "payoff": 1.466394542021425,
+        "exits": {
+          "tp": 6,
+          "sl": 63,
+          "be": 119,
+          "sl_tp_same_bar": 41,
+          "time_stop": 1
+        },
+        "equity_ref": 10000.0,
+        "risk_pct": 0.005,
+        "pnl_at_0p5pct_risk": -3177.154575822152,
+        "median_risk_lots": 0.19153107623694698
+      },
+      "eligible": false
+    }
+  ],
+  "primary": {
+    "id": "tpr1_be0_ts6",
+    "params": {
+      "id": "tpr1_be0_ts6",
+      "tp_r": 1.0,
+      "be_r": 0.0,
+      "time_stop_bars": 6,
+      "sl_atr": 1.0
+    },
+    "pick_reason": "no_eligible_max_select_pf_n30",
+    "eligible": false,
+    "select": {
+      "trades": 230,
+      "wins": 110,
+      "losses": 120,
+      "win_rate": 0.4782608695652174,
+      "net_pnl": -5886.136784557542,
+      "avg_trade": -25.591899063293663,
+      "profit_factor": 0.8322250462921718,
+      "max_dd": -9173.58936263701,
+      "expectancy": -25.591899063293663,
+      "longs": 121,
+      "shorts": 109,
+      "median_mae": 2.1549999999999727,
+      "median_mfe": 1.9950000000001182,
+      "avg_win": 265.4308020547523,
+      "avg_loss": -292.3627084215025,
+      "payoff": 0.9078818686823692,
+      "exits": {
+        "tp": 105,
+        "sl": 109,
+        "time_stop": 16
+      },
+      "equity_ref": 10000.0,
+      "risk_pct": 0.005,
+      "pnl_at_0p5pct_risk": -1400.0393887636378,
+      "median_risk_lots": 0.19153107623694698
+    },
+    "confirm": {
+      "trades": 40,
+      "wins": 18,
+      "losses": 22,
+      "win_rate": 0.45,
+      "net_pnl": -2351.2452000072535,
+      "avg_trade": -58.781130000181335,
+      "profit_factor": 0.715600202612199,
+      "max_dd": -2796.999862515102,
+      "expectancy": -58.781130000181335,
+      "longs": 24,
+      "shorts": 16,
+      "median_mae": 3.2100000000000364,
+      "median_mfe": 2.539999999999509,
+      "avg_win": 328.674937529318,
+      "avg_loss": -375.79063979704443,
+      "payoff": 0.8746224698593544,
+      "exits": {
+        "sl": 21,
+        "tp": 17,
+        "time_stop": 2
+      },
+      "equity_ref": 10000.0,
+      "risk_pct": 0.005,
+      "pnl_at_0p5pct_risk": -347.25061196547966,
+      "median_risk_lots": 0.14068303155769724
+    },
+    "develop": {
+      "trades": 270,
+      "wins": 128,
+      "losses": 142,
+      "win_rate": 0.4740740740740741,
+      "net_pnl": -8237.381984564796,
+      "avg_trade": -30.5088221650548,
+      "profit_factor": 0.8099836829710233,
+      "max_dd": -9173.58936263701,
+      "expectancy": -30.5088221650548,
+      "longs": 145,
+      "shorts": 125,
+      "median_mae": 2.2050000000001546,
+      "median_mfe": 2.009999999999991,
+      "avg_win": 274.3245086058631,
+      "avg_loss": -305.28816257827657,
+      "payoff": 0.898575648295979,
+      "exits": {
+        "tp": 122,
+        "sl": 130,
+        "time_stop": 18
+      },
+      "equity_ref": 10000.0,
+      "risk_pct": 0.005,
+      "pnl_at_0p5pct_risk": -1747.2900007291173,
+      "median_risk_lots": 0.18284160041323422
+    },
+    "holdout": {
+      "trades": 226,
+      "wins": 100,
+      "losses": 126,
+      "win_rate": 0.4424778761061947,
+      "net_pnl": -14125.556000959214,
+      "avg_trade": -62.502460181235456,
+      "profit_factor": 0.7768184911164927,
+      "max_dd": -15516.58591452167,
+      "expectancy": -62.502460181235456,
+      "longs": 97,
+      "shorts": 129,
+      "median_mae": 3.9899999999997817,
+      "median_mfe": 3.6400000000001,
+      "avg_win": 491.66228661775756,
+      "avg_loss": -502.3157512915473,
+      "payoff": 0.978791298806781,
+      "exits": {
+        "sl": 109,
+        "tp": 96,
+        "time_stop": 18,
+        "sl_tp_same_bar": 3
+      },
+      "equity_ref": 10000.0,
+      "risk_pct": 0.005,
+      "pnl_at_0p5pct_risk": -1550.220459719278,
+      "median_risk_lots": 0.1109560670180734
+    }
+  },
+  "wr80_verdict": {
+    "hit_80_and_pf1_on_select": false,
+    "select_wr": 0.4782608695652174,
+    "select_pf": 0.8322250462921718,
+    "select_n": 230,
+    "if_missed": "80% WR and PF>=1 after gold costs are incompatible on this select tape under the frozen 16-cell defined-R grid. Tight TP cells raise WR but fail payoff/PF; wider TP keeps the 2-bar SL/TP race."
+  },
+  "note": "Select-window metrics only were used to pick. Confirm and holdout are evaluation. Not permission to --live."
+}

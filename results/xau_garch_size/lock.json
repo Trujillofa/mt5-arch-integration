@@ -1,0 +1,75 @@
+{
+  "overlay_id": "xau_h1_bb_rsi_garch11_invvol_size_v1",
+  "kind": "size_overlay",
+  "not_a_search_family": true,
+  "signal_family_note": "Host signal is the shipped strategy_params.json bb_rsi window. bb_rsi was later null-killed as a search family. This overlay does not revive it.",
+  "frozen_before_metrics": true,
+  "frozen_at": "2026-09-09T19:50:00+00:00",
+  "promote": false,
+  "live_go": false,
+  "host": {
+    "params": "strategy_params.json",
+    "mode": "bb_rsi",
+    "window": "strategy_params.json data block via slice_to_window",
+    "bars": 25582,
+    "end": "2025-12-31T23:00:00+00:00",
+    "size_rule_host": "ATR-lot: lots = floor(risk_pct*balance / (atr*sl_atr*contract)) cap 0.50 min 0.01",
+    "exits": "Host ATR SL/TP and RSI soft exit unchanged. Overlay changes lots only."
+  },
+  "holdout_start": "2026-01-01",
+  "holdout_rule": "NEVER used for selection; evaluate once after develop pick",
+  "costs": {
+    "source": "results/xau_research_costs.json",
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "slippage_notes": "UNMEASURED. Not a claim of zero slip. Official comparison uses this book. Assumed-slip sensitivity is labeled and not used to pick."
+  },
+  "model": {
+    "name": "GARCH(1,1)",
+    "egarch_searched": false,
+    "variance_targeting": true,
+    "returns": "log close[t]/close[t-1]",
+    "info_set": "returns strictly before the signal bar (through r[i-1])",
+    "min_lookback_bars": 500,
+    "recalibrate_every_bars": 120,
+    "window": "expanding",
+    "warmup_fallback": "ATR-lot until GARCH is ready",
+    "persistence": "alpha+beta < 0.999"
+  },
+  "size_map": {
+    "name": "target_risk_invvol",
+    "lot": "risk_pct * balance / (sigma_price * sl_atr * contract)",
+    "sigma_price": "forecast_sigma_return * close[i]",
+    "risk_pct": 0.01,
+    "lot_min": 0.01,
+    "lot_max": 0.5,
+    "lot_step": 0.01,
+    "constant_lot": 0.1,
+    "sideline_quantile": 0.95,
+    "sideline_note": "lot=0 if forecast sigma_return > expanding 95th percentile of past forecasts (past only). Risk, not a direction filter."
+  },
+  "baselines": [
+    "constant_lot_0.10",
+    "atr_lot_host"
+  ],
+  "score": {
+    "window": "develop_slice_to_window",
+    "winner": "max profit_factor; tie-break net_profit",
+    "garch_beats_atr": "develop PF_garch > PF_atr OR (PF equal and NP_garch > NP_atr)",
+    "n_note": "host develop n=42 is thin; do not celebrate small-n PF"
+  },
+  "do_not": [
+    "retune bb_rsi params",
+    "emit +1/-1",
+    "fit GARCH once on full develop and apply backward",
+    "use holdout to pick",
+    "run backtest.py --save",
+    "mutate strategy_params.json",
+    "edit results/xau_loop_status.md disposition",
+    "reopen GoldSessionScalp or the M5 defined-R grid",
+    "build exogenous beta"
+  ],
+  "safety": "offline only; never --live"
+}

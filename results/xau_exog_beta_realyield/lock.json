@@ -1,0 +1,73 @@
+{
+  "family_id": "exog_dfii10_dtwex_daily_tvbeta_xau_follow_flat_v1",
+  "kind": "new_research_family",
+  "not_a_reopen": [
+    "exog_dxy_us10y_daily_tvbeta_xau_follow_flat_v1",
+    "exog_london_fx_cosign_xau_follow_flat",
+    "xau_h1_bb_rsi_garch11_invvol_size_v1",
+    "xau_london_defined_r_be_flat_v1"
+  ],
+  "frozen_before_metrics": true,
+  "frozen_at": "2026-09-09T20:20:00+00:00",
+  "promote": false,
+  "live_go": false,
+  "drivers": {
+    "primary": [
+      "DFII10",
+      "DTWEXBGS"
+    ],
+    "dfii10": "first difference of 10Y TIPS real yield (FRED DFII10)",
+    "dtwexbgs": "log-diff of broad trade-weighted USD (FRED DTWEXBGS)",
+    "stored_not_in_rule": [
+      "DGS10",
+      "T10YIE",
+      "DFII5"
+    ],
+    "tips_note": "DFII10 is the real-yield primary; DGS10/T10YIE stored for audit only"
+  },
+  "timeframe": "D1",
+  "gold_host": "xauusd_data.csv H1 resampled to UTC daily",
+  "alignment": "as-of: last FRED observation with date <= gold UTC date; no future fill",
+  "beta": {
+    "model": "rolling_OLS",
+    "spec": "r_xau ~ a + b_real*d_DFII10 + b_usd*r_DTWEXBGS",
+    "window_primary": 60,
+    "window_robustness": 120,
+    "robustness_used_to_pick": false,
+    "info_set": "through day i inclusive; enter day i+1 open"
+  },
+  "rule": {
+    "name": "next_bar_pred_sign_follow",
+    "pred": "b_real*d_DFII10[i] + b_usd*r_DTWEXBGS[i]",
+    "threshold_abs_pred": 0.002,
+    "side": "sign(pred)",
+    "entry": "next gold daily open",
+    "occupancy_days": 5,
+    "sl_atr": 1.5,
+    "atr_period": 14,
+    "lots": 0.1,
+    "one_position": true
+  },
+  "baseline": {
+    "primary": "always_long_same_entries",
+    "note": "same |pred| gate; side forced +1"
+  },
+  "costs": {
+    "source": "results/xau_research_costs.json",
+    "spread": "last H1 spread on the gold UTC date",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "slippage_notes": "UNMEASURED"
+  },
+  "select_window": "gold utc_date < 2026-01-01",
+  "holdout_start": "2026-01-01",
+  "score": {
+    "window": "develop",
+    "metric": "profit_factor",
+    "n_floor": 30,
+    "continue_if": "n>=30 and PF_beta > PF_always_long_same_entries and PF_beta >= 1.0"
+  },
+  "fred_auth": "env: FRED_API_KEY",
+  "safety": "offline only; never --live"
+}

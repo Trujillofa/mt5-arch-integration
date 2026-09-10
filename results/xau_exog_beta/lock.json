@@ -1,0 +1,71 @@
+{
+  "family_id": "exog_dxy_us10y_daily_tvbeta_xau_follow_flat_v1",
+  "kind": "new_research_family",
+  "not_a_reopen": "exog_london_fx_cosign_xau_follow_flat",
+  "frozen_before_metrics": true,
+  "frozen_at": "2026-09-09T20:10:00+00:00",
+  "promote": false,
+  "live_go": false,
+  "drivers": {
+    "primary": [
+      "dxy",
+      "us10y"
+    ],
+    "dxy": "results/xau_exog_beta/data/dxy_1d.csv (DX-Y.NYB via yfinance snapshot)",
+    "us10y": "results/xau_exog_beta/data/us10y_1d.csv (^TNX via yfinance snapshot)",
+    "tips": "NOT ON DISK \u2014 not used",
+    "vix": "copied but not in frozen rule"
+  },
+  "timeframe": "D1",
+  "gold_host": "xauusd_data.csv H1 resampled to UTC daily",
+  "beta": {
+    "model": "rolling_OLS",
+    "spec": "r_xau ~ a + b_dxy*r_dxy + b_10y*r_us10y",
+    "window_primary": 60,
+    "window_robustness": 120,
+    "robustness_used_to_pick": false,
+    "info_set": "returns through day i inclusive; trade enters at day i+1 open"
+  },
+  "rule": {
+    "name": "next_bar_pred_sign_follow",
+    "pred": "b_dxy*r_dxy[i] + b_10y*r_us10y[i]  (no intercept in the signal)",
+    "threshold_abs_pred": 0.002,
+    "side": "sign(pred)",
+    "entry": "next gold daily open",
+    "occupancy_days": 5,
+    "sl_atr": 1.5,
+    "atr_period": 14,
+    "lots": 0.1,
+    "one_position": true,
+    "no_bb_rsi": true,
+    "no_london_fx_cosign": true
+  },
+  "baseline": {
+    "primary": "always_long_same_entries",
+    "note": "same |pred| dates and occupancy/SL/costs; side forced +1"
+  },
+  "costs": {
+    "source": "results/xau_research_costs.json",
+    "spread": "last H1 spread on the gold UTC date",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0,
+    "slippage_notes": "UNMEASURED"
+  },
+  "select_window": "gold utc_date < 2026-01-01",
+  "holdout_start": "2026-01-01",
+  "score": {
+    "window": "develop",
+    "metric": "profit_factor",
+    "n_floor": 30,
+    "continue_if": "n>=30 and PF_beta > PF_always_long_same_entries and PF_beta >= 1.0"
+  },
+  "do_not": [
+    "reopen exog_london_fx_cosign_xau_follow_flat",
+    "retune M5 GoldSessionScalp",
+    "revive GARCH size overlay",
+    "run backtest.py --save",
+    "mutate strategy_params.json or xau_loop_status.md"
+  ],
+  "safety": "offline only; never --live"
+}

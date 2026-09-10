@@ -1,0 +1,34 @@
+{
+  "family_id": "xau_london_orb_overlap_vwap_ema_flat",
+  "baseline_family_id": "ny_cash_orb_vwap_ema_flat",
+  "holdout_start": "2026-01-01",
+  "holdout_source": "results/xau_holdout_lock.json",
+  "holdout_rule": "NEVER used for selection; evaluate only",
+  "primary_candidate": "london30_both_windows",
+  "candidates_frozen_before_metrics": true,
+  "promote": false,
+  "live_go": false,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 100.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 40.0,
+    "slippage_notes": "UNMEASURED explicit assumption. Not a claim of zero slip."
+  },
+  "primary_params": {
+    "or_event": "london_open_0800",
+    "or_minutes": 30,
+    "allow_ny": true,
+    "ny_window_et": ["08:00", "11:00"],
+    "london_entry_end": "11:00",
+    "or_buffer_atr_frac": 0.10,
+    "ema_fast": 9,
+    "ema_slow": 21,
+    "sl_atr": 1.0,
+    "tp_atr": 1.2,
+    "min_atr_pct": 0.00015
+  },
+  "safety": "offline only; never --live; do not write strategy_params.json"
+}

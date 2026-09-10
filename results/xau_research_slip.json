@@ -1,0 +1,123 @@
+{
+  "status": "MEASURED_FILL_VS_QUOTE",
+  "measured_slippage_points": -19.499999999970896,
+  "official_research_book": {
+    "path": "results/xau_research_costs.json",
+    "slippage_points": 0.0,
+    "label": "UNMEASURED",
+    "changed": false
+  },
+  "sources_read_only": {
+    "dir": "mt5-arch-integration/results/live_book_2026-08-15_2026-09-04",
+    "files": [
+      "fp_deals_live.json",
+      "fp_deals_export_live.csv",
+      "vantage_deals.json",
+      "ANALYSIS.md"
+    ]
+  },
+  "xau_deals": {
+    "fp_XAUUSD.r": {
+      "deals": 24,
+      "entry_in": 12,
+      "entry_out": 12,
+      "paired_roundtrips_est": 12
+    },
+    "vantage_XAUUSD": {
+      "deals": 22,
+      "entry_in": 11,
+      "entry_out": 11,
+      "paired_roundtrips_est": 11
+    }
+  },
+  "why_gap": "Fills have deal price, volume, profit, and (FP) commission. No requested price, no bid/ask at order send, no slippage field. Cannot compute fill \u2212 request in MT5 points without inventing a mid.",
+  "commission_observed": {
+    "fp_comment": "FP XAUUSD.r deals include commission on some rows (not the Vantage Standard STP research book).",
+    "fp_commission_min": -9.0,
+    "fp_commission_max": 0.0,
+    "vantage": "no commission field on vantage_deals.json rows"
+  },
+  "do_not": "Do not change xau_research_costs.json. Do not invent slip. fill-vs-quote is not request\u2192fill. Do not promote.",
+  "sibling_hunt": {
+    "date": "2026-09-09",
+    "status": "GAP",
+    "measured_slippage_points": null,
+    "fp_l1_ticks": {
+      "path": "mt5-arch-integration/results/tick_data/ticks_XAUUSD.r_fpmarkets.csv",
+      "gitignored": true,
+      "symbol": "XAUUSD.r",
+      "tf": "L1 tick",
+      "n": 489634,
+      "bytes": 46515325,
+      "from_utc": "2026-08-18T13:02:00Z",
+      "to_utc": "2026-08-20T01:01:59Z",
+      "overlap_live_book_xau_deals": false,
+      "note": "quoted bid/ask only; no requested price; 4-day gap before first FP/Vantage XAU deal"
+    },
+    "dukascopy_xau": "H1 bars only in ctrader-trading-agent/data/dukascopy/; no persisted ticks",
+    "official_research_book_changed": false
+  },
+  "bi5_audit": {
+    "status": "MEASURED_FILL_VS_QUOTE",
+    "method": "dukascopy_bi5_merge_asof_backward",
+    "label": "fill-vs-quote (Dukascopy L1), NOT request\u2192fill",
+    "promote": false,
+    "do_not_overwrite_official_cost_book": true,
+    "official_research_book": {
+      "path": "results/xau_research_costs.json",
+      "slippage_points": 0.0,
+      "label": "UNMEASURED",
+      "changed": false
+    },
+    "window_utc": [
+      "2026-08-18T00:00:00+00:00",
+      "2026-09-02T23:59:59+00:00"
+    ],
+    "ticks_file": "results/xau_slip_ticks/xauusd_ticks_2026-08-18_2026-09-02.csv.gz",
+    "n_ticks": 3270463,
+    "n_xau_deals": 46,
+    "n_usable": 45,
+    "max_tick_age_sec": 2.0,
+    "server_utc_offset_hours": 3,
+    "gold_point": 0.01,
+    "measured_slippage_points": -19.499999999970896,
+    "usable_as_cost_assumption": false,
+    "usable_as_cost_assumption_why": "n RTs/deals is a two-week live_book sample, cross-venue (Dukascopy quote vs FP/Vantage fill). Too few to replace the official H1 slip-0 UNMEASURED book.",
+    "all_usable": {
+      "n": 45,
+      "median": -19.499999999970896,
+      "mean": -6.144444444443151,
+      "p25": -33.50000000000364,
+      "p75": -4.500000000007276,
+      "min": -156.49999999995998,
+      "max": 367.5000000000182,
+      "usd_0_10_lot_median": -1.9499999999970896,
+      "usd_1_00_lot_median": -19.499999999970896
+    },
+    "by_broker": {
+      "fpmarkets": {
+        "n": 24,
+        "median": -24.499999999989086,
+        "mean": -10.666666666668334,
+        "p25": -46.50000000001455,
+        "p75": -3.749999999990905,
+        "min": -152.50000000005457,
+        "max": 292.5000000000182,
+        "usd_0_10_lot_median": -2.4499999999989086,
+        "usd_1_00_lot_median": -24.499999999989086
+      },
+      "vantage": {
+        "n": 21,
+        "median": -15.499999999974534,
+        "mean": -0.9761904761857988,
+        "p25": -25.500000000010914,
+        "p75": -4.500000000007276,
+        "min": -156.49999999995998,
+        "max": 367.5000000000182,
+        "usd_0_10_lot_median": -1.5499999999974534,
+        "usd_1_00_lot_median": -15.499999999974534
+      }
+    },
+    "n_rejected_stale_or_unmatched": 1
+  }
+}

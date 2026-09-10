@@ -1,0 +1,73 @@
+{
+  "family_id": "exog_dfii10_regime_long_or_flat_v1",
+  "kind": "new_research_family",
+  "not_a_reopen": [
+    "exog_dfii10_dtwex_daily_tvbeta_xau_follow_flat_v1",
+    "exog_dxy_us10y_daily_tvbeta_xau_follow_flat_v1",
+    "exog_london_fx_cosign_xau_follow_flat",
+    "xau_h1_bb_rsi_garch11_invvol_size_v1",
+    "xau_london_defined_r_be_flat_v1"
+  ],
+  "frozen_before_metrics": true,
+  "frozen_at": "2026-09-09T20:45:00+00:00",
+  "promote": false,
+  "live_go": false,
+  "driver": {
+    "series": "DFII10",
+    "source": "results/xau_exog_beta/data/fred/DFII10.csv",
+    "alignment": "as-of: last FRED observation with date <= gold UTC date; no future fill"
+  },
+  "regime_primary": {
+    "name": "real_yield_falling_20d",
+    "rule": "long iff DFII10_asof[t] < DFII10_asof[t-20], else flat",
+    "lookback_days": 20,
+    "side": "long_or_flat",
+    "never_short": true
+  },
+  "regime_robustness_not_pick": {
+    "name": "below_expanding_40th_of_prior_252",
+    "rule": "long iff DFII10_asof[t] < 40th percentile of DFII10_asof[t-252:t] (past only)",
+    "used_to_pick": false
+  },
+  "timing": {
+    "gold": "xauusd_data.csv H1 resampled UTC daily",
+    "knowable": "regime at day t uses as-of DFII10 through t",
+    "enter_exit": "next daily open after regime is knowable",
+    "hold": "while regime on; flatten next open when it flips",
+    "catastrophe_sl": null,
+    "catastrophe_sl_note": "none on primary; 4.0 daily ATR listed only as unused robustness"
+  },
+  "size": {
+    "lots": 0.1
+  },
+  "costs": {
+    "source": "results/xau_research_costs.json",
+    "slippage_points": 0.0,
+    "slippage_notes": "UNMEASURED. results/xau_research_slip.json status=GAP. Book not changed.",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0
+  },
+  "baseline": {
+    "name": "always_long_continuous",
+    "rule": "one continuous long from first eligible next-open through last bar of the window; same lots/costs (one RT)"
+  },
+  "select_window": "gold utc_date < 2026-01-01",
+  "holdout_start": "2026-01-01",
+  "n_floor": {
+    "kind": "regime_on_days",
+    "min": 30
+  },
+  "score": {
+    "window": "develop",
+    "continue_if": "regime_on_days>=30 and PF>=1.0 and net > always_long_net",
+    "always_long_pf_note": "always-long is one RT; binding vs-drift test is net (declared). PF still required >=1 on the regime book."
+  },
+  "do_not": [
+    "short gold as the primary rule",
+    "add DTWEX/DXY/VIX to the primary rule",
+    "daily-trade the OLS residual",
+    "retune killed families",
+    "use holdout to pick"
+  ],
+  "safety": "offline only; never --live"
+}

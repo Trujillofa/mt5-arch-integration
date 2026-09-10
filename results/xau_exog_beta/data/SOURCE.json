@@ -1,0 +1,37 @@
+{
+  "source_repo": "TRADING/crypto-agent",
+  "source_dir": "data/tradfi",
+  "fetcher": "scripts/pull_tradfi_data.py",
+  "vendor": "yfinance (Yahoo Finance)",
+  "license_note": "Public Yahoo quotes; no API key; files are git-tracked in crypto-agent (!data/tradfi/). Research snapshot copy only. No secrets.",
+  "copied_at": "2026-09-09",
+  "used_in_family": [
+    "dxy_1d.csv",
+    "us10y_1d.csv"
+  ],
+  "not_used_in_frozen_rule": [
+    "vix_1d.csv"
+  ],
+  "files": {
+    "dxy_1d.csv": {
+      "sha256": "fad602ee245a4a8258f82f4ff01287d898827b204c61bae24d8812d0ec875cab",
+      "bytes": 51900,
+      "copied_from": "/home/yderf/Projects/trading/TRADING/crypto-agent/data/tradfi/dxy_1d.csv"
+    },
+    "us10y_1d.csv": {
+      "sha256": "ed1af610859110da8bd2c875ffac89a539ecc427fdfba502505bcf93938edbfd",
+      "bytes": 49570,
+      "copied_from": "/home/yderf/Projects/trading/TRADING/crypto-agent/data/tradfi/us10y_1d.csv"
+    },
+    "vix_1d.csv": {
+      "sha256": "ff78509786c4dd8736c56a808ca6846f9db5b91cae309e597f795329db5a933d",
+      "bytes": 49046,
+      "copied_from": "/home/yderf/Projects/trading/TRADING/crypto-agent/data/tradfi/vix_1d.csv"
+    },
+    "README.md": {
+      "sha256": "cab631c6b99021c0ab5effd00a207a6b623226a70430d1a866ebfd7625d6b6be",
+      "bytes": 2335,
+      "copied_from": "/home/yderf/Projects/trading/TRADING/crypto-agent/data/tradfi/README.md"
+    }
+  }
+}

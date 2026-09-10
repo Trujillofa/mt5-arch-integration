@@ -1,0 +1,99 @@
+{
+  "family_id": "xau_london_defined_r_be_flat_v1",
+  "supersedes": "xau_london_orb_overlap_vwap_ema_flat",
+  "frozen_at": "2026-09-08T21:50:00+00:00",
+  "frozen_before_metrics": true,
+  "promote": false,
+  "live_go": false,
+  "holdout_start": "2026-01-01",
+  "holdout_source": "results/xau_holdout_lock.json",
+  "holdout_rule": "NEVER used for selection; evaluate once after pick",
+  "select_end": "2025-10-31",
+  "select_rule": "utc_date <= select_end only; Nov-Dec 2025 is confirm, not selection",
+  "confirm_start": "2025-11-01",
+  "confirm_end": "2025-12-31",
+  "clock": {
+    "or_event": "london_open_0800",
+    "or_minutes": 30,
+    "allow_ny": true,
+    "ny_window_et": ["08:00", "11:00"],
+    "london_entry_end": "11:00",
+    "or_buffer_atr_frac": 0.10,
+    "ema_fast": 9,
+    "ema_slow": 21,
+    "min_atr_pct": 0.00015,
+    "friday_cutoff_et": "14:00",
+    "note": "Gold clock unchanged. New family is exit/risk, not a new event."
+  },
+  "risk_invariants": {
+    "hard_sl": true,
+    "sl_atr": 1.0,
+    "tp_is_defined_r": true,
+    "same_bar_sl_tp": "sl_wins",
+    "flatten_box_end": true,
+    "no_martingale": true,
+    "no_grid": true,
+    "no_average_down": true,
+    "spread_cap_points": 40,
+    "or_width_atr_min": 0.35,
+    "or_width_atr_max": 2.5,
+    "max_cost_to_tp_ratio": 0.35,
+    "equity_ref_usd": 10000.0,
+    "risk_pct": 0.005
+  },
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 100.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 40.0,
+    "slippage_notes": "UNMEASURED explicit assumption. Same book as v1 gold scalp."
+  },
+  "grid": {
+    "tp_r": [0.35, 0.5, 0.7, 1.0],
+    "be_r": [0.0, 0.4],
+    "time_stop_bars": [0, 6],
+    "cardinality": 16,
+    "note": "16 cells. tp_r=0.35 is the WR-trap cell (cost-adjusted breakeven at 80% WR needs tp_r>=0.37 on this ATR/cost)."
+  },
+  "score": {
+    "window": "select",
+    "eligible": "n>=40 and pf>=1.0 and payoff>=0.22 and wr_not_degenerate",
+    "payoff": "avg_win / abs(avg_loss)",
+    "degenerate": "payoff<0.22 (one loser wipes >=5 winners) unless pf>1.2 and max_dd bounded — still reject payoff<0.20",
+    "rank": "max wr among eligible",
+    "if_none_eligible": "no 80pct winner; honest_book = max pf among n>=30; do not pick by confirm or holdout"
+  },
+  "wr80_grill": {
+    "target": "develop_or_select WR>=0.80 and PF>=1.0 after costs",
+    "math": "net_win=tp_r*S-c; net_loss=S+c; at WR=0.80 need tp_r >= (c/S+0.20)/0.80. S~2.6 USD ATR, c~25 USD => tp_r>=0.37",
+    "trap": "tight TP + wide SL can print WR>=80 with PF<1; that is a FAIL",
+    "min_n": 40
+  },
+  "autopsy_prior_family": {
+    "family_id": "xau_london_orb_overlap_vwap_ema_flat",
+    "develop_n": 381,
+    "exits": {"sl": 215, "tp": 164, "sl_tp_same_bar": 1, "flatten_session": 1},
+    "median_bars_held": 2,
+    "avg_cost_usd": 25.05,
+    "diagnosis": "SL/TP race on M5 noise; flatten never matters; London and NY equally negative"
+  },
+  "skills_applied": [
+    "trading-strategy-developer: every trade has SL/TP; Friday cutoff; session box",
+    "trading-risk-troubleshoot: defined 1R stop; 0.5% equity risk reported; no size-up",
+    "trading-signal-analyzer: exit-reason autopsy before retune",
+    "trading-backtest-validator: small frozen grid; select then confirm then holdout; no holdout pick",
+    "trading-session-momentum: defined R, optional BE, time-stop, cost-to-TP gate; do not widen TP as a search",
+    "grill-me: 80% WR pressure-tested in wr80_grill",
+    "trading-data-pipeline: skipped — existing FP M5 / Vantage M15 sufficient"
+  ],
+  "skills_skipped_wrong_product": [
+    "trading-telegram-bot",
+    "trading-deployment",
+    "trading-metrics-dashboard",
+    "trading-paper-monitoring",
+    "prop-firm-compliance"
+  ],
+  "safety": "offline only; never --live; do not write strategy_params.json; do not edit xau_loop_status.md"
+}

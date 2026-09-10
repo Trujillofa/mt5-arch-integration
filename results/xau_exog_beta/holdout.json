@@ -1,0 +1,68 @@
+{
+  "family_id": "exog_dxy_us10y_daily_tvbeta_xau_follow_flat_v1",
+  "promote": false,
+  "live_go": false,
+  "verdict": "kill",
+  "score_window": "develop",
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0
+  },
+  "slip_label": "UNMEASURED",
+  "panel": {
+    "n_days": 605,
+    "start": "2024-01-02 00:00:00+00:00",
+    "end": "2026-06-01 00:00:00+00:00"
+  },
+  "develop": {
+    "beta_follow_w60": {
+      "n": 82,
+      "win_rate": 0.47560975609756095,
+      "profit_factor": 0.9920962410998698,
+      "net_profit": -185.47892428375712,
+      "max_dd_pct": 48.348718838784606,
+      "wins": 39,
+      "losses": 43
+    },
+    "always_long_same_entries": {
+      "n": 79,
+      "win_rate": 0.6329113924050633,
+      "profit_factor": 2.0219262504077635,
+      "net_profit": 15679.710404870832,
+      "max_dd_pct": 15.974075027551477,
+      "wins": 50,
+      "losses": 29
+    },
+    "robust_w120_not_pick": {
+      "n": 74,
+      "win_rate": 0.47297297297297297,
+      "profit_factor": 0.9933283999875907,
+      "net_profit": -153.59487561785704,
+      "max_dd_pct": 61.595564845340725,
+      "wins": 35,
+      "losses": 39
+    }
+  },
+  "holdout": {
+    "beta_follow_w60": {
+      "n": 23,
+      "win_rate": 0.5652173913043478,
+      "profit_factor": 0.8100539678599173,
+      "net_profit": -3235.128183558586,
+      "max_dd_pct": 63.649821296836976,
+      "wins": 13,
+      "losses": 10
+    },
+    "always_long_same_entries": {
+      "n": 23,
+      "win_rate": 0.43478260869565216,
+      "profit_factor": 1.1890496539762967,
+      "net_profit": 3537.5611791659103,
+      "max_dd_pct": 35.994234177496494,
+      "wins": 10,
+      "losses": 13
+    }
+  }
+}

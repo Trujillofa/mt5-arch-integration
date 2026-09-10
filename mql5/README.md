@@ -4,12 +4,15 @@
 |------|------|
 | `Include/ForexUtils.mqh` | Pips, sessions, spread, pure EMA/ATR/RSI, pivot helpers |
 | `Include/IndexSessionUtils.mqh` | US-index DST clock (ET / London / Tokyo) + point spread |
+| `Include/GoldSessionUtils.mqh` | Gold DST clock (London OR / NY metals 08:00 ET) + gold-point spread |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** Asia/London H/L + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
+| `Indicators/GoldSessionScalp.mq5` | **XAUUSD scalp (CLOSED / observe-only):** London OR + NY metals — **[How to use](../docs/HOWTO-GOLD-SESSION-SCALP.md)** |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Presets/ForexSignalLogger-UsIndexSessionScalp.set` | Logger inputs for US100/US30 (buffer 8, max-spread pips 0) |
+| `Presets/ForexSignalLogger-GoldSessionScalp.set` | Logger inputs for XAUUSD (buffer 8, max-spread pips 0) |
 | `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
@@ -41,12 +44,13 @@ MetaEditor **F7** compile order:
 1. `Indicators/ForexHtfPivotsFib.mq5`
 2. `Indicators/BtcTrendPullback.mq5`
 3. `Indicators/UsIndexSessionScalp.mq5` (US30 / US100 M5)
-4. `Indicators/ForexIndicatorTemplate.mq5` (optional)
-5. `Experts/ForexSignalLogger.mq5` (optional)
-6. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
-7. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
-8. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
-9. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
+4. `Indicators/GoldSessionScalp.mq5` (XAUUSD M5 / M15)
+5. `Indicators/ForexIndicatorTemplate.mq5` (optional)
+6. `Experts/ForexSignalLogger.mq5` (optional)
+7. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
+8. `Scripts/ExportHtfFibParityFixture.mq5` (optional; MQL5 ↔ Python dump)
+9. `Scripts/ExportSymbolCapabilities.mq5` (optional; broker symbol dump)
+10. `Scripts/ExportSymbolSyncAudit.mq5` (optional; H1 calendar / spread audit)
 
 ## Chart recipe — FX / gold
 
@@ -79,6 +83,19 @@ MetaEditor **F7** compile order:
 
 Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Scripts/ExportUsIndexM5.mq5`. Do **not** run `ExportInstrumentHistory.mq5` on an open terminal — it kills that prefix. Operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md). Screen how-to (research): [docs/HOWTO-US-INDEX-SCALP.md](../docs/HOWTO-US-INDEX-SCALP.md).
 
+## Chart recipe — XAUUSD (session scalp)
+
+| Setting | Value |
+|---------|--------|
+| Symbol | **XAUUSD** (or `XAUUSD.r` on FP) |
+| TF | **M5** preferred; M15 is the Vantage-cost tape this repo can actually test |
+| Indicator | **GoldSessionScalp** |
+| Logger | `InpIndicatorName=GoldSessionScalp`, buffer **8**, `InpMaxSpreadPips=0` |
+| Look for | **Observe-only.** Not a live signal. London 30m OR + defined-R guides; NY metals 08:00 ET |
+
+Research note: [docs/research/XAU-SESSION-SCALP.md](../docs/research/XAU-SESSION-SCALP.md). Status: `results/xau_session_scalp/STATUS.md`. **CLOSED / observe-only / promote=no.** Do not retune. Do not use buffer 8 as a live entry host.
+
+
 ### Trading mode (FX / BTC indicators)
 
 | Mode | EMAs | Sessions | Spread | Fib | Chart |
@@ -90,7 +107,7 @@ Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Sc
 - Signals also require **close vs EMA bias (200)** when mode uses bias filter
 - `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields
 
-Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **Template = 9**.
+Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **Gold session scalp = 8**, **Template = 9**.
 
 ### RSI + RSI-MA (both indicators)
 
@@ -169,6 +186,21 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 | **8** | **Signal (+1/−1/0)** |
 | 9 | ATR |
 
+### GoldSessionScalp buffers (`iCustom`)
+
+| Index | Content |
+|------:|---------|
+| 0 | EMA9 |
+| 1 | EMA21 |
+| 2 | London-date VWAP |
+| 3–4 | London OR high / low |
+| 5–6 | Long / short arrows |
+| 7 | Session id (0 off / 1 Tokyo / 2 London / 3 NY metals / 4 overlap) |
+| **8** | **Signal (+1/−1/0)** |
+| 9 | ATR |
+
+London OR is knowable at 08:00+`InpOrMinutes` London, not at 09:30 ET. NY metals is 08:00–17:00 ET. Signal also gates OR-width / ATR ∈ [0.35, 2.5] (`or_width`). Cost-to-TP is a live-spread / fill-time gate, not a historical buffer rewrite. Do not copy UsIndexSessionScalp buffer 8 onto gold. Buffer 8 is **observe-only**, not a trading signal source. Buffers 0–9 unchanged in v1.10.
+
 ### BtcTrendPullback buffers (`iCustom`)
 
 | Index | Content |
@@ -184,9 +216,10 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 
 ### ForexSignalLogger
 
-- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, `UsIndexSessionScalp`, or `ForexIndicatorTemplate`), buffer (`7` or `8`)
-- BTC / US index: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
+- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, `UsIndexSessionScalp`, `GoldSessionScalp`, or `ForexIndicatorTemplate`), buffer (`7` or `8`)
+- BTC / US index / gold: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
 - US-index preset: `Presets/ForexSignalLogger-UsIndexSessionScalp.set` (name=`UsIndexSessionScalp`, buffer **8**, max-spread pips **0**)
+- Gold preset: `Presets/ForexSignalLogger-GoldSessionScalp.set` (name=`GoldSessionScalp`, buffer **8**, max-spread pips **0**)
 - Writes `MQL5/Files/forex_signals/<SYMBOL>_<TF>.csv`
 - **Never** calls `OrderSend`
 - Parity dump: `Scripts/ExportHtfFibParityFixture.mq5` →

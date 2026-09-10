@@ -1,0 +1,51 @@
+{
+  "attribution": "Federal Reserve Bank of St. Louis / FRED",
+  "url": "https://fred.stlouisfed.org/",
+  "api": "https://api.stlouisfed.org/fred/series/observations",
+  "auth": "env: FRED_API_KEY",
+  "observation_start": "2018-01-01",
+  "fetched_at": "2026-09-09T20:13:39.133300+00:00",
+  "use": "offline XAU research cache; not a republished FRED product",
+  "series": [
+    {
+      "series_id": "DFII10",
+      "role": "10Y TIPS / real yield (primary)",
+      "n": 2170,
+      "min_date": "2018-01-02",
+      "max_date": "2026-09-04",
+      "csv": "results/xau_exog_beta/data/fred/DFII10.csv"
+    },
+    {
+      "series_id": "DGS10",
+      "role": "nominal 10Y",
+      "n": 2170,
+      "min_date": "2018-01-02",
+      "max_date": "2026-09-04",
+      "csv": "results/xau_exog_beta/data/fred/DGS10.csv"
+    },
+    {
+      "series_id": "T10YIE",
+      "role": "10Y breakeven inflation",
+      "n": 2171,
+      "min_date": "2018-01-02",
+      "max_date": "2026-09-08",
+      "csv": "results/xau_exog_beta/data/fred/T10YIE.csv"
+    },
+    {
+      "series_id": "DTWEXBGS",
+      "role": "broad trade-weighted USD",
+      "n": 2166,
+      "min_date": "2018-01-02",
+      "max_date": "2026-09-04",
+      "csv": "results/xau_exog_beta/data/fred/DTWEXBGS.csv"
+    },
+    {
+      "series_id": "DFII5",
+      "role": "5Y TIPS / real yield (robustness store only)",
+      "n": 2170,
+      "min_date": "2018-01-02",
+      "max_date": "2026-09-04",
+      "csv": "results/xau_exog_beta/data/fred/DFII5.csv"
+    }
+  ]
+}

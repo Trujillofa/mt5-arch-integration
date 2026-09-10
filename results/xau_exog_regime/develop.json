@@ -1,0 +1,68 @@
+{
+  "family_id": "exog_dfii10_regime_long_or_flat_v1",
+  "promote": false,
+  "live_go": false,
+  "verdict": "kill",
+  "score_window": "develop",
+  "costs": {
+    "spread_col": "spread",
+    "point_size": 0.01,
+    "commission_per_lot": 0.0,
+    "slippage_points": 0.0
+  },
+  "slip_label": "UNMEASURED",
+  "develop": {
+    "regime_falling_20d": {
+      "n_trades": 56,
+      "regime_on_days": 550,
+      "win_rate": 0.5178571428571429,
+      "profit_factor": 1.4817588095978562,
+      "net_profit": 6041.400000000001,
+      "max_dd_pct": 27.5357973931789,
+      "wins": 29,
+      "losses": 27
+    },
+    "always_long_continuous": {
+      "n_trades": 1,
+      "regime_on_days": 1096,
+      "win_rate": 1.0,
+      "profit_factor": 99.0,
+      "net_profit": 25580.500000000004,
+      "max_dd_pct": 0.0,
+      "wins": 1,
+      "losses": 0
+    },
+    "robust_pct40_not_pick": {
+      "n_trades": 22,
+      "regime_on_days": 236,
+      "win_rate": 0.4090909090909091,
+      "profit_factor": 3.8555851851852,
+      "net_profit": 9637.60000000002,
+      "max_dd_pct": 20.665504388601605,
+      "wins": 9,
+      "losses": 13
+    }
+  },
+  "holdout": {
+    "regime_falling_20d": {
+      "n_trades": 11,
+      "regime_on_days": 58,
+      "win_rate": 0.6363636363636364,
+      "profit_factor": 0.8277915307002721,
+      "net_profit": -1836.5000000000198,
+      "max_dd_pct": 51.41702745874688,
+      "wins": 7,
+      "losses": 4
+    },
+    "always_long_continuous": {
+      "n_trades": 1,
+      "regime_on_days": 155,
+      "win_rate": 1.0,
+      "profit_factor": 99.0,
+      "net_profit": 140.20000000000036,
+      "max_dd_pct": 0.0,
+      "wins": 1,
+      "losses": 0
+    }
+  }
+}

@@ -102,6 +102,19 @@ apps/seven-desk/next-env.d.ts
 
 # Large local dumps / session artifacts (never commit)
 results/tick_data/
+results/xau_slip_ticks/
 results/btc_data/
 .crew/
 pi-session-*.html
+
+# Gold session-scalp dumps. Slim metrics JSON + lock + NOTE.md stay tracked.
+results/xau_session_scalp/data/
+results/xau_session_scalp/*_full.json
+results/xau_session_scalp/*_trades.json
+
+# Slim FRED / yfinance snapshots for killed XAU macro probes (no API keys; ~50k each).
+# Parent `data/` ignore would otherwise drop this cache.
+!results/xau_exog_beta/data/
+!results/xau_exog_beta/data/**
+!results/xau_exog_beta/data/fred/
+!results/xau_exog_beta/data/fred/**
