@@ -1,13 +1,13 @@
 //+------------------------------------------------------------------+
 //| ForexIndicatorTemplate.mq5                                       |
 //| Forex overlay: EMA cloud + prior-day levels + RSI signals        |
-//| v1.10 — useful levels instead of noisy ATR bands                 |
+//| v1.41 — EMA cloud + PDH/PDL/PDO + RSI; signal on buffer 9        |
 //+------------------------------------------------------------------+
 #property copyright   "mt5-arch-integration / trading"
 #property link        "https://github.com/Trujillofa/mt5-arch-integration"
 #property version     "1.41"
 #property description "EMA cloud (bull/bear) + PDH/PDL/PDO + RSI signals + session/spread panel"
-#property description "iCustom buffer 8 = signal (+1/-1/0). Closed-bar signals only."
+#property description "iCustom buffer 9 = signal (+1/-1/0). Closed-bar signals only."
 #property strict
 
 #property indicator_chart_window

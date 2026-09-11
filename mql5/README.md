@@ -152,9 +152,10 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 
 | Index | Content |
 |------:|---------|
-| 0–3 | Bull/bear cloud + EMAs |
-| 6–7 | Long/short arrows |
-| **8** | **Signal** |
+| 0–3 | Bull/bear cloud |
+| 4–6 | EMAs (fast / slow / bias) |
+| 7–8 | Long/short arrows |
+| **9** | **Signal** (10–11 RSI/RSI-MA, internal) |
 
 ### UsIndexSessionScalp buffers (`iCustom`)
 

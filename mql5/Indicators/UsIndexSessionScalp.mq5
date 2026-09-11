@@ -65,7 +65,6 @@
 #property indicator_color7  clrOrangeRed
 #property indicator_width7  2
 
-#include <ForexUtils.mqh>
 #include <IndexSessionUtils.mqh>
 #include <IndexM5Export.mqh>
 
@@ -156,7 +155,6 @@ int    g_hRsi     = INVALID_HANDLE;
 int    g_hMacd    = INVALID_HANDLE;
 string g_pfx;
 int    g_offset   = 0;
-int    g_drawn_days = 0;
 string g_last_reason = "";
 
 struct IdxBox
@@ -577,8 +575,6 @@ void DrawSessionGeometry(const datetime &time[],
       ObjectDelete(0, flk);
       ObjectDelete(0, flt);
      }
-
-   g_drawn_days = InpDrawDays;
   }
 
 //+------------------------------------------------------------------+

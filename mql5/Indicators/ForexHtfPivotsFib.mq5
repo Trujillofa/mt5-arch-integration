@@ -459,7 +459,7 @@ int OnCalculate(const int rates_total,
    int bc_rsi  = BarsCalculated(g_hRsi);
    int bc_min  = MathMin(MathMin(bc_fast, bc_slow), MathMin(bc_bias, bc_rsi));
    if(bc_min <= 0)
-      return(rates_total); // HTF stamped; wait for MA/RSI next tick
+      return(prev_calculated); // HTF stamped; stay cold until MA/RSI ready
 
    int copy_n = MathMin(rates_total, bc_min);
    if(copy_n < need)
@@ -539,7 +539,7 @@ int OnCalculate(const int rates_total,
         }
      }
 
-   // Signals: ConfluenceSignal needs chart-indexed open/close/ema arrays.
+   // Signals: ConfluenceSignalLocal needs chart-indexed open/close/ema arrays.
    // Build aligned series over [chart0 .. rates_total) for confluence.
    for(int i = start; i < rates_total && !IsStopped(); i++)
      {
@@ -1089,104 +1089,6 @@ double FibLevel(const int direction, const double hi, const double lo, const dou
    if(direction == 1)
       return hi - (hi - lo) * ratio;
    return lo + (hi - lo) * ratio;
-  }
-
-//+------------------------------------------------------------------+
-int ConfluenceSignal(const int i,
-                     const datetime bar_time,
-                     const double &open[],
-                     const double &close[],
-                     const double &ema_bias[],
-                     const double &rsi[],
-                     const double &rsi_ma[])
-  {
-   int    dir = 0;
-   double f618 = 0.0, f786 = 0.0;
-   bool   have = FibAt(ChartBarClose(bar_time), dir, f618, f786);
-   if(InpRequireGoldenZone && !have)
-      return 0;
-
-   double c = close[i];
-   double eb = ema_bias[i];
-   bool bull_zone = true;
-   bool bear_zone = true;
-   if(InpRequireGoldenZone)
-     {
-      bull_zone = (dir == 1 && c <= f618 && c >= f786);
-      bear_zone = (dir == -1 && c >= f618 && c <= f786);
-     }
-   else if(dir != 0)
-     {
-      bull_zone = (dir == 1);
-      bear_zone = (dir == -1);
-     }
-
-   bool bullish_candle = (close[i] > open[i] && close[i] > close[i - 1]);
-   bool bearish_candle = (close[i] < open[i] && close[i] < close[i - 1]);
-
-   bool rsi_long_ok  = (rsi[i] <= (double)InpRsiLongMax);
-   bool rsi_short_ok = (rsi[i] >= (double)InpRsiShortMin);
-
-   if(InpUseRsiMaFilter)
-     {
-      if(FxRsiMaBias(rsi[i], rsi_ma[i]) < 1)
-         rsi_long_ok = false;
-      if(FxRsiMaBias(rsi[i], rsi_ma[i]) > -1)
-         rsi_short_ok = false;
-     }
-
-   bool regime_long  = (!InpRequireBiasFilter || !g_mode.use_bias_ema || c > eb);
-   bool regime_short = (!InpRequireBiasFilter || !g_mode.use_bias_ema || c < eb);
-
-   bool long_ok = bull_zone && regime_long && rsi_long_ok
-                  && (!InpRequireCandle || bullish_candle);
-   bool short_ok = bear_zone && regime_short && rsi_short_ok
-                   && (!InpRequireCandle || bearish_candle);
-
-   bool prev_long = false, prev_short = false;
-   if(i >= 1)
-     {
-      int    d1 = dir;
-      double a1 = f618, b1 = f786;
-      // Prefer snap at previous bar time if available via globals only (cheap)
-      double c1 = close[i - 1];
-      double eb1 = ema_bias[i - 1];
-      bool bz1 = true, ez1 = true;
-      if(InpRequireGoldenZone && have)
-        {
-         bz1 = (d1 == 1 && c1 <= a1 && c1 >= b1);
-         ez1 = (d1 == -1 && c1 >= a1 && c1 <= b1);
-        }
-      else if(!InpRequireGoldenZone && d1 != 0)
-        {
-         bz1 = (d1 == 1);
-         ez1 = (d1 == -1);
-        }
-      else if(InpRequireGoldenZone)
-        {
-         bz1 = false;
-         ez1 = false;
-        }
-      bool pl = (rsi[i - 1] <= (double)InpRsiLongMax);
-      bool ps = (rsi[i - 1] >= (double)InpRsiShortMin);
-      if(InpUseRsiMaFilter)
-        {
-         if(FxRsiMaBias(rsi[i - 1], rsi_ma[i - 1]) < 1)
-            pl = false;
-         if(FxRsiMaBias(rsi[i - 1], rsi_ma[i - 1]) > -1)
-            ps = false;
-        }
-      bool rl = (!InpRequireBiasFilter || !g_mode.use_bias_ema || c1 > eb1);
-      bool rs = (!InpRequireBiasFilter || !g_mode.use_bias_ema || c1 < eb1);
-      prev_long  = bz1 && rl && pl;
-      prev_short = ez1 && rs && ps;
-     }
-
-   if(long_ok && !prev_long)
-      return 1;
-   if(short_ok && !prev_short)
-      return -1;
-   return 0;
   }
 
 //+------------------------------------------------------------------+
