@@ -147,18 +147,26 @@ def simulate_exits(
     return trades
 
 
-def _cfg_signals(b: H1Book, c: dict) -> np.ndarray:
-    return family_signals(
-        b,
+def _cfg_signals(b: H1Book, c: dict, cache: dict) -> np.ndarray:
+    key = (
         c["family"],
-        min_atr_pct=float(c["min_atr_pct"]),
-        long_only=bool(c["long_only"]),
-        one_per_day=bool(c["one_per_day"]),
+        float(c["min_atr_pct"]),
+        bool(c["long_only"]),
+        bool(c["one_per_day"]),
     )
+    if key not in cache:
+        cache[key] = family_signals(
+            b,
+            c["family"],
+            min_atr_pct=float(c["min_atr_pct"]),
+            long_only=bool(c["long_only"]),
+            one_per_day=bool(c["one_per_day"]),
+        )
+    return cache[key]
 
 
-def _run_cell(b: H1Book, c: dict, costs: CostSpec, hs: date) -> dict:
-    sigs = _cfg_signals(b, c)
+def _run_cell(b: H1Book, c: dict, costs: CostSpec, hs: date, cache: dict) -> dict:
+    sigs = _cfg_signals(b, c, cache)
     trades = simulate_exits(
         b,
         sigs,
@@ -197,7 +205,8 @@ def run_screen(lock: dict) -> dict:
     b = load_btc_h1(csv, expected_sha256=lock["data"]["sha256"])
     grid = lk.assert_cardinality(lk.iter_product_grid(lock), lock)
 
-    rows = [_run_cell(b, c, costs, hs) for c in grid]
+    sig_cache: dict = {}
+    rows = [_run_cell(b, c, costs, hs, sig_cache) for c in grid]
     eligible = [r for r in rows if r["eligible"]]
     ranked = lk.rank_pf_expectancy(eligible)
     winner = ranked[0] if ranked else None
@@ -222,7 +231,7 @@ def run_screen(lock: dict) -> dict:
     def null_metric(rng: np.random.Generator) -> float | None:
         rotated = lk.rotate_returns_within_days(b, rng)
         rebuilt = rebuild_indicators(rotated)
-        packed = _run_cell(rebuilt, a_priori, costs, hs)
+        packed = _run_cell(rebuilt, a_priori, costs, hs, {})
         return packed["develop"]["profit_factor"]
 
     seeds = [int(s) for s in lock["null_calibration"]["seeds"]]
