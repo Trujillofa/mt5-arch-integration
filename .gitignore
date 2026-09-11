@@ -64,6 +64,9 @@ xauusd_data.csv
 results/us_index_data/
 results/us_index_session_*_full.json
 results/us_index_session_*_trades.json
+results/btc_trend_pullback_data/
+results/btc_trend_pullback_*_full.json
+results/btc_trend_pullback_*_trades.json
 
 # EURUSD NY-scalp research dumps. Slim metrics JSON + lock + *.md stay tracked.
 results/eurusd_data/

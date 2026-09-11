@@ -1,0 +1,167 @@
+{
+  "search_id": "btc_trend_pullback_develop_v1",
+  "locked_at": "2026-09-11T18:40:00-05:00",
+  "base_branch": "research/btc-trend-pullback (stacked on refactor/lane-kit)",
+  "base_commit": "ade35860d15046907a09ccb8e727a66cb8ffbf1a",
+  "symbol": "BTCUSD",
+  "tf": "H1",
+  "promote": false,
+  "live_go": false,
+  "a_priori_overlay_default": "btc_h4bias_h1_full_grammar",
+  "note": "Freeze-before-peek: first lock/PF for BtcTrendPullback — the only mt5-arch indicator with zero offline evidence. This lock is committed before any simulation PnL. SCREEN_FAIL is a valid outcome. Do not widen the grid, cut costs, move the holdout, or reopen closed theses to manufacture a passer. The MQL5 indicator (v1.00, buffer 7) is untouched; this lane mirrors its grammar offline.",
+  "data": {
+    "path": "results/btc_trend_pullback_data/history_BTCUSD_H1.csv",
+    "sha256": "797cff1071031d2c2d5e93a86c188b035c7e42390f0b40cf26ad649f3d4d0027",
+    "hc_path": "~/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/BTCUSD/cache/H1.hc",
+    "hc_sha256": "acc8272f9d9b339bac9355d5cc4fe2fee14c930317219e22826067f2f4301067",
+    "bars": 29373,
+    "time_min_server": "2021.12.21 00:00",
+    "time_max_server": "2026.09.07 20:00",
+    "et_min": "2021-12-20 17:00:00-05:00",
+    "et_max": "2026-09-07 13:00:00-04:00",
+    "et_dates": 1473,
+    "et_nat_dropped": 0,
+    "source": "FP Markets BTCUSD H1.hc via read_mt5_hc (offline; terminal not touched)",
+    "broker": "fpmarkets",
+    "vantage_transfer_note": "Vantage BTCUSD H1.hc (VantageMarkets-Live 5) is unreadable by the repo .hc reader; Vantage M5 exists but is NOT this book. No transfer tape this lane; no prior BTC H1/H4 lane exists to transfer."
+  },
+  "clock": {
+    "rule": "server wall clock = America/New_York + 7h (tracks US DST)",
+    "et_from_server": "et = (server_naive - 7h).tz_localize('America/New_York', ambiguous='NaT', nonexistent='shift_forward'); drop NaT",
+    "never_use": "constant server_utc_offset_sec (10800 mislabels every US-winter bar by 1h in ET)",
+    "admission": {
+      "method": "lane_kit.admit_clock_lag0: hourly log-return lag scan vs Binance BTCUSDT H1 (UTC-native). Peak must be lag 0; 0.95 floor on the long overlap.",
+      "fp_h1_vs_binance_2021_24": {
+        "overlap": "2021-12-21 .. 2024-01-31",
+        "lag0_corr": 0.9598947590939302,
+        "peak_lag": 0,
+        "next_best_abs": 0.01357684414418533,
+        "floor_0_95": true
+      },
+      "fp_h1_vs_binance_2026": {
+        "overlap": "2026-02-01 .. 2026-06-10",
+        "lag0_corr": 0.9166232562367422,
+        "peak_lag": 0,
+        "next_best_abs": 0.03940357628285272,
+        "note": "unique lag-0 peak; 0.917 is the CFD/spot basis residual (identical value recorded in the BTC-NY lock for M5 vs 2026 spot), not a clock shift"
+      },
+      "verdict": "clock admitted — unique lag-0 peak on both overlaps; long 2021-24 book clears the 0.95 floor"
+    }
+  },
+  "session": {
+    "name": "none",
+    "note": "BtcTrendPullback is an H1/H4 swing grammar with NO session gate. The H4 bias uses completed H4 bars only (CompletedHtfShift mirror: containment tested with the chart bar's open time, so a bar never reads its own bucket). Do not bolt a session box onto it.",
+    "not": [
+      "BTC-NY desk overlap [08:00, 11:30) ET",
+      "US cash 09:30 opening range",
+      "Americas 16:00-24:00 UTC",
+      "any intraday flatten"
+    ]
+  },
+  "holdout": {
+    "start": "2026-04-01",
+    "rule": "et_date < 2026-04-01 develop / selection; et_date >= 2026-04-01 holdout evaluation only; NEVER used for selection",
+    "min_holdout_days": 120,
+    "measured_holdout_days": 137,
+    "measured_holdout_bars": 2726,
+    "assert_not": [
+      "2025-03-01",
+      "2026-01-01",
+      "2026-03-01",
+      "2026-06-01",
+      "2026-07-01"
+    ],
+    "assert_not_reason": "taken by EURUSD / XAU / BTC-NY / index-v1(+v8 buffer) / index-v8 respectively; a holdout already evaluated never becomes develop"
+  },
+  "book": {
+    "balance_usd": 10000,
+    "lots": 1.0,
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "digits": 2,
+    "sizing_policy": "fixed_lots"
+  },
+  "costs": {
+    "commission_per_lot": 0.0,
+    "commission_note": "spread-inclusive CFD assumption (same as BTC-NY)",
+    "slippage_points": 125.0,
+    "slippage_note": "STATED ASSUMPTION: 10% of median H1 spread 1251 pts ($1.25/side) — mirrors the BTC-NY 10%-of-median rule (160 of 1600 on M5). Not index 10 pt.",
+    "max_spread_points": 1600.0,
+    "max_spread_note": "rounded ~p95 of FP H1 spread (p50=1251, p95=1601, p99=2150). Skip fills above cap.",
+    "spread_measured": {
+      "p50": 1251.0,
+      "p95": 1601.0,
+      "p99": 2150.0,
+      "zeros": 779
+    },
+    "spread_imputation": "779 zero-spread bars: forward-fill previous bar spread within the same ET day, else global median 1251",
+    "cost_formula": "round trip = (spread_pts + 2 * slippage_points) * point_size * contract_size * lots + 2 * commission_per_lot * lots, charged once at fill",
+    "typical_rt_usd_at_median": 15.01
+  },
+  "families": {
+    "search": [
+      "btc_h4bias_h1_pullback_reclaim",
+      "btc_h4bias_h1_continuation",
+      "btc_h4bias_h1_full_grammar"
+    ],
+    "transfer_never_ranked": [],
+    "notes": {
+      "btc_h4bias_h1_pullback_reclaim": "indicator pullback setup only: H4 bias (EMA50>EMA200, strength>=1%, completed bar) + |close-EMA50|/EMA50 <= 1.5% + recovery (RSI>=50 rising, MACD-hist>=0 rising, close>prev close); mirrored short = 100-RSI",
+      "btc_h4bias_h1_continuation": "indicator continuation setup only: H4 strength >= 1.5% + close>=EMA50 + extension 0..3% + RSI>=54 with (RSI rising or MACD rising); mirrored short",
+      "btc_h4bias_h1_full_grammar": "the shipped default: pullback OR continuation (both with panic veto, ATR% floor, edge trigger); short side is the mirrored stack"
+    },
+    "mirror_source": "mql5/Indicators/BtcTrendPullback.mq5 v1.00 (H4 bias + H1 EMA50/200 + RSI14 + MACD(12,26,9, SMA signal per MT5 iMACD) + ATR14)"
+  },
+  "grid": {
+    "sl_atr": [1.5, 2.0],
+    "tp_r": [1.5, 2.0],
+    "time_stop_bars": [24, 48],
+    "min_atr_pct": [0.005, 0.01],
+    "one_per_day": [false, true],
+    "long_only": [true, false],
+    "max_configs": 192,
+    "expected_configs": 192,
+    "a_priori_cell": {
+      "family": "btc_h4bias_h1_full_grammar",
+      "sl_atr": 2.0,
+      "tp_r": 2.0,
+      "time_stop_bars": 48,
+      "min_atr_pct": 0.01,
+      "one_per_day": true,
+      "long_only": false,
+      "note": "closest offline analog of the shipped indicator defaults (InpAtrBandMult 2.0 -> 2.0 ATR SL; liveliness 1% -> min_atr 0.01; edge trigger + one signal/day)"
+    }
+  },
+  "rank": {
+    "min_trades_develop": 40,
+    "eligible": "trades>=40 and net_pnl>0",
+    "score": "profit_factor (None->3.0) then expectancy",
+    "holdout_unused_for_selection": true
+  },
+  "null_calibration": {
+    "seeds": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    "method": "circular phase rotation of within-ET-day H1 log returns (lane_kit.rotate_returns_within_days) on the a-priori cell; frac_null_ge_real on develop profit_factor"
+  },
+  "closed_theses": [
+    "4h multi-AND RegimeRouter / OHLCV regime classifier (crypto-agent WFO REJECT)",
+    "Americas 16:00-24:00 UTC BUY gate (crypto-agent WFO REJECT; do not retune hours)",
+    "RSI-overbought as primary short trigger",
+    "CVD / OFI / CopyTicks true volume on these CFDs",
+    "ny_cash_orb / cash-open ORB on BTC (ny-1330: dummy PF 0.57-0.73)",
+    "session boxes bolted onto this H1/H4 grammar (BTC-NY v1 already SCREEN_FAIL on the M5 box)",
+    "TradFi->BTC lead-lag coupling (crypto-agent: WEAK_EDGE / CLOSE_LANE)",
+    "index 1%/20% median trade-day/month goal",
+    "gold 80% WR trap / defined_r retune",
+    "widening this grid or moving this holdout"
+  ],
+  "fills_and_exits": {
+    "signal_to_fill": "signal on close of bar i, fill at open of bar i+1 (cross-ET-day fills allowed — weekend gaps are real; the indicator has no day constraint)",
+    "one_position": true,
+    "sl_first": true,
+    "short_bid_space": true,
+    "gap_rule": "if a bar OPENS beyond SL/TP, fill at that open (BTC-NY convention)",
+    "time_stop": "exit at open of the limit bar (fill + time_stop_bars), reason barsN; book end exits at last bar",
+    "forming_bar_never_signals": true,
+    "edge_trigger": true
+  }
+}
