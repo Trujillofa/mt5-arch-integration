@@ -94,6 +94,8 @@ Frozen chart defaults stay OR 15 / EMA 9/21 / window to 11:30. Do not retune on 
 
 Install, compile, buffer table, logger, live-safe dump: [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) §§4–7. Do not grow an overlay §12 / §12b here.
 
+Compare vs GoldSessionScalp (observe-only; gold is killed): [../results/indicator_compare_gold_vs_index.md](../results/indicator_compare_gold_vs_index.md).
+
 ---
 
 ## 7. Tests (local only — no CI)

@@ -9,6 +9,7 @@
 | Supersedes | `xau_london_orb_overlap_vwap_ema_flat` |
 | Status file | `results/xau_session_scalp/STATUS.md` |
 | Kill inventory | `results/xau_session_scalp/KILLED.md` |
+| Vs index overlay | `results/indicator_compare_gold_vs_index.md` |
 | Holdout | **2026-01-01** — never for selection |
 
 M5 London/NY session-OR scalp is **structurally cost-killed** on the FP M5

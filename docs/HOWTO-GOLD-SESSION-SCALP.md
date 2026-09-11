@@ -17,6 +17,7 @@ Do not rerun `xau_session_scalp_defined_r.py` to replace official metrics.
 
 Status: `results/xau_session_scalp/STATUS.md`.
 Design: `docs/research/XAU-SESSION-SCALP.md`.
+Compare vs UsIndexSessionScalp: `results/indicator_compare_gold_vs_index.md`.
 
 ## Attach (observe-only)
 
