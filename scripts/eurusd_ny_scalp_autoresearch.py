@@ -15,7 +15,6 @@ Invariants enforced at runtime:
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import math
 import sys
@@ -31,6 +30,7 @@ _ROOT = _SCRIPTS.parent
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+import lane_kit  # noqa: E402  (shared lane machinery; see scripts/lane_kit.py)
 from eurusd_ny_scalp_core import (  # noqa: E402
     FLAT_MIN,
     M5Data,
@@ -66,11 +66,13 @@ FROZEN_RISK_PER_TRADE_USD = 100.0
 
 
 def refuse_mutated_eurusd_lock(lock: dict) -> None:
-    """Refuse promote/live_go flips or a mutated 5 pt slip / 30 pt cap book."""
-    if lock.get("promote") is True:
-        raise SystemExit("promote must stay false")
-    if lock.get("live_go") is True:
-        raise SystemExit("live_go must stay false")
+    """Refuse promote/live_go flips or a mutated 5 pt slip / 30 pt cap book.
+
+    Promote/live_go refusal is shared machinery (lane_kit); the cost pins
+    below stay local because they are exact-equality (stricter than
+    lane_kit.refuse_pinned's 1e-9 tolerance) and message-pinned to this lane.
+    """
+    lane_kit.refuse_promote_flips(lock)
     costs = lock.get("costs") if isinstance(lock.get("costs"), dict) else {}
     if float(costs.get("slippage_points", -1)) != FROZEN_SLIPPAGE_POINTS:
         raise SystemExit("eurusd lock slippage_points must stay 5.0")
@@ -142,10 +144,8 @@ def require_eurusd_cost_book(lock: dict) -> CostSpec:
 
 
 def verify_data_sha(csv_path: Path, lock: dict) -> None:
-    h = hashlib.sha256(Path(csv_path).read_bytes()).hexdigest()
-    want = str(lock["data"]["sha256"])
-    if h != want:
-        raise SystemExit(f"data sha256 mismatch: {h} != {want} (refusing to run)")
+    # lane_kit is the single home for this refusal (same message, streamed sha)
+    lane_kit.verify_data_sha256(csv_path, lock["data"]["sha256"])
 
 
 # ---------------------------------------------------------------------------
