@@ -65,6 +65,10 @@ results/us_index_data/
 results/us_index_session_*_full.json
 results/us_index_session_*_trades.json
 
+# Index-session scan extracts (lock / slim metrics / write-up stay tracked).
+results/index_session_scan/data/
+results/index_session_scan/*_full.json
+
 # EURUSD NY-scalp research dumps. Slim metrics JSON + lock + *.md stay tracked.
 results/eurusd_data/
 results/eurusd_ny_scalp_*_full.json

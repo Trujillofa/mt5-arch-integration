@@ -1,0 +1,447 @@
+{
+  "search_id": "index_session_scan_v1",
+  "wine_m5": [
+    {
+      "id": "fpmarkets_US100",
+      "symbol": "US100",
+      "broker": "fpmarkets",
+      "tf": "M5",
+      "source_kind": "wine_hc",
+      "path": "/home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/US100/cache/M5.hc",
+      "extract": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_fpmarkets_US100_M5.csv",
+      "sha256": "d45ccda450fafb1a987be15503776a879d32078848d9b33619fca1540c0081b4",
+      "bars": 57856,
+      "from": "2025-10-23 01:00:00+00:00",
+      "to": "2026-08-18 20:50:00+00:00",
+      "spread_median": 60.0,
+      "server_utc_offset_sec": 10800,
+      "clock": {
+        "offset_sec": 10800,
+        "scores": {
+          "0": {
+            "cash_med": 1337.0,
+            "pre_med": 1266.0,
+            "ratio": 1.05608214849921
+          },
+          "7200": {
+            "cash_med": 2574.5,
+            "pre_med": 1474.0,
+            "ratio": 1.746607869742198
+          },
+          "10800": {
+            "cash_med": 14025.5,
+            "pre_med": 1759.0,
+            "ratio": 7.973564525298465
+          }
+        },
+        "default": 10800
+      }
+    },
+    {
+      "id": "fpmarkets_US30",
+      "symbol": "US30",
+      "broker": "fpmarkets",
+      "tf": "M5",
+      "source_kind": "wine_hc",
+      "path": "/home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/US30/cache/M5.hc",
+      "extract": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_fpmarkets_US30_M5.csv",
+      "sha256": "4bfdd85413b68b4a53621f188ac381d2fe9329b155809c8a564d737842d643a2",
+      "bars": 64138,
+      "from": "2025-10-13 01:00:00+00:00",
+      "to": "2026-09-08 18:35:00+00:00",
+      "spread_median": 140.0,
+      "server_utc_offset_sec": 10800,
+      "clock": {
+        "offset_sec": 10800,
+        "scores": {
+          "0": {
+            "cash_med": 388.0,
+            "pre_med": 324.0,
+            "ratio": 1.1975308641975309
+          },
+          "7200": {
+            "cash_med": 1223.0,
+            "pre_med": 424.0,
+            "ratio": 2.884433962264151
+          },
+          "10800": {
+            "cash_med": 1912.0,
+            "pre_med": 498.0,
+            "ratio": 3.8393574297188753
+          }
+        },
+        "default": 10800
+      }
+    },
+    {
+      "id": "vantage_DJ30.r",
+      "symbol": "DJ30.r",
+      "broker": "vantage",
+      "tf": "M5",
+      "source_kind": "wine_hc",
+      "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/Bases/VantageMarkets-Live 5/history/DJ30.r/cache/M5.hc",
+      "extract": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_vantage_DJ30_r_M5.csv",
+      "sha256": "160988bfecefdc57e1c74522ab69dd80d8db721afef1bf0549bafb7857ceb3ba",
+      "bars": 100006,
+      "from": "2025-04-08 08:45:00+00:00",
+      "to": "2026-09-04 17:10:00+00:00",
+      "spread_median": 310.0,
+      "server_utc_offset_sec": 10800,
+      "clock": {
+        "offset_sec": 10800,
+        "scores": {
+          "0": {
+            "cash_med": 207.0,
+            "pre_med": 172.0,
+            "ratio": 1.2034883720930232
+          },
+          "7200": {
+            "cash_med": 471.0,
+            "pre_med": 225.0,
+            "ratio": 2.0933333333333333
+          },
+          "10800": {
+            "cash_med": 1045.0,
+            "pre_med": 254.0,
+            "ratio": 4.1141732283464565
+          }
+        },
+        "default": 10800
+      }
+    },
+    {
+      "id": "exness_US30m",
+      "symbol": "US30m",
+      "broker": "exness",
+      "tf": "M5",
+      "source_kind": "wine_hc",
+      "path": "/home/yderf/.mt5-exness/drive_c/Program Files/MetaTrader 5 EXNESS/Bases/Exness-MT5Real11/history/US30m/cache/M5.hc",
+      "extract": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_exness_US30m_M5.csv",
+      "sha256": "3d6afff5df8d499ef83b46e67ead0864115423cdea948ac97a9bf3df1254dc63",
+      "bars": 56204,
+      "from": "2025-11-04 00:00:00+00:00",
+      "to": "2026-08-20 22:35:00+00:00",
+      "spread_median": 21.0,
+      "server_utc_offset_sec": 0,
+      "clock": {
+        "offset_sec": 0,
+        "scores": {
+          "0": {
+            "cash_med": 5229.5,
+            "pre_med": 422.0,
+            "ratio": 12.39218009478673
+          },
+          "7200": {
+            "cash_med": 1831.0,
+            "pre_med": 618.0,
+            "ratio": 2.9627831715210355
+          },
+          "10800": {
+            "cash_med": 1301.5,
+            "pre_med": 959.0,
+            "ratio": 1.3571428571428572
+          }
+        },
+        "default": 0
+      }
+    }
+  ],
+  "dukascopy_m5": [
+    {
+      "id": "dukascopy_US30",
+      "symbol": "US30",
+      "instrument": "usa30idxusd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_US30_dukascopy_M5.csv",
+      "sha256": "3ad791e8a7e70533189046717fb449f3a4916c2b0a86f9e902ee44def7e7bdcf",
+      "bars": 144819,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_US500",
+      "symbol": "US500",
+      "instrument": "usa500idxusd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_US500_dukascopy_M5.csv",
+      "sha256": "501078e5b0b5a1a3864f33ef5f2622092ae384c34b0b8c85972fb5e124d47e8c",
+      "bars": 147366,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_US100",
+      "symbol": "US100",
+      "instrument": "usatechidxusd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_US100_dukascopy_M5.csv",
+      "sha256": "3acb349433630f6dff29a2e639f9ce4dce27fb9dc1c30c4acfc3952faca10e3d",
+      "bars": 146016,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_US2000",
+      "symbol": "US2000",
+      "instrument": "ussc2000idxusd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_US2000_dukascopy_M5.csv",
+      "sha256": "30bcc92a19ab028d300f0c2d3e1516420e1aa608b87255e26f0ce8f7795d7785",
+      "bars": 117729,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_GER40",
+      "symbol": "GER40",
+      "instrument": "deuidxeur",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_GER40_dukascopy_M5.csv",
+      "sha256": "22fdb98e0dfc28010eae7a74657ead794f44b33cf3f4d74b8be7a66002aaa6dc",
+      "bars": 137202,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_UK100",
+      "symbol": "UK100",
+      "instrument": "gbridxgbp",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_UK100_dukascopy_M5.csv",
+      "sha256": "4bd8824e1daecdaef9b0701c166f39f3b91a400043f02c9751ec4d3548e9870d",
+      "bars": 140177,
+      "from": "2025-01-02 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_JP225",
+      "symbol": "JP225",
+      "instrument": "jpnidxjpy",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_JP225_dukascopy_M5.csv",
+      "sha256": "4ec7d89bf348dda174461a4cd38f3476d1ee2a97ff8b43b94377bad3d7226f00",
+      "bars": 136644,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_AU200",
+      "symbol": "AU200",
+      "instrument": "ausidxaud",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_AU200_dukascopy_M5.csv",
+      "sha256": "7ee1466b08cd2af3dfac29bc0e98c64d60835894804b680a5854fc65dc0d3e92",
+      "bars": 142572,
+      "from": "2025-01-01 00:00:00+00:00",
+      "to": "2026-09-09 23:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_EU50",
+      "symbol": "EU50",
+      "instrument": "eusidxeur",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_EU50_dukascopy_M5.csv",
+      "sha256": "32791ca8c4588df6217b90ef6d769d057ca0c35b174179bf989b1d384b5f65d5",
+      "bars": 103968,
+      "from": "2025-01-02 00:00:00+00:00",
+      "to": "2026-09-09 19:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_FRA40",
+      "symbol": "FRA40",
+      "instrument": "fraidxeur",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_FRA40_dukascopy_M5.csv",
+      "sha256": "93ea2923edb713635ed94c33585df3d3cc52e321af2973324e4794743acfa30c",
+      "bars": 104796,
+      "from": "2025-01-02 00:00:00+00:00",
+      "to": "2026-09-09 19:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_SUI20",
+      "symbol": "SUI20",
+      "instrument": "cheidxchf",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_SUI20_dukascopy_M5.csv",
+      "sha256": "61e20f6598c2f0f262937f4c0835f106bc847474ea3f685fd027b52b632f9767",
+      "bars": 27484,
+      "from": "2025-01-03 00:00:00+00:00",
+      "to": "2026-09-09 19:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_HK50",
+      "symbol": "HK50",
+      "instrument": "hkgidxhkd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_HK50_dukascopy_M5.csv",
+      "sha256": "4ce27ae44220f9e5e7f4053de0eff294319bd55cc5c11288d2bef0c38dee9651",
+      "bars": 45282,
+      "from": "2025-01-03 00:00:00+00:00",
+      "to": "2026-09-09 16:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_ESP35",
+      "symbol": "ESP35",
+      "instrument": "espidxeur",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_ESP35_dukascopy_M5.csv",
+      "sha256": "44c2642e5eaed74a308597442b909d69de91c77a0496f414b814f1cc6d18bbd3",
+      "bars": 66576,
+      "from": "2025-01-02 00:00:00+00:00",
+      "to": "2026-09-09 17:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_NL25",
+      "symbol": "NL25",
+      "instrument": "nldidxeur",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_NL25_dukascopy_M5.csv",
+      "sha256": "e2cdb681b157ac1989d48bfe1ba3b3636188a4cbaa5f3e9e547ef83e4b661fd0",
+      "bars": 16860,
+      "from": "2025-01-07 00:00:00+00:00",
+      "to": "2026-09-09 19:55:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    },
+    {
+      "id": "dukascopy_IT40",
+      "status": "insufficient_bars",
+      "instrument": "itaidxeur",
+      "symbol": "IT40",
+      "bars": 1200,
+      "min_bars_m5": 2000,
+      "sha256": "10adeea83872501761f385c311a6b57cd76051d522ad67b21947fb60f979f9c6",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_IT40_dukascopy_M5.csv"
+    },
+    {
+      "id": "dukascopy_CHINA50",
+      "symbol": "CHINA50",
+      "instrument": "chiidxusd",
+      "tf": "M5",
+      "source_kind": "dukascopy_public_bars",
+      "path": "/home/yderf/Projects/trading/.worktrees/mt5-arch-integration/index-session-scan/results/index_session_scan/data/history_CHINA50_dukascopy_M5.csv",
+      "sha256": "54da009fd6bbe6e874a6249c2bf354cba5d60905e922f18420532234f4c01e09",
+      "bars": 105024,
+      "from": "2025-01-02 00:00:00+00:00",
+      "to": "2026-09-09 20:25:00+00:00",
+      "spread": 60.0,
+      "spread_unmeasured": true,
+      "server_utc_offset_sec": 0
+    }
+  ],
+  "gaps": [
+    {
+      "symbol": "NAS100.r",
+      "broker": "vantage",
+      "tf": "M15",
+      "reason": "M15 cannot stamp a 15-minute NY OR without inventing M5 bars",
+      "path": "/home/yderf/.mt5-vantage/drive_c/Program Files/Vantage International MT5/Bases/VantageMarkets-Live 5/history/NAS100.r/cache/M15.hc",
+      "exists": true
+    },
+    {
+      "symbol": "US500",
+      "broker": "fpmarkets",
+      "tf": "H1",
+      "reason": "H1 cannot represent the 15-minute NY cash OR",
+      "path": "/home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/US500/cache/H1.hc",
+      "exists": true
+    },
+    {
+      "symbol": "DJ30.c",
+      "broker": "wsf",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    },
+    {
+      "symbol": "US30.cash",
+      "broker": "ftmo",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    },
+    {
+      "symbol": "US30.pro",
+      "broker": "alphacapital",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    },
+    {
+      "symbol": "US30",
+      "broker": "fundednext",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    },
+    {
+      "symbol": "US30",
+      "broker": "fortraders",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    },
+    {
+      "symbol": "US30",
+      "broker": "neomaa",
+      "tf": null,
+      "reason": "Wine history folder empty (no M5 bars)",
+      "exists": false
+    }
+  ],
+  "note": "No invented candles. H1/M15 Wine leftovers listed as gaps. Dukascopy is public M5 bars (not ticks, not JForex)."
+}
