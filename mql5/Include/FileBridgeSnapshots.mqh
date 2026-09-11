@@ -243,6 +243,37 @@ void WriteSymbols()
    Put(g_dir + "\\symbols.json", j);
   }
 
+void WriteQuotes()
+  {
+   string parts[];
+   int n = StringSplit(InpSymbols, ',', parts);
+   string j = "{\"updated_at\":" + IntegerToString((long)TimeCurrent()) + ",\"quotes\":[";
+   bool first = true;
+   for(int i=0; i<n; i++)
+     {
+      string requested = parts[i];
+      StringTrimLeft(requested);
+      StringTrimRight(requested);
+      if(StringLen(requested) == 0) continue;
+      string sym = ResolveSymbol(requested);
+      if(StringLen(sym) == 0) continue;
+      MqlTick tick;
+      if(!SymbolInfoTick(sym, tick) || tick.bid <= 0.0 || tick.ask <= 0.0)
+         continue;
+      if(!first) j += ",";
+      first = false;
+      int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+      j += "{";
+      j += "\"symbol\":\"" + Esc(sym) + "\",";
+      j += "\"bid\":" + DoubleToString(tick.bid, digits) + ",";
+      j += "\"ask\":" + DoubleToString(tick.ask, digits) + ",";
+      j += "\"time_msc\":" + IntegerToString((long)tick.time_msc);
+      j += "}";
+     }
+   j += "]}";
+   Put(g_dir + "\\quotes.json", j);
+  }
+
 ENUM_TIMEFRAMES ParseTf(const string tf)
   {
    if(tf == "M1")  return PERIOD_M1;
@@ -378,6 +409,7 @@ void WriteAll()
    WriteAccount();
    WriteTerminal();
    WriteSymbols();
+   WriteQuotes();
    WriteCandles();
    WritePositions();
    WriteOrders();

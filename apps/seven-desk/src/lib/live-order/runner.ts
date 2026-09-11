@@ -4,6 +4,8 @@ import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
 import { defaultLotsForFirm } from "@/lib/firms";
+import { readBridgeQuote } from "@/lib/live-order/bridge-quotes";
+import { openLiveQuoteJournal } from "@/lib/live-order/quote-journal";
 import {
   EA_ORDER_BUDGET_MS,
   EA_ORDER_POLL_MS,
@@ -933,6 +935,24 @@ export async function executeDeskLiveOrder(
   }
 
   dropBridgeFiles(resultCandidates(paths));
+  const quote = readBridgeQuote({
+    bridgeDirs: [paths.bridgeDir, ...paths.extraBridgeDirs],
+    symbol: parsed.symbol,
+    heartbeatFresh: freshness.heartbeatFresh,
+  });
+  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : firm.defaultLots);
+  const qj = openLiveQuoteJournal({
+    requestId,
+    firm: firm.id,
+    symbol: parsed.symbol,
+    side: parsed.side,
+    action: parsed.action,
+    orderType: parsed.orderType,
+    lots,
+    intendedPrice: parsed.price,
+    quote,
+    sendPath: "ea",
+  });
   writeRequest(firm, paths, parsed, requestId);
   const eaWaitMs = Math.min(EA_ORDER_BUDGET_MS, Math.max(500, remainingMs(deadlineMs) - 1000));
   const eaDeadline = Date.now() + eaWaitMs;
@@ -983,54 +1003,52 @@ export async function executeDeskLiveOrder(
       result.reason = `result login is not ${firm.login}`;
     }
     const status = result.ok ? 200 : result.stage === "timeout" ? 504 : 409;
+    qj.finish(result);
     return { status, result };
   }
 
   dropBridgeFiles([...requestCandidates(paths), ...claimCandidates(paths)]);
   if (!options.allowOneshot) {
-    return {
-      status: 409,
-      result: fail(
-        firm,
-        409,
-        "ea",
-        parsedResult.reason?.includes("request_id")
-          ? parsedResult.reason
-          : "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
-        {
-          requestId,
-          endpoint,
-          login: identity.login ? Number(identity.login) : null,
-          server: identity.server,
-          sendPath: "ea",
-        }
-      ).result,
-    };
-  }
-
-  if (deadlineExceeded(deadlineMs) || remainingMs(deadlineMs) < 8000) {
-    return {
-      status: 504,
-      result: fail(firm, 504, "timeout", "live order deadline exhausted before wine one-shot", {
+    const blocked = fail(
+      firm,
+      409,
+      "ea",
+      parsedResult.reason?.includes("request_id")
+        ? parsedResult.reason
+        : "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
+      {
         requestId,
         endpoint,
         login: identity.login ? Number(identity.login) : null,
         server: identity.server,
-      }).result,
-    };
+        sendPath: "ea",
+      }
+    ).result;
+    qj.finish(blocked);
+    return { status: 409, result: blocked };
+  }
+
+  if (deadlineExceeded(deadlineMs) || remainingMs(deadlineMs) < 8000) {
+    const timedOut = fail(firm, 504, "timeout", "live order deadline exhausted before wine one-shot", {
+      requestId,
+      endpoint,
+      login: identity.login ? Number(identity.login) : null,
+      server: identity.server,
+    }).result;
+    qj.finish(timedOut);
+    return { status: 504, result: timedOut };
   }
 
   const compileError = compileScript(firm, paths);
   if (compileError) {
-    return {
-      status: 500,
-      result: fail(firm, 500, "compile", compileError, {
-        requestId,
-        endpoint,
-        login: identity.login ? Number(identity.login) : null,
-        server: identity.server,
-      }).result,
-    };
+    const compiled = fail(firm, 500, "compile", compileError, {
+      requestId,
+      endpoint,
+      login: identity.login ? Number(identity.login) : null,
+      server: identity.server,
+    }).result;
+    qj.finish(compiled);
+    return { status: 500, result: compiled };
   }
 
   const needsQuotes =
@@ -1040,20 +1058,37 @@ export async function executeDeskLiveOrder(
       firm.id === "fortraders" ||
       (firm.id === "alphacapital" && !parsed.symbol.toUpperCase().startsWith("BTC")));
   if (needsQuotes && !quotesReady(paths.brandDir, parsed.symbol)) {
-    return {
-      status: 409,
-      result: fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
-        requestId,
-        endpoint,
-        login: identity.login ? Number(identity.login) : null,
-        server: identity.server,
-      }).result,
-    };
+    const unsynced = fail(firm, 409, "symbol", `${parsed.symbol} not synchronized — no history/ticks yet; not sending OrderSend`, {
+      requestId,
+      endpoint,
+      login: identity.login ? Number(identity.login) : null,
+      server: identity.server,
+    }).result;
+    qj.finish(unsynced);
+    return { status: 409, result: unsynced };
   }
 
   const startupServer = resolveStartupServer(identity.server, firm.server, firm.needle);
   writeStartupIni(firm, paths, oneshotChartSymbol(firm.id, parsed.symbol), startupServer);
   dropBridgeFiles(resultCandidates(paths));
+  qj.finish({ ok: false, stage: "ea" });
+  const oneshotQuote = readBridgeQuote({
+    bridgeDirs: [paths.bridgeDir, ...paths.extraBridgeDirs],
+    symbol: parsed.symbol,
+    heartbeatFresh: freshness.heartbeatFresh,
+  });
+  const qjOneshot = openLiveQuoteJournal({
+    requestId,
+    firm: firm.id,
+    symbol: parsed.symbol,
+    side: parsed.side,
+    action: parsed.action,
+    orderType: parsed.orderType,
+    lots,
+    intendedPrice: parsed.price,
+    quote: oneshotQuote,
+    sendPath: "oneshot",
+  });
   writeRequest(firm, paths, parsed, requestId);
 
   let stopped: number[] = [];
@@ -1130,6 +1165,7 @@ export async function executeDeskLiveOrder(
     result.reason = `result login is not ${firm.login}`;
   }
   const status = result.ok ? 200 : result.stage === "timeout" ? 504 : 409;
+  qjOneshot.finish(result);
   return { status, result };
 }
 

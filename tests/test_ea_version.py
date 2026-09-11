@@ -49,7 +49,11 @@ def test_heartbeat_writes_the_version_field() -> None:
     assert "OrderSend(" not in snapshots
     assert "#include <DeskOrderBridge" not in snapshots
     assert "void WriteOrders()" in snapshots
+    assert "void WriteQuotes()" in snapshots
     write_all = snapshots.index("void WriteAll()")
+    assert snapshots.index("WriteQuotes();", write_all) < snapshots.index(
+        'Put(g_dir + "\\\\heartbeat.txt"', write_all
+    )
     assert snapshots.index("WriteOrders();", write_all) < snapshots.index(
         'Put(g_dir + "\\\\heartbeat.txt"', write_all
     )

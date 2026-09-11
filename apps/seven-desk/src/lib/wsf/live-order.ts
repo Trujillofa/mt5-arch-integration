@@ -4,6 +4,8 @@ import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
 import { defaultLotsForFirm } from "@/lib/firms";
+import { readBridgeQuote } from "@/lib/live-order/bridge-quotes";
+import { openLiveQuoteJournal } from "@/lib/live-order/quote-journal";
 import {
   EA_ORDER_BUDGET_MS,
   LIVE_ORDER_HTTP_BUDGET_MS,
@@ -723,6 +725,24 @@ export async function executeWsfLiveOrder(
     };
   }
 
+  const quote = readBridgeQuote({
+    bridgeDirs: [paths.bridgeDir],
+    symbol: parsed.symbol,
+    heartbeatFresh: freshness.heartbeatFresh,
+  });
+  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForFirm("wsf"));
+  const qj = openLiveQuoteJournal({
+    requestId,
+    firm: "wsf",
+    symbol: parsed.symbol,
+    side: parsed.side,
+    action: parsed.action,
+    orderType: parsed.orderType,
+    lots,
+    intendedPrice: parsed.price,
+    quote,
+    sendPath: "ea",
+  });
   writeRequest(paths, parsed, requestId);
   const eaDeadline = Date.now() + Math.min(EA_ORDER_BUDGET_MS, Math.max(500, remainingMs(deadlineMs) - 1000));
   while (Date.now() < eaDeadline) {
@@ -731,41 +751,40 @@ export async function executeWsfLiveOrder(
       const fromFile = parseResultJson(readFileSync(resultFile, "utf8"));
       if (!resultMatchesRequest(fromFile.requestId, requestId)) continue;
       const status = fromFile.ok === true ? 200 : fromFile.stage === "timeout" ? 504 : 409;
-      return {
-        status,
-        result: {
-          ok: fromFile.ok === true,
-          source: "seven-desk",
-          endpoint,
-          requestId,
-          stage: fromFile.stage || "unknown",
-          reason: fromFile.reason || "",
-          login: fromFile.login ?? Number(identity.login),
-          server: fromFile.server ?? identity.server,
-          company: fromFile.company ?? identity.company ?? undefined,
-          symbol: fromFile.symbol ?? parsed.symbol,
-          volume: fromFile.volume ?? parsed.volume ?? undefined,
-          side: fromFile.side ?? parsed.side,
-          orderType: fromFile.orderType ?? parsed.orderType,
-          price: fromFile.price ?? parsed.price ?? undefined,
-          sl: fromFile.sl ?? parsed.sl ?? undefined,
-          tp: fromFile.tp ?? parsed.tp ?? undefined,
-          order: fromFile.order,
-          ticket: fromFile.ticket ?? fromFile.order,
-          position: fromFile.position,
-          dealOpen: fromFile.dealOpen,
-          dealClose: fromFile.dealClose,
-          openPrice: fromFile.openPrice,
-          closePrice: fromFile.closePrice,
-          profit: fromFile.profit,
-          holdMs: fromFile.holdMs,
-          balanceAfter: fromFile.balanceAfter,
-          closeRetcode: fromFile.closeRetcode,
-          winePrefix: ".mt5-wsf",
-          restoreNote: "ea path — terminal left running",
-          sendPath: "ea",
-        },
+      const result = {
+        ok: fromFile.ok === true,
+        source: "seven-desk" as const,
+        endpoint,
+        requestId,
+        stage: fromFile.stage || "unknown",
+        reason: fromFile.reason || "",
+        login: fromFile.login ?? Number(identity.login),
+        server: fromFile.server ?? identity.server,
+        company: fromFile.company ?? identity.company ?? undefined,
+        symbol: fromFile.symbol ?? parsed.symbol,
+        volume: fromFile.volume ?? parsed.volume ?? undefined,
+        side: fromFile.side ?? parsed.side,
+        orderType: fromFile.orderType ?? parsed.orderType,
+        price: fromFile.price ?? parsed.price ?? undefined,
+        sl: fromFile.sl ?? parsed.sl ?? undefined,
+        tp: fromFile.tp ?? parsed.tp ?? undefined,
+        order: fromFile.order,
+        ticket: fromFile.ticket ?? fromFile.order,
+        position: fromFile.position,
+        dealOpen: fromFile.dealOpen,
+        dealClose: fromFile.dealClose,
+        openPrice: fromFile.openPrice,
+        closePrice: fromFile.closePrice,
+        profit: fromFile.profit,
+        holdMs: fromFile.holdMs,
+        balanceAfter: fromFile.balanceAfter,
+        closeRetcode: fromFile.closeRetcode,
+        winePrefix: ".mt5-wsf",
+        restoreNote: "ea path — terminal left running",
+        sendPath: "ea" as const,
       };
+      qj.finish(result);
+      return { status, result };
     }
     await sleep(100);
   }
@@ -775,52 +794,51 @@ export async function executeWsfLiveOrder(
     // gone
   }
   if (!options.allowOneshot) {
-    return {
-      status: 409,
-      result: fail(
-        409,
-        "ea",
-        "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
-        {
-          requestId,
-          endpoint,
-          login: Number(identity.login),
-          server: identity.server,
-          sendPath: "ea",
-        }
-      ).result,
-    };
+    const blocked = fail(
+      409,
+      "ea",
+      "EA did not claim desk_live_order_request — attach/recompile Mt5ArchBridge v1.25+; not falling back to wine one-shot",
+      {
+        requestId,
+        endpoint,
+        login: Number(identity.login),
+        server: identity.server,
+        sendPath: "ea",
+      }
+    ).result;
+    qj.finish(blocked);
+    return { status: 409, result: blocked };
   }
 
   const compileError = compileScript(paths);
   if (compileError) {
-    return {
-      status: 500,
-      result: fail(500, "compile", compileError, {
-        requestId,
-        endpoint,
-        login: Number(identity.login),
-        server: identity.server,
-      }).result,
-    };
+    const compiled = fail(500, "compile", compileError, {
+      requestId,
+      endpoint,
+      login: Number(identity.login),
+      server: identity.server,
+    }).result;
+    qj.finish(compiled);
+    return { status: 500, result: compiled };
   }
 
   const orphan = inspectWsfOrphan(paths);
   if (orphan.class === "in_flight") {
-    return {
-      status: 409,
-      result: fail(409, "orphan", inFlightOrphanReason(orphan.requestId), {
-        requestId,
-        endpoint,
-        login: Number(identity.login),
-        server: identity.server,
-      }).result,
-    };
+    const blocked = fail(409, "orphan", inFlightOrphanReason(orphan.requestId), {
+      requestId,
+      endpoint,
+      login: Number(identity.login),
+      server: identity.server,
+    }).result;
+    qj.finish(blocked);
+    return { status: 409, result: blocked };
   }
 
   const iniError = writeStartupIni(paths, oneshotChartSymbol("wsf", parsed.symbol));
   if (iniError) {
-    return { status: 500, result: fail(500, "ini", iniError, { requestId, endpoint }).result };
+    const iniFail = fail(500, "ini", iniError, { requestId, endpoint }).result;
+    qj.finish(iniFail);
+    return { status: 500, result: iniFail };
   }
   if (existsSync(paths.resultFile)) {
     try {
@@ -829,6 +847,24 @@ export async function executeWsfLiveOrder(
       // ignore
     }
   }
+  qj.finish({ ok: false, stage: "ea" });
+  const oneshotQuote = readBridgeQuote({
+    bridgeDirs: [paths.bridgeDir],
+    symbol: parsed.symbol,
+    heartbeatFresh: freshness.heartbeatFresh,
+  });
+  const qjOneshot = openLiveQuoteJournal({
+    requestId,
+    firm: "wsf",
+    symbol: parsed.symbol,
+    side: parsed.side,
+    action: parsed.action,
+    orderType: parsed.orderType,
+    lots,
+    intendedPrice: parsed.price,
+    quote: oneshotQuote,
+    sendPath: "oneshot",
+  });
   writeRequest(paths, parsed, requestId);
 
   const stopped = await stopWsfBrandTerminals(paths.prefix);
@@ -927,6 +963,7 @@ export async function executeWsfLiveOrder(
     enriched.reason = "result login is not 149736";
   }
   const status = enriched.ok ? 200 : enriched.stage === "timeout" ? 504 : 409;
+  qjOneshot.finish(enriched);
   return { status, result: enriched };
 }
 

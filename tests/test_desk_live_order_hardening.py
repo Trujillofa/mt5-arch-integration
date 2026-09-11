@@ -18,6 +18,9 @@ WSF_LIVE = DESK / "src" / "lib" / "wsf" / "live-order.ts"
 WSF_FILE = DESK / "src" / "lib" / "wsf" / "mt5-file-backend.ts"
 CONTEXT = DESK / "src" / "lib" / "desk-context.tsx"
 GUARDS_UNIT = ROOT / "tests" / "test_desk_live_order_guards.ts"
+QUOTE_JOURNAL = DESK / "src" / "lib" / "live-order" / "quote-journal.ts"
+BRIDGE_QUOTES = DESK / "src" / "lib" / "live-order" / "bridge-quotes.ts"
+QUOTE_JOURNAL_UNIT = ROOT / "tests" / "test_desk_live_order_quote_journal.ts"
 
 
 def test_http_budget_is_bounded_and_shared() -> None:
@@ -308,9 +311,48 @@ def test_flatten_bar_is_always_visible() -> None:
     assert "MIN_DESK_MODIFY_VERSION = [1, 27]" in GUARDS.read_text(encoding="utf-8")
 
 
+def test_quote_journal_is_before_write_request() -> None:
+    runner = RUNNER.read_text(encoding="utf-8")
+    wsf = WSF_LIVE.read_text(encoding="utf-8")
+    journal = QUOTE_JOURNAL.read_text(encoding="utf-8")
+    quotes = BRIDGE_QUOTES.read_text(encoding="utf-8")
+    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(
+        encoding="utf-8"
+    )
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "openLiveQuoteJournal" in runner
+    assert "readBridgeQuote" in runner
+    assert runner.index("openLiveQuoteJournal") < runner.index(
+        "writeRequest(firm, paths, parsed, requestId)"
+    )
+    assert "openLiveQuoteJournal" in wsf
+    assert wsf.index("openLiveQuoteJournal") < wsf.index(
+        "writeRequest(paths, parsed, requestId)"
+    )
+    assert "journalBeforeSend" in journal
+    assert "requestedBid: null" in journal
+    assert 'reason: "missing"' in quotes
+    assert 'reason: "stale"' in quotes
+    assert "WriteQuotes()" in snapshots
+    assert "quotes.json" in snapshots
+    assert "apps/seven-desk/data/" in gitignore
+    assert "quote-journal" not in (DESK / "src" / "lib" / "copy-engine.ts").read_text()
+    assert "quote-journal" not in CONTEXT.read_text()
+
+
 def test_guards_node_unit() -> None:
     result = subprocess.run(
         ["node", "--experimental-strip-types", str(GUARDS_UNIT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_quote_journal_node_unit() -> None:
+    result = subprocess.run(
+        ["node", "--experimental-strip-types", "--import", str(FANOUT_ALIAS), str(QUOTE_JOURNAL_UNIT)],
         check=False,
         capture_output=True,
         text=True,
