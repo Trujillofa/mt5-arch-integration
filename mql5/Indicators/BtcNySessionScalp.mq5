@@ -71,7 +71,7 @@ enum ENUM_BTC_FAMILY
   {
    BTC_FAM_VWAP_EMA     = 0, // a-priori default (SCREEN_FAIL)
    BTC_FAM_ATR_DRIVE    = 1, // 30m NY-desk range + 0.10 ATR
-   BTC_FAM_HTF_PULLBACK = 2  // completed H1 EMA50/200 + M5 reclaim
+   BTC_FAM_HTF_PULLBACK = 2  // completed H1 EMA50/200 bias + M5 reclaim vs chart EMA-slow (mirrors htf_pullback_signals)
   };
 
 input group "=== Family (observe only) ==="
@@ -154,13 +154,17 @@ int OnInit()
    PlotIndexSetInteger(6, PLOT_ARROW, 234);
    for(int p=0; p<7; p++)
       PlotIndexSetDouble(p, PLOT_EMPTY_VALUE, EMPTY_VALUE);
+   if(InpEmaFast < 1 || InpEmaSlow <= InpEmaFast || InpAtrPeriod < 1 ||
+      InpOrMinutes < 1 || InpHtfFast < 1 || InpHtfSlow <= InpHtfFast)
+      return INIT_PARAMETERS_INCORRECT;
    g_hEmaFast = iMA(_Symbol, PERIOD_CURRENT, InpEmaFast, 0, MODE_EMA, PRICE_CLOSE);
    g_hEmaSlow = iMA(_Symbol, PERIOD_CURRENT, InpEmaSlow, 0, MODE_EMA, PRICE_CLOSE);
    g_hAtr     = iATR(_Symbol, PERIOD_CURRENT, InpAtrPeriod);
    g_hHtfFast = iMA(_Symbol, PERIOD_H1, InpHtfFast, 0, MODE_EMA, PRICE_CLOSE);
    g_hHtfSlow = iMA(_Symbol, PERIOD_H1, InpHtfSlow, 0, MODE_EMA, PRICE_CLOSE);
    if(g_hEmaFast == INVALID_HANDLE || g_hEmaSlow == INVALID_HANDLE ||
-      g_hAtr == INVALID_HANDLE)
+      g_hAtr == INVALID_HANDLE || g_hHtfFast == INVALID_HANDLE ||
+      g_hHtfSlow == INVALID_HANDLE)
       return INIT_FAILED;
    g_pfx = StringFormat("BNS_%I64d_", ChartID());
    IndicatorSetString(INDICATOR_SHORTNAME,
@@ -180,7 +184,13 @@ void OnDeinit(const int reason)
    if(g_hAtr     != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hHtfFast != INVALID_HANDLE) IndicatorRelease(g_hHtfFast);
    if(g_hHtfSlow != INVALID_HANDLE) IndicatorRelease(g_hHtfSlow);
-   ObjectsDeleteAll(0, g_pfx);
+   // HTF Fib lesson: never ObjectsDeleteAll on CHARTCHANGE / PARAMETERS.
+   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
+      reason == REASON_RECOMPILE)
+     {
+      ObjectsDeleteAll(0, g_pfx);
+      Comment("");
+     }
   }
 
 //+------------------------------------------------------------------+
@@ -212,8 +222,7 @@ void BnsDrawFlat(const datetime et_day_start)
    ObjectSetInteger(0, name, OBJPROP_COLOR, InpColFlat);
    ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_DOT);
    ObjectSetString(0, name, OBJPROP_TEXT, "FLAT 11:30 ET");
-   if(InpShowFlattenLine)
-     {
+   {
       datetime et_open = et_day_start + BTC_SESSION_START_MIN * 60;
       datetime server_open = et_open + BTC_SERVER_MINUS_SEC;
       string n2 = g_pfx + "NY08";
@@ -222,7 +231,7 @@ void BnsDrawFlat(const datetime et_day_start)
       ObjectSetInteger(0, n2, OBJPROP_TIME, server_open);
       ObjectSetInteger(0, n2, OBJPROP_COLOR, InpColNy);
       ObjectSetString(0, n2, OBJPROP_TEXT, "NY desk 08:00");
-     }
+   }
   }
 
 //+------------------------------------------------------------------+

@@ -30,7 +30,7 @@ Gold and index session overlays exist. The next instrument is BTC. Prior work al
 |--------|--------|
 | `btc_ny_overlap_vwap_ema_flat` | NY-desk VWAP + EMA 9/21 + ATR% |
 | `btc_ny_overlap_atr_drive` | First 30m NY-desk range + 0.10 ATR buffer + VWAP + EMA |
-| `btc_ny_overlap_htf_pullback` | Completed H1 EMA50/200 + M5 reclaim inside the box |
+| `btc_ny_overlap_htf_pullback` | Completed H1 EMA50/200 **bias** + M5 reclaim vs chart EMA-slow (default 21 — mirrors `htf_pullback_signals()` in the core) inside the box |
 
 Transfers (never ranked): unmodified index 09:30 ORB (flatten 15:45) and gold London 30m OR + NY metals on this BTC tape.
 
