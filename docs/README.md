@@ -18,6 +18,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [research/HOWTO-BACKTEST-PATHS.md](research/HOWTO-BACKTEST-PATHS.md) | **Run index** for offline backtest paths (split, costs, promote=no) |
 | [research/MATH-MODELS-ROADMAP.md](research/MATH-MODELS-ROADMAP.md) | **Which math models to implement next** (GARCH filter, TV-β, OU/coint; no code, promote=no) |
 | [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) | **Offline US-index session screens** (1%/20% **archived**; overlay observe-only) |
+| [HOWTO-BTC-NY-SESSION-SCALP.md](HOWTO-BTC-NY-SESSION-SCALP.md) | **Offline BTC NY-desk overlap** (SCREEN_FAIL 0/96; overlay observe-only) |
 | [HOWTO-MT5-AI-MCP.md](HOWTO-MT5-AI-MCP.md) | Official MT5 AI Assistant / MCP vs read-only `mt5-arch mcp` |
 | [research/ZACKS-MCP-OVERLAY-LANE.md](research/ZACKS-MCP-OVERLAY-LANE.md) | **Observe-only:** Zacks MCP gold-complex overlay (schema pass; observe-only, no KEEP path; not XAU charter) |
 | [HOWTO-HTF-FIB.md](HOWTO-HTF-FIB.md) | **How to use ForexHtfPivotsFib** (modes, Fib, RSI, logger, **backtest**) |
@@ -30,7 +31,8 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [research/ALGO-TRADING-BTC-GOLD-FOREX.md](research/ALGO-TRADING-BTC-GOLD-FOREX.md) | Multi-asset algo integration research |
 | [research/PHASE0-DISCOVERY.md](research/PHASE0-DISCOVERY.md) | Live symbol matrix (Vantage / FP) |
 | [research/WAVE-B-OBSERVE.md](research/WAVE-B-OBSERVE.md) | Wave B chart/logger checklist |
-| [research/BTC-INDICATOR-DESIGN.md](research/BTC-INDICATOR-DESIGN.md) | BtcTrendPullback design (crypto-agent → MQL5) |
+| [research/BTC-INDICATOR-DESIGN.md](research/BTC-INDICATOR-DESIGN.md) | BtcTrendPullback design (crypto-agent → MQL5; H1/H4, **not** the NY-desk scalp) |
+| [research/BTC-NY-SESSION-SCALP.md](research/BTC-NY-SESSION-SCALP.md) | BtcNySessionScalp NY-desk overlap (M5; SCREEN_FAIL) |
 
 ## Multi-broker (WSF / Vantage / FP Markets)
 

@@ -6,10 +6,12 @@
 | `Include/IndexSessionUtils.mqh` | US-index DST clock (ET / London / Tokyo) + point spread |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
-| `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
+| `Indicators/BtcTrendPullback.mq5` | **BTCUSD H1:** H4 bias + H1 EMA pullback reclaim (ATR guides, buffer 7) |
+| `Indicators/BtcNySessionScalp.mq5` | **BTCUSD M5 NY-desk overlap:** VWAP+EMA observe-only (buffer 8, SCREEN_FAIL) |
 | `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** Asia/London H/L + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Presets/ForexSignalLogger-UsIndexSessionScalp.set` | Logger inputs for US100/US30 (buffer 8, max-spread pips 0) |
+| `Presets/ForexSignalLogger-BtcNySessionScalp.set` | Logger inputs for BTCUSD M5 NY-desk (buffer 8, max-spread pips 0) |
 | `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
@@ -90,7 +92,7 @@ Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Sc
 - Signals also require **close vs EMA bias (200)** when mode uses bias filter
 - `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields
 
-Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **Template = 9**.
+Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **BTC NY scalp = 8**, **BTC H1 pullback = 7**, **Template = 9**.
 
 ### RSI + RSI-MA (both indicators)
 
@@ -168,6 +170,20 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 | 7 | Session id |
 | **8** | **Signal (+1/−1/0)** |
 | 9 | ATR |
+
+### BtcNySessionScalp buffers (`iCustom`)
+
+| Index | Name | Notes |
+|------:|------|-------|
+| 0–1 | EMA9 / EMA21 | Chart TF |
+| 2 | NY-desk VWAP | From 08:00 ET |
+| 3–4 | OR high/low | 30m NY-desk range (atr_drive) |
+| 5–6 | Long / short arrows | Closed bar |
+| 7 | session | 1 inside [08:00, 11:30) ET |
+| **8** | **signal** | **+1 / −1 / 0** — logger target |
+| 9 | ATR | Guides |
+
+SCREEN_FAIL / observe-only. Not a trading signal.
 
 ### BtcTrendPullback buffers (`iCustom`)
 

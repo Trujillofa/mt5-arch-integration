@@ -1,0 +1,133 @@
+{
+  "family_id": "xau_london_orb_overlap_vwap_ema_flat",
+  "primary": "london30_both_windows",
+  "selection": "none \u2014 primary was frozen a priori; alternates are develop-only sensitivity",
+  "promote": false,
+  "live_go": false,
+  "holdout_start": "2026-01-01",
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 100.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 40.0
+  },
+  "data": {
+    "source": "/home/yderf/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/XAUUSD.r/cache/M5.hc",
+    "timeframe": "M5",
+    "sha256": "f98e19f1da90148dbde65f0550f4b65592da3c8a9c27c7d161fe111fecdcccd0",
+    "bars": 100190,
+    "start": "2025-04-03 02:35:00+00:00",
+    "end": "2026-09-01 17:15:00+00:00",
+    "selection_cutoff": "2026-01-01",
+    "holdout_sealed": true,
+    "server_utc_offset_sec": 0
+  },
+  "candidates": [
+    {
+      "id": "london30_both_windows",
+      "params": {
+        "or_minutes": 30,
+        "allow_ny": true,
+        "or_buffer_atr_frac": 0.1,
+        "sl_atr": 1.0,
+        "tp_atr": 1.2,
+        "min_atr_pct": 0.00015,
+        "ema_fast": 9,
+        "ema_slow": 21
+      },
+      "develop": {
+        "trades": 319,
+        "wins": 137,
+        "losses": 182,
+        "win_rate": 0.42946708463949845,
+        "net_pnl": -12003.972833785427,
+        "avg_trade": -37.6300088833399,
+        "profit_factor": 0.8032848221349658,
+        "max_dd": -12304.615213400117,
+        "expectancy": -37.6300088833399,
+        "longs": 171,
+        "shorts": 148,
+        "median_mae": 2.619999999999891,
+        "median_mfe": 2.4200000000000728
+      },
+      "holdout_evaluated": true,
+      "holdout": {
+        "trades": 276,
+        "wins": 124,
+        "losses": 152,
+        "win_rate": 0.4492753623188406,
+        "net_pnl": -10439.657611601813,
+        "avg_trade": -37.82484641884715,
+        "profit_factor": 0.8778849177203328,
+        "max_dd": -16811.272129684687,
+        "expectancy": -37.82484641884715,
+        "longs": 120,
+        "shorts": 156,
+        "median_mae": 4.289999999999964,
+        "median_mfe": 4.355000000000018
+      }
+    },
+    {
+      "id": "london30_london_only",
+      "params": {
+        "or_minutes": 30,
+        "allow_ny": false,
+        "or_buffer_atr_frac": 0.1,
+        "sl_atr": 1.0,
+        "tp_atr": 1.2,
+        "min_atr_pct": 0.00015,
+        "ema_fast": 9,
+        "ema_slow": 21
+      },
+      "develop": {
+        "trades": 156,
+        "wins": 68,
+        "losses": 88,
+        "win_rate": 0.4358974358974359,
+        "net_pnl": -7029.233642064548,
+        "avg_trade": -45.05919001323428,
+        "profit_factor": 0.7449215033315495,
+        "max_dd": -7329.876021679238,
+        "expectancy": -45.05919001323428,
+        "longs": 91,
+        "shorts": 65,
+        "median_mae": 2.315000000000282,
+        "median_mfe": 2.290000000000191
+      },
+      "holdout_evaluated": false,
+      "holdout": null
+    },
+    {
+      "id": "london15_london_only",
+      "params": {
+        "or_minutes": 15,
+        "allow_ny": false,
+        "or_buffer_atr_frac": 0.1,
+        "sl_atr": 1.0,
+        "tp_atr": 1.2,
+        "min_atr_pct": 0.00015,
+        "ema_fast": 9,
+        "ema_slow": 21
+      },
+      "develop": {
+        "trades": 183,
+        "wins": 83,
+        "losses": 100,
+        "win_rate": 0.453551912568306,
+        "net_pnl": -6649.807740258155,
+        "avg_trade": -36.337747214525436,
+        "profit_factor": 0.7948572141429937,
+        "max_dd": -7506.7578686473225,
+        "expectancy": -36.337747214525436,
+        "longs": 100,
+        "shorts": 83,
+        "median_mae": 2.430000000000291,
+        "median_mfe": 2.300000000000182
+      },
+      "holdout_evaluated": false,
+      "holdout": null
+    }
+  ]
+}

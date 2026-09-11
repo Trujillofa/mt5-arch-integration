@@ -1,0 +1,178 @@
+{
+  "search_id": "btc_ny_session_scalp_develop_v1",
+  "locked_at": "2026-09-11T14:55:00-05:00",
+  "base_branch": "main",
+  "base_commit": "ade35860d15046907a09ccb8e727a66cb8ffbf1a",
+  "symbol": "BTCUSD",
+  "tf": "M5",
+  "promote": false,
+  "live_go": false,
+  "a_priori_overlay_default": "btc_ny_overlap_vwap_ema_flat",
+  "note": "Freeze-before-peek: this lock is committed before any BTC family signal or simulation PnL. SCREEN_FAIL is a valid outcome. Do not widen the grid, cut costs, move the holdout, or reopen closed theses to manufacture a passer.",
+  "data": {
+    "path": "results/btc_ny_data/history_BTCUSD_M5.csv",
+    "sha256": "514d1c131b15dbfe70885d0bc68da2aae335290e6a450f1b3125d585c5c945f3",
+    "hc_path": "~/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/Bases/FPMarketsSC-Live/history/BTCUSD/cache/M5.hc",
+    "hc_sha256": "9a6d74088f64e56fbc5857d7c89ada427d6e5421cf3062fe70939cbfac2a8df5",
+    "bars": 100006,
+    "time_min_server": "2025.04.21 19:30",
+    "time_max_server": "2026.08.20 01:20",
+    "et_min": "2025-04-21 12:30:00-04:00",
+    "et_max": "2026-08-19 18:20:00-04:00",
+    "et_dates": 417,
+    "source": "FP Markets BTCUSD M5.hc via read_mt5_hc (offline; terminal not killed)",
+    "broker": "fpmarkets",
+    "meta_path": "results/btc_ny_data/symbol_meta_BTCUSD.csv",
+    "transfer_tape_note": "Vantage M5.hc exists (2025-09-19..2026-09-04, spread almost constant 1694) \u2014 transfer/eval only, not this lock"
+  },
+  "clock": {
+    "rule": "server wall clock = America/New_York + 7h (tracks US DST)",
+    "et_from_server": "et = (server_naive - 7h).tz_localize('America/New_York', ambiguous='NaT', nonexistent='shift_forward'); drop NaT",
+    "never_use": "us_index_session_backtest.load_m5_csv constant server_utc_offset_sec (10800 mislabels every US-winter bar by 1h in ET)",
+    "admission": {
+      "method": "hourly log-return lag vs Binance BTCUSDT H1 (UTC-native). Peak lag must be 0. Floor 0.95 on a long UTC-native overlap; fail-closed if the tape is a shifted UTC label.",
+      "fp_m5_vs_binance_2026_02_06": {
+        "n": 2226,
+        "lag0_corr": 0.9166,
+        "peak_lag": 0,
+        "next_best_abs": 0.039
+      },
+      "fp_h1_export_vs_binance_2021_24": {
+        "n": 13147,
+        "lag0_corr": 0.9599,
+        "peak_lag": 0,
+        "floor_0_95": true
+      },
+      "constant_10800_m5_vs_binance_2026": {
+        "lag0_corr": 0.5285,
+        "lag_minus_1": 0.4195,
+        "rejected": true
+      },
+      "verdict": "clock admitted \u2014 unique lag-0 peak; long H1 book clears 0.95; M5 vs spot 0.917 is CFD/spot residual not a 1h shift; 10800 path rejected"
+    }
+  },
+  "session": {
+    "name": "ny_desk_overlap",
+    "entry_window": "[08:00, 11:30) America/New_York",
+    "force_flat": "11:30 ET same-day, at first bar open >= 11:30",
+    "friday_cutoff": "no new entries at or after 14:00 ET Friday",
+    "same_day_only": true,
+    "not": [
+      "US cash 09:30 opening range",
+      "gold London 08:00 Europe/London primary",
+      "FX NY 08:00-17:00",
+      "Americas 16:00-24:00 UTC"
+    ]
+  },
+  "holdout": {
+    "start": "2026-03-01",
+    "rule": "et_date < 2026-03-01 develop / selection; et_date >= 2026-03-01 holdout evaluation only; NEVER used for selection",
+    "assert_not": [
+      "2026-01-01",
+      "2026-06-01"
+    ],
+    "assert_not_reason": "must stay lane-local; XAU default is 2026-01-01; US-index default is 2026-06-01"
+  },
+  "book": {
+    "balance_usd": 10000,
+    "lots": 1.0,
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "digits": 2,
+    "sizing_policy": "fixed_lots"
+  },
+  "costs": {
+    "commission_per_lot": 0.0,
+    "commission_note": "spread-inclusive CFD assumption",
+    "slippage_points": 160.0,
+    "slippage_note": "STATED ASSUMPTION after measuring median M5 spread 1600 pts ($16). 10% of median = 160 pts ($1.60/side). Not index 10 pt. Not ny-1330 H1 800.",
+    "max_spread_points": 2000.0,
+    "max_spread_note": "rounded ~p95 of FP M5 spread (p50=1600, p95=1925, p99=3030). Skip fills above cap.",
+    "spread_measured": {
+      "p50": 1600.0,
+      "p95": 1925.0,
+      "p99": 3030.0,
+      "zeros": 7
+    },
+    "spread_imputation": "7 zero-spread bars: forward-fill previous bar spread within the same ET day, else global median 1600",
+    "cost_formula": "round trip = (spread_pts + 2 * slippage_points) * point_size * contract_size * lots + 2 * commission_per_lot * lots, charged once at fill",
+    "typical_rt_usd_at_median": 19.2
+  },
+  "families": {
+    "search": [
+      "btc_ny_overlap_vwap_ema_flat",
+      "btc_ny_overlap_atr_drive",
+      "btc_ny_overlap_htf_pullback"
+    ],
+    "transfer_never_ranked": [
+      "index_transfer",
+      "gold_transfer"
+    ],
+    "notes": {
+      "btc_ny_overlap_vwap_ema_flat": "NY-desk VWAP from first 08:00 ET bar + EMA 9/21 + ATR% floor; close vs VWAP and EMA stack",
+      "btc_ny_overlap_atr_drive": "first 30m of NY desk as range, 0.10 ATR buffer, then close beyond range + VWAP + EMA",
+      "btc_ny_overlap_htf_pullback": "completed H1 EMA50/200 bias (shift>=1) + M5 shallow pullback reclaim + ATR% + extension cap, inside the box only",
+      "index_transfer": "unmodified ny_cash_orb_vwap_ema_flat (09:30/15m OR/15:45 flat) on BTC \u2014 replay only",
+      "gold_transfer": "frozen London 30m OR + NY metals 08:00-11:00 on BTC \u2014 replay only"
+    }
+  },
+  "grid": {
+    "sl_atr": [
+      1.0,
+      1.5
+    ],
+    "tp_r": [
+      1.0,
+      1.5
+    ],
+    "time_stop_bars": [
+      6,
+      12
+    ],
+    "nfp_blackout": [
+      false,
+      true
+    ],
+    "min_atr_pct": [
+      0.00015,
+      0.0003
+    ],
+    "or_minutes_atr_drive": 30,
+    "or_buffer_atr_frac": 0.1,
+    "ema_fast": 9,
+    "ema_slow": 21,
+    "one_per_day": true,
+    "nfp_window_et": "[08:25, 08:40]",
+    "max_configs": 192,
+    "expected_configs": 96
+  },
+  "rank": {
+    "min_trades_develop": 40,
+    "eligible": "trades>=40 and net_pnl>0",
+    "score": "profit_factor (None->3.0) then expectancy",
+    "holdout_unused_for_selection": true
+  },
+  "null_calibration": {
+    "seeds": 10,
+    "method": "circular phase rotation of within-ET-day log returns (EURUSD pattern)"
+  },
+  "closed_theses": [
+    "ny_cash_orb_vwap_ema_flat as BTC default (ny-1330: do not encode cash-open ORB on BTC)",
+    "Americas 16:00-24:00 UTC BUY gate (crypto-agent WFO REJECT; do not retune hours)",
+    "BTC/4h RegimeRouter and OHLCV multi-AND regime classifier",
+    "RSI-overbought as primary short trigger",
+    "CVD / OFI / CopyTicks true volume on these CFDs",
+    "CME halt as an entry trigger",
+    "NFP as the session definition (optional 08:25-08:40 blackout is a grid flag only)",
+    "index 1%/20% median trade-day/month goal",
+    "gold 80% WR trap / defined_r retune",
+    "BtcTrendPullback H1/H4 as this scalp signal"
+  ],
+  "fills_and_exits": {
+    "signal_to_fill": "signal on close of bar i, fill at open of bar i+1 (same ET day only)",
+    "one_position": true,
+    "sl_first": true,
+    "short_bid_space": true,
+    "forming_bar_never_signals": true
+  }
+}
