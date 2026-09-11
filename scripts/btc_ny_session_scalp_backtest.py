@@ -25,8 +25,8 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 from btc_ny_session_scalp_core import (  # noqa: E402
-    FLAT_MIN,
     FAM_VWAP_EMA,
+    FLAT_MIN,
     M5Data,
     assert_lane_holdout,
     family_signals,

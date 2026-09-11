@@ -6,6 +6,7 @@
 //| Default: ForexHtfPivotsFib buffer 8.                             |
 //| UsIndexSessionScalp: buffer 8, InpMaxSpreadPips=0.               |
 //| BtcTrendPullback: buffer 7, InpMaxSpreadPips=0.                  |
+//| BtcNySessionScalp: buffer 8, InpMaxSpreadPips=0.                 |
 //| ForexIndicatorTemplate: buffer 9.                                |
 //|                                                                  |
 //| Output:                                                           |

@@ -32,10 +32,10 @@ from us_index_session_core import (  # noqa: E402
     ema_series,
     is_london_open,
     rsi_series,
-    scalp_signal_series as index_scalp_signal_series,
     to_london,
     wilder_atr,
 )
+from us_index_session_core import scalp_signal_series as index_scalp_signal_series  # noqa: E402
 
 SERVER_MINUS_HOURS = 7
 TZ_ET = "America/New_York"
@@ -364,12 +364,17 @@ def htf_pullback_signals(
             continue
         dist = (px - es) / px
         b = int(bias[i])
-        if b == 1 and 0.0 >= -PULLBACK_PCT and abs(dist) <= PULLBACK_PCT:
+        if b == 1 and -PULLBACK_PCT <= 0.0 and abs(dist) <= PULLBACK_PCT:
             if px > es and px > c[i - 1] and dist <= EXTENSION_PCT:
                 raw[i] = 1
-        elif b == -1 and abs(dist) <= PULLBACK_PCT:
-            if px < es and px < c[i - 1] and -dist <= EXTENSION_PCT:
-                raw[i] = -1
+        elif (
+            b == -1
+            and abs(dist) <= PULLBACK_PCT
+            and px < es
+            and px < c[i - 1]
+            and -dist <= EXTENSION_PCT
+        ):
+            raw[i] = -1
     return _dedupe_one_per_day(raw, d) if one_per_day else raw
 
 

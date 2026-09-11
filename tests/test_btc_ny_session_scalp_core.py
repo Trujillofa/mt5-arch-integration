@@ -3,14 +3,13 @@
 from __future__ import annotations
 
 import json
+import sys
 from datetime import date, datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
-
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -26,7 +25,6 @@ LOCK = json.loads((ROOT / "results" / "btc_ny_session_scalp_lock.json").read_tex
 def _m5(n: int, start_et: datetime, step_min: int = 5, px: float = 100000.0) -> core.M5Data:
     """Build a synthetic M5 bundle. start_et must be tz-aware America/New_York."""
     times_et = [start_et + pd.Timedelta(minutes=step_min * i) for i in range(n)]
-    times_utc = [t.tz_convert("UTC").to_pydatetime() if hasattr(t, "tz_convert") else t.astimezone() for t in times_et]
     # normalize to pandas timestamps
     et = pd.DatetimeIndex(pd.to_datetime(times_et))
     utc = et.tz_convert("UTC")

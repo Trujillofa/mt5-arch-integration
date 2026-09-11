@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import itertools
-import json
 import sys
 from pathlib import Path
 
@@ -34,14 +33,13 @@ from btc_ny_session_scalp_backtest import (  # noqa: E402
     simulate_exits,
     split_by_holdout,
 )
-from us_index_session_backtest import metrics_from_trades, write_slim_json  # noqa: E402
 from btc_ny_session_scalp_core import (  # noqa: E402
     FLAT_MIN,
-    SEARCH_FAMILIES,
     family_signals,
     load_btc_m5,
     rotate_returns_within_days,
 )
+from us_index_session_backtest import metrics_from_trades, write_slim_json  # noqa: E402
 
 MIN_TRADES = 40
 NULL_SEEDS = 10
@@ -284,14 +282,14 @@ def write_md(report: dict, path: Path) -> None:
     lines = [
         "# BTC NY-desk overlap develop screen (`btc_ny_session_scalp_develop_v1`)",
         "",
-        f"| Field | Value |",
-        f"|-------|-------|",
+        "| Field | Value |",
+        "|-------|-------|",
         f"| **Search** | `{report['search_id']}` |",
         f"| **Disposition** | **{report['disposition']}** |",
         f"| **Overlay default** | `{report['overlay_default']}` |",
         f"| **Configs** | {report['n_configs']} (eligible {report['n_eligible']}) |",
         f"| **Holdout** | `{report['holdout_start']}` unused for selection |",
-        f"| **promote / live_go** | no / false |",
+        "| **promote / live_go** | no / false |",
         "",
         "Machine JSON: `results/btc_ny_session_scalp_autoresearch.json`.",
         "",
@@ -306,8 +304,8 @@ def write_md(report: dict, path: Path) -> None:
         lines += [
             f"Winner `{best['id']}` (holdout eval only).",
             "",
-            f"| Slice | n | WR | PF | Net |",
-            f"|-------|--:|---:|---:|----:|",
+            "| Slice | n | WR | PF | Net |",
+            "|-------|--:|---:|---:|----:|",
             f"| develop | {d['trades']} | {d['win_rate']:.1%} | {d['profit_factor']} | {d['net_pnl']:.2f} |",
             f"| holdout | {h['trades']} | {h['win_rate']:.1%} | {h['profit_factor']} | {h['net_pnl']:.2f} |",
         ]
