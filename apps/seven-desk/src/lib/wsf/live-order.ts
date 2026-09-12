@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync, unlinkSync, writeFileS
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
-import { defaultLotsForFirm } from "@/lib/firms";
+import { defaultLotsForSymbolFirm } from "@/lib/firms";
 import { readBridgeQuote } from "@/lib/live-order/bridge-quotes";
 import { openLiveQuoteJournal } from "@/lib/live-order/quote-journal";
 import {
@@ -368,7 +368,7 @@ function writeRequest(paths: ReturnType<typeof wsfPaths>, parsed: GuardOk, reque
     `symbol=${parsed.symbol}`,
     `side=${parsed.side}`,
     `confirm=${parsed.confirm}`,
-    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForFirm("wsf"))}`,
+    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForSymbolFirm("wsf", parsed.symbol))}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `order_type=${parsed.orderType}`,
     `price=${parsed.price ?? 0}`,
@@ -694,7 +694,7 @@ export async function executeWsfLiveOrder(
     parsed.action !== "close" &&
     parsed.action !== "modify"
   ) {
-    parsed.volume = defaultLotsForFirm("wsf");
+    parsed.volume = defaultLotsForSymbolFirm("wsf", parsed.symbol);
   }
 
   const freshness = inspectBridgeFreshness({
@@ -730,7 +730,7 @@ export async function executeWsfLiveOrder(
     symbol: parsed.symbol,
     heartbeatFresh: freshness.heartbeatFresh,
   });
-  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForFirm("wsf"));
+  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForSymbolFirm("wsf", parsed.symbol));
   const qj = openLiveQuoteJournal({
     requestId,
     firm: "wsf",

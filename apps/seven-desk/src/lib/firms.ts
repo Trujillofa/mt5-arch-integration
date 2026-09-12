@@ -1,7 +1,17 @@
 import type { FirmId, FirmProfile } from "@/lib/types";
 
-/** Master / ticket standard. Change this; FN/FP lots follow their scales. */
+/** Master / ticket standard for FX and US/NAS index CFDs. FN/FP lots follow their scales. */
 export const STANDARD_LOT = 4;
+/**
+ * XAUUSD / GOLD. Vantage 2026-09-12: contract 100, volume_min 0.01, ~$100 per $1 per lot.
+ * 4.00 gold = $400 per $1 (not the US30 4-lot). 0.40 ≈ US30 4×80pt ($320) at an $8 gold stop.
+ */
+export const GOLD_STANDARD_LOT = 0.4;
+/**
+ * BTCUSD family. Vantage 2026-09-12: contract 1, volume_min 0.01 (~1 BTC / lot).
+ * 4.00 BTC is 4 coins. 0.04 stays under the research 0.05–0.10 cap; FN/FP round up to 0.01.
+ */
+export const BTC_STANDARD_LOT = 0.04;
 /** Alias kept for seed/storage paper multipliers (scale = firm default / standard). */
 export const DEFAULT_DESK_LOTS = STANDARD_LOT;
 export const FUNDEDNEXT_SCALE = 0.1;
@@ -40,6 +50,29 @@ export function defaultLotsForFirm(
   standard: number = STANDARD_LOT
 ): number {
   return scaleLiveLots(standard, firmLotScale(firmId)).lots;
+}
+
+/** Ticket / omitted-volume size for this symbol, then firm scale. */
+export function standardLotsForSymbol(symbol?: string | null): number {
+  if (symbol == null || symbol.trim() === "") return STANDARD_LOT;
+  const key = symbol.toUpperCase();
+  if (key.startsWith("BTC")) return BTC_STANDARD_LOT;
+  if (key.startsWith("XAU") || key === "GOLD") return GOLD_STANDARD_LOT;
+  return STANDARD_LOT;
+}
+
+export function defaultLotsForSymbolFirm(
+  firmId: FirmId | string,
+  symbol?: string | null
+): number {
+  return defaultLotsForFirm(firmId, standardLotsForSymbol(symbol));
+}
+
+export function defaultLotsHelp(firmId: FirmId | string): string {
+  return (
+    `Default FX/US30 ${defaultLotsForSymbolFirm(firmId, "EURUSD")} · gold ${defaultLotsForSymbolFirm(firmId, "XAUUSD")} · BTC ${defaultLotsForSymbolFirm(firmId, "BTCUSD")} lots ` +
+    `(market / limit / stop). volume_min: true is the 0.01 prove.`
+  );
 }
 
 export type LiveLotPlan = {
@@ -155,3 +188,17 @@ export const FIRM_ACCENT: Record<FirmId, string> = {
   ftmo: "bg-blue-500",
   alphacapital: "bg-emerald-500",
 };
+
+/** Known ticket defaults (not 0.01 prove) so a symbol/firm switch can replace them. */
+export function knownDefaultLotValues(): number[] {
+  const standards = [STANDARD_LOT, GOLD_STANDARD_LOT, BTC_STANDARD_LOT];
+  const out = new Set<number>();
+  for (const standard of standards) {
+    out.add(standard);
+    for (const firm of FIRMS) {
+      const lots = defaultLotsForFirm(firm.id, standard);
+      if (Math.abs(lots - LOT_STEP) > 1e-8) out.add(lots);
+    }
+  }
+  return [...out];
+}

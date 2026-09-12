@@ -1,4 +1,4 @@
-import { defaultLotsForFirm } from "@/lib/firms";
+import { defaultLotsHelp } from "@/lib/firms";
 import { handleLiveOrderPost } from "@/lib/live-order/runner";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET() {
       endpoint: "/api/alphacapital/order",
       stage: "method",
       reason:
-        `GET is read-only. Live Alpha Capital OrderSend requires POST { live: true, confirm: "ACG-2765247", action: "open" }. Default ${defaultLotsForFirm("alphacapital")} lots (market / limit / stop). volume_min: true is the 0.01 prove.`,
+        `GET is read-only. Live Alpha Capital OrderSend requires POST { live: true, confirm: "ACG-2765247", action: "open" }. ${defaultLotsHelp("alphacapital")}`,
       winePrefix: ".mt5-alphacapital",
     },
     { status: 405 }

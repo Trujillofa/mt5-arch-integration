@@ -55,6 +55,17 @@ export function liveCopySlTpError(state: DeskState): string | null {
   return "copySlTp must stay on while live copy is armed — slaves get the same SL/TP prices";
 }
 
+export function slaveLiveCopyArmed(state: DeskState, slaveAccountId: string): boolean {
+  const account = state.accounts.find((row) => row.id === slaveAccountId);
+  if (!account) return false;
+  if (account.firmId === "wsf") return state.wsfLiveCopy;
+  if (account.firmId === "fundednext") return state.fundednextLiveCopy;
+  if (account.firmId === "fundingpips") return state.fundingpipsLiveCopy;
+  if (account.firmId === "neomaa") return state.neomaaLiveCopy;
+  if (account.firmId === "fortraders") return state.fortradersLiveCopy;
+  return false;
+}
+
 export function masterLotsForGroup(state: DeskState, groupId: string): number | null {
   const master = state.blotter.find((row) => row.groupId === groupId && row.role === "master");
   return master && Number.isFinite(master.lots) ? master.lots : null;

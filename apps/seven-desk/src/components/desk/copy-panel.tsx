@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { defaultCopySettings } from "@/lib/copy-engine";
+import { slaveLiveCopyArmed } from "@/lib/copy-fanout";
 import { useDesk } from "@/lib/desk-context";
 import { FIRM_BY_ID } from "@/lib/firms";
 import { MASTER_SYMBOLS } from "@/lib/quotes";
@@ -256,6 +257,7 @@ export function CopyPanel() {
                 id="sltp"
                 label="Copy SL / TP"
                 checked={copy.copySlTp}
+                disabled={slaveLiveCopyArmed(state, account.id)}
                 onChange={(checked) =>
                   updateCopy(account.id, { copySlTp: checked })
                 }
@@ -369,17 +371,20 @@ function Toggle({
   label,
   checked,
   onChange,
+  disabled,
 }: {
   id: string;
   label: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
       <Switch
         id={id}
         checked={checked}
+        disabled={disabled}
         onCheckedChange={(value) => onChange(Boolean(value))}
       />
       <Label htmlFor={id} className="text-xs font-normal">

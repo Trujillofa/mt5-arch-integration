@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, unlinkSync,
 import { homedir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import { inspectBridgeFreshness } from "@/lib/bridge-freshness";
-import { defaultLotsForFirm } from "@/lib/firms";
+import { defaultLotsForFirm, defaultLotsForSymbolFirm } from "@/lib/firms";
 import { readBridgeQuote } from "@/lib/live-order/bridge-quotes";
 import { openLiveQuoteJournal } from "@/lib/live-order/quote-journal";
 import {
@@ -17,6 +17,7 @@ import {
   deadlineExceeded,
   disconnectedOrderReason,
   eaNotReadyReason,
+  marketNeedsSltpVersion,
   httpTimeoutResult,
   inFlightOrphanReason,
   isUs30Family,
@@ -519,7 +520,7 @@ function writeRequest(firm: FirmSpec, paths: ReturnType<typeof pathsFor>, parsed
     `expect_confirm=${firm.confirm}`,
     `expect_login=${firm.login}`,
     `expect_needle=${firm.needle}`,
-    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : firm.defaultLots)}`,
+    `volume=${parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForSymbolFirm(firm.id, parsed.symbol))}`,
     `use_volume_min=${parsed.useVolumeMin ? 1 : 0}`,
     `order_type=${parsed.orderType}`,
     `price=${parsed.price ?? 0}`,
@@ -893,7 +894,7 @@ export async function executeDeskLiveOrder(
     parsed.action !== "close" &&
     parsed.action !== "modify"
   ) {
-    parsed.volume = firm.defaultLots;
+    parsed.volume = defaultLotsForSymbolFirm(firm.id, parsed.symbol);
   }
 
   const freshness = inspectBridgeFreshness({
@@ -907,6 +908,7 @@ export async function executeDeskLiveOrder(
     algoAllowed: identity.algoAllowed,
     readonly: readHeartbeatReadonly(paths),
     action: parsed.action,
+    needsMarketSltp: marketNeedsSltpVersion(parsed),
   });
   if (eaBlocked) {
     return {
@@ -940,7 +942,7 @@ export async function executeDeskLiveOrder(
     symbol: parsed.symbol,
     heartbeatFresh: freshness.heartbeatFresh,
   });
-  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : firm.defaultLots);
+  const lots = parsed.volume ?? (parsed.useVolumeMin ? MIN_LIVE_LOT : defaultLotsForSymbolFirm(firm.id, parsed.symbol));
   const qj = openLiveQuoteJournal({
     requestId,
     firm: firm.id,

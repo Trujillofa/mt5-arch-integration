@@ -5,6 +5,7 @@ export const MASTER_SYMBOLS = [
   "GBPUSD",
   "USDJPY",
   "XAUUSD",
+  "BTCUSD",
   "NAS100",
   "US30",
 ] as const;
@@ -17,6 +18,7 @@ export const SEED_QUOTES: PaperQuote[] = [
   { symbol: "USDJPY", bid: 149.812, ask: 149.818, pip: 0.01 },
   { symbol: "XAUUSD", bid: 2348.42, ask: 2348.62, pip: 0.1 },
   { symbol: "GOLD", bid: 2348.40, ask: 2348.64, pip: 0.1 },
+  { symbol: "BTCUSD", bid: 77354.37, ask: 77371.47, pip: 1 },
   { symbol: "NAS100", bid: 19838.5, ask: 19841.0, pip: 1 },
   { symbol: "USTEC", bid: 19838.0, ask: 19841.5, pip: 1 },
   { symbol: "US30", bid: 39118.0, ask: 39122.0, pip: 1 },
@@ -49,15 +51,17 @@ export function floatingPnl(
   symbol: string
 ): number {
   const direction = side === "buy" ? 1 : -1;
-  const contract = contractSize(symbol);
+  const contract = quoteContractSize(symbol);
   return direction * (mark - entry) * lots * contract;
 }
 
-function contractSize(symbol: string): number {
-  if (symbol.includes("JPY")) return 1000;
-  if (symbol.startsWith("XAU") || symbol === "GOLD") return 100;
-  if (symbol.startsWith("NAS") || symbol === "USTEC") return 1;
-  if (symbol.startsWith("US")) return 1;
+export function quoteContractSize(symbol: string): number {
+  const key = symbol.toUpperCase();
+  if (key.includes("JPY")) return 1000;
+  if (key.startsWith("XAU") || key === "GOLD") return 100;
+  if (key.startsWith("BTC")) return 1;
+  if (key.startsWith("NAS") || key === "USTEC") return 1;
+  if (key.startsWith("US") || key.startsWith("DJ")) return 1;
   return 100_000;
 }
 
