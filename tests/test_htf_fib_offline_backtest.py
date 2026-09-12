@@ -13,8 +13,11 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from htf_fib_offline_backtest import (  # noqa: E402
+    H4_H1_MAPPING_DISCLOSURE,
     LOCK_PATH,
+    holdout_used_flag,
     load_offline_lock,
+    max_drawdown_from_pnls,
     refuse_holdout_selection,
     refuse_mutated_htf_offline_lock,
     simulate_from_signals,
@@ -80,3 +83,21 @@ def test_htf_offline_lock_file_is_slim():
     lock = json.loads(LOCK_PATH.read_text())
     assert "trades" not in lock
     assert lock["book"]["lots"] == 0.10
+
+
+def test_max_drawdown_includes_first_trade():
+    assert max_drawdown_from_pnls([]) == 0.0
+    assert max_drawdown_from_pnls([-10.0, 5.0]) == pytest.approx(-10.0)
+    assert max_drawdown_from_pnls([10.0, -3.0]) == pytest.approx(-3.0)
+
+
+def test_holdout_used_reflects_unbounded_and_sealed_bars():
+    assert holdout_used_flag(date_to="2025-01-01", unbounded=False) is False
+    assert holdout_used_flag(date_to="2026-06-01", unbounded=False) is False
+    assert holdout_used_flag(date_to="2025-01-01", unbounded=True) is False
+    assert holdout_used_flag(date_to="2026-01-01", unbounded=True) is True
+
+
+def test_h4_h1_mapping_disclosure_is_unavoidable():
+    assert "NOT covered by htf_fib_core" in H4_H1_MAPPING_DISCLOSURE
+    assert "≤4h" in H4_H1_MAPPING_DISCLOSURE or "<=4h" in H4_H1_MAPPING_DISCLOSURE

@@ -5,6 +5,9 @@
 //|                                                                  |
 //| Bar times are broker SERVER wall clocks. Convert via             |
 //| TimeCurrent()-TimeGMT() (override with InpServerUtcOffsetHours). |
+//| Strategy Tester: TimeGMT()==TimeCurrent(), so -99 auto-offset is |
+//| silently 0. Prefer an explicit InpServerUtcOffsetHours (GMT+2/+3). |
+//| Live auto-detect is unchanged. |
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property strict
@@ -123,6 +126,17 @@ int IdxDetectServerUtcOffsetSec(const int override_hours)
   {
    if(override_hours != -99)
       return override_hours * 3600;
+
+   if((bool)MQLInfoInteger(MQL_TESTER))
+     {
+      static bool s_warned_tester_offset = false;
+      if(!s_warned_tester_offset)
+        {
+         Print("IndexSessionUtils: InpServerUtcOffsetHours=-99 is silently 0 in Strategy Tester "
+               "(TimeGMT()==TimeCurrent()). Set an explicit broker UTC offset (GMT+2/+3).");
+         s_warned_tester_offset = true;
+        }
+     }
 
    long delta = (long)(TimeCurrent() - TimeGMT());
    if(MathAbs(delta) >= 1800)

@@ -106,6 +106,15 @@ def test_logger_and_howto_use_buffer_8():
     assert "CopyBuffer(handle, 7, 1, 1, sig)" not in readme
 
 
+def test_template_readme_signal_buffer_9():
+    src = (ROOT / "mql5" / "Indicators" / "ForexIndicatorTemplate.mq5").read_text()
+    assert "SetIndexBuffer(9, BufSignal" in src
+    readme = (ROOT / "mql5" / "README.md").read_text()
+    section = readme.split("### ForexIndicatorTemplate buffers", 1)[1].split("###", 1)[0]
+    assert "| **9** | **Signal" in section
+    assert "| **8** | **Signal" not in section
+
+
 def test_forming_bar_signal_is_zero():
     fx = load_fixture(DEFAULT_FIXTURE)
     assert fx.signal[-1] == 0
