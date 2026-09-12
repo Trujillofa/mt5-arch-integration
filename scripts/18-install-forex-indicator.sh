@@ -35,6 +35,7 @@ SRC_INC=(
   "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
   "${ROOT}/mql5/Include/IndexM5Export.mqh"
   "${ROOT}/mql5/Include/BtcSessionUtils.mqh"
+  "${ROOT}/mql5/Include/SignalContract.mqh"
 )
 SRC_IND=(
   "${ROOT}/mql5/Indicators/ForexIndicatorTemplate.mq5"
@@ -142,6 +143,7 @@ Next steps:
        Include/FxSymbolRegistry.mqh    (auto via includes)
        Include/IndexSessionUtils.mqh   (auto via includes)
        Include/BtcSessionUtils.mqh     (auto via includes)
+       Include/SignalContract.mqh      (auto via includes)
        Indicators/ForexHtfPivotsFib.mq5     ← FX/gold primary
        Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
        Indicators/UsIndexSessionScalp.mq5  ← US30/US100 M5 scalp

@@ -62,6 +62,7 @@
 
 #include <ForexUtils.mqh>
 #include <FxSymbolRegistry.mqh>
+#include <SignalContract.mqh>
 
 //+------------------------------------------------------------------+
 enum ENUM_FIB_SOURCE
@@ -283,6 +284,8 @@ int OnInit()
   {
    if(InpLeft4h < 1 || InpRight4h < 1 || InpLeftDaily < 1 || InpRightDaily < 1 ||
       InpRsiPeriod < 1 || InpRsiMaPeriod < 1)
+      return INIT_PARAMETERS_INCORRECT;
+   if(HTFFIB_SIGNAL_BUFFER != 8)
       return INIT_PARAMETERS_INCORRECT;
 
    ApplyTradingMode();
