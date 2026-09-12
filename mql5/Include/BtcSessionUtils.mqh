@@ -71,6 +71,10 @@ bool BtcInOverlap(const datetime et)
   }
 
 //+------------------------------------------------------------------+
+//| Unreachable under the current window: entries require the         |
+//| [08:00, 11:30) overlap box, so a 14:00 Friday bar can never be    |
+//| an entry. Kept because the frozen lock / Python core define it.   |
+//+------------------------------------------------------------------+
 bool BtcFridayCutoff(const datetime et)
   {
    return (BtcEtDow(et) == 5 && BtcEtMinuteOfDay(et) >= BTC_FRIDAY_CUTOFF_MIN);
