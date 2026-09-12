@@ -57,6 +57,7 @@
 #property indicator_width6  2
 
 #include <SignalContract.mqh>
+#include <ChartObjects.mqh>
 
 //+------------------------------------------------------------------+
 enum ENUM_ATR_BAND_MID
@@ -223,13 +224,7 @@ void OnDeinit(const int reason)
    if(g_hAtr       != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hHtfEma50  != INVALID_HANDLE) IndicatorRelease(g_hHtfEma50);
    if(g_hHtfEma200 != INVALID_HANDLE) IndicatorRelease(g_hHtfEma200);
-   // EMA tweak = REASON_PARAMETERS — do NOT wipe objects (Wine freeze)
-   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
-     {
-      ObjectsDeleteAll(0, g_pfx);
-      Comment("");
-     }
+   CoWipePrefix(reason, g_pfx);
   }
 
 //+------------------------------------------------------------------+

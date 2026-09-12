@@ -63,6 +63,7 @@
 
 #include <ForexUtils.mqh>
 #include <SignalContract.mqh>
+#include <ChartObjects.mqh>
 
 //+------------------------------------------------------------------+
 //| Inputs                                                           |
@@ -271,13 +272,7 @@ void OnDeinit(const int reason)
    if(g_hEmaBias != INVALID_HANDLE) IndicatorRelease(g_hEmaBias);
    if(g_hAtr     != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
-   // Skip object wipe on REASON_PARAMETERS (EMA tweak) — freezes Wine
-   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_CHARTCHANGE || reason == REASON_RECOMPILE)
-     {
-      ObjectsDeleteAll(0, g_prefix);
-      Comment("");
-     }
+   CoWipePrefix(reason, g_prefix);
   }
 
 //+------------------------------------------------------------------+
@@ -470,36 +465,10 @@ void MoveHLine(const string key, const double price,
                const datetime t1, const datetime t2,
                const color clr, const string label)
   {
-   string name = g_prefix + key;
-   if(ObjectFind(0, name) < 0)
-     {
-      ObjectCreate(0, name, OBJ_TREND, 0, t1, price, t2, price);
-      ObjectSetInteger(0, name, OBJPROP_RAY_RIGHT, InpLevelExtendRight);
-      ObjectSetInteger(0, name, OBJPROP_RAY_LEFT, false);
-      ObjectSetInteger(0, name, OBJPROP_WIDTH, InpLevelWidth);
-      ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_DASH);
-      ObjectSetInteger(0, name, OBJPROP_BACK, true);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
-     }
-   ObjectMove(0, name, 0, t1, price);
-   ObjectMove(0, name, 1, t2, price);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-   ObjectSetInteger(0, name, OBJPROP_RAY_RIGHT, InpLevelExtendRight);
-
-   string lname = g_prefix + key + "_lbl";
-   if(ObjectFind(0, lname) < 0)
-     {
-      ObjectCreate(0, lname, OBJ_TEXT, 0, t2, price);
-      ObjectSetInteger(0, lname, OBJPROP_FONTSIZE, 8);
-      ObjectSetString(0, lname, OBJPROP_FONT, "Arial");
-      ObjectSetInteger(0, lname, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, lname, OBJPROP_HIDDEN, true);
-      ObjectSetInteger(0, lname, OBJPROP_ANCHOR, ANCHOR_LEFT_LOWER);
-     }
-   ObjectMove(0, lname, 0, t2, price);
-   ObjectSetString(0, lname, OBJPROP_TEXT, " " + label);
-   ObjectSetInteger(0, lname, OBJPROP_COLOR, clr);
+   CoTrend(g_prefix + key, t1, price, t2, clr, STYLE_DASH, InpLevelWidth,
+           InpLevelExtendRight);
+   CoText(g_prefix + key + "_lbl", t2, price, " " + label, clr,
+          8, ANCHOR_LEFT_LOWER, "Arial");
   }
 
 //+------------------------------------------------------------------+
