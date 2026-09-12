@@ -67,6 +67,10 @@
 
 #include <IndexSessionUtils.mqh>
 #include <IndexM5Export.mqh>
+#include <SignalContract.mqh>
+#if UIS_SIGNAL_BUFFER != 8
+   #error "UsIndexSessionScalp signal buffer must stay UIS_SIGNAL_BUFFER=8"
+#endif
 
 #define IDX_MAX_BOXES 12
 

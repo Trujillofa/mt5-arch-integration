@@ -56,6 +56,11 @@
 #property indicator_color6  clrOrangeRed
 #property indicator_width6  2
 
+#include <SignalContract.mqh>
+#if BTP_SIGNAL_BUFFER != 7
+   #error "BtcTrendPullback signal buffer must stay BTP_SIGNAL_BUFFER=7"
+#endif
+
 //+------------------------------------------------------------------+
 enum ENUM_ATR_BAND_MID
   {

@@ -62,6 +62,10 @@
 
 #include <ForexUtils.mqh>
 #include <FxSymbolRegistry.mqh>
+#include <SignalContract.mqh>
+#if HTFFIB_SIGNAL_BUFFER != 8
+   #error "ForexHtfPivotsFib signal buffer must stay HTFFIB_SIGNAL_BUFFER=8"
+#endif
 
 //+------------------------------------------------------------------+
 enum ENUM_FIB_SOURCE

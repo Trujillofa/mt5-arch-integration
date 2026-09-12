@@ -3,11 +3,14 @@
 //| Thin EA: reads indicator signal buffers, logs only (no orders)   |
 //|                                                                  |
 //| Attach to the same chart as the indicator you want to monitor.   |
-//| Default: ForexHtfPivotsFib buffer 8.                             |
-//| UsIndexSessionScalp: buffer 8, InpMaxSpreadPips=0.               |
-//| BtcTrendPullback: buffer 7, InpMaxSpreadPips=0.                  |
-//| BtcNySessionScalp: buffer 8, InpMaxSpreadPips=0.                 |
-//| ForexIndicatorTemplate: buffer 9.                                |
+//| Buffer indices live in Include/SignalContract.mqh:               |
+//|   UIS=8  BNS=8  HTFFIB=8  BTP=7  FXIT=9                          |
+//| Default: ForexHtfPivotsFib / HTFFIB_SIGNAL_BUFFER (8).           |
+//| InpSignalBuffer stays an input so existing .set files work.      |
+//| UsIndexSessionScalp: UIS=8, InpMaxSpreadPips=0.                  |
+//| BtcNySessionScalp:   BNS=8, InpMaxSpreadPips=0.                  |
+//| BtcTrendPullback:    BTP=7, InpMaxSpreadPips=0.                  |
+//| ForexIndicatorTemplate: FXIT=9 (not 8 — 8 is the short arrow).   |
 //|                                                                  |
 //| Output:                                                           |
 //|  • Experts tab Print lines                                        |
@@ -21,10 +24,15 @@
 #property strict
 
 #include <ForexUtils.mqh>
+#include <SignalContract.mqh>
+
+#if HTFFIB_SIGNAL_BUFFER != 8
+   #error "ForexSignalLogger default InpSignalBuffer=8 must match HTFFIB_SIGNAL_BUFFER"
+#endif
 
 input group "=== Indicator ==="
 input string InpIndicatorName   = "ForexHtfPivotsFib"; // Indicator file name (no .ex5)
-input int    InpSignalBuffer    = 8;                   // Signal buffer (HTF Fib=8, Template=9)
+input int    InpSignalBuffer    = 8;                   // Signal buffer (HTFFIB=8, BTP=7, FXIT=9; SignalContract.mqh)
 input int    InpSignalShift     = 1;                   // 1 = last closed bar
 
 input group "=== Filters ==="
@@ -61,8 +69,15 @@ int OnInit()
    if(InpWriteCsv)
       FolderCreate(InpCsvDir);
 
+   int expected = SignalContractBufferFor(InpIndicatorName);
+   if(expected >= 0 && InpSignalBuffer != expected)
+      Print("ForexSignalLogger: buf=", InpSignalBuffer,
+            " != SignalContract ", InpIndicatorName, "=", expected,
+            " (", SignalContractTable(), ")");
+
    Print("ForexSignalLogger ON | ", _Symbol, " ", EnumToString(Period()),
          " | ind=", InpIndicatorName, " buf=", InpSignalBuffer,
+         " | contract=", SignalContractTable(),
          " | NO ORDERS");
    return INIT_SUCCEEDED;
   }

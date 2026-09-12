@@ -62,6 +62,10 @@
 #property indicator_width7  2
 
 #include <ForexUtils.mqh>
+#include <SignalContract.mqh>
+#if FXIT_SIGNAL_BUFFER != 9
+   #error "ForexIndicatorTemplate signal buffer must stay FXIT_SIGNAL_BUFFER=9"
+#endif
 
 //+------------------------------------------------------------------+
 //| Inputs                                                           |

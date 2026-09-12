@@ -66,6 +66,10 @@
 #property indicator_width7  2
 
 #include <BtcSessionUtils.mqh>
+#include <SignalContract.mqh>
+#if BNS_SIGNAL_BUFFER != 8
+   #error "BtcNySessionScalp signal buffer must stay BNS_SIGNAL_BUFFER=8"
+#endif
 
 enum ENUM_BTC_FAMILY
   {

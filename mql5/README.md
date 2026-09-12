@@ -4,6 +4,7 @@
 |------|------|
 | `Include/ForexUtils.mqh` | Pips, sessions, spread, pure EMA/ATR/RSI, pivot helpers |
 | `Include/IndexSessionUtils.mqh` | US-index DST clock (ET / London / Tokyo) + point spread |
+| `Include/SignalContract.mqh` | Overlay SIGNAL buffer indices (UIS/BNS/HTFFIB=8, BTP=7, FXIT=9) |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD H1:** H4 bias + H1 EMA pullback reclaim (ATR guides, buffer 7) |
@@ -93,6 +94,7 @@ Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Sc
 - `InpManualEmaOverride` / `InpManualOverride` locks periods to the input fields
 
 Signal buffers: **HTF Fib = 8**, **US index scalp = 8**, **BTC NY scalp = 8**, **BTC H1 pullback = 7**, **Template = 9**.
+Authoritative indices: `Include/SignalContract.mqh`. Template signal is **9**, never 8 (8 is the short arrow).
 
 ### RSI + RSI-MA (both indicators)
 
@@ -127,7 +129,7 @@ Static snapshot — regenerate after re-drawing zones. Full notes:
 
 ### ForexHtfPivotsFib buffers (`iCustom`)
 
-Authoritative map (v1.42+). Do not use the old signal-at-7 table.
+Authoritative map (v1.42+, `HTFFIB_SIGNAL_BUFFER` in `Include/SignalContract.mqh`). Do not use the old signal-at-7 table.
 Parity harness: [docs/MQL5-PYTHON-PARITY.md](../docs/MQL5-PYTHON-PARITY.md).
 
 | Index | Content |
@@ -152,14 +154,20 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 
 ### ForexIndicatorTemplate buffers
 
+Authoritative map (`FXIT_SIGNAL_BUFFER` in `Include/SignalContract.mqh`).
+Signal is **9**. Buffer **8** is the short arrow, not the signal — do not write signal=8 here.
+
 | Index | Content |
 |------:|---------|
 | 0–3 | Bull/bear cloud |
 | 4–6 | EMAs (fast / slow / bias) |
 | 7–8 | Long/short arrows |
-| **9** | **Signal** (10–11 RSI/RSI-MA, internal) |
+| **9** | **Signal (+1/−1/0)** |
+| 10–11 | RSI / RSI-MA (internal) |
 
 ### UsIndexSessionScalp buffers (`iCustom`)
+
+Authoritative map (`UIS_SIGNAL_BUFFER` in `Include/SignalContract.mqh`).
 
 | Index | Content |
 |------:|---------|
@@ -173,6 +181,8 @@ CopyBuffer(handle, 8, 1, 1, sig);  // last closed bar
 | 9 | ATR |
 
 ### BtcNySessionScalp buffers (`iCustom`)
+
+Authoritative map (`BNS_SIGNAL_BUFFER` in `Include/SignalContract.mqh`).
 
 | Index | Name | Notes |
 |------:|------|-------|
@@ -188,6 +198,8 @@ SCREEN_FAIL / observe-only. Not a trading signal.
 
 ### BtcTrendPullback buffers (`iCustom`)
 
+Authoritative map (`BTP_SIGNAL_BUFFER` in `Include/SignalContract.mqh`).
+
 | Index | Content |
 |------:|---------|
 | 0 | EMA50 |
@@ -201,7 +213,8 @@ SCREEN_FAIL / observe-only. Not a trading signal.
 
 ### ForexSignalLogger
 
-- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, `UsIndexSessionScalp`, or `ForexIndicatorTemplate`), buffer (`7` or `8`)
+- Inputs: indicator name (`ForexHtfPivotsFib`, `BtcTrendPullback`, `BtcNySessionScalp`, `UsIndexSessionScalp`, or `ForexIndicatorTemplate`); buffer from `Include/SignalContract.mqh` (HTFFIB/UIS/BNS=**8**, BTP=**7**, FXIT=**9**)
+- Default `InpSignalBuffer=8` (HTFFIB). The input stays so existing `.set` files keep working.
 - BTC / US index: set **`InpMaxSpreadPips=0`** (pip gate is FX-oriented)
 - US-index preset: `Presets/ForexSignalLogger-UsIndexSessionScalp.set` (name=`UsIndexSessionScalp`, buffer **8**, max-spread pips **0**)
 - Writes `MQL5/Files/forex_signals/<SYMBOL>_<TF>.csv`
