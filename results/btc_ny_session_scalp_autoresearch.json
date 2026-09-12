@@ -1,0 +1,1088 @@
+{
+  "search_id": "btc_ny_session_scalp_develop_v1",
+  "promote": false,
+  "live_go": false,
+  "disposition": "SCREEN_FAIL",
+  "overlay_default": "btc_ny_overlap_vwap_ema_flat",
+  "holdout_start": "2026-03-01",
+  "n_configs": 96,
+  "n_eligible": 0,
+  "best_develop": null,
+  "top5_develop": [],
+  "by_family_best": {
+    "btc_ny_overlap_vwap_ema_flat": {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts6|nfp1|atr0.00015",
+      "params": {
+        "sl_atr": 1.0,
+        "tp_r": 1.5,
+        "time_stop_bars": 6,
+        "min_atr_pct": 0.00015,
+        "nfp_blackout": true
+      },
+      "develop": {
+        "trades": 217,
+        "wins": 82,
+        "losses": 135,
+        "win_rate": 0.3778801843317972,
+        "net_pnl": -6056.801191304912,
+        "avg_trade": -27.911526227211585,
+        "profit_factor": 0.7023226395665297,
+        "max_dd": -7046.916151741575,
+        "expectancy": -27.911526227211585,
+        "longs": 111,
+        "shorts": 106,
+        "median_mae": 128.5,
+        "median_mfe": 115.0
+      },
+      "eligible": false
+    },
+    "btc_ny_overlap_atr_drive": {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts6|nfp0|atr0.00015",
+      "params": {
+        "sl_atr": 1.0,
+        "tp_r": 1.0,
+        "time_stop_bars": 6,
+        "min_atr_pct": 0.00015,
+        "nfp_blackout": false
+      },
+      "develop": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0.0,
+        "net_pnl": 0.0,
+        "avg_trade": 0.0,
+        "profit_factor": 0.0,
+        "max_dd": 0.0,
+        "expectancy": 0.0,
+        "longs": 0,
+        "shorts": 0,
+        "median_mae": 0.0,
+        "median_mfe": 0.0
+      },
+      "eligible": false
+    },
+    "btc_ny_overlap_htf_pullback": {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts6|nfp1|atr0.00015",
+      "params": {
+        "sl_atr": 1.5,
+        "tp_r": 1.0,
+        "time_stop_bars": 6,
+        "min_atr_pct": 0.00015,
+        "nfp_blackout": true
+      },
+      "develop": {
+        "trades": 188,
+        "wins": 81,
+        "losses": 107,
+        "win_rate": 0.4308510638297872,
+        "net_pnl": -5673.726409758995,
+        "avg_trade": -30.17939579659041,
+        "profit_factor": 0.747015083851638,
+        "max_dd": -7168.43632602153,
+        "expectancy": -30.17939579659041,
+        "longs": 88,
+        "shorts": 100,
+        "median_mae": 183.8399999999965,
+        "median_mfe": 159.3000000000029
+      },
+      "eligible": false
+    }
+  },
+  "null": {
+    "family": "btc_ny_overlap_vwap_ema_flat",
+    "seeds": 10,
+    "real_develop_score": -1000000000.0,
+    "null_scores": [
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0
+    ],
+    "frac_null_ge_real": 1.0
+  },
+  "transfers": {
+    "index_transfer": {
+      "family_id": "index_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 320,
+        "wins": 155,
+        "losses": 165,
+        "win_rate": 0.484375,
+        "net_pnl": 3797.2300000000896,
+        "avg_trade": 11.8663437500003,
+        "profit_factor": 1.0252932847498997,
+        "max_dd": -13336.879999999961,
+        "expectancy": 11.8663437500003,
+        "longs": 157,
+        "shorts": 163,
+        "median_mae": 654.2750000000015,
+        "median_mfe": 702.7999999999993
+      },
+      "develop": {
+        "trades": 208,
+        "wins": 103,
+        "losses": 105,
+        "win_rate": 0.4951923076923077,
+        "net_pnl": 8752.680000000077,
+        "avg_trade": 42.08019230769267,
+        "profit_factor": 1.0794512985129736,
+        "max_dd": -13336.879999999961,
+        "expectancy": 42.08019230769267,
+        "longs": 103,
+        "shorts": 105,
+        "median_mae": 728.875,
+        "median_mfe": 849.375
+      },
+      "holdout": {
+        "trades": 112,
+        "wins": 52,
+        "losses": 60,
+        "win_rate": 0.4642857142857143,
+        "net_pnl": -4955.449999999987,
+        "avg_trade": -44.24508928571417,
+        "profit_factor": 0.8760018416621003,
+        "max_dd": -12785.999999999993,
+        "expectancy": -44.24508928571417,
+        "longs": 54,
+        "shorts": 58,
+        "median_mae": 532.7999999999993,
+        "median_mfe": 469.5
+      },
+      "signals": 320
+    },
+    "gold_transfer": {
+      "family_id": "gold_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 516,
+        "wins": 241,
+        "losses": 275,
+        "win_rate": 0.46705426356589147,
+        "net_pnl": -9961.626301948716,
+        "avg_trade": -19.305477329357984,
+        "profit_factor": 0.7688934935182588,
+        "max_dd": -10447.429806581926,
+        "expectancy": -19.305477329357984,
+        "longs": 233,
+        "shorts": 283,
+        "median_mae": 110.54999999999927,
+        "median_mfe": 115.7100000000064
+      },
+      "develop": {
+        "trades": 326,
+        "wins": 143,
+        "losses": 183,
+        "win_rate": 0.4386503067484663,
+        "net_pnl": -8736.85986537664,
+        "avg_trade": -26.800183636124668,
+        "profit_factor": 0.72107267255589,
+        "max_dd": -9524.893559896123,
+        "expectancy": -26.800183636124668,
+        "longs": 143,
+        "shorts": 183,
+        "median_mae": 132.60499999999593,
+        "median_mfe": 129.5
+      },
+      "holdout": {
+        "trades": 190,
+        "wins": 98,
+        "losses": 92,
+        "win_rate": 0.5157894736842106,
+        "net_pnl": -1224.7664365720757,
+        "avg_trade": -6.44613913985303,
+        "profit_factor": 0.8960386691202357,
+        "max_dd": -3081.643237131635,
+        "expectancy": -6.44613913985303,
+        "longs": 90,
+        "shorts": 100,
+        "median_mae": 84.52499999999782,
+        "median_mfe": 100.47499999999854
+      },
+      "signals": 516
+    }
+  },
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 160.0,
+    "max_spread_points": 2000.0
+  },
+  "bars": 100006,
+  "note": "Holdout unused for selection. Transfers never ranked. Not permission to --live.",
+  "rows_slim": [
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5583928445475975,
+      "develop_net": -8680.459044172656,
+      "holdout_pf": 0.9359770458015635
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5583928445475975,
+      "develop_net": -8680.459044172656,
+      "holdout_pf": 0.9359770458015635
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5999053456710556,
+      "develop_net": -7658.099939803957,
+      "holdout_pf": 0.8975083286174314
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5999053456710556,
+      "develop_net": -7658.099939803957,
+      "holdout_pf": 0.8975083286174314
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5658527359890856,
+      "develop_net": -8868.75419661539,
+      "holdout_pf": 0.9359770458015635
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5658527359890856,
+      "develop_net": -8868.75419661539,
+      "holdout_pf": 0.9359770458015635
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6059501357670817,
+      "develop_net": -7846.39509224669,
+      "holdout_pf": 0.8751631058307665
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6059501357670817,
+      "develop_net": -7846.39509224669,
+      "holdout_pf": 0.8751631058307665
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.660323584771867,
+      "develop_net": -7086.554597077174,
+      "holdout_pf": 0.9617702171322892
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.660323584771867,
+      "develop_net": -7086.554597077174,
+      "holdout_pf": 0.9617702171322892
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.7023226395665297,
+      "develop_net": -6056.801191304912,
+      "holdout_pf": 0.9311934692154638
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.7023226395665297,
+      "develop_net": -6056.801191304912,
+      "holdout_pf": 0.9311934692154638
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6434095067704626,
+      "develop_net": -8014.724114195454,
+      "holdout_pf": 0.9255166533291609
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6434095067704626,
+      "develop_net": -8014.724114195454,
+      "holdout_pf": 0.9255166533291609
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6663874662176795,
+      "develop_net": -7426.488332121327,
+      "holdout_pf": 0.9053407432478966
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.0|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6663874662176795,
+      "develop_net": -7426.488332121327,
+      "holdout_pf": 0.9053407432478966
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6587640077378182,
+      "develop_net": -8365.18871757058,
+      "holdout_pf": 0.8228480482247128
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6587640077378182,
+      "develop_net": -8365.18871757058,
+      "holdout_pf": 0.8228480482247128
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6928978795747907,
+      "develop_net": -7385.341888692469,
+      "holdout_pf": 0.7974845320469979
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6928978795747907,
+      "develop_net": -7385.341888692469,
+      "holdout_pf": 0.7974845320469979
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6346574455359689,
+      "develop_net": -10275.567450524732,
+      "holdout_pf": 0.7747184862781796
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6346574455359689,
+      "develop_net": -10275.567450524732,
+      "holdout_pf": 0.7747184862781796
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6550385495005369,
+      "develop_net": -9596.91666506607,
+      "holdout_pf": 0.724288606329752
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6550385495005369,
+      "develop_net": -9596.91666506607,
+      "holdout_pf": 0.724288606329752
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6195197880499683,
+      "develop_net": -10169.00520102642,
+      "holdout_pf": 0.8046205743521614
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6195197880499683,
+      "develop_net": -10169.00520102642,
+      "holdout_pf": 0.8046205743521614
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6575125217589285,
+      "develop_net": -8994.020484495784,
+      "holdout_pf": 0.7770717493568563
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.6575125217589285,
+      "develop_net": -8994.020484495784,
+      "holdout_pf": 0.7770717493568563
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5151164602957072,
+      "develop_net": -16024.241180320723,
+      "holdout_pf": 0.8756272104691267
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5151164602957072,
+      "develop_net": -16024.241180320723,
+      "holdout_pf": 0.8756272104691267
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5372780576519416,
+      "develop_net": -15150.452507209535,
+      "holdout_pf": 0.8119940732892791
+    },
+    {
+      "id": "btc_ny_overlap_vwap_ema_flat|sl1.5|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 217,
+      "develop_pf": 0.5372780576519416,
+      "develop_net": -15150.452507209535,
+      "holdout_pf": 0.8119940732892791
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.0|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_atr_drive|sl1.5|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_atr_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5870510602346732,
+      "develop_net": -7784.605137160674,
+      "holdout_pf": 0.6826480952042541
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5870510602346732,
+      "develop_net": -7784.605137160674,
+      "holdout_pf": 0.6826480952042541
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6418108236450274,
+      "develop_net": -6621.751273376964,
+      "holdout_pf": 0.7613142421451251
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6418108236450274,
+      "develop_net": -6621.751273376964,
+      "holdout_pf": 0.7613142421451251
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.6102224360839223,
+      "develop_net": -7479.051152733518,
+      "holdout_pf": 0.6455326736691396
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.6102224360839223,
+      "develop_net": -7479.051152733518,
+      "holdout_pf": 0.6455326736691396
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6561027598530228,
+      "develop_net": -6386.813091244281,
+      "holdout_pf": 0.6976131378689561
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6561027598530228,
+      "develop_net": -6386.813091244281,
+      "holdout_pf": 0.6976131378689561
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5467917022372029,
+      "develop_net": -9798.133995805387,
+      "holdout_pf": 0.6976099800369191
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5467917022372029,
+      "develop_net": -9798.133995805387,
+      "holdout_pf": 0.6976099800369191
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.5795105556057136,
+      "develop_net": -9042.49794303442,
+      "holdout_pf": 0.7388734329107475
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.5795105556057136,
+      "develop_net": -9042.49794303442,
+      "holdout_pf": 0.7388734329107475
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5979000566961338,
+      "develop_net": -8967.808444849055,
+      "holdout_pf": 0.6724361228143374
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.5979000566961338,
+      "develop_net": -8967.808444849055,
+      "holdout_pf": 0.6724361228143374
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6057858025868011,
+      "develop_net": -8732.61291588982,
+      "holdout_pf": 0.7348405273924599
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.0|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6057858025868011,
+      "develop_net": -8732.61291588982,
+      "holdout_pf": 0.7348405273924599
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.70645674696912,
+      "develop_net": -6626.951079574376,
+      "holdout_pf": 0.8022843642909091
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.70645674696912,
+      "develop_net": -6626.951079574376,
+      "holdout_pf": 0.8022843642909091
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.747015083851638,
+      "develop_net": -5673.726409758995,
+      "holdout_pf": 0.8579487685609478
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.747015083851638,
+      "develop_net": -5673.726409758995,
+      "holdout_pf": 0.8579487685609478
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.7100522439047628,
+      "develop_net": -7544.647367402685,
+      "holdout_pf": 0.8501979631164979
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.7100522439047628,
+      "develop_net": -7544.647367402685,
+      "holdout_pf": 0.8501979631164979
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.7150277613717245,
+      "develop_net": -7379.666423419055,
+      "holdout_pf": 0.8224741659766126
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.0|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.7150277613717245,
+      "develop_net": -7379.666423419055,
+      "holdout_pf": 0.8224741659766126
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts6|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.7301264203350967,
+      "develop_net": -6628.386225063688,
+      "holdout_pf": 0.8780303953707863
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts6|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.7301264203350967,
+      "develop_net": -6628.386225063688,
+      "holdout_pf": 0.8780303953707863
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts6|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.7408574950231195,
+      "develop_net": -6377.386847325041,
+      "holdout_pf": 0.9030959251015721
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts6|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.7408574950231195,
+      "develop_net": -6377.386847325041,
+      "holdout_pf": 0.9030959251015721
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts12|nfp0|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.6709082351665396,
+      "develop_net": -9967.665731376734,
+      "holdout_pf": 0.9928418614497566
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts12|nfp0|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 190,
+      "develop_pf": 0.6709082351665396,
+      "develop_net": -9967.665731376734,
+      "holdout_pf": 0.9928418614497566
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts12|nfp1|atr0.00015",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6784735033468227,
+      "develop_net": -9683.143009396788,
+      "holdout_pf": 0.8812253568039258
+    },
+    {
+      "id": "btc_ny_overlap_htf_pullback|sl1.5|tp1.5|ts12|nfp1|atr0.0003",
+      "family_id": "btc_ny_overlap_htf_pullback",
+      "eligible": false,
+      "develop_trades": 188,
+      "develop_pf": 0.6784735033468227,
+      "develop_net": -9683.143009396788,
+      "holdout_pf": 0.8812253568039258
+    }
+  ]
+}

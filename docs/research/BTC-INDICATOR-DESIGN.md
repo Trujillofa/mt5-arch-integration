@@ -11,6 +11,8 @@
 
 ---
 
+> **Different product:** NY-desk M5 overlap scalp is [BTC-NY-SESSION-SCALP.md](BTC-NY-SESSION-SCALP.md) / `BtcNySessionScalp` (buffer **8**, SCREEN_FAIL). This memo stays H1/H4 `BtcTrendPullback` (buffer **7**). Do not mix session gates into this indicator.
+
 ## 1. Purpose of this document
 
 This memo freezes the **implementation design** for a BTC-only chart indicator on Wine MT5. It is the durable handoff between:

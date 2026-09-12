@@ -34,12 +34,14 @@ SRC_INC=(
   "${ROOT}/mql5/Include/FileBridgeSnapshots.mqh"
   "${ROOT}/mql5/Include/IndexSessionUtils.mqh"
   "${ROOT}/mql5/Include/IndexM5Export.mqh"
+  "${ROOT}/mql5/Include/BtcSessionUtils.mqh"
 )
 SRC_IND=(
   "${ROOT}/mql5/Indicators/ForexIndicatorTemplate.mq5"
   "${ROOT}/mql5/Indicators/ForexHtfPivotsFib.mq5"
   "${ROOT}/mql5/Indicators/BtcTrendPullback.mq5"
   "${ROOT}/mql5/Indicators/UsIndexSessionScalp.mq5"
+  "${ROOT}/mql5/Indicators/BtcNySessionScalp.mq5"
 )
 SRC_EA=(
   "${ROOT}/mql5/Experts/ForexSignalLogger.mq5"
@@ -62,6 +64,7 @@ SRC_FILES=(
 )
 SRC_PRESETS=(
   "${ROOT}/mql5/Presets/ForexSignalLogger-UsIndexSessionScalp.set"
+  "${ROOT}/mql5/Presets/ForexSignalLogger-BtcNySessionScalp.set"
 )
 
 for inc in "${SRC_INC[@]}"; do
@@ -138,9 +141,11 @@ Next steps:
        Include/ForexUtils.mqh          (auto via includes)
        Include/FxSymbolRegistry.mqh    (auto via includes)
        Include/IndexSessionUtils.mqh   (auto via includes)
+       Include/BtcSessionUtils.mqh     (auto via includes)
        Indicators/ForexHtfPivotsFib.mq5     ← FX/gold primary
        Indicators/BtcTrendPullback.mq5     ← BTCUSD primary
        Indicators/UsIndexSessionScalp.mq5  ← US30/US100 M5 scalp
+       Indicators/BtcNySessionScalp.mq5    ← BTCUSD M5 NY-desk (SCREEN_FAIL observe)
        Indicators/ForexIndicatorTemplate.mq5
        Experts/ForexSignalLogger.mq5        ← optional log-only EA
        Experts/TradeTransactionJournal.mq5  ← optional read-only trade-id journal
@@ -151,12 +156,15 @@ Next steps:
   2. FX/gold H1: ForexHtfPivotsFib
      BTCUSD H1:  BtcTrendPullback
      US30/US100 M5: UsIndexSessionScalp
+     BTCUSD M5 NY-desk: BtcNySessionScalp (observe-only, SCREEN_FAIL)
   3. Optional: Experts → ForexSignalLogger (Algo Trading green)
        FX:  InpIndicatorName=ForexHtfPivotsFib  buffer 8
        Template: buffer 9
        BTC: InpIndicatorName=BtcTrendPullback   buffer 7  MaxSpreadPips=0
        US index: InpIndicatorName=UsIndexSessionScalp buffer 8  MaxSpreadPips=0
-       preset: Presets/ForexSignalLogger-UsIndexSessionScalp.set
+       BTC NY M5: InpIndicatorName=BtcNySessionScalp buffer 8  MaxSpreadPips=0
+       presets: Presets/ForexSignalLogger-UsIndexSessionScalp.set
+                Presets/ForexSignalLogger-BtcNySessionScalp.set
        — logs signals only, never orders
   4. CSV logs: MQL5/Files/forex_signals/
      Trade-id journal (optional): Experts → TradeTransactionJournal
