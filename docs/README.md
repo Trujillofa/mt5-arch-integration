@@ -16,6 +16,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [FOREX-MT5-ROADMAP.md](FOREX-MT5-ROADMAP.md) | Forex observe → paper → live waves |
 | [MT5-INTEGRATION-CAPABILITIES.md](MT5-INTEGRATION-CAPABILITIES.md) | **Operator inventory** of the live Wine/MT5 path |
 | [research/HOWTO-BACKTEST-PATHS.md](research/HOWTO-BACKTEST-PATHS.md) | **Run index** for offline backtest paths (split, costs, promote=no) |
+| [research/INDICATOR-VALIDATION-MATRIX.md](research/INDICATOR-VALIDATION-MATRIX.md) | **Per-indicator lane/lock/PF/null/disposition matrix** + replay evidence |
 | [research/MATH-MODELS-ROADMAP.md](research/MATH-MODELS-ROADMAP.md) | **Which math models to implement next** (GARCH filter, TV-β, OU/coint; no code, promote=no) |
 | [HOWTO-US-INDEX-SCALP.md](HOWTO-US-INDEX-SCALP.md) | **Offline US-index session screens** (1%/20% **archived**; overlay observe-only) |
 | [HOWTO-BTC-NY-SESSION-SCALP.md](HOWTO-BTC-NY-SESSION-SCALP.md) | **Offline BTC NY-desk overlap** (SCREEN_FAIL 0/96; overlay observe-only) |
