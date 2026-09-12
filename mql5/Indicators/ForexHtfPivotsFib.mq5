@@ -63,6 +63,7 @@
 #include <ForexUtils.mqh>
 #include <FxSymbolRegistry.mqh>
 #include <SignalContract.mqh>
+#include <ChartObjects.mqh>
 
 //+------------------------------------------------------------------+
 enum ENUM_FIB_SOURCE
@@ -365,36 +366,7 @@ void OnDeinit(const int reason)
    if(g_hEmaSlow != INVALID_HANDLE) IndicatorRelease(g_hEmaSlow);
    if(g_hEmaBias != INVALID_HANDLE) IndicatorRelease(g_hEmaBias);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
-
-   // Only wipe drawings when really leaving the chart — not on EMA/input tweak,
-   // and NOT on REASON_CHARTCHANGE.
-   //
-   // REASON_CHARTCHANGE fires on every symbol *and timeframe* switch, and g_pfx is
-   // keyed on ChartID(), which does not change when the timeframe does. So the old
-   // code deleted all ~18 objects and OnInit + the first OnCalculate immediately
-   // recreated the same ~18 under the same names -- a pure delete-all/recreate-all
-   // cycle, for nothing, on every flip of the timeframe button.
-   //
-   // That is a mass GDI teardown, which is exactly what the OnInit comment above
-   // already warns freezes the UI under Wine. Measured on 2026-08-13: Vantage (65
-   // indicator load/remove events) froze at 09:26 and FP Markets (31 events) at
-   // 09:56, both with the main thread dead inside win32u.so -- one deadlocked on
-   // pthread_mutex_lock under NtUserDispatchMessage/NtGdiSelectBitmap, the other in
-   // an endless SEGV_MAPERR loop under NtUserGetMessage. Exness, same host and Wine
-   // build but 0 such events, ran 22h clean.
-   //
-   // Dropping the wipe here is safe because every draw path is idempotent: each
-   // object is created only when ObjectFind() misses, then repositioned by name, and
-   // every hidden branch deletes its own keys explicitly. A surviving object is
-   // adopted and moved by the next instance within one OnCalculate.
-   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_RECOMPILE)
-     {
-      ObjectsDeleteAll(0, g_pfx);
-      Comment("");
-     }
-   // REASON_PARAMETERS / REASON_CHARTCHANGE / REASON_ACCOUNT: keep objects, just
-   // release handles
+   CoWipePrefix(reason, g_pfx);
   }
 
 //+------------------------------------------------------------------+
@@ -1187,45 +1159,17 @@ void HLine(const string key, const double price,
            const datetime t1, const datetime t2,
            const color clr, const string label)
   {
-   string name = g_pfx + key;
-   if(ObjectFind(0, name) < 0)
-     {
-      ObjectCreate(0, name, OBJ_TREND, 0, t1, price, t2, price);
-      ObjectSetInteger(0, name, OBJPROP_RAY_RIGHT, true);
-      ObjectSetInteger(0, name, OBJPROP_RAY_LEFT, false);
-      ObjectSetInteger(0, name, OBJPROP_WIDTH, (key == "F618" || StringFind(key, "P") == 0) ? 2 : 1);
-      ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_SOLID);
-      ObjectSetInteger(0, name, OBJPROP_BACK, true);
-      ObjectSetInteger(0, name, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, name, OBJPROP_HIDDEN, true);
-     }
-   ObjectMove(0, name, 0, t1, price);
-   ObjectMove(0, name, 1, t2, price);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, clr);
-
+   int width = (key == "F618" || StringFind(key, "P") == 0) ? 2 : 1;
+   CoTrend(g_pfx + key, t1, price, t2, clr, STYLE_SOLID, width, true);
    if(StringLen(label) > 0)
-     {
-      string lname = g_pfx + key + "_lbl";
-      if(ObjectFind(0, lname) < 0)
-        {
-         ObjectCreate(0, lname, OBJ_TEXT, 0, t2, price);
-         ObjectSetInteger(0, lname, OBJPROP_FONTSIZE, 8);
-         ObjectSetString(0, lname, OBJPROP_FONT, "Arial");
-         ObjectSetInteger(0, lname, OBJPROP_SELECTABLE, false);
-         ObjectSetInteger(0, lname, OBJPROP_HIDDEN, true);
-         ObjectSetInteger(0, lname, OBJPROP_ANCHOR, ANCHOR_LEFT_LOWER);
-        }
-      ObjectMove(0, lname, 0, t2, price);
-      ObjectSetString(0, lname, OBJPROP_TEXT, " " + label + " " + DoubleToString(price, _Digits));
-      ObjectSetInteger(0, lname, OBJPROP_COLOR, clr);
-     }
+      CoText(g_pfx + key + "_lbl", t2, price,
+             " " + label + " " + DoubleToString(price, _Digits),
+             clr, 8, ANCHOR_LEFT_LOWER, "Arial");
    else
-     {
       // Callers pass "" to hide a label (InpShow4hLabels / InpShowDailyLabels). Without
       // this delete the previously drawn label object survived that toggle forever,
       // since REASON_PARAMETERS deliberately keeps objects.
       ObjectDelete(0, g_pfx + key + "_lbl");
-     }
   }
 
 //+------------------------------------------------------------------+

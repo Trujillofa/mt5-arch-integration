@@ -67,6 +67,7 @@
 
 #include <BtcSessionUtils.mqh>
 #include <SignalContract.mqh>
+#include <ChartObjects.mqh>
 
 enum ENUM_BTC_FAMILY
   {
@@ -187,13 +188,7 @@ void OnDeinit(const int reason)
    if(g_hAtr     != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hHtfFast != INVALID_HANDLE) IndicatorRelease(g_hHtfFast);
    if(g_hHtfSlow != INVALID_HANDLE) IndicatorRelease(g_hHtfSlow);
-   // HTF Fib lesson: never ObjectsDeleteAll on CHARTCHANGE / PARAMETERS.
-   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_RECOMPILE)
-     {
-      ObjectsDeleteAll(0, g_pfx);
-      Comment("");
-     }
+   CoWipePrefix(reason, g_pfx);
   }
 
 //+------------------------------------------------------------------+
@@ -218,23 +213,12 @@ void BnsDrawFlat(const datetime et_day_start)
       return;
    datetime et_flat = et_day_start + BTC_FLAT_MIN * 60;
    datetime server_flat = et_flat + BTC_SERVER_MINUS_SEC;
-   string name = g_pfx + "FLAT";
-   if(ObjectFind(0, name) < 0)
-      ObjectCreate(0, name, OBJ_VLINE, 0, server_flat, 0);
-   ObjectSetInteger(0, name, OBJPROP_TIME, server_flat);
-   ObjectSetInteger(0, name, OBJPROP_COLOR, InpColFlat);
-   ObjectSetInteger(0, name, OBJPROP_STYLE, STYLE_DOT);
-   ObjectSetString(0, name, OBJPROP_TEXT, "FLAT 11:30 ET");
-   {
-      datetime et_open = et_day_start + BTC_SESSION_START_MIN * 60;
-      datetime server_open = et_open + BTC_SERVER_MINUS_SEC;
-      string n2 = g_pfx + "NY08";
-      if(ObjectFind(0, n2) < 0)
-         ObjectCreate(0, n2, OBJ_VLINE, 0, server_open, 0);
-      ObjectSetInteger(0, n2, OBJPROP_TIME, server_open);
-      ObjectSetInteger(0, n2, OBJPROP_COLOR, InpColNy);
-      ObjectSetString(0, n2, OBJPROP_TEXT, "NY desk 08:00");
-   }
+   CoVline(g_pfx + "FLAT", server_flat, InpColFlat, STYLE_DOT, 1,
+           false, false, "FLAT 11:30 ET");
+   datetime et_open = et_day_start + BTC_SESSION_START_MIN * 60;
+   datetime server_open = et_open + BTC_SERVER_MINUS_SEC;
+   CoVline(g_pfx + "NY08", server_open, InpColNy, STYLE_SOLID, 1,
+           false, false, "NY desk 08:00");
   }
 
 //+------------------------------------------------------------------+

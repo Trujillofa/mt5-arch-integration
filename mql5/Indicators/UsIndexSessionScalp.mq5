@@ -68,6 +68,7 @@
 #include <IndexSessionUtils.mqh>
 #include <IndexM5Export.mqh>
 #include <SignalContract.mqh>
+#include <ChartObjects.mqh>
 
 #define IDX_MAX_BOXES 12
 
@@ -253,13 +254,7 @@ void OnDeinit(const int reason)
    if(g_hAtr     != INVALID_HANDLE) IndicatorRelease(g_hAtr);
    if(g_hRsi     != INVALID_HANDLE) IndicatorRelease(g_hRsi);
    if(g_hMacd    != INVALID_HANDLE) IndicatorRelease(g_hMacd);
-   // HTF Fib lesson: never ObjectsDeleteAll on CHARTCHANGE / PARAMETERS.
-   if(reason == REASON_REMOVE || reason == REASON_CHARTCLOSE ||
-      reason == REASON_RECOMPILE)
-     {
-      ObjectsDeleteAll(0, g_pfx);
-      Comment("");
-     }
+   CoWipePrefix(reason, g_pfx);
   }
 
 //+------------------------------------------------------------------+
@@ -324,79 +319,6 @@ double IdxLabelPrice(const int slot)
   }
 
 //+------------------------------------------------------------------+
-void IdxUpsertRect(const string key, const datetime t1, const double p1,
-                   const datetime t2, const double p2, const color col,
-                   const bool fill)
-  {
-   if(ObjectFind(0, key) < 0)
-     {
-      ObjectCreate(0, key, OBJ_RECTANGLE, 0, t1, p1, t2, p2);
-      ObjectSetInteger(0, key, OBJPROP_BACK, true);
-      ObjectSetInteger(0, key, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, key, OBJPROP_HIDDEN, true);
-      ObjectSetInteger(0, key, OBJPROP_BORDER_TYPE, BORDER_FLAT);
-     }
-   ObjectMove(0, key, 0, t1, p1);
-   ObjectMove(0, key, 1, t2, p2);
-   ObjectSetInteger(0, key, OBJPROP_FILL, fill);
-   ObjectSetInteger(0, key, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, key, OBJPROP_BGCOLOR, col);
-   ObjectSetInteger(0, key, OBJPROP_STYLE, fill ? STYLE_SOLID : STYLE_DOT);
-   ObjectSetInteger(0, key, OBJPROP_WIDTH, 1);
-  }
-
-//+------------------------------------------------------------------+
-void IdxUpsertVline(const string key, const datetime t, const color col,
-                    const ENUM_LINE_STYLE style = STYLE_SOLID)
-  {
-   if(ObjectFind(0, key) < 0)
-     {
-      ObjectCreate(0, key, OBJ_VLINE, 0, t, 0);
-      ObjectSetInteger(0, key, OBJPROP_BACK, true);
-      ObjectSetInteger(0, key, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, key, OBJPROP_HIDDEN, true);
-      ObjectSetInteger(0, key, OBJPROP_WIDTH, 1);
-     }
-   ObjectMove(0, key, 0, t, 0);
-   ObjectSetInteger(0, key, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, key, OBJPROP_STYLE, style);
-  }
-
-//+------------------------------------------------------------------+
-void IdxUpsertHline(const string key, const double price, const color col,
-                    const ENUM_LINE_STYLE style)
-  {
-   if(ObjectFind(0, key) < 0)
-     {
-      ObjectCreate(0, key, OBJ_HLINE, 0, 0, price);
-      ObjectSetInteger(0, key, OBJPROP_BACK, true);
-      ObjectSetInteger(0, key, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, key, OBJPROP_HIDDEN, true);
-      ObjectSetInteger(0, key, OBJPROP_WIDTH, 1);
-     }
-   ObjectSetDouble(0, key, OBJPROP_PRICE, 0, price);
-   ObjectSetInteger(0, key, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, key, OBJPROP_STYLE, style);
-  }
-
-//+------------------------------------------------------------------+
-void IdxUpsertText(const string key, const datetime t, const double price,
-                   const string text, const color col)
-  {
-   if(ObjectFind(0, key) < 0)
-     {
-      ObjectCreate(0, key, OBJ_TEXT, 0, t, price);
-      ObjectSetInteger(0, key, OBJPROP_SELECTABLE, false);
-      ObjectSetInteger(0, key, OBJPROP_HIDDEN, true);
-      ObjectSetInteger(0, key, OBJPROP_ANCHOR, ANCHOR_LEFT_UPPER);
-     }
-   ObjectMove(0, key, 0, t, price);
-   ObjectSetString(0, key, OBJPROP_TEXT, text);
-   ObjectSetInteger(0, key, OBJPROP_COLOR, col);
-   ObjectSetInteger(0, key, OBJPROP_FONTSIZE, 11);
-  }
-
-//+------------------------------------------------------------------+
 //| Most recent session range as full-width S/R (ORH/PDH pattern).   |
 //| Does not change BufSignal. Tokyo vlines stay on InpShowTokyo.    |
 //+------------------------------------------------------------------+
@@ -421,12 +343,12 @@ void IdxDrawLatestSessionHl(const string tag,
       ObjectDelete(0, lt);
       return;
      }
-   IdxUpsertHline(hk, boxes[n - 1].hi, col, STYLE_SOLID);
-   IdxUpsertHline(lk, boxes[n - 1].lo, col, STYLE_SOLID);
+   CoHline(hk, boxes[n - 1].hi, col, STYLE_SOLID, 1);
+   CoHline(lk, boxes[n - 1].lo, col, STYLE_SOLID, 1);
    if(label_t > 0)
      {
-      IdxUpsertText(ht, label_t, boxes[n - 1].hi, hi_label, col);
-      IdxUpsertText(lt, label_t, boxes[n - 1].lo, lo_label, col);
+      CoText(ht, label_t, boxes[n - 1].hi, hi_label, col, 11, ANCHOR_LEFT_UPPER);
+      CoText(lt, label_t, boxes[n - 1].lo, lo_label, col, 11, ANCHOR_LEFT_UPPER);
      }
   }
 
@@ -449,12 +371,12 @@ void IdxDrawBoxSet(const string tag, const string label,
          continue;
         }
       if(InpShowSessionBoxes)
-         IdxUpsertRect(rk, boxes[i].t0, boxes[i].hi, boxes[i].t1, boxes[i].lo,
-                       col, false);
+         CoRect(rk, boxes[i].t0, boxes[i].hi, boxes[i].t1, boxes[i].lo,
+                col, false, STYLE_DOT, 1);
       else
          ObjectDelete(0, rk);
-      IdxUpsertVline(vk, boxes[i].t0, col, STYLE_SOLID);
-      IdxUpsertText(tk, boxes[i].t0, y, label, col);
+      CoVline(vk, boxes[i].t0, col, STYLE_SOLID, 1);
+      CoText(tk, boxes[i].t0, y, label, col, 11, ANCHOR_LEFT_UPPER);
      }
   }
 
@@ -519,17 +441,20 @@ void DrawSessionGeometry(const datetime &time[],
    string orlt = g_pfx + "ORLT";
    if(InpShowOrBox && today_or_ok && today_or_t0 > 0)
      {
-      IdxUpsertRect(ork, today_or_t0, today_or_h, today_or_t1, today_or_l,
-                    InpColOr, false);
-      IdxUpsertText(ort, today_or_t0, today_or_h,
-                    "OR " + IntegerToString(InpOrMinutes) + "m", InpColOr);
+      CoRect(ork, today_or_t0, today_or_h, today_or_t1, today_or_l,
+             InpColOr, false, STYLE_DOT, 1);
+      CoText(ort, today_or_t0, today_or_h,
+             "OR " + IntegerToString(InpOrMinutes) + "m", InpColOr,
+             11, ANCHOR_LEFT_UPPER);
       // Full-width levels so afternoon zoom still shows the range.
-      IdxUpsertHline(orh, today_or_h, InpColOr, STYLE_DOT);
-      IdxUpsertHline(orl, today_or_l, InpColOr, STYLE_DOT);
+      CoHline(orh, today_or_h, InpColOr, STYLE_DOT, 1);
+      CoHline(orl, today_or_l, InpColOr, STYLE_DOT, 1);
       if(rates_total > 1)
         {
-         IdxUpsertText(orht, time[rates_total - 1], today_or_h, "ORH", InpColOr);
-         IdxUpsertText(orlt, time[rates_total - 1], today_or_l, "ORL", InpColOr);
+         CoText(orht, time[rates_total - 1], today_or_h, "ORH", InpColOr,
+                11, ANCHOR_LEFT_UPPER);
+         CoText(orlt, time[rates_total - 1], today_or_l, "ORL", InpColOr,
+                11, ANCHOR_LEFT_UPPER);
         }
      }
    else
@@ -546,12 +471,14 @@ void DrawSessionGeometry(const datetime &time[],
    string pdlk = g_pfx + "PDL";
    if(InpShowPriorDay && pdh > 0.0 && pdl > 0.0)
      {
-      IdxUpsertHline(pdhk, pdh, InpColPdh, STYLE_DASH);
-      IdxUpsertHline(pdlk, pdl, InpColPdl, STYLE_DASH);
+      CoHline(pdhk, pdh, InpColPdh, STYLE_DASH, 1);
+      CoHline(pdlk, pdl, InpColPdl, STYLE_DASH, 1);
       if(rates_total > 1)
         {
-         IdxUpsertText(g_pfx + "PDHT", time[rates_total - 1], pdh, "PDH", InpColPdh);
-         IdxUpsertText(g_pfx + "PDLT", time[rates_total - 1], pdl, "PDL", InpColPdl);
+         CoText(g_pfx + "PDHT", time[rates_total - 1], pdh, "PDH", InpColPdh,
+                11, ANCHOR_LEFT_UPPER);
+         CoText(g_pfx + "PDLT", time[rates_total - 1], pdl, "PDL", InpColPdl,
+                11, ANCHOR_LEFT_UPPER);
         }
      }
    else
@@ -570,8 +497,9 @@ void DrawSessionGeometry(const datetime &time[],
       IdxEtOfBar(time[rates_total - 1], g_offset, et_now);
       datetime flat_t = IdxEtWallToServer(et_now.year, et_now.mon, et_now.day,
                                           15, 45, g_offset);
-      IdxUpsertVline(flk, flat_t, InpColFlat, STYLE_DASH);
-      IdxUpsertText(flt, flat_t, IdxLabelPrice(3), "FLAT 15:45 ET", InpColFlat);
+      CoVline(flk, flat_t, InpColFlat, STYLE_DASH, 1);
+      CoText(flt, flat_t, IdxLabelPrice(3), "FLAT 15:45 ET", InpColFlat,
+             11, ANCHOR_LEFT_UPPER);
      }
    else
      {
@@ -603,13 +531,13 @@ void DrawAtrGuides(const datetime &time[],
      }
    double sl = last_sig_px - last_sig_side * InpSlAtr * last_sig_atr;
    double tp = last_sig_px + last_sig_side * InpTpAtr * last_sig_atr;
-   IdxUpsertHline(slk, sl, clrOrangeRed, STYLE_DASH);
-   IdxUpsertHline(tpk, tp, clrLime, STYLE_DASH);
+   CoHline(slk, sl, clrOrangeRed, STYLE_DASH, 1);
+   CoHline(tpk, tp, clrLime, STYLE_DASH, 1);
    if(rates_total > 1)
      {
       datetime t = time[rates_total - 1];
-      IdxUpsertText(slt, t, sl, "SL ATR", clrOrangeRed);
-      IdxUpsertText(tpt, t, tp, "TP ATR", clrLime);
+      CoText(slt, t, sl, "SL ATR", clrOrangeRed, 11, ANCHOR_LEFT_UPPER);
+      CoText(tpt, t, tp, "TP ATR", clrLime, 11, ANCHOR_LEFT_UPPER);
      }
   }
 
