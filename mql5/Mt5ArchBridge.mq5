@@ -11,7 +11,7 @@
 //+------------------------------------------------------------------+
 #property copyright "mt5-arch-integration"
 #property link      ""
-#property version   "1.27"
+#property version   "1.28"
 #property description "JSON bridge → MQL5/Files/mt5_arch/  |  ONE chart only under Wine"
 #property description "v1.20: timer-only + file lock (stops multi-EA freeze / err 5004)"
 #property description "v1.21: per-bar spread in candles + one-shot deep history dump"
@@ -20,11 +20,12 @@
 #property description "v1.25: in-process desk_live_order_request → pending OrderSend"
 #property description "v1.26: OrdersTotal dump → orders.json (working limits/stops)"
 #property description "v1.27: TRADE_ACTION_SLTP modify + magic on positions.json"
+#property description "v1.28: request-gated history dump (dump_history.request)"
 
 // Single source for the running version. #property takes a literal, so
 // tests/test_ea_version.py asserts the two stay equal — a deployed EA that
 // misreports its version is how a stale build hides in plain sight.
-#define BRIDGE_VERSION "1.27"
+#define BRIDGE_VERSION "1.28"
 #define BRIDGE_READONLY false
 
 #include <FxSymbolRegistry.mqh>
@@ -107,6 +108,7 @@ void OnTimer()
    WriteAll();
    // After heartbeat — HistorySelect can block on a fresh reconnect.
    DumpDealsIfRequested();
+   DumpHistoryIfRequested();
   }
 
 //+------------------------------------------------------------------+

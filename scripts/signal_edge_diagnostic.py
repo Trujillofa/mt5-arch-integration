@@ -50,6 +50,7 @@ Usage:
     python3 scripts/signal_edge_diagnostic.py --lane eurusd
     python3 scripts/signal_edge_diagnostic.py --lane xau
     python3 scripts/signal_edge_diagnostic.py --lane us_index
+    python3 scripts/signal_edge_diagnostic.py --lane oil
     python3 scripts/signal_edge_diagnostic.py --lane all --by-year
     python3 scripts/signal_edge_diagnostic.py --horizons 5,20,50 --by-year
 """
@@ -1046,12 +1047,60 @@ def _print_lane(families: list[LaneFamily], horizons: tuple[int, ...], by_year: 
                 print()
 
 
+
+# --- Oil session scalp lane --------------------------------------------------
+
+
+def _oil_lane(root: Path) -> list[LaneFamily]:
+    """Frozen oil search families on the locked M5 book. Skip if lock unstamped."""
+    import json
+    from oil_session_scalp_core import SEARCH_FAMILIES, family_signals, load_oil_m5
+
+    lock_path = root / "results" / "oil_session_scalp_lock.json"
+    lock = json.loads(lock_path.read_text())
+    data = lock.get("data") or {}
+    costs = lock.get("costs") or {}
+    if data.get("status") == "pending_m5_export" or not data.get("sha256"):
+        print("oil lane: lock data.sha256 empty — export M5 and stamp before diagnostic")
+        return []
+    csv = root / data["path"]
+    d = load_oil_m5(csv, expected_sha256=data["sha256"])
+    ho = date.fromisoformat(lock["holdout"]["start"])
+    develop = np.array([t.date() < ho for t in d.times_et], dtype=bool)
+    years = np.array([t.year for t in d.times_et], dtype=np.int32)
+    point = float(lock["book"]["point_size"])
+    spr = (costs.get("spread_measured") or {}).get("p50")
+    slip = float(costs.get("slippage_points") or 0)
+    if spr is None:
+        raise SystemExit("oil lane: spread not measured")
+    friction = float(spr) + 2.0 * slip
+    g = lock["grid"]
+    min_atr = float(g["min_atr_pct"][0])
+    out = []
+    for fam in SEARCH_FAMILIES:
+        sig = family_signals(d, fam, min_atr_pct=min_atr, eia_blackout=False)
+        out.append(
+            LaneFamily(
+                name=fam,
+                open=d.open,
+                close=d.close,
+                signals=sig,
+                develop=develop,
+                years=years,
+                point=point,
+                friction_pts=friction,
+                holdout_iso=lock["holdout"]["start"],
+            )
+        )
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument(
         "--lane",
         default="eurusd",
-        choices=("eurusd", "xau", "us_index", "all"),
+        choices=("eurusd", "xau", "us_index", "oil", "all"),
         help="which frozen lane adapter to run (default: eurusd)",
     )
     ap.add_argument("--csv", default="results/eurusd_data/history_EURUSD.csv")
@@ -1078,7 +1127,7 @@ def main() -> None:
     if not csv.is_absolute():
         csv = root / csv
 
-    lanes = ("eurusd", "xau", "us_index") if args.lane == "all" else (args.lane,)
+    lanes = ("eurusd", "xau", "us_index", "oil") if args.lane == "all" else (args.lane,)
     for lane in lanes:
         print(f"=== lane={lane} ===")
         if lane == "eurusd":
@@ -1088,6 +1137,9 @@ def main() -> None:
             _print_lane(families, horizons, args.by_year)
         elif lane == "xau":
             families = _xau_lane(root)
+            _print_lane(families, horizons, args.by_year)
+        elif lane == "oil":
+            families = _oil_lane(root)
             _print_lane(families, horizons, args.by_year)
         else:
             families, _runtime_skips = _us_index_lane(root)

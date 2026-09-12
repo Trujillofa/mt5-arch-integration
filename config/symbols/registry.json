@@ -7,54 +7,101 @@
     "USDJPY",
     "USDCHF",
     "XAUUSD",
-    "BTCUSD"
+    "BTCUSD",
+    "XTIUSD"
   ],
   "brokers": {
     "vantage": {
       "EURUSD": {
         "broker_symbol": "EURUSD",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "GBPUSD": {
         "broker_symbol": "GBPUSD",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "USDJPY": {
         "broker_symbol": "USDJPY",
-        "expect": {"digits": 3, "contract_size": 100000.0, "point": 0.001}
+        "expect": {
+          "digits": 3,
+          "contract_size": 100000.0,
+          "point": 0.001
+        }
       },
       "USDCHF": {
         "broker_symbol": "USDCHF",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "XAUUSD": {
         "broker_symbol": "XAUUSD",
-        "expect": {"digits": 2, "contract_size": 100.0, "point": 0.01}
+        "expect": {
+          "digits": 2,
+          "contract_size": 100.0,
+          "point": 0.01
+        }
       },
       "BTCUSD": {
         "broker_symbol": "BTCUSD"
+      },
+      "XTIUSD": {
+        "broker_symbol": "CL-OIL",
+        "expect": {
+          "digits": 3
+        },
+        "evidence": "Vantage live chart 2026-09-11: symbol=CL-OIL, description='Crude Oil Future CFD (USD)', digits=3. USOUSD is a different Vantage WTI name (M15.hc only) and is not this lock."
       }
     },
     "fpmarkets": {
       "EURUSD": {
         "broker_symbol": "EURUSD",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "GBPUSD": {
         "broker_symbol": "GBPUSD",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "USDJPY": {
         "broker_symbol": "USDJPY",
-        "expect": {"digits": 3, "contract_size": 100000.0, "point": 0.001}
+        "expect": {
+          "digits": 3,
+          "contract_size": 100000.0,
+          "point": 0.001
+        }
       },
       "USDCHF": {
         "broker_symbol": "USDCHF",
-        "expect": {"digits": 5, "contract_size": 100000.0, "point": 1e-05}
+        "expect": {
+          "digits": 5,
+          "contract_size": 100000.0,
+          "point": 1e-05
+        }
       },
       "XAUUSD": {
         "broker_symbol": "XAUUSD.r",
-        "expect": {"digits": 2, "contract_size": 100.0}
+        "expect": {
+          "digits": 2,
+          "contract_size": 100.0
+        }
       },
       "BTCUSD": {
         "broker_symbol": "BTCUSD"

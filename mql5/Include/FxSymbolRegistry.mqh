@@ -120,6 +120,12 @@ bool FxRegistryLookup(const string broker, const string requested,
          broker_symbol = "BTCUSD";
          return true;
         }
+      if(r == "XTIUSD" || r == "CL-OIL")
+        {
+         canonical = "XTIUSD";
+         broker_symbol = "CL-OIL";
+         return true;
+        }
       return false;
      }
    return false;
@@ -154,6 +160,11 @@ string FxCanonicalFromBrokerSymbolAny(const string broker_symbol)
    if(r == "BTCUSD")
      {
       hit = "BTCUSD";
+      n++;
+     }
+   if(r == "CL-OIL")
+     {
+      hit = "XTIUSD";
       n++;
      }
    if(r == "EURUSD")

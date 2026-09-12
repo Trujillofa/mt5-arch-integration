@@ -1,0 +1,1188 @@
+{
+  "search_id": "oil_session_scalp_develop_v1",
+  "promote": false,
+  "live_go": false,
+  "disposition": "SCREEN_FAIL",
+  "overlay_default": "oil_london_orb_vwap_ema_flat",
+  "holdout_start": "2026-04-01",
+  "n_configs": 96,
+  "n_eligible": 0,
+  "best_develop": null,
+  "top5_develop": [],
+  "by_family_best": {
+    "oil_london_orb_vwap_ema_flat": {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts12|eia0|atr0.00015",
+      "params": {
+        "sl_atr": 1.5,
+        "tp_r": 1.5,
+        "time_stop_bars": 12,
+        "min_atr_pct": 0.00015,
+        "eia_blackout": false
+      },
+      "develop": {
+        "trades": 146,
+        "wins": 53,
+        "losses": 93,
+        "win_rate": 0.363013698630137,
+        "net_pnl": -7018.729193197051,
+        "avg_trade": -48.07348762463733,
+        "profit_factor": 0.6383807947309905,
+        "max_dd": -7387.013870350967,
+        "expectancy": -48.07348762463733,
+        "longs": 73,
+        "shorts": 73,
+        "median_mae": 0.129999999999999,
+        "median_mfe": 0.12750000000000128
+      },
+      "eligible": false
+    },
+    "oil_ny_inventory_drive": {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts6|eia0|atr0.00015",
+      "params": {
+        "sl_atr": 1.0,
+        "tp_r": 1.0,
+        "time_stop_bars": 6,
+        "min_atr_pct": 0.00015,
+        "eia_blackout": false
+      },
+      "develop": {
+        "trades": 0,
+        "wins": 0,
+        "losses": 0,
+        "win_rate": 0.0,
+        "net_pnl": 0.0,
+        "avg_trade": 0.0,
+        "profit_factor": 0.0,
+        "max_dd": 0.0,
+        "expectancy": 0.0,
+        "longs": 0,
+        "shorts": 0,
+        "median_mae": 0.0,
+        "median_mfe": 0.0
+      },
+      "eligible": false
+    },
+    "oil_prior_day_reclaim": {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts6|eia0|atr0.00015",
+      "params": {
+        "sl_atr": 1.5,
+        "tp_r": 1.5,
+        "time_stop_bars": 6,
+        "min_atr_pct": 0.00015,
+        "eia_blackout": false
+      },
+      "develop": {
+        "trades": 158,
+        "wins": 59,
+        "losses": 99,
+        "win_rate": 0.37341772151898733,
+        "net_pnl": -4139.287713965971,
+        "avg_trade": -26.198023506113735,
+        "profit_factor": 0.7281539160053104,
+        "max_dd": -5542.722078157172,
+        "expectancy": -26.198023506113735,
+        "longs": 74,
+        "shorts": 84,
+        "median_mae": 0.11499999999999844,
+        "median_mfe": 0.11999999999999389
+      },
+      "eligible": false
+    }
+  },
+  "null": {
+    "family": "oil_london_orb_vwap_ema_flat",
+    "seeds": 10,
+    "real_develop_score": -1000000000.0,
+    "null_scores": [
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0,
+      -1000000000.0
+    ],
+    "frac_null_ge_real": 1.0
+  },
+  "transfers": {
+    "index_transfer": {
+      "family_id": "index_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 348,
+        "wins": 150,
+        "losses": 198,
+        "win_rate": 0.43103448275862066,
+        "net_pnl": -57321.999999999956,
+        "avg_trade": -164.7183908045976,
+        "profit_factor": 0.6698060495043233,
+        "max_dd": -64708.99999999998,
+        "expectancy": -164.7183908045976,
+        "longs": 176,
+        "shorts": 172,
+        "median_mae": 0.5800000000000054,
+        "median_mfe": 0.5250000000000057
+      },
+      "develop": {
+        "trades": 232,
+        "wins": 108,
+        "losses": 124,
+        "win_rate": 0.46551724137931033,
+        "net_pnl": -19607.00000000002,
+        "avg_trade": -84.51293103448283,
+        "profit_factor": 0.7748960988266627,
+        "max_dd": -37144.0,
+        "expectancy": -84.51293103448283,
+        "longs": 118,
+        "shorts": 114,
+        "median_mae": 0.44750000000000156,
+        "median_mfe": 0.4250000000000007
+      },
+      "holdout": {
+        "trades": 116,
+        "wins": 42,
+        "losses": 74,
+        "win_rate": 0.3620689655172414,
+        "net_pnl": -37714.999999999935,
+        "avg_trade": -325.12931034482693,
+        "profit_factor": 0.5639833986520079,
+        "max_dd": -38058.999999999935,
+        "expectancy": -325.12931034482693,
+        "longs": 58,
+        "shorts": 58,
+        "median_mae": 0.970000000000006,
+        "median_mfe": 0.8524999999999991
+      },
+      "signals": 348
+    },
+    "gold_transfer": {
+      "family_id": "gold_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 508,
+        "wins": 204,
+        "losses": 304,
+        "win_rate": 0.4015748031496063,
+        "net_pnl": -28447.707765413925,
+        "avg_trade": -55.99942473506678,
+        "profit_factor": 0.5261390990985177,
+        "max_dd": -29293.999209764734,
+        "expectancy": -55.99942473506678,
+        "longs": 261,
+        "shorts": 247,
+        "median_mae": 0.10999999999999943,
+        "median_mfe": 0.10999999999999943
+      },
+      "develop": {
+        "trades": 352,
+        "wins": 141,
+        "losses": 211,
+        "win_rate": 0.4005681818181818,
+        "net_pnl": -13115.818783542376,
+        "avg_trade": -37.26084881688175,
+        "profit_factor": 0.575346523934596,
+        "max_dd": -14355.32212215313,
+        "expectancy": -37.26084881688175,
+        "longs": 185,
+        "shorts": 167,
+        "median_mae": 0.09250000000000114,
+        "median_mfe": 0.0899999999999963
+      },
+      "holdout": {
+        "trades": 156,
+        "wins": 63,
+        "losses": 93,
+        "win_rate": 0.40384615384615385,
+        "net_pnl": -15331.88898187155,
+        "avg_trade": -98.28133962738174,
+        "profit_factor": 0.47399761219153286,
+        "max_dd": -17020.346821907417,
+        "expectancy": -98.28133962738174,
+        "longs": 76,
+        "shorts": 80,
+        "median_mae": 0.1950000000000074,
+        "median_mfe": 0.20749999999999602
+      },
+      "signals": 508
+    },
+    "btc_transfer": {
+      "family_id": "btc_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 365,
+        "wins": 154,
+        "losses": 211,
+        "win_rate": 0.42191780821917807,
+        "net_pnl": -17795.947235656877,
+        "avg_trade": -48.75601982371746,
+        "profit_factor": 0.5607423057561995,
+        "max_dd": -18189.4885804045,
+        "expectancy": -48.75601982371746,
+        "longs": 207,
+        "shorts": 158,
+        "median_mae": 0.09499999999999886,
+        "median_mfe": 0.10000000000000142
+      },
+      "develop": {
+        "trades": 248,
+        "wins": 100,
+        "losses": 148,
+        "win_rate": 0.4032258064516129,
+        "net_pnl": -11613.23411601148,
+        "avg_trade": -46.82755691940112,
+        "profit_factor": 0.47519635046087366,
+        "max_dd": -12536.035327457439,
+        "expectancy": -46.82755691940112,
+        "longs": 150,
+        "shorts": 98,
+        "median_mae": 0.0849999999999973,
+        "median_mfe": 0.07500000000000284
+      },
+      "holdout": {
+        "trades": 117,
+        "wins": 54,
+        "losses": 63,
+        "win_rate": 0.46153846153846156,
+        "net_pnl": -6182.713119645396,
+        "avg_trade": -52.84370187731108,
+        "profit_factor": 0.6637081277257191,
+        "max_dd": -6486.00303358718,
+        "expectancy": -52.84370187731108,
+        "longs": 57,
+        "shorts": 60,
+        "median_mae": 0.1599999999999966,
+        "median_mfe": 0.23000000000000398
+      },
+      "signals": 365
+    },
+    "eurusd_mr_transfer": {
+      "family_id": "eurusd_mr_transfer",
+      "role": "transfer_never_ranked",
+      "all": {
+        "trades": 364,
+        "wins": 151,
+        "losses": 213,
+        "win_rate": 0.41483516483516486,
+        "net_pnl": -23313.867883944724,
+        "avg_trade": -64.04908759325474,
+        "profit_factor": 0.4849509425199219,
+        "max_dd": -23689.65013572689,
+        "expectancy": -64.04908759325474,
+        "longs": 181,
+        "shorts": 183,
+        "median_mae": 0.11250000000000426,
+        "median_mfe": 0.120000000000001
+      },
+      "develop": {
+        "trades": 247,
+        "wins": 102,
+        "losses": 145,
+        "win_rate": 0.41295546558704455,
+        "net_pnl": -13059.126362302284,
+        "avg_trade": -52.870956932397895,
+        "profit_factor": 0.4476976780978926,
+        "max_dd": -13577.937621416972,
+        "expectancy": -52.870956932397895,
+        "longs": 119,
+        "shorts": 128,
+        "median_mae": 0.09999999999999432,
+        "median_mfe": 0.09499999999999886
+      },
+      "holdout": {
+        "trades": 117,
+        "wins": 49,
+        "losses": 68,
+        "win_rate": 0.4188034188034188,
+        "net_pnl": -10254.741521642442,
+        "avg_trade": -87.64736343284135,
+        "profit_factor": 0.5256924340639904,
+        "max_dd": -11158.342947029856,
+        "expectancy": -87.64736343284135,
+        "longs": 62,
+        "shorts": 55,
+        "median_mae": 0.23000000000000398,
+        "median_mfe": 0.18500000000000227
+      },
+      "signals": 364
+    }
+  },
+  "costs": {
+    "point_size": 0.001,
+    "contract_size": 1000.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 3.0,
+    "max_spread_points": 90.0
+  },
+  "bars": 100000,
+  "note": "Holdout unused for selection. Transfers never ranked. Not permission to --live.",
+  "rows_slim": [
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.4938642479680843,
+      "develop_net": -6660.115172832701,
+      "holdout_pf": 0.35807630421627007
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.4938642479680843,
+      "develop_net": -6660.115172832701,
+      "holdout_pf": 0.35807630421627007
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.4938642479680843,
+      "develop_net": -6660.115172832701,
+      "holdout_pf": 0.35807630421627007
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.4938642479680843,
+      "develop_net": -6660.115172832701,
+      "holdout_pf": 0.35807630421627007
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.49175920138641166,
+      "develop_net": -6730.912340198768,
+      "holdout_pf": 0.3803219116083879
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.49175920138641166,
+      "develop_net": -6730.912340198768,
+      "holdout_pf": 0.3803219116083879
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.49175920138641166,
+      "develop_net": -6730.912340198768,
+      "holdout_pf": 0.3803219116083879
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.49175920138641166,
+      "develop_net": -6730.912340198768,
+      "holdout_pf": 0.3803219116083879
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.43866172380351526,
+      "develop_net": -8517.704592348122,
+      "holdout_pf": 0.45367950538404944
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.43866172380351526,
+      "develop_net": -8517.704592348122,
+      "holdout_pf": 0.45367950538404944
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.43866172380351526,
+      "develop_net": -8517.704592348122,
+      "holdout_pf": 0.45367950538404944
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.43866172380351526,
+      "develop_net": -8517.704592348122,
+      "holdout_pf": 0.45367950538404944
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.45360348864591776,
+      "develop_net": -8551.616262696012,
+      "holdout_pf": 0.5538398467125191
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.45360348864591776,
+      "develop_net": -8551.616262696012,
+      "holdout_pf": 0.5538398467125191
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.45360348864591776,
+      "develop_net": -8551.616262696012,
+      "holdout_pf": 0.5538398467125191
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.0|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.45360348864591776,
+      "develop_net": -8551.616262696012,
+      "holdout_pf": 0.5538398467125191
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5522281655715819,
+      "develop_net": -7478.417577978225,
+      "holdout_pf": 0.489185840519006
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5522281655715819,
+      "develop_net": -7478.417577978225,
+      "holdout_pf": 0.489185840519006
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5522281655715819,
+      "develop_net": -7478.417577978225,
+      "holdout_pf": 0.489185840519006
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5522281655715819,
+      "develop_net": -7478.417577978225,
+      "holdout_pf": 0.489185840519006
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5610912402246593,
+      "develop_net": -7931.385139019061,
+      "holdout_pf": 0.7063544107426792
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5610912402246593,
+      "develop_net": -7931.385139019061,
+      "holdout_pf": 0.7063544107426792
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5610912402246593,
+      "develop_net": -7931.385139019061,
+      "holdout_pf": 0.7063544107426792
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5610912402246593,
+      "develop_net": -7931.385139019061,
+      "holdout_pf": 0.7063544107426792
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5430605599130841,
+      "develop_net": -8133.857823975075,
+      "holdout_pf": 0.5341853779613105
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5430605599130841,
+      "develop_net": -8133.857823975075,
+      "holdout_pf": 0.5341853779613105
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5430605599130841,
+      "develop_net": -8133.857823975075,
+      "holdout_pf": 0.5341853779613105
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.5430605599130841,
+      "develop_net": -8133.857823975075,
+      "holdout_pf": 0.5341853779613105
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.6383807947309905,
+      "develop_net": -7018.729193197051,
+      "holdout_pf": 0.6964671262915122
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.6383807947309905,
+      "develop_net": -7018.729193197051,
+      "holdout_pf": 0.6964671262915122
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.6383807947309905,
+      "develop_net": -7018.729193197051,
+      "holdout_pf": 0.6964671262915122
+    },
+    {
+      "id": "oil_london_orb_vwap_ema_flat|sl1.5|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_london_orb_vwap_ema_flat",
+      "eligible": false,
+      "develop_trades": 146,
+      "develop_pf": 0.6383807947309905,
+      "develop_net": -7018.729193197051,
+      "holdout_pf": 0.6964671262915122
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.0|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_ny_inventory_drive|sl1.5|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_ny_inventory_drive",
+      "eligible": false,
+      "develop_trades": 0,
+      "develop_pf": 0.0,
+      "develop_net": 0.0,
+      "holdout_pf": 0.0
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5297221580718069,
+      "develop_net": -5466.895649296419,
+      "holdout_pf": 0.6870576136288874
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5297221580718069,
+      "develop_net": -5466.895649296419,
+      "holdout_pf": 0.6870576136288874
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5297221580718069,
+      "develop_net": -5466.895649296419,
+      "holdout_pf": 0.6870576136288874
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5297221580718069,
+      "develop_net": -5466.895649296419,
+      "holdout_pf": 0.6870576136288874
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5344927443947688,
+      "develop_net": -5576.595408069325,
+      "holdout_pf": 0.7291215971568135
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5344927443947688,
+      "develop_net": -5576.595408069325,
+      "holdout_pf": 0.7291215971568135
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5344927443947688,
+      "develop_net": -5576.595408069325,
+      "holdout_pf": 0.7291215971568135
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.5344927443947688,
+      "develop_net": -5576.595408069325,
+      "holdout_pf": 0.7291215971568135
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6137604064955039,
+      "develop_net": -4963.457310941159,
+      "holdout_pf": 0.8043145773972479
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6137604064955039,
+      "develop_net": -4963.457310941159,
+      "holdout_pf": 0.8043145773972479
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6137604064955039,
+      "develop_net": -4963.457310941159,
+      "holdout_pf": 0.8043145773972479
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6137604064955039,
+      "develop_net": -4963.457310941159,
+      "holdout_pf": 0.8043145773972479
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6503281508240146,
+      "develop_net": -4681.541056435479,
+      "holdout_pf": 0.7613033391278985
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6503281508240146,
+      "develop_net": -4681.541056435479,
+      "holdout_pf": 0.7613033391278985
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6503281508240146,
+      "develop_net": -4681.541056435479,
+      "holdout_pf": 0.7613033391278985
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.0|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6503281508240146,
+      "develop_net": -4681.541056435479,
+      "holdout_pf": 0.7613033391278985
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts6|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6632097952028575,
+      "develop_net": -4861.502275634905,
+      "holdout_pf": 0.8481888047695016
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts6|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6632097952028575,
+      "develop_net": -4861.502275634905,
+      "holdout_pf": 0.8481888047695016
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts6|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6632097952028575,
+      "develop_net": -4861.502275634905,
+      "holdout_pf": 0.8481888047695016
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts6|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6632097952028575,
+      "develop_net": -4861.502275634905,
+      "holdout_pf": 0.8481888047695016
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts12|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6864008120759125,
+      "develop_net": -4958.560000208309,
+      "holdout_pf": 0.9348524403222238
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts12|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6864008120759125,
+      "develop_net": -4958.560000208309,
+      "holdout_pf": 0.9348524403222238
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts12|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6864008120759125,
+      "develop_net": -4958.560000208309,
+      "holdout_pf": 0.9348524403222238
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.0|ts12|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6864008120759125,
+      "develop_net": -4958.560000208309,
+      "holdout_pf": 0.9348524403222238
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts6|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.7281539160053104,
+      "develop_net": -4139.287713965971,
+      "holdout_pf": 0.7855353891351667
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts6|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.7281539160053104,
+      "develop_net": -4139.287713965971,
+      "holdout_pf": 0.7855353891351667
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts6|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.7281539160053104,
+      "develop_net": -4139.287713965971,
+      "holdout_pf": 0.7855353891351667
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts6|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.7281539160053104,
+      "develop_net": -4139.287713965971,
+      "holdout_pf": 0.7855353891351667
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts12|eia0|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6693194917089559,
+      "develop_net": -6098.422500710279,
+      "holdout_pf": 0.7544122560947871
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts12|eia0|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6693194917089559,
+      "develop_net": -6098.422500710279,
+      "holdout_pf": 0.7544122560947871
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts12|eia1|atr0.00015",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6693194917089559,
+      "develop_net": -6098.422500710279,
+      "holdout_pf": 0.7544122560947871
+    },
+    {
+      "id": "oil_prior_day_reclaim|sl1.5|tp1.5|ts12|eia1|atr0.0003",
+      "family_id": "oil_prior_day_reclaim",
+      "eligible": false,
+      "develop_trades": 158,
+      "develop_pf": 0.6693194917089559,
+      "develop_net": -6098.422500710279,
+      "holdout_pf": 0.7544122560947871
+    }
+  ]
+}

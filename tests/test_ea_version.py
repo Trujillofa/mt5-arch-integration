@@ -80,3 +80,12 @@ def test_min_deal_dump_version_is_not_ahead_of_the_ea(source: str) -> None:
     assert define is not None
     ea_version = tuple(int(p) for p in define.group(1).split("."))
     assert ea_version >= MIN_DEAL_DUMP_VERSION
+
+
+def test_request_gated_history_dump_exists_and_does_not_trade():
+    snapshots = SNAPSHOTS.read_text(encoding="utf-8")
+    ea = EA.read_text(encoding="utf-8")
+    assert "void DumpHistoryIfRequested()" in snapshots
+    assert "dump_history.request" in snapshots
+    assert "DumpHistoryIfRequested();" in ea
+    assert "OrderSend(" not in snapshots

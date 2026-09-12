@@ -1,0 +1,288 @@
+{
+  "search_id": "oil_session_scalp_develop_v1",
+  "locked_at": "2026-09-11T15:20:00-05:00",
+  "base_branch": "main",
+  "base_commit": "ade35860d15046907a09ccb8e727a66cb8ffbf1a",
+  "symbol": "XTIUSD",
+  "broker_symbol_vantage": "CL-OIL",
+  "tf": "M5",
+  "promote": false,
+  "live_go": false,
+  "a_priori_overlay_default": "oil_london_orb_vwap_ema_flat",
+  "note": "Freeze-before-peek: families/clock/grid locked BEFORE any oil family signal or simulation PnL. data.sha256 and measured costs are stamped after the M5 export and BEFORE the develop screen. SCREEN_FAIL is a valid outcome. Do not widen the grid, cut costs, move the holdout, or reopen closed theses to manufacture a passer. Do not lock M15.hc, cTrader H1, or CL=F as the costed book.",
+  "data": {
+    "status": "stamped",
+    "path": "results/oil_session_data/history_CL-OIL_M5.csv",
+    "sha256": "7e55dab7b8b5fab3f4478cf2a420a4be771122858ecc4f211d6bc644c16dbbf2",
+    "hc_path": "",
+    "hc_sha256": "",
+    "bars": 100000,
+    "time_min_server": "2025.04.15 10:55",
+    "time_max_server": "2026.09.11 23:55",
+    "et_min": "2025-04-15 03:55:00-04:00",
+    "et_max": "2026-09-11 16:55:00-04:00",
+    "et_dates": 440,
+    "source": "Vantage International MT5 Mt5ArchBridge dump_history.request CopyRates CL-OIL M5 + per-bar spread + SymbolInfo meta. 100000 bars (CopyRates cap). 2025.04.15 10:55 \u2192 2026.09.11 23:55 server. Not Dukascopy LIGHTCMDUSD. Not USOUSD M15.hc. Not cTrader H1 as the book. Not CL=F.",
+    "broker": "vantage",
+    "meta_path": "results/oil_session_data/symbol_meta_CL-OIL.csv",
+    "clock_admission_status": "clock admitted \u2014 unique lag-0 vs cTrader XTIUSD H1; constant-10800 worse",
+    "disk_probe_2026-09-11": {
+      "uso_usd_m5_hc": false,
+      "uso_usd_m15_hc": {
+        "path": "~/.mt5-vantage/.../history/USOUSD/cache/M15.hc",
+        "bars": 2760,
+        "server_span": "2026-07-15 \u2192 2026-08-25",
+        "spread_p50": 22,
+        "price_decimals": 3,
+        "locked": false
+      },
+      "uso_usd_2026_hcc": {
+        "path": "~/.mt5-vantage/.../history/USOUSD/2026.hcc",
+        "m1_bars_uncompressed": 41324,
+        "server_span": "2026-07-15 \u2192 2026-08-25",
+        "note": "M1 records exist; do not resample into the costed lock. Holdout 2026-04-01 is not on this tape.",
+        "locked": false
+      },
+      "export_oil_request": "written on live Vantage Files/mt5_arch/export_oil.request; unread because OilSessionScalp is not on a chart",
+      "terminal64": "left running \u2014 ExportInstrumentHistory.mq5 was not used",
+      "cl_oil_2026_hcc": {
+        "path": "~/.mt5-vantage/.../history/CL-OIL/2026.hcc",
+        "m1_bars_uncompressed": 90339,
+        "server_span": "2026-06-22 \u2192 2026-09-11",
+        "m5_hc": false,
+        "chart_saved_tf": "H1 (period_type=1, period_size=1); screenshot was M5",
+        "digits_from_chart": 3,
+        "description": "Crude Oil Future CFD (USD)",
+        "locked": false,
+        "note": "Holdout 2026-04-01 is still before this tape. Scroll CL-OIL M5 left for 2025/2024 .hcc, then ExportOilM5."
+      },
+      "mt5_arch_bridge_dump_history": {
+        "request": "CL-OIL / M5 / 60",
+        "done": "ok=1 rows=100000 requested=CL-OIL resolved=CL-OIL tfs=M5 at=2026.09.11 16:13:41",
+        "csv": "results/oil_session_data/history_CL-OIL_M5.csv",
+        "meta": "results/oil_session_data/symbol_meta_CL-OIL.csv",
+        "locked": true,
+        "note": "Native Vantage CopyRates M5 + spread. Replaces Dukascopy LIGHTCMDUSD as the costed book. Holdout 2026-04-01 is on this tape (67913 develop bars / 32087 holdout)."
+      },
+      "dukascopy_lightcmdusd_m5": {
+        "path": "results/oil_session_data/history_XTIUSD_M5.csv",
+        "locked": false,
+        "note": "Prior substitute book. Not the costed lock after Mt5ArchBridge dump."
+      }
+    }
+  },
+  "clock": {
+    "rule": "server wall clock = America/New_York + 7h (tracks US DST)",
+    "et_from_server": "et = (server_naive - 7h).tz_localize('America/New_York', ambiguous='NaT', nonexistent='shift_forward'); drop NaT",
+    "london": "from UTC via Europe/London (Python authoritative). Overlay visual uses ET+5h.",
+    "never_use": "us_index_session_backtest.load_m5_csv constant server_utc_offset_sec (10800 mislabels every US-winter bar by 1h in ET)",
+    "admission": {
+      "method": "hourly log-return lag-0 vs cTrader XTIUSD H1 (UTC-native) and vs yfinance CL=F on overlap. Peak lag must be 0. constant-10800 must lose. Reject if the tape is a shifted UTC label.",
+      "verdict": "clock admitted \u2014 unique lag-0 vs cTrader XTIUSD H1; constant-10800 worse",
+      "dukascopy_m5_h1_vs_ctrader_xtiusd_h1": {
+        "n": 675,
+        "lag0_corr": 0.8876774967440852,
+        "peak_lag": 0,
+        "lags": {
+          "-4": -0.04596315619255666,
+          "-3": 0.008974261424532112,
+          "-2": -0.017654015967442534,
+          "-1": -0.08432079401585238,
+          "0": 0.8876774967440852,
+          "1": -0.10351888087379828,
+          "2": -0.001635497107645747,
+          "3": 0.00020593431406409045,
+          "4": -0.005573194916128587
+        },
+        "rejected_if_peak_not_0": false
+      },
+      "constant_10800_vs_ctrader": {
+        "n": 4349,
+        "lag0_corr": 0.004284907334005444,
+        "peak_lag": 4,
+        "lags": {
+          "-4": 0.016643836587330155,
+          "-3": 0.0017394992731287451,
+          "-2": 0.0121167150064479,
+          "-1": 0.012603123500436833,
+          "0": 0.004284907334005444,
+          "1": -0.0024122421384578205,
+          "2": 0.00404087248286541,
+          "3": 0.04927860846214577,
+          "4": 0.06890378866221655
+        },
+        "rejected_if_peak_not_0": true
+      },
+      "m5_h1_vs_ctrader_xtiusd_h1": {
+        "n": 4745,
+        "lag0_corr": 0.9457405916374626,
+        "peak_lag": 0,
+        "lags": {
+          "-4": -0.0205049339114868,
+          "-3": 0.034076069347451304,
+          "-2": -0.015288693686151399,
+          "-1": -0.010358859464326037,
+          "0": 0.9457405916374626,
+          "1": -0.009743175692816056,
+          "2": -0.014949370757307918,
+          "3": 0.026884476669551235,
+          "4": -0.012354828681842074
+        },
+        "rejected_if_peak_not_0": false
+      }
+    }
+  },
+  "session": {
+    "london_energy": {
+      "or": "first 30m after 08:00 Europe/London",
+      "entries": "after OR complete through 11:00 London",
+      "force_flat": "11:00 London same-day, at first bar open >= 11:00 London"
+    },
+    "ny_energy": {
+      "entry_window": "[08:00, 11:30) America/New_York",
+      "or": "first 30m of NY energy [08:00, 08:30) ET",
+      "force_flat": "11:30 ET same-day",
+      "cme_0900": "CME electronic 09:00 ET sits inside this box \u2014 not a 09:30 cash OR"
+    },
+    "eia_blackout": "Wed [10:25, 10:40) ET \u2014 grid on/off, not the session definition",
+    "friday_cutoff": "no new entries at or after 14:00 ET Friday",
+    "globex_gap": "no entries 21:00-22:00 UTC",
+    "same_day_only": true,
+    "not": [
+      "US cash 09:30 opening range",
+      "gold London defined-R 80% WR hunt",
+      "BTC NY-desk as the ranked thesis",
+      "EURUSD 08:00-17:00 FX session as the oil box"
+    ]
+  },
+  "holdout": {
+    "start": "2026-04-01",
+    "rule": "et_date < 2026-04-01 develop / selection; et_date >= 2026-04-01 holdout evaluation only; NEVER used for selection. Confirm the book actually reaches this date after export; if the tape is shorter, stop \u2014 do not substitute M15/H1/CL=F.",
+    "assert_not": [
+      "2026-01-01",
+      "2026-06-01",
+      "2026-03-01"
+    ],
+    "assert_not_reason": "must stay lane-local; XAU 2026-01-01; US-index 2026-06-01; BTC 2026-03-01"
+  },
+  "book": {
+    "balance_usd": 10000,
+    "lots": 1.0,
+    "point_size": 0.001,
+    "contract_size": 1000.0,
+    "digits": 3,
+    "sizing_policy": "fixed_lots",
+    "contract_note": "Vantage SymbolInfo CL-OIL: contract_size=1000, tick_size=0.001, tick_value=1.0, digits=3. From dump_history.request via Mt5ArchBridge. Not Dukascopy. Not USOUSD. Not CL=F."
+  },
+  "costs": {
+    "status": "stamped",
+    "commission_per_lot": 0.0,
+    "commission_note": "spread-inclusive CFD assumption",
+    "slippage_points": 3.0,
+    "slippage_note": "10% of measured M5 median spread 30.0000 pts",
+    "max_spread_points": 90.0,
+    "max_spread_note": "ceil(p95=90.0000) of measured M5 spread",
+    "spread_measured": {
+      "p50": 30.0,
+      "p95": 90.0,
+      "p99": 109.0,
+      "zeros": 2
+    },
+    "spread_imputation": "zero-spread bars: forward-fill previous bar spread within the same ET day, else global median",
+    "cost_formula": "round trip = (spread_pts + 2 * slippage_points) * point_size * contract_size * lots + 2 * commission_per_lot * lots, charged once at fill",
+    "typical_rt_usd_at_median": 36.00000000000001,
+    "m15_probe_not_the_book": {
+      "path": "~/.mt5-vantage/.../history/USOUSD/cache/M15.hc",
+      "bars": 2760,
+      "span": "2026-07-15 \u2192 2026-08-25 UTC",
+      "spread_p50": 22,
+      "note": "spread scale probe only. Not locked. No M5.hc on disk."
+    }
+  },
+  "families": {
+    "search": [
+      "oil_london_orb_vwap_ema_flat",
+      "oil_ny_inventory_drive",
+      "oil_prior_day_reclaim"
+    ],
+    "transfer_never_ranked": [
+      "index_transfer",
+      "gold_transfer",
+      "btc_transfer",
+      "eurusd_mr_transfer"
+    ],
+    "notes": {
+      "oil_london_orb_vwap_ema_flat": "London 30m OR + London-date VWAP + EMA 9/21 + ATR% + OR-width [0.35, 2.5] ATR",
+      "oil_ny_inventory_drive": "NY energy 30m OR + 0.10 ATR buffer + NY VWAP + EMA; EIA blackout in grid",
+      "oil_prior_day_reclaim": "undercut/takeout of prior ET-day H/L then close-confirm reclaim inside London OR NY energy boxes",
+      "index_transfer": "unmodified ny_cash_orb_vwap_ema_flat (09:30/15m OR/15:45 flat) on oil \u2014 replay only",
+      "gold_transfer": "frozen London 30m OR + NY metals 08:00-11:00 on oil \u2014 replay only",
+      "btc_transfer": "BTC NY-desk VWAP+EMA grammar on the oil NY box \u2014 replay only",
+      "eurusd_mr_transfer": "EURUSD mean_reversion (BB20,2 + RSI7) + FX NY [08:00,17:00) on oil \u2014 replay only"
+    }
+  },
+  "grid": {
+    "sl_atr": [
+      1.0,
+      1.5
+    ],
+    "tp_r": [
+      1.0,
+      1.5
+    ],
+    "time_stop_bars": [
+      6,
+      12
+    ],
+    "eia_blackout": [
+      false,
+      true
+    ],
+    "min_atr_pct": [
+      0.00015,
+      0.0003
+    ],
+    "or_minutes": 30,
+    "or_buffer_atr_frac": 0.1,
+    "or_width_atr": [
+      0.35,
+      2.5
+    ],
+    "ema_fast": 9,
+    "ema_slow": 21,
+    "one_per_day": true,
+    "eia_window_et": "[10:25, 10:40) Wednesday",
+    "max_configs": 192,
+    "expected_configs": 96
+  },
+  "rank": {
+    "min_trades_develop": 40,
+    "eligible": "trades>=40 and net_pnl>0",
+    "score": "profit_factor (None->3.0) then expectancy",
+    "holdout_unused_for_selection": true
+  },
+  "null_calibration": {
+    "seeds": 10,
+    "method": "circular phase rotation of within-ET-day log returns (EURUSD / BTC pattern)"
+  },
+  "closed_theses": [
+    "ny_cash_orb_vwap_ema_flat as the oil default (no US cash open; CME 09:00 is inside the NY energy box)",
+    "gold London defined-R 80% WR + PF>=1 hunt (XAU M5 session-OR already cost-killed)",
+    "BTC NY-desk VWAP+EMA as a ranked oil family (SCREEN_FAIL 2026-09-11 on BTC; transfer only here)",
+    "EURUSD trend_continuation (ANTI on its own tape)",
+    "CL=F continuous as the costed book (roll; no broker spread)",
+    "Vantage USOUSD M15.hc as the locked tape (no M5.hc; 2026-only)",
+    "cTrader XTIUSD H1 as the locked scalp book (clock admission / HTF lag only)",
+    "index 1%/20% median trade-day/month goal",
+    "CVD / OFI / CopyTicks true volume on these CFDs",
+    "Brent UKOUSD / XBRUSD as a ranked book"
+  ],
+  "fills_and_exits": {
+    "signal_to_fill": "signal on close of bar i, fill at open of bar i+1 (same ET day only)",
+    "one_position": true,
+    "sl_first": true,
+    "short_bid_space": true,
+    "forming_bar_never_signals": true,
+    "flatten": "London family 11:00 London; NY family 11:30 ET; reclaim uses the box that produced the signal"
+  }
+}

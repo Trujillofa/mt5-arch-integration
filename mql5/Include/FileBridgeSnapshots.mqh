@@ -573,4 +573,157 @@ void DumpDealsIfRequested()
    Print("DumpDeals done rows=", wrote, " -> Files/", rel);
   }
 
+//+------------------------------------------------------------------+
+//| Request-gated deep history dump (OHLC + per-bar spread).          |
+//| Touch Files/mt5_arch/dump_history.request (ANSI, 3 lines):        |
+//|   symbol                                                        |
+//|   timeframes   (csv, default M5)                                |
+//|   months       (default 60)                                     |
+//| Writes history_<requested>_<TF>.csv + symbol_meta_<requested>.csv|
+//| Resolve via registry, else bare SymbolSelect (CL-OIL).           |
+//| Does not trade. Does not kill the terminal.                      |
+//+------------------------------------------------------------------+
+void DumpHistoryIfRequested()
+  {
+   string req = g_dir + "\\dump_history.request";
+   if(!FileIsExist(req, 0))
+      return;
+
+   int rh = FileOpen(req, FILE_READ | FILE_TXT | FILE_ANSI | FILE_SHARE_READ);
+   if(rh == INVALID_HANDLE)
+      return;
+   string requested = FileReadString(rh);
+   string tfs_line  = FileReadString(rh);
+   string months_s  = FileReadString(rh);
+   FileClose(rh);
+   StringTrimLeft(requested); StringTrimRight(requested);
+   StringTrimLeft(tfs_line);  StringTrimRight(tfs_line);
+   StringTrimLeft(months_s);  StringTrimRight(months_s);
+   if(StringLen(requested) == 0)
+     {
+      FileDelete(req);
+      return;
+     }
+   if(StringLen(tfs_line) == 0)
+      tfs_line = "M5";
+   int months = (int)StringToInteger(months_s);
+   if(months < 1)
+      months = 60;
+
+   string sym = ResolveSymbol(requested);
+   if(StringLen(sym) == 0 && SymbolSelect(requested, true))
+      sym = requested;
+   if(StringLen(sym) == 0)
+     {
+      Print("DumpHistoryIfRequested: resolve failed ", requested);
+      FileDelete(req);
+      Put(g_dir + "\\dump_history.done", "ok=0 reason=resolve symbol=" + requested);
+      return;
+     }
+   if(!SymbolSelect(sym, true))
+     {
+      Print("DumpHistoryIfRequested: SymbolSelect failed ", sym);
+      return; // keep request for retry
+     }
+
+   int digits = (int)SymbolInfoInteger(sym, SYMBOL_DIGITS);
+   datetime to = TimeCurrent();
+   datetime from = to - (datetime)((long)months * 30L * 24L * 3600L);
+   string tfs[];
+   int nt = StringSplit(tfs_line, ',', tfs);
+   long total = 0;
+   datetime t0 = 0;
+   datetime t1 = 0;
+   string first_tf = "";
+
+   for(int j = 0; j < nt; j++)
+     {
+      string tf = tfs[j];
+      StringTrimLeft(tf); StringTrimRight(tf);
+      if(StringLen(tf) == 0)
+         continue;
+      if(StringLen(first_tf) == 0)
+         first_tf = tf;
+      ENUM_TIMEFRAMES period = ParseTf(tf);
+      MqlRates rates[];
+      ArraySetAsSeries(rates, false);
+      int n = 0;
+      for(int attempt = 0; attempt < 5; attempt++)
+        {
+         n = CopyRates(sym, period, from, to, rates);
+         if(n <= 0)
+            n = CopyRates(sym, period, 0, 100000, rates);
+         if(n > 0)
+            break;
+         Sleep(2000);
+        }
+      if(n <= 0)
+        {
+         Print("DumpHistoryIfRequested: no ", tf, " bars for ", sym, " err=", GetLastError());
+         continue;
+        }
+      string rel = g_dir + "\\history_" + requested + "_" + tf + ".csv";
+      int h = FileOpen(rel, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ);
+      if(h == INVALID_HANDLE)
+        {
+         Print("DumpHistoryIfRequested: FileOpen fail ", rel, " err=", GetLastError());
+         return; // keep request
+        }
+      FileWrite(h, "time,tf,symbol,open,high,low,close,tick_volume,spread,server_epoch");
+      for(int k = 0; k < n; k++)
+        {
+         string line = TimeToString(rates[k].time, TIME_DATE | TIME_MINUTES);
+         line += "," + tf;
+         line += "," + sym;
+         line += "," + DoubleToString(rates[k].open, digits);
+         line += "," + DoubleToString(rates[k].high, digits);
+         line += "," + DoubleToString(rates[k].low, digits);
+         line += "," + DoubleToString(rates[k].close, digits);
+         line += "," + IntegerToString((long)rates[k].tick_volume);
+         line += "," + IntegerToString((long)rates[k].spread);
+         line += "," + IntegerToString((long)rates[k].time);
+         FileWrite(h, line);
+        }
+      FileClose(h);
+      total += n;
+      t0 = rates[0].time;
+      t1 = rates[n - 1].time;
+      Print("DumpHistoryIfRequested ", sym, " ", tf, " bars=", n,
+            " from=", TimeToString(t0, TIME_DATE | TIME_MINUTES),
+            " to=", TimeToString(t1, TIME_DATE | TIME_MINUTES));
+     }
+
+   if(total <= 0)
+      return; // keep request — history may still be downloading
+
+   string meta = g_dir + "\\symbol_meta_" + requested + ".csv";
+   int mh = FileOpen(meta, FILE_WRITE | FILE_CSV | FILE_ANSI | FILE_SHARE_READ);
+   if(mh != INVALID_HANDLE)
+     {
+      FileWrite(mh, "key,value");
+      FileWrite(mh, "requested," + requested);
+      FileWrite(mh, "resolved," + sym);
+      FileWrite(mh, "digits," + IntegerToString(digits));
+      FileWrite(mh, "point," + DoubleToString(SymbolInfoDouble(sym, SYMBOL_POINT), 8));
+      FileWrite(mh, "contract_size," + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_CONTRACT_SIZE), 4));
+      FileWrite(mh, "tick_size," + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE), 8));
+      FileWrite(mh, "tick_value," + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE), 8));
+      FileWrite(mh, "currency_profit," + SymbolInfoString(sym, SYMBOL_CURRENCY_PROFIT));
+      FileWrite(mh, "bars," + IntegerToString((int)total));
+      FileWrite(mh, "from," + TimeToString(t0, TIME_DATE | TIME_MINUTES));
+      FileWrite(mh, "to," + TimeToString(t1, TIME_DATE | TIME_MINUTES));
+      FileWrite(mh, "tf," + first_tf);
+      FileClose(mh);
+     }
+
+   FileDelete(req);
+   Put(g_dir + "\\dump_history.done",
+       "ok=1 rows=" + IntegerToString(total) +
+       " requested=" + requested +
+       " resolved=" + sym +
+       " tfs=" + tfs_line +
+       " at=" + TimeToString(TimeLocal(), TIME_DATE | TIME_SECONDS));
+   Print("DumpHistoryIfRequested done rows=", total, " ", requested, " -> ", sym);
+  }
+
 #endif

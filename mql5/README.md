@@ -8,8 +8,10 @@
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD primary:** H4 bias + H1 EMA pullback reclaim (ATR guides) |
 | `Indicators/UsIndexSessionScalp.mq5` | **US30/US100 scalp:** Asia/London H/L + NY ORB+VWAP+EMA — **[How to use](../docs/HOWTO-US-INDEX-SCALP.md)** |
+| `Indicators/OilSessionScalp.mq5` | **XTIUSD/USOUSD M5 scalp:** London+NY energy OR+VWAP+EMA — **[How to use](../docs/HOWTO-OIL-SESSION-SCALP.md)** |
 | `Experts/ForexSignalLogger.mq5` | Log-only EA (`iCustom` → Print/CSV, **no orders**) |
 | `Presets/ForexSignalLogger-UsIndexSessionScalp.set` | Logger inputs for US100/US30 (buffer 8, max-spread pips 0) |
+| `Presets/ForexSignalLogger-OilSessionScalp.set` | Logger inputs for XTIUSD/USOUSD (buffer 8, max-spread pips 0) |
 | `Experts/TradeTransactionJournal.mq5` | Read-only `OnTradeTransaction` id journal (**no orders**) |
 | `Experts/ForexHtfFibTester.mq5` | **Strategy Tester EA** — EA-native Fib + ATR SL/TP (not iCustom buffer 8) |
 | `Scripts/ExportHtfFibParityFixture.mq5` | Read-only MQL5 ↔ Python parity dump (no orders) |
@@ -22,7 +24,7 @@
 ### Mt5ArchBridge symbols (v1.23)
 
 `InpBroker` is **required** (`vantage|fpmarkets|exness|wsf`).
-`InpSymbols` / `InpHistorySymbol` use **canonical** names (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
+`InpSymbols` / `InpHistorySymbol` use **canonical** names (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD,XTIUSD`).
 `FxResolveSymbol` maps them through `config/symbols/registry.json` and `SymbolSelect`s only that name — no suffix walk.
 `symbols.json` and candle filenames still use the **resolved** broker name (e.g. `XAUUSD.r`).
 See [docs/SYMBOL-REGISTRY.md](../docs/SYMBOL-REGISTRY.md).
@@ -41,6 +43,7 @@ MetaEditor **F7** compile order:
 1. `Indicators/ForexHtfPivotsFib.mq5`
 2. `Indicators/BtcTrendPullback.mq5`
 3. `Indicators/UsIndexSessionScalp.mq5` (US30 / US100 M5)
+3b. `Indicators/OilSessionScalp.mq5` (XTIUSD / USOUSD M5)
 4. `Indicators/ForexIndicatorTemplate.mq5` (optional)
 5. `Experts/ForexSignalLogger.mq5` (optional)
 6. `Experts/TradeTransactionJournal.mq5` (optional; trade-id journal)
@@ -66,6 +69,19 @@ MetaEditor **F7** compile order:
 | Indicator | **BtcTrendPullback** |
 | Logger | `InpIndicatorName=BtcTrendPullback`, buffer **7**, `InpMaxSpreadPips=0` |
 | Look for | EMA50/200 stack, pullback reclaim arrows, ATR bands (price, not pips) |
+
+
+## Chart recipe — XTIUSD / USOUSD (oil scalp)
+
+| Setting | Value |
+|---------|--------|
+| Symbol | **CL-OIL** (Vantage WTI future CFD) / **XTIUSD** |
+| TF | **M5** |
+| Indicator | **OilSessionScalp** |
+| Logger | `InpIndicatorName=OilSessionScalp`, buffer **8**, `InpMaxSpreadPips=0` |
+| Look for | London 30m OR + NY energy [08:00, 11:30) ET + VWAP + EMA 9/21 lime/red markers |
+
+Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_oil.request` or run `Scripts/ExportOilM5.mq5`. Do **not** run `ExportInstrumentHistory.mq5` on an open terminal. Screen how-to: [docs/HOWTO-OIL-SESSION-SCALP.md](../docs/HOWTO-OIL-SESSION-SCALP.md).
 
 ## Chart recipe — US30 / US100 (scalp)
 
