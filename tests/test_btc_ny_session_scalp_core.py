@@ -68,7 +68,9 @@ def test_et_from_server_jan_and_jul():
     jul = pd.Series(pd.to_datetime(["2026-07-15 22:00:00"]))
     et_j = core.et_from_server(jan)
     et_l = core.et_from_server(jul)
-    assert et_j.dt.tz.zone == "America/New_York" or str(et_j.dt.tz) == "America/New_York"
+    assert (
+        str(et_j.dt.tz) == "America/New_York"
+    )  # pytz: .zone; zoneinfo: no .zone attr — str() covers both
     assert int(et_j.dt.hour.iloc[0]) == 15
     assert int(et_l.dt.hour.iloc[0]) == 15
     # winter EST is UTC-5; summer EDT UTC-4
