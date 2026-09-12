@@ -26,10 +26,6 @@
 #include <ForexUtils.mqh>
 #include <SignalContract.mqh>
 
-#if HTFFIB_SIGNAL_BUFFER != 8
-   #error "ForexSignalLogger default InpSignalBuffer=8 must match HTFFIB_SIGNAL_BUFFER"
-#endif
-
 input group "=== Indicator ==="
 input string InpIndicatorName   = "ForexHtfPivotsFib"; // Indicator file name (no .ex5)
 input int    InpSignalBuffer    = 8;                   // Signal buffer (HTFFIB=8, BTP=7, FXIT=9; SignalContract.mqh)
@@ -55,6 +51,8 @@ datetime g_last_logged_bar = 0;
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   if(HTFFIB_SIGNAL_BUFFER != 8)
+      return INIT_PARAMETERS_INCORRECT;
    // Create handle with default inputs of the indicator (user must match chart settings
    // if they changed inputs — advanced: pass inputs explicitly in iCustom).
    g_handle = iCustom(_Symbol, PERIOD_CURRENT, InpIndicatorName);

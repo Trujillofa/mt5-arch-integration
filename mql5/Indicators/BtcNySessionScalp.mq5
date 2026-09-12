@@ -67,9 +67,6 @@
 
 #include <BtcSessionUtils.mqh>
 #include <SignalContract.mqh>
-#if BNS_SIGNAL_BUFFER != 8
-   #error "BtcNySessionScalp signal buffer must stay BNS_SIGNAL_BUFFER=8"
-#endif
 
 enum ENUM_BTC_FAMILY
   {
@@ -133,6 +130,8 @@ string g_last_reason = "SCREEN_FAIL observe-only";
 int OnInit()
   {
    if(InpEmaFast < 1 || InpEmaSlow < InpEmaFast || InpAtrPeriod < 1)
+      return INIT_PARAMETERS_INCORRECT;
+   if(BNS_SIGNAL_BUFFER != 8)
       return INIT_PARAMETERS_INCORRECT;
    SetIndexBuffer(0, BufEmaFast,  INDICATOR_DATA);
    SetIndexBuffer(1, BufEmaSlow,  INDICATOR_DATA);

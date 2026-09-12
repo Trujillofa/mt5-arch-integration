@@ -94,6 +94,12 @@ def test_contract_defines_match_setindexbuffer_signal() -> None:
         )
         assert "#include <SignalContract.mqh>" in src
         assert f"{key}_SIGNAL_BUFFER" in src
+        assert re.search(
+            rf"if\({key}_SIGNAL_BUFFER != {defines[key]}\)",
+            src,
+        ), f"{path.name} missing OnInit pin for {key}_SIGNAL_BUFFER"
+        assert not re.search(r"^\s*#if\b", src, re.M)
+        assert not re.search(r"^\s*#error\b", src, re.M)
         assert not re.search(r"\bOrderSend\s*\(", src)
 
 
@@ -130,6 +136,9 @@ def test_logger_table_derives_from_contract() -> None:
     assert "InpSignalBuffer    = 8" in src
     assert "SignalContractTable()" in src
     assert "SignalContractBufferFor(" in src
+    assert re.search(r"if\(HTFFIB_SIGNAL_BUFFER != 8\)", src)
+    assert not re.search(r"^\s*#if\b", src, re.M)
+    assert not re.search(r"^\s*#error\b", src, re.M)
     assert not re.search(r"\bOrderSend\s*\(", src)
     for key, idx in defines.items():
         assert re.search(rf"{key}\s*=\s*{idx}", src), f"logger missing {key}={idx}"

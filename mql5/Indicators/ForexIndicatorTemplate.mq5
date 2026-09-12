@@ -63,9 +63,6 @@
 
 #include <ForexUtils.mqh>
 #include <SignalContract.mqh>
-#if FXIT_SIGNAL_BUFFER != 9
-   #error "ForexIndicatorTemplate signal buffer must stay FXIT_SIGNAL_BUFFER=9"
-#endif
 
 //+------------------------------------------------------------------+
 //| Inputs                                                           |
@@ -187,6 +184,8 @@ int OnInit()
   {
    if(InpEmaFastPeriod < 1 || InpEmaSlowPeriod < 1 || InpEmaBiasPeriod < 1 ||
       InpRsiPeriod < 1 || InpRsiMaPeriod < 1)
+      return INIT_PARAMETERS_INCORRECT;
+   if(FXIT_SIGNAL_BUFFER != 9)
       return INIT_PARAMETERS_INCORRECT;
 
    ApplyTradingMode();

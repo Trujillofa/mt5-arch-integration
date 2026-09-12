@@ -57,9 +57,6 @@
 #property indicator_width6  2
 
 #include <SignalContract.mqh>
-#if BTP_SIGNAL_BUFFER != 7
-   #error "BtcTrendPullback signal buffer must stay BTP_SIGNAL_BUFFER=7"
-#endif
 
 //+------------------------------------------------------------------+
 enum ENUM_ATR_BAND_MID
@@ -159,6 +156,8 @@ int OnInit()
    if(InpRsiPeriod < 2 || InpAtrPeriod < 1)
       return INIT_PARAMETERS_INCORRECT;
    if(InpMacdSlow <= InpMacdFast)
+      return INIT_PARAMETERS_INCORRECT;
+   if(BTP_SIGNAL_BUFFER != 7)
       return INIT_PARAMETERS_INCORRECT;
 
    SetIndexBuffer(0, BufEma50,    INDICATOR_DATA);

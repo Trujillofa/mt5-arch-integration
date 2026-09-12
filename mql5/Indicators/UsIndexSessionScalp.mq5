@@ -68,9 +68,6 @@
 #include <IndexSessionUtils.mqh>
 #include <IndexM5Export.mqh>
 #include <SignalContract.mqh>
-#if UIS_SIGNAL_BUFFER != 8
-   #error "UsIndexSessionScalp signal buffer must stay UIS_SIGNAL_BUFFER=8"
-#endif
 
 #define IDX_MAX_BOXES 12
 
@@ -181,6 +178,8 @@ int OnInit()
       InpMacdSignal < 1 || InpAtrDev < 0.0)
       return INIT_PARAMETERS_INCORRECT;
    if(InpDrawDays < 1 || InpDrawDays > IDX_MAX_BOXES)
+      return INIT_PARAMETERS_INCORRECT;
+   if(UIS_SIGNAL_BUFFER != 8)
       return INIT_PARAMETERS_INCORRECT;
 
    SetIndexBuffer(0, BufEmaFast,  INDICATOR_DATA);

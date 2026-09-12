@@ -4,6 +4,7 @@
 //|                                                                  |
 //| In-scope: UIS, BNS, HTFFIB, BTP, FXIT. GoldSessionScalp excluded.|
 //| Do not change a define without moving that file's SetIndexBuffer.|
+//| MQL5 has no #if/#error — overlays pin *_SIGNAL_BUFFER in OnInit.|
 //| ForexSignalLogger keeps InpSignalBuffer as an input so existing  |
 //| .set files keep working (default stays HTFFIB=8).                |
 //+------------------------------------------------------------------+
