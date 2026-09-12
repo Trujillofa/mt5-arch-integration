@@ -264,33 +264,6 @@ double FxTrueRange(const double high, const double low,
   }
 
 //+------------------------------------------------------------------+
-//| Seed SMA then recursive EMA — series index 0 = oldest bar        |
-//| Returns false if rates_total < period                            |
-//+------------------------------------------------------------------+
-bool FxEmaSeries(const double &price[],
-                 const int rates_total,
-                 const int period,
-                 double &out_ema[])
-  {
-   if(period < 1 || rates_total < period)
-      return false;
-
-   ArrayResize(out_ema, rates_total);
-   ArrayInitialize(out_ema, EMPTY_VALUE);
-
-   double sum = 0.0;
-   for(int i = 0; i < period; i++)
-      sum += price[i];
-
-   out_ema[period - 1] = sum / period;
-   double mult = 2.0 / (period + 1.0);
-   for(int i = period; i < rates_total; i++)
-      out_ema[i] = price[i] * mult + out_ema[i - 1] * (1.0 - mult);
-
-   return true;
-  }
-
-//+------------------------------------------------------------------+
 //| Wilder ATR series — index 0 = oldest                             |
 //+------------------------------------------------------------------+
 bool FxAtrSeries(const double &high[],
@@ -318,93 +291,6 @@ bool FxAtrSeries(const double &high[],
      {
       double tr = FxTrueRange(high[i], low[i], close[i - 1]);
       out_atr[i] = (out_atr[i - 1] * (period - 1) + tr) / period;
-     }
-   return true;
-  }
-
-//+------------------------------------------------------------------+
-//| Classic RSI (Wilder) — index 0 = oldest                          |
-//+------------------------------------------------------------------+
-bool FxRsiSeries(const double &price[],
-                 const int rates_total,
-                 const int period,
-                 double &out_rsi[])
-  {
-   if(period < 1 || rates_total <= period)
-      return false;
-
-   ArrayResize(out_rsi, rates_total);
-   ArrayInitialize(out_rsi, EMPTY_VALUE);
-
-   double sum_pos = 0.0, sum_neg = 0.0;
-   for(int i = 1; i <= period; i++)
-     {
-      double d = price[i] - price[i - 1];
-      if(d > 0.0) sum_pos += d;
-      else        sum_neg -= d;
-     }
-
-   double avg_pos = sum_pos / period;
-   double avg_neg = sum_neg / period;
-   if(avg_neg == 0.0)
-      out_rsi[period] = (avg_pos == 0.0) ? 50.0 : 100.0;
-   else
-      out_rsi[period] = 100.0 - (100.0 / (1.0 + avg_pos / avg_neg));
-
-   for(int i = period + 1; i < rates_total; i++)
-     {
-      double d = price[i] - price[i - 1];
-      double pos = (d > 0.0) ? d : 0.0;
-      double neg = (d < 0.0) ? -d : 0.0;
-      avg_pos = (avg_pos * (period - 1) + pos) / period;
-      avg_neg = (avg_neg * (period - 1) + neg) / period;
-      if(avg_neg == 0.0)
-         out_rsi[i] = (avg_pos == 0.0) ? 50.0 : 100.0;
-      else
-         out_rsi[i] = 100.0 - (100.0 / (1.0 + avg_pos / avg_neg));
-     }
-   return true;
-  }
-
-//+------------------------------------------------------------------+
-//| Confirmed pivot high at bar center (left/right wings).           |
-//| Non-repainting: only true after `right` bars have closed.        |
-//| Call with i = rates_total-1-right for latest candidate.          |
-//+------------------------------------------------------------------+
-bool FxIsPivotHigh(const double &high[],
-                   const int rates_total,
-                   const int center,
-                   const int left,
-                   const int right)
-  {
-   if(center - left < 0 || center + right >= rates_total)
-      return false;
-   double v = high[center];
-   for(int i = center - left; i <= center + right; i++)
-     {
-      if(i == center)
-         continue;
-      if(high[i] >= v)
-         return false;
-     }
-   return true;
-  }
-
-bool FxIsPivotLow(const double &low[],
-                  const int rates_total,
-                  const int center,
-                  const int left,
-                  const int right)
-  {
-   if(center - left < 0 || center + right >= rates_total)
-      return false;
-   double v = low[center];
-   for(int i = center - left; i <= center + right; i++)
-     {
-      if(i == center)
-         continue;
-      if(low[i] <= v)
-         return false;
      }
    return true;
   }
@@ -491,22 +377,6 @@ bool FxMaOnSeries(const double &src[],
         }
      }
    return true;
-  }
-
-//+------------------------------------------------------------------+
-//| RSI + MA-of-RSI convenience (index 0 = oldest).                  |
-//+------------------------------------------------------------------+
-bool FxRsiWithMa(const double &price[],
-                 const int rates_total,
-                 const int rsi_period,
-                 const int ma_period,
-                 const ENUM_MA_METHOD ma_method,
-                 double &out_rsi[],
-                 double &out_rsi_ma[])
-  {
-   if(!FxRsiSeries(price, rates_total, rsi_period, out_rsi))
-      return false;
-   return FxMaOnSeries(out_rsi, rates_total, ma_period, ma_method, out_rsi_ma);
   }
 
 //+------------------------------------------------------------------+
