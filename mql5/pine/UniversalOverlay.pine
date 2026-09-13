@@ -1,0 +1,1015 @@
+// UniversalOverlay.pine
+// One-chart attach for the five in-repo overlay families.
+// Standalone files stay the source-faithful per-family ports.
+//
+// Observe-only. promote=no. merge ≠ deploy. Not a live host.
+// Never strategy / never orders. Not a live signal.
+//
+// Families (SignalContract.mqh):
+//   FX HTF Fib          mql5/Indicators/ForexHtfPivotsFib.mq5        buffer 8
+//   FX template         mql5/Indicators/ForexIndicatorTemplate.mq5   buffer 9 (8 = short arrow)
+//   US index scalp      mql5/Indicators/UsIndexSessionScalp.mq5      buffer 8
+//   BTC H1 pullback     mql5/Indicators/BtcTrendPullback.mq5         buffer 7
+//   BTC NY scalp        mql5/Indicators/BtcNySessionScalp.mq5        buffer 8  SCREEN_FAIL
+//
+// GoldSessionScalp / OilSessionScalp are host-only — not invented, not included.
+//
+// Compute: only the selected family's signal/VWAP/swing/ORB state runs each bar.
+// request.security is always registered (Pine limitation); unused families
+// request the chart TF instead of H4/D1/H1 so we do not pull five HTF books.
+
+//@version=5
+indicator("Universal Overlay (observe-only)", shorttitle="UNIV", overlay=true, max_labels_count=50, max_lines_count=50, max_boxes_count=20)
+
+TZ_NY = "America/New_York"
+TZ_LON = "Europe/London"
+TZ_TYO = "Asia/Tokyo"
+
+// === Overlay family ===
+string InpOverlay = input.string("FX HTF Fib", "Overlay family", options=["FX HTF Fib", "FX template", "US index scalp", "BTC H1 pullback", "BTC NY scalp"], group="=== Overlay family ===", tooltip="Computes only this family. BTC NY scalp is SCREEN_FAIL / promote=no.")
+bool InpShowPanel = input.bool(true, "InpShowPanel", group="=== Overlay family ===")
+bool InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== Overlay family ===")
+bool InpShowEmas = input.bool(true, "InpShowEmas", group="=== Overlay family ===")
+
+bool isHTF = InpOverlay == "FX HTF Fib"
+bool isFXIT = InpOverlay == "FX template"
+bool isUIS = InpOverlay == "US index scalp"
+bool isBTP = InpOverlay == "BTC H1 pullback"
+bool isBNS = InpOverlay == "BTC NY scalp"
+int sigBuf = isBTP ? 7 : isFXIT ? 9 : 8
+string famCode = isHTF ? "HTFFIB" : isFXIT ? "FXIT" : isUIS ? "UIS" : isBTP ? "BTP" : "BNS"
+
+// --- HTFFIB inputs ---
+string Htf_Mode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="HTFFIB — Trading mode")
+bool   Htf_Manual = input.bool(false, "InpManualOverride", group="HTFFIB — Trading mode")
+int    Htf_EmaFast = input.int(20, "InpEmaFast", minval=1, group="HTFFIB — EMAs")
+int    Htf_EmaSlow = input.int(50, "InpEmaSlow", minval=1, group="HTFFIB — EMAs")
+int    Htf_EmaBias = input.int(200, "InpEmaBias", minval=1, group="HTFFIB — EMAs")
+bool   Htf_ShowBias = input.bool(true, "InpShowBiasEma", group="HTFFIB — EMAs")
+int    Htf_Left4h = input.int(5, "InpLeft4h", minval=1, group="HTFFIB — Pivots")
+int    Htf_Right4h = input.int(5, "InpRight4h", minval=1, group="HTFFIB — Pivots")
+bool   Htf_Show4h = input.bool(true, "InpShow4hLines", group="HTFFIB — Pivots")
+bool   Htf_Lab4h = input.bool(false, "InpShow4hLabels", group="HTFFIB — Pivots")
+int    Htf_LeftD = input.int(5, "InpLeftDaily", minval=1, group="HTFFIB — Pivots")
+int    Htf_RightD = input.int(5, "InpRightDaily", minval=1, group="HTFFIB — Pivots")
+bool   Htf_ShowD = input.bool(true, "InpShowDailyLines", group="HTFFIB — Pivots")
+bool   Htf_LabD = input.bool(false, "InpShowDailyLabels", group="HTFFIB — Pivots")
+string Htf_FibSrc = input.string("H4", "InpFibSource", options=["H4", "Daily"], group="HTFFIB — Fibonacci")
+bool   Htf_ShowFib = input.bool(true, "InpShowFib", group="HTFFIB — Fibonacci")
+bool   Htf_Show236 = input.bool(false, "InpShowFib236", group="HTFFIB — Fibonacci")
+bool   Htf_Show382 = input.bool(false, "InpShowFib382", group="HTFFIB — Fibonacci")
+bool   Htf_Show500 = input.bool(true, "InpShowFib500", group="HTFFIB — Fibonacci")
+bool   Htf_Show618 = input.bool(true, "InpShowFib618", group="HTFFIB — Fibonacci")
+bool   Htf_Show786 = input.bool(true, "InpShowFib786", group="HTFFIB — Fibonacci")
+bool   Htf_ShowGold = input.bool(true, "InpShowGoldenZone", group="HTFFIB — Fibonacci")
+int    Htf_Rsi = input.int(14, "InpRsiPeriod", minval=1, group="HTFFIB — RSI")
+int    Htf_RsiMa = input.int(14, "InpRsiMaPeriod", minval=1, group="HTFFIB — RSI")
+string Htf_RsiMaM = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="HTFFIB — RSI")
+int    Htf_RsiLong = input.int(35, "InpRsiLongMax", group="HTFFIB — RSI")
+int    Htf_RsiShort = input.int(65, "InpRsiShortMin", group="HTFFIB — RSI")
+bool   Htf_RsiMaF = input.bool(true, "InpUseRsiMaFilter", group="HTFFIB — RSI")
+bool   Htf_ReqCandle = input.bool(false, "InpRequireCandle", group="HTFFIB — RSI")
+bool   Htf_ReqZone = input.bool(true, "InpRequireGoldenZone", group="HTFFIB — RSI")
+bool   Htf_ReqBias = input.bool(true, "InpRequireBiasFilter", group="HTFFIB — RSI")
+
+// --- FXIT inputs ---
+string Fxit_Mode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="FXIT — Trading mode")
+bool   Fxit_ManSess = input.bool(false, "InpManualSessionOverride", group="FXIT — Trading mode")
+bool   Fxit_ManEma = input.bool(false, "InpManualEmaOverride", group="FXIT — Trading mode")
+int    Fxit_EmaFast = input.int(20, "InpEmaFastPeriod", minval=1, group="FXIT — EMAs / cloud")
+int    Fxit_EmaSlow = input.int(50, "InpEmaSlowPeriod", minval=1, group="FXIT — EMAs / cloud")
+int    Fxit_EmaBias = input.int(200, "InpEmaBiasPeriod", minval=1, group="FXIT — EMAs / cloud")
+bool   Fxit_ShowCloud = input.bool(true, "InpShowCloud", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowLines = input.bool(false, "InpShowEmaLines", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowBias = input.bool(true, "InpShowBiasEma", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowPD = input.bool(true, "InpShowPriorDay", group="FXIT — Prior day")
+int    Fxit_Rsi = input.int(14, "InpRsiPeriod", minval=1, group="FXIT — RSI / signal")
+int    Fxit_RsiMa = input.int(14, "InpRsiMaPeriod", minval=1, group="FXIT — RSI / signal")
+string Fxit_RsiMaM = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="FXIT — RSI / signal")
+int    Fxit_RsiLong = input.int(35, "InpRsiLongMax", group="FXIT — RSI / signal")
+int    Fxit_RsiShort = input.int(65, "InpRsiShortMin", group="FXIT — RSI / signal")
+bool   Fxit_RsiMaF = input.bool(true, "InpUseRsiMaFilter", group="FXIT — RSI / signal")
+bool   Fxit_RsiX = input.bool(false, "InpRsiMaCross", group="FXIT — RSI / signal")
+bool   Fxit_ReqTrend = input.bool(true, "InpRequireTrend", group="FXIT — RSI / signal")
+bool   Fxit_UseSess = input.bool(true, "InpUseSessionFilter", group="FXIT — RSI / signal")
+bool   Fxit_AlAsian = input.bool(false, "InpAllowAsian", group="FXIT — RSI / signal")
+bool   Fxit_AlLon = input.bool(true, "InpAllowLondon", group="FXIT — RSI / signal")
+bool   Fxit_AlNy = input.bool(true, "InpAllowNY", group="FXIT — RSI / signal")
+bool   Fxit_AlOv = input.bool(true, "InpAllowOverlap", group="FXIT — RSI / signal")
+float  Fxit_MaxSpr = input.float(2.5, "InpMaxSpreadPips", step=0.1, group="FXIT — RSI / signal")
+bool   Fxit_OnClose = input.bool(true, "InpSignalOnClose", group="FXIT — RSI / signal")
+string Fxit_Tz = input.string("exchange", "InpSessionTimezone", options=["exchange", "America/New_York", "Europe/London", "Etc/UTC"], group="FXIT — Session hours")
+int    Fxit_As0 = input.int(0, "InpAsianStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_As1 = input.int(8, "InpAsianEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ln0 = input.int(7, "InpLondonStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ln1 = input.int(16, "InpLondonEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ny0 = input.int(12, "InpNyStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ny1 = input.int(21, "InpNyEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Atr = input.int(14, "InpAtrPeriod", minval=1, group="FXIT — ATR")
+
+// --- UIS inputs ---
+int    Uis_OrMin = input.int(15, "InpOrMinutes", minval=1, group="UIS — OR / signal")
+int    Uis_EmaFast = input.int(9, "InpEmaFast", minval=1, group="UIS — OR / signal")
+int    Uis_EmaSlow = input.int(21, "InpEmaSlow", minval=1, group="UIS — OR / signal")
+int    Uis_Atr = input.int(14, "InpAtrPeriod", minval=1, group="UIS — OR / signal")
+float  Uis_MinAtr = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="UIS — OR / signal")
+int    Uis_EndH = input.int(11, "InpEntryEndHour", minval=0, maxval=23, group="UIS — OR / signal")
+int    Uis_EndM = input.int(30, "InpEntryEndMinute", minval=0, maxval=59, group="UIS — OR / signal")
+bool   Uis_Once = input.bool(true, "InpOnePerDay", group="UIS — OR / signal")
+bool   Uis_OnClose = input.bool(true, "InpSignalOnClose", group="UIS — OR / signal")
+bool   Uis_Edge = input.bool(true, "InpEdgeTrigger", group="UIS — OR / signal")
+bool   Uis_AtrStops = input.bool(false, "InpShowAtrStops", group="UIS — OR / signal")
+float  Uis_SlAtr = input.float(1.0, "InpSlAtr", step=0.1, group="UIS — OR / signal")
+float  Uis_TpAtr = input.float(1.5, "InpTpAtr", step=0.1, group="UIS — OR / signal")
+string Uis_Play = input.string("ORB", "InpFamily", options=["ORB", "VWAP_BOUNCE", "EMA_MACD"], group="UIS — Playbook")
+int    Uis_Rsi = input.int(14, "InpRsiPeriod", minval=2, group="UIS — Playbook")
+float  Uis_RsiOb = input.float(75.0, "InpRsiOb", group="UIS — Playbook")
+float  Uis_RsiOs = input.float(25.0, "InpRsiOs", group="UIS — Playbook")
+float  Uis_AtrDev = input.float(1.0, "InpAtrDev", minval=0.0, group="UIS — Playbook")
+int    Uis_MacdF = input.int(12, "InpMacdFast", minval=1, group="UIS — Playbook")
+int    Uis_MacdS = input.int(26, "InpMacdSlow", minval=1, group="UIS — Playbook")
+int    Uis_MacdG = input.int(9, "InpMacdSignal", minval=1, group="UIS — Playbook")
+bool   Uis_Cross = input.bool(true, "InpCrossOnly", group="UIS — Playbook")
+bool   Uis_ShowTyo = input.bool(false, "InpShowTokyo", group="UIS — Sessions")
+bool   Uis_ShowLon = input.bool(true, "InpShowLondon", group="UIS — Sessions")
+bool   Uis_ShowNy = input.bool(true, "InpShowNyCash", group="UIS — Sessions")
+bool   Uis_ShowOr = input.bool(true, "InpShowOrBox", group="UIS — Sessions")
+bool   Uis_ShowPD = input.bool(true, "InpShowPriorDay", group="UIS — Sessions")
+bool   Uis_ShowFlat = input.bool(true, "InpShowFlattenLine", group="UIS — Sessions")
+bool   Uis_ShowAsia = input.bool(true, "InpShowAsiaLevels", group="UIS — Sessions")
+bool   Uis_ShowLonLv = input.bool(true, "InpShowLondonLevels", group="UIS — Sessions")
+bool   Uis_ShowVwap = input.bool(true, "InpShowVwap", group="UIS — Sessions")
+
+// --- BTP inputs ---
+int    Btp_EmaFast = input.int(50, "InpEmaFast", minval=1, group="BTP — EMAs / HTF")
+int    Btp_EmaSlow = input.int(200, "InpEmaSlow", minval=1, group="BTP — EMAs / HTF")
+string Btp_Htf = input.timeframe("240", "InpHtfPeriod", group="BTP — EMAs / HTF")
+float  Btp_MinStr = input.float(0.01, "InpMinTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
+float  Btp_StrStr = input.float(0.015, "InpStrongTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
+int    Btp_Rsi = input.int(14, "InpRsiPeriod", minval=2, group="BTP — RSI / MACD / ATR")
+float  Btp_RsiReclaim = input.float(50.0, "InpRsiReclaim", group="BTP — RSI / MACD / ATR")
+float  Btp_ContRsi = input.float(54.0, "InpContinuationRsi", group="BTP — RSI / MACD / ATR")
+int    Btp_MacdF = input.int(12, "InpMacdFast", minval=1, group="BTP — RSI / MACD / ATR")
+int    Btp_MacdS = input.int(26, "InpMacdSlow", minval=1, group="BTP — RSI / MACD / ATR")
+int    Btp_MacdG = input.int(9, "InpMacdSignal", minval=1, group="BTP — RSI / MACD / ATR")
+float  Btp_MinHist = input.float(0.0, "InpMinMacdHist", group="BTP — RSI / MACD / ATR")
+int    Btp_Atr = input.int(14, "InpAtrPeriod", minval=1, group="BTP — RSI / MACD / ATR")
+float  Btp_MinAtr = input.float(0.01, "InpMinAtrPct", step=0.001, group="BTP — RSI / MACD / ATR")
+float  Btp_BandMult = input.float(2.0, "InpAtrBandMult", step=0.1, group="BTP — RSI / MACD / ATR")
+string Btp_BandMid = input.string("EMA50", "InpAtrBandMid", options=["EMA50", "CLOSE"], group="BTP — RSI / MACD / ATR")
+bool   Btp_ShowBands = input.bool(true, "InpShowAtrBands", group="BTP — RSI / MACD / ATR")
+float  Btp_MaxPb = input.float(0.015, "InpMaxPullbackPct", step=0.001, group="BTP — Modes")
+float  Btp_MaxExt = input.float(0.03, "InpMaxEma50ExtensionPct", step=0.001, group="BTP — Modes")
+bool   Btp_UseVwap = input.bool(false, "InpUseVwap", group="BTP — Modes")
+float  Btp_VwapPb = input.float(0.01, "InpVwapPullbackPct", step=0.001, group="BTP — Modes")
+int    Btp_VwapN = input.int(24, "InpVwapLookback", minval=1, group="BTP — Modes")
+bool   Btp_Cont = input.bool(true, "InpAllowContinuation", group="BTP — Modes")
+bool   Btp_Deep = input.bool(false, "InpDeepReclaimEnabled", group="BTP — Modes")
+int    Btp_DeepN = input.int(3, "InpDeepReclaimArmBars", minval=1, group="BTP — Modes")
+float  Btp_DeepMax = input.float(0.03, "InpDeepReclaimArmMaxPct", step=0.001, group="BTP — Modes")
+bool   Btp_Shorts = input.bool(true, "InpAllowShorts", group="BTP — Modes")
+bool   Btp_Panic = input.bool(true, "InpPanicBlock", group="BTP — Modes")
+float  Btp_PanicRsi = input.float(35.0, "InpPanicRsi", group="BTP — Modes")
+float  Btp_PanicAtr = input.float(0.08, "InpPanicAtrPct", step=0.001, group="BTP — Modes")
+bool   Btp_Edge = input.bool(true, "InpEdgeTrigger", group="BTP — Modes")
+
+// --- BNS inputs ---
+string Bns_Play = input.string("VWAP_EMA", "InpFamily", options=["VWAP_EMA", "ATR_DRIVE", "HTF_PULLBACK"], group="BNS — Family (SCREEN_FAIL)")
+int    Bns_EmaFast = input.int(9, "InpEmaFast", minval=1, group="BNS — Session / signal")
+int    Bns_EmaSlow = input.int(21, "InpEmaSlow", minval=1, group="BNS — Session / signal")
+int    Bns_Atr = input.int(14, "InpAtrPeriod", minval=1, group="BNS — Session / signal")
+float  Bns_MinAtr = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="BNS — Session / signal")
+int    Bns_OrMin = input.int(30, "InpOrMinutes", minval=1, group="BNS — Session / signal")
+float  Bns_OrBuf = input.float(0.10, "InpOrBufferAtrFrac", step=0.01, group="BNS — Session / signal")
+bool   Bns_Once = input.bool(true, "InpOnePerDay", group="BNS — Session / signal")
+bool   Bns_OnClose = input.bool(true, "InpSignalOnClose", group="BNS — Session / signal")
+bool   Bns_Edge = input.bool(true, "InpEdgeTrigger", group="BNS — Session / signal")
+bool   Bns_Nfp = input.bool(false, "InpNfpBlackout", group="BNS — Session / signal")
+int    Bns_HtfF = input.int(50, "InpHtfFast", minval=1, group="BNS — HTF pullback")
+int    Bns_HtfS = input.int(200, "InpHtfSlow", minval=1, group="BNS — HTF pullback")
+float  Bns_Pb = input.float(0.003, "InpPullbackPct", step=0.001, group="BNS — HTF pullback")
+float  Bns_Ext = input.float(0.005, "InpExtensionPct", step=0.001, group="BNS — HTF pullback")
+bool   Bns_ShowVwap = input.bool(true, "InpShowVwap", group="BNS — Display")
+bool   Bns_ShowOr = input.bool(true, "InpShowOr", group="BNS — Display")
+bool   Bns_ShowFlat = input.bool(true, "InpShowFlattenLine", group="BNS — Display")
+
+// --- helpers ---
+fibLevel(int direction, float hi, float lo, float ratio) =>
+    direction == 1 ? hi - (hi - lo) * ratio : lo + (hi - lo) * ratio
+
+rsiBias(float r, float m) =>
+    na(r) or na(m) ? 0 : r > m ? 1 : r < m ? -1 : 0
+
+rsiCrossUp(float r1, float m1, float r0, float m0) =>
+    not na(r1) and not na(m1) and not na(r0) and not na(m0) and r1 <= m1 and r0 > m0
+
+rsiCrossDown(float r1, float m1, float r0, float m0) =>
+    not na(r1) and not na(m1) and not na(r0) and not na(m0) and r1 >= m1 and r0 < m0
+
+inHourWindow(int h, int startH, int endH) =>
+    startH == endH ? true : startH < endH ? (h >= startH and h < endH) : (h >= startH or h < endH)
+
+inHm(int h, int mi, int sh, int sm, int eh, int em) =>
+    t = h * 60 + mi
+    a = sh * 60 + sm
+    b = eh * 60 + em
+    a < b ? (t >= a and t < b) : (t >= a or t < b)
+
+pad2(int n) =>
+    (n < 10 ? "0" : "") + str.tostring(n)
+
+// --- selected lengths (input-const) so one EMA/RSI/ATR/MACD stack runs ---
+bool htfSwing = Htf_Mode == "SWING"
+bool fxitSwing = Fxit_Mode == "SWING"
+int emaFastLen = isHTF ? (Htf_Manual ? Htf_EmaFast : htfSwing ? 50 : 20) : isFXIT ? (Fxit_ManEma ? Fxit_EmaFast : fxitSwing ? 50 : 20) : isUIS ? Uis_EmaFast : isBTP ? Btp_EmaFast : Bns_EmaFast
+int emaSlowLen = isHTF ? (Htf_Manual ? Htf_EmaSlow : htfSwing ? 200 : 50) : isFXIT ? (Fxit_ManEma ? Fxit_EmaSlow : fxitSwing ? 200 : 50) : isUIS ? Uis_EmaSlow : isBTP ? Btp_EmaSlow : Bns_EmaSlow
+int emaBiasLen = isHTF ? (Htf_Manual ? Htf_EmaBias : 200) : isFXIT ? (Fxit_ManEma ? Fxit_EmaBias : 200) : emaSlowLen
+int rsiLen = isHTF ? Htf_Rsi : isFXIT ? Fxit_Rsi : isUIS ? Uis_Rsi : isBTP ? Btp_Rsi : 14
+int rsiMaLen = isHTF ? Htf_RsiMa : isFXIT ? Fxit_RsiMa : rsiLen
+string rsiMaM = isHTF ? Htf_RsiMaM : isFXIT ? Fxit_RsiMaM : "SMA"
+int atrLen = isFXIT ? Fxit_Atr : isUIS ? Uis_Atr : isBTP ? Btp_Atr : Bns_Atr
+int macdF = isUIS ? Uis_MacdF : Btp_MacdF
+int macdS = isUIS ? Uis_MacdS : Btp_MacdS
+int macdG = isUIS ? Uis_MacdG : Btp_MacdG
+
+emaF = ta.ema(close, emaFastLen)
+emaS = ta.ema(close, emaSlowLen)
+emaB = ta.ema(close, emaBiasLen)
+rsiV = ta.rsi(close, rsiLen)
+rsiMa = rsiMaM == "EMA" ? ta.ema(rsiV, rsiMaLen) : ta.sma(rsiV, rsiMaLen)
+atrV = ta.atr(atrLen)
+[macdLine, macdSig, macdHist] = ta.macd(close, macdF, macdS, macdG)
+
+// security: unused families hit the chart TF (not five HTF books)
+string tfH4 = isHTF ? "240" : timeframe.period
+string tfD1p = isHTF ? "D" : timeframe.period
+string tfD1o = isFXIT ? "D" : timeframe.period
+string tfBtp = isBTP ? Btp_Htf : timeframe.period
+string tfBns = isBNS ? "60" : timeframe.period
+
+[h4Ph, h4Pl] = request.security(syminfo.tickerid, tfH4, [ta.pivothigh(high, Htf_Left4h, Htf_Right4h), ta.pivotlow(low, Htf_Left4h, Htf_Right4h)], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+[d1Ph, d1Pl] = request.security(syminfo.tickerid, tfD1p, [ta.pivothigh(high, Htf_LeftD, Htf_RightD), ta.pivotlow(low, Htf_LeftD, Htf_RightD)], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, [high, low, open], lookahead=barmerge.lookahead_off)
+[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, [ta.ema(close, Btp_EmaFast), ta.ema(close, Btp_EmaSlow), close], lookahead=barmerge.lookahead_off)
+[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, [ta.ema(close, Bns_HtfF), ta.ema(close, Bns_HtfS), close], lookahead=barmerge.lookahead_off)
+
+// shared outputs (na unless the active family writes them)
+float oEmaF = na
+float oEmaS = na
+float oEmaB = na
+float oVwap = na
+float oOrH = na
+float oOrL = na
+float oF236 = na
+float oF382 = na
+float oF500 = na
+float oF618 = na
+float oF786 = na
+float o4hH = na
+float o4hL = na
+float oDh = na
+float oDl = na
+float oPdh = na
+float oPdl = na
+float oPdo = na
+float oAsiaH = na
+float oAsiaL = na
+float oLonH = na
+float oLonL = na
+float oAtrLo = na
+float oAtrHi = na
+float oSl = na
+float oTp = na
+int   oSess = 0
+int   oBias = 0
+int   sig = 0
+string lastWhy = ""
+bool showCloud = false
+bool showGold = false
+bool showLong = false
+bool showShort = false
+bool bgNy = false
+bool bgLon = false
+bool bgTyo = false
+bool bgDesk = false
+bool shpNy = false
+bool shpLon = false
+bool shpTyo = false
+bool shpFlat = false
+bool shpDesk = false
+
+var float latest4hH = na
+var float latest4hL = na
+var float latestDh = na
+var float latestDl = na
+var int   lastPivotType = 0
+var float lastPivotPrice = 0.0
+var float swingHigh = 0.0
+var float swingLow = 0.0
+var int   swingDir = 0
+var float lastSrcHigh = 0.0
+var float lastSrcLow = 0.0
+var int   lastSrcHighBar = 0
+var int   lastSrcLowBar = 0
+var bool  fibValid = false
+var float g236 = na
+var float g382 = na
+var float g500 = na
+var float g618 = na
+var float g786 = na
+var float uisVnum = 0.0
+var float uisVden = 0.0
+var float uisOrH = 0.0
+var float uisOrL = 0.0
+var bool  uisOrSet = false
+var float uisDayH = na
+var float uisDayL = na
+var float uisPdh = na
+var float uisPdl = na
+var float uisAsiaH = na
+var float uisAsiaL = na
+var float uisLonH = na
+var float uisLonL = na
+var int   uisFired = -1
+var int   uisSide = 0
+var float uisSigPx = na
+var float uisSigAtr = na
+var string uisWhy = "sig@8"
+var float bnsVnum = 0.0
+var float bnsVden = 0.0
+var float bnsOrH = na
+var float bnsOrL = na
+var bool  bnsOrReady = false
+var int   bnsFired = -1
+var string bnsWhy = "SCREEN_FAIL observe-only"
+
+if isHTF
+    int fibSrc = Htf_Manual ? (Htf_FibSrc == "Daily" ? 1 : 0) : (htfSwing ? 1 : 0)
+    bool use4h = timeframe.in_seconds() <= timeframe.in_seconds("240")
+    bool fibFrom4h = fibSrc == 0 and use4h
+    bool show4hEff = Htf_Manual ? Htf_Show4h : (not htfSwing and Htf_Show4h)
+    if not na(h4Ph)
+        latest4hH := h4Ph
+    if not na(h4Pl)
+        latest4hL := h4Pl
+    if not na(d1Ph)
+        latestDh := d1Ph
+    if not na(d1Pl)
+        latestDl := d1Pl
+    srcPh = fibFrom4h ? h4Ph : d1Ph
+    srcPl = fibFrom4h ? h4Pl : d1Pl
+    both = not na(srcPh) and not na(srcPl)
+    newH = not na(srcPh) and not both
+    newL = not na(srcPl) and not both
+    if newH or newL
+        ptype = newH ? 1 : -1
+        price = newH ? srcPh : srcPl
+        if ptype == 1
+            lastSrcHigh := price
+            lastSrcHighBar := bar_index
+            if lastPivotType == 0
+                lastPivotType := 1
+                lastPivotPrice := price
+            else if lastPivotType == 1
+                if price > lastPivotPrice
+                    lastPivotPrice := price
+                    if swingDir == 1
+                        swingHigh := price
+            else
+                if price > lastPivotPrice or swingDir == 0
+                    swingLow := lastPivotPrice
+                    swingHigh := price
+                    swingDir := 1
+                lastPivotType := 1
+                lastPivotPrice := price
+        else
+            lastSrcLow := price
+            lastSrcLowBar := bar_index
+            if lastPivotType == 0
+                lastPivotType := -1
+                lastPivotPrice := price
+            else if lastPivotType == -1
+                if price < lastPivotPrice
+                    lastPivotPrice := price
+                    if swingDir == -1
+                        swingLow := price
+            else
+                if price < lastPivotPrice or swingDir == 0
+                    swingHigh := lastPivotPrice
+                    swingLow := price
+                    swingDir := -1
+                lastPivotType := -1
+                lastPivotPrice := price
+        if swingDir != 0 and swingHigh > swingLow
+            g236 := fibLevel(swingDir, swingHigh, swingLow, 0.236)
+            g382 := fibLevel(swingDir, swingHigh, swingLow, 0.382)
+            g500 := fibLevel(swingDir, swingHigh, swingLow, 0.500)
+            g618 := fibLevel(swingDir, swingHigh, swingLow, 0.618)
+            g786 := fibLevel(swingDir, swingHigh, swingLow, 0.786)
+            fibValid := true
+        else if swingDir == 0 and lastSrcHigh > 0.0 and lastSrcLow > 0.0 and lastSrcHigh > lastSrcLow
+            swingHigh := lastSrcHigh
+            swingLow := lastSrcLow
+            swingDir := lastSrcHighBar >= lastSrcLowBar ? 1 : -1
+            g236 := fibLevel(swingDir, swingHigh, swingLow, 0.236)
+            g382 := fibLevel(swingDir, swingHigh, swingLow, 0.382)
+            g500 := fibLevel(swingDir, swingHigh, swingLow, 0.500)
+            g618 := fibLevel(swingDir, swingHigh, swingLow, 0.618)
+            g786 := fibLevel(swingDir, swingHigh, swingLow, 0.786)
+            fibValid := true
+    have = fibValid and swingDir != 0 and not na(g618) and not na(g786) and g618 > 0 and g786 > 0
+    int dir = have ? swingDir : 0
+    float f618 = have ? g618 : na
+    float f786 = have ? g786 : na
+    bool bullZone = true
+    bool bearZone = true
+    if Htf_ReqZone
+        bullZone := have and dir == 1 and close <= f618 and close >= f786
+        bearZone := have and dir == -1 and close >= f618 and close <= f786
+    else if dir != 0
+        bullZone := dir == 1
+        bearZone := dir == -1
+    bool rsiLongOk = rsiV <= Htf_RsiLong
+    bool rsiShortOk = rsiV >= Htf_RsiShort
+    if Htf_RsiMaF
+        rsiLongOk := rsiLongOk and rsiBias(rsiV, rsiMa) == 1
+        rsiShortOk := rsiShortOk and rsiBias(rsiV, rsiMa) == -1
+    bool regimeLong = not Htf_ReqBias or close > emaB
+    bool regimeShort = not Htf_ReqBias or close < emaB
+    bool longOk = bullZone and regimeLong and rsiLongOk and (not Htf_ReqCandle or (close > open and close > close[1]))
+    bool shortOk = bearZone and regimeShort and rsiShortOk and (not Htf_ReqCandle or (close < open and close < close[1]))
+    bool bz1 = true
+    bool ez1 = true
+    if Htf_ReqZone and have
+        bz1 := dir == 1 and close[1] <= f618 and close[1] >= f786
+        ez1 := dir == -1 and close[1] >= f618 and close[1] <= f786
+    else if not Htf_ReqZone and dir != 0
+        bz1 := dir == 1
+        ez1 := dir == -1
+    else if Htf_ReqZone
+        bz1 := false
+        ez1 := false
+    bool pl = rsiV[1] <= Htf_RsiLong
+    bool ps = rsiV[1] >= Htf_RsiShort
+    if Htf_RsiMaF
+        pl := pl and rsiBias(rsiV[1], rsiMa[1]) == 1
+        ps := ps and rsiBias(rsiV[1], rsiMa[1]) == -1
+    bool prevLong = bz1 and (not Htf_ReqBias or close[1] > emaB[1]) and pl
+    bool prevShort = ez1 and (not Htf_ReqBias or close[1] < emaB[1]) and ps
+    if Htf_ReqZone and not have
+        sig := 0
+    else if bar_index < 1 or not barstate.isconfirmed
+        sig := 0
+    else if longOk and not prevLong
+        sig := 1
+    else if shortOk and not prevShort
+        sig := -1
+    oEmaF := InpShowEmas ? emaF : na
+    oEmaS := InpShowEmas ? emaS : na
+    oEmaB := (InpShowEmas and not Htf_ShowBias) ? na : emaB
+    oF236 := Htf_ShowFib and Htf_Show236 and have ? g236 : na
+    oF382 := Htf_ShowFib and Htf_Show382 and have ? g382 : na
+    oF500 := Htf_ShowFib and Htf_Show500 and have ? g500 : na
+    oF618 := Htf_ShowFib and Htf_Show618 and have ? g618 : na
+    oF786 := Htf_ShowFib and Htf_Show786 and have ? g786 : na
+    o4hH := show4hEff and use4h ? latest4hH : na
+    o4hL := show4hEff and use4h ? latest4hL : na
+    oDh := Htf_ShowD ? latestDh : na
+    oDl := Htf_ShowD ? latestDl : na
+    oBias := dir
+    showGold := Htf_ShowGold
+    showLong := InpShowMarkers and sig == 1
+    showShort := InpShowMarkers and sig == -1
+    lastWhy := "sig@8"
+
+if isFXIT
+    bool useSession = Fxit_ManSess ? Fxit_UseSess : not fxitSwing
+    bool allowAsian = Fxit_ManSess ? Fxit_AlAsian : fxitSwing
+    bool allowLondon = Fxit_ManSess ? Fxit_AlLon : true
+    bool allowNY = Fxit_ManSess ? Fxit_AlNy : true
+    bool allowOverlap = Fxit_ManSess ? Fxit_AlOv : true
+    float maxSpread = Fxit_ManSess ? Fxit_MaxSpr : (fxitSwing ? 0.0 : 2.5)
+    string tzSess = Fxit_Tz == "exchange" ? syminfo.timezone : Fxit_Tz
+    int sessH = hour(time, tzSess)
+    bool asian = inHourWindow(sessH, Fxit_As0, Fxit_As1)
+    bool london = inHourWindow(sessH, Fxit_Ln0, Fxit_Ln1)
+    bool ny = inHourWindow(sessH, Fxit_Ny0, Fxit_Ny1)
+    int sess = london and ny ? 4 : london ? 2 : ny ? 3 : asian ? 1 : 0
+    bool sessionAllowed = sess == 1 ? allowAsian : sess == 2 ? allowLondon : sess == 3 ? allowNY : sess == 4 ? allowOverlap : false
+    // STUB: historical TV has no MT5 bid/ask. Same pass-through as ForexIndicatorTemplate.pine.
+    float liveSpreadPips = na
+    bool spreadOk = maxSpread <= 0.0 or na(liveSpreadPips) or liveSpreadPips <= maxSpread
+    bool bullTrend = (close > emaB) and (not Fxit_ReqTrend or emaF > emaS)
+    bool bearTrend = (close < emaB) and (not Fxit_ReqTrend or emaF < emaS)
+    bool rsiUp = rsiV[1] <= Fxit_RsiLong and rsiV > Fxit_RsiLong
+    bool rsiDn = rsiV[1] >= Fxit_RsiShort and rsiV < Fxit_RsiShort
+    if Fxit_RsiX
+        rsiUp := rsiUp or rsiCrossUp(rsiV[1], rsiMa[1], rsiV, rsiMa)
+        rsiDn := rsiDn or rsiCrossDown(rsiV[1], rsiMa[1], rsiV, rsiMa)
+    if Fxit_RsiMaF
+        rsiUp := rsiUp and rsiBias(rsiV, rsiMa) == 1
+        rsiDn := rsiDn and rsiBias(rsiV, rsiMa) == -1
+    bool skipForming = Fxit_OnClose and not barstate.isconfirmed
+    if skipForming or bar_index < 1
+        sig := 0
+    else if not spreadOk
+        sig := 0
+    else if useSession and not sessionAllowed
+        sig := 0
+    else if bullTrend and rsiUp
+        sig := 1
+    else if bearTrend and rsiDn
+        sig := -1
+    bool showBias = false
+    if Fxit_ShowBias and emaBiasLen != emaSlowLen
+        showBias := true
+    else if Fxit_ShowBias and Fxit_ShowLines
+        showBias := false
+    else if Fxit_ShowBias and emaBiasLen == emaSlowLen and not Fxit_ShowLines
+        showBias := true
+    oEmaF := Fxit_ShowLines ? emaF : na
+    oEmaS := Fxit_ShowLines ? emaS : na
+    oEmaB := showBias ? emaB : na
+    oPdh := Fxit_ShowPD ? d1High : na
+    oPdl := Fxit_ShowPD ? d1Low : na
+    oPdo := Fxit_ShowPD ? d1Open : na
+    oSess := sess
+    showCloud := Fxit_ShowCloud
+    showLong := InpShowMarkers and sig == 1
+    showShort := InpShowMarkers and sig == -1
+    lastWhy := "sig@9"
+
+if isUIS
+    int etH = hour(time, TZ_NY)
+    int etM = minute(time, TZ_NY)
+    int etDow = dayofweek(time, TZ_NY)
+    int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
+    int lonH = hour(time, TZ_LON)
+    int lonM = minute(time, TZ_LON)
+    int tyoH = hour(time, TZ_TYO)
+    int tyoM = minute(time, TZ_TYO)
+    bool inNyCash = inHm(etH, etM, 9, 30, 16, 0)
+    bool inLondon = inHm(lonH, lonM, 8, 0, 17, 0)
+    bool inTokyo = inHm(tyoH, tyoM, 9, 0, 18, 0)
+    int sess = inNyCash and inLondon ? 4 : inNyCash ? 3 : inLondon ? 2 : inTokyo ? 1 : 0
+    int etMin = etH * 60 + etM
+    bool inOrWin = etMin >= 9 * 60 + 30 and etMin < 9 * 60 + 30 + Uis_OrMin
+    bool orComplete = etMin >= 9 * 60 + 30 + Uis_OrMin
+    int winOr = Uis_Play == "ORB" ? Uis_OrMin : 5
+    bool inEntry = etMin >= 9 * 60 + 30 + winOr and etMin < Uis_EndH * 60 + Uis_EndM
+    bool fridayCut = etDow == dayofweek.friday and etMin >= 14 * 60
+    bool newEt = na(etKey[1]) or etKey != etKey[1]
+    int tyoYmd = year(time, TZ_TYO) * 10000 + month(time, TZ_TYO) * 100 + dayofmonth(time, TZ_TYO)
+    int lonYmd = year(time, TZ_LON) * 10000 + month(time, TZ_LON) * 100 + dayofmonth(time, TZ_LON)
+    bool newTyoDay = na(tyoYmd[1]) or tyoYmd != tyoYmd[1]
+    bool newLonDay = na(lonYmd[1]) or lonYmd != lonYmd[1]
+    if newEt
+        uisVnum := 0.0
+        uisVden := 0.0
+        uisOrH := 0.0
+        uisOrL := 0.0
+        uisOrSet := false
+        uisPdh := uisDayH
+        uisPdl := uisDayL
+        uisDayH := high
+        uisDayL := low
+    else
+        uisDayH := math.max(nz(uisDayH, high), high)
+        uisDayL := math.min(nz(uisDayL, low), low)
+    if newTyoDay
+        uisAsiaH := inTokyo ? high : na
+        uisAsiaL := inTokyo ? low : na
+    else if inTokyo
+        uisAsiaH := math.max(nz(uisAsiaH, high), high)
+        uisAsiaL := math.min(nz(uisAsiaL, low), low)
+    if newLonDay
+        uisLonH := inLondon ? high : na
+        uisLonL := inLondon ? low : na
+    else if inLondon
+        uisLonH := math.max(nz(uisLonH, high), high)
+        uisLonL := math.min(nz(uisLonL, low), low)
+    float vwap = na
+    if inNyCash
+        typ = (high + low + close) / 3.0
+        vol = math.max(nz(volume, 1.0), 1.0)
+        uisVnum += typ * vol
+        uisVden += vol
+        vwap := uisVden > 0 ? uisVnum / uisVden : na
+    if inOrWin
+        if not uisOrSet
+            uisOrH := high
+            uisOrL := low
+            uisOrSet := true
+        else
+            uisOrH := math.max(uisOrH, high)
+            uisOrL := math.min(uisOrL, low)
+    bool orReady = uisOrSet and orComplete
+    string why = "no_confluence"
+    bool skipForming = Uis_OnClose and not barstate.isconfirmed
+    if skipForming
+        sig := 0
+        why := "forming"
+    else if fridayCut
+        why := "friday_cutoff"
+    else if not inEntry
+        why := etMin < 9 * 60 + 30 + winOr ? "before_or_end" : "outside_entry_window"
+    else if Uis_Play == "ORB" and not orReady
+        why := "or_incomplete"
+    else if Uis_Play != "EMA_MACD" and na(vwap)
+        why := "no_vwap"
+    else if na(atrV) or atrV <= 0
+        why := "atr_warmup"
+    else if Uis_Play == "ORB" and (na(emaF) or na(emaS) or emaF <= 0 or emaS <= 0)
+        why := "ema_atr_warmup"
+    else if close > 0 and atrV / close < Uis_MinAtr
+        why := "dead_atr"
+    else if Uis_Once and uisFired == etKey
+        why := "already_today"
+    else if Uis_Play == "VWAP_BOUNCE"
+        if na(rsiV) or rsiV <= 0
+            why := "rsi_warmup"
+        else
+            ext = (close - vwap) / atrV
+            if ext <= -Uis_AtrDev and rsiV <= Uis_RsiOs
+                sig := 1
+                why := "vwap_bounce_long"
+            else if ext >= Uis_AtrDev and rsiV >= Uis_RsiOb
+                sig := -1
+                why := "vwap_bounce_short"
+    else if Uis_Play == "EMA_MACD"
+        if na(emaF) or na(emaS) or emaF <= 0 or emaS <= 0 or na(macdLine) or na(macdSig)
+            why := "macd_warmup"
+        else
+            hist = macdHist
+            longOk = emaF > emaS and hist > 0
+            shortOk = emaF < emaS and hist < 0
+            if Uis_Cross
+                longOk := longOk and emaF[1] <= emaS[1]
+                shortOk := shortOk and emaF[1] >= emaS[1]
+            if longOk
+                sig := 1
+                why := "ema_macd_long"
+            else if shortOk
+                sig := -1
+                why := "ema_macd_short"
+    else if close > uisOrH and close > vwap and emaF > emaS
+        sig := 1
+        why := "orb_vwap_ema_long"
+    else if close < uisOrL and close < vwap and emaF < emaS
+        sig := -1
+        why := "orb_vwap_ema_short"
+    if Uis_Edge and bar_index > 0 and sig != 0 and sig[1] == sig
+        sig := 0
+        why := "edge_hold"
+    if sig != 0
+        uisFired := etKey
+        uisSide := sig
+        uisSigPx := close
+        uisSigAtr := atrV
+    if barstate.isconfirmed
+        uisWhy := why
+    oEmaF := InpShowEmas ? emaF : na
+    oEmaS := InpShowEmas ? emaS : na
+    oVwap := Uis_ShowVwap ? vwap : na
+    oOrH := Uis_ShowOr and orReady ? uisOrH : na
+    oOrL := Uis_ShowOr and orReady ? uisOrL : na
+    oAsiaH := Uis_ShowAsia ? uisAsiaH : na
+    oAsiaL := Uis_ShowAsia ? uisAsiaL : na
+    oLonH := Uis_ShowLonLv ? uisLonH : na
+    oLonL := Uis_ShowLonLv ? uisLonL : na
+    oPdh := Uis_ShowPD ? uisPdh : na
+    oPdl := Uis_ShowPD ? uisPdl : na
+    oSess := sess
+    oSl := Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx - uisSide * Uis_SlAtr * uisSigAtr : na
+    oTp := Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx + uisSide * Uis_TpAtr * uisSigAtr : na
+    showLong := InpShowMarkers and sig == 1
+    showShort := InpShowMarkers and sig == -1
+    bgNy := Uis_ShowNy and inNyCash
+    bgLon := Uis_ShowLon and inLondon and not inNyCash
+    bgTyo := Uis_ShowTyo and inTokyo
+    shpNy := Uis_ShowNy and inNyCash and not inNyCash[1]
+    shpLon := Uis_ShowLon and inLondon and not inLondon[1]
+    shpTyo := Uis_ShowTyo and inTokyo and not inTokyo[1]
+    shpFlat := Uis_ShowFlat and etH == 15 and etM == 45
+    lastWhy := uisWhy
+
+if isBTP
+    htfStrength = not na(htfE50) and not na(htfE200) and htfE200 != 0 ? (htfE50 - htfE200) / htfE200 : 0.0
+    int htfBias = 0
+    if not na(htfC) and not na(htfE50) and not na(htfE200) and htfE50 > 0 and htfE200 > 0
+        if htfC > htfE200 and htfE50 > htfE200 and htfStrength >= Btp_MinStr
+            htfBias := 1
+        else if htfC < htfE200 and htfE50 < htfE200 and (-htfStrength) >= Btp_MinStr
+            htfBias := -1
+    float rollVwap = close
+    if Btp_UseVwap
+        vn = 0.0
+        vd = 0.0
+        for k = 0 to Btp_VwapN - 1
+            typ = (high[k] + low[k] + close[k]) / 3.0
+            vol = math.max(nz(volume[k], 1.0), 1.0)
+            vn += typ * vol
+            vd += vol
+        rollVwap := vd > 0 ? vn / vd : close
+    panicLong = Btp_Panic and ((rsiV <= Btp_PanicRsi) or (atrV / close >= Btp_PanicAtr)) and close < emaS
+    panicShort = Btp_Panic and ((rsiV >= (100.0 - Btp_PanicRsi)) or (atrV / close >= Btp_PanicAtr)) and close > emaS
+    deepLong = false
+    deepShort = false
+    if Btp_Deep and bar_index >= Btp_DeepN + 1
+        under = 0
+        stopped = false
+        for k = 1 to Btp_DeepN
+            if not stopped
+                ek = emaF[k]
+                ck = close[k]
+                if na(ek) or ek <= 0
+                    stopped := true
+                else
+                    dist = (ek - ck) / ek
+                    if ck < ek and dist >= 0 and dist <= Btp_DeepMax
+                        under += 1
+                    else
+                        stopped := true
+        if under >= Btp_DeepN and close >= emaF
+            ext = (close - emaF) / emaF
+            deepLong := ext >= 0 and ext <= Btp_MaxExt and rsiV >= Btp_RsiReclaim and rsiV > rsiV[1] and macdHist >= Btp_MinHist and macdHist > macdHist[1]
+        over = 0
+        stoppedS = false
+        for k = 1 to Btp_DeepN
+            if not stoppedS
+                ek = emaF[k]
+                ck = close[k]
+                if na(ek) or ek <= 0
+                    stoppedS := true
+                else
+                    dist = (ck - ek) / ek
+                    if ck > ek and dist >= 0 and dist <= Btp_DeepMax
+                        over += 1
+                    else
+                        stoppedS := true
+        if over >= Btp_DeepN and close <= emaF
+            ext = (emaF - close) / emaF
+            deepShort := ext >= 0 and ext <= Btp_MaxExt and rsiV <= (100.0 - Btp_RsiReclaim) and rsiV < rsiV[1] and macdHist <= -Btp_MinHist and macdHist < macdHist[1]
+    nearE50 = emaF > 0 and math.abs(close - emaF) / emaF <= Btp_MaxPb
+    nearVwap = not Btp_UseVwap or rollVwap <= 0 or math.abs(close - rollVwap) / rollVwap <= Btp_VwapPb
+    recovLong = rsiV >= Btp_RsiReclaim and rsiV > rsiV[1] and macdHist >= Btp_MinHist and macdHist > macdHist[1] and close > close[1]
+    recovShort = rsiV <= (100.0 - Btp_RsiReclaim) and rsiV < rsiV[1] and macdHist <= -Btp_MinHist and macdHist < macdHist[1] and close < close[1]
+    setupContLong = false
+    setupContShort = false
+    if Btp_Cont and emaF > 0
+        extL = (close - emaF) / emaF
+        extS = (emaF - close) / emaF
+        momL = rsiV >= Btp_ContRsi and (rsiV > rsiV[1] or macdHist > macdHist[1])
+        momS = rsiV <= (100.0 - Btp_ContRsi) and (rsiV < rsiV[1] or macdHist < macdHist[1])
+        setupContLong := htfStrength >= Btp_StrStr and close >= emaF and extL >= 0 and extL <= Btp_MaxExt and momL
+        setupContShort := (-htfStrength) >= Btp_StrStr and close <= emaF and extS >= 0 and extS <= Btp_MaxExt and momS
+    longSetup = htfBias == 1 and not panicLong and emaF > 0 and ((nearE50 and nearVwap and recovLong) or setupContLong or deepLong)
+    shortSetup = Btp_Shorts and htfBias == -1 and not panicShort and emaF > 0 and ((nearE50 and nearVwap and recovShort) or setupContShort or deepShort)
+    atrPct = close > 0 and atrV > 0 ? atrV / close : 0.0
+    canTrade = close > 0 and atrV > 0 and atrPct >= Btp_MinAtr
+    longNow = canTrade and longSetup
+    shortNow = canTrade and shortSetup
+    if bar_index < 1 or not barstate.isconfirmed
+        sig := 0
+    else
+        longFire = longNow
+        shortFire = shortNow
+        if Btp_Edge and bar_index >= 2
+            longFire := longNow and not (canTrade[1] and longSetup[1])
+            shortFire := shortNow and not (canTrade[1] and shortSetup[1])
+        if longFire
+            sig := 1
+        else if shortFire
+            sig := -1
+    mid = Btp_BandMid == "EMA50" ? emaF : close
+    oEmaF := InpShowEmas ? emaF : na
+    oEmaS := InpShowEmas ? emaS : na
+    oAtrLo := Btp_ShowBands and atrV > 0 and mid > 0 ? mid - Btp_BandMult * atrV : na
+    oAtrHi := Btp_ShowBands and atrV > 0 and mid > 0 ? mid + Btp_BandMult * atrV : na
+    oBias := htfBias
+    oVwap := Btp_UseVwap ? rollVwap : na
+    showLong := InpShowMarkers and sig == 1
+    showShort := InpShowMarkers and sig == -1
+    lastWhy := "sig@7"
+
+if isBNS
+    int etH = hour(time, TZ_NY)
+    int etM = minute(time, TZ_NY)
+    int etDow = dayofweek(time, TZ_NY)
+    int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
+    int emin = etH * 60 + etM
+    bool inBox = emin >= 8 * 60 and emin < 11 * 60 + 30
+    bool fridayCut = etDow == dayofweek.friday and emin >= 14 * 60
+    bool nfpHit = Bns_Nfp and emin >= 8 * 60 + 25 and emin < 8 * 60 + 40
+    bool entryOk = inBox and not fridayCut and not nfpHit
+    bool newEt = na(etKey[1]) or etKey != etKey[1]
+    if newEt
+        bnsVnum := 0.0
+        bnsVden := 0.0
+        bnsOrH := na
+        bnsOrL := na
+        bnsOrReady := false
+    float vwap = na
+    if inBox
+        typ = (high + low + close) / 3.0
+        vol = math.max(nz(volume, 1.0), 1.0)
+        bnsVnum += typ * vol
+        bnsVden += vol
+        if bnsVden > 0 and Bns_ShowVwap
+            vwap := bnsVnum / bnsVden
+        orEnd = 8 * 60 + Bns_OrMin
+        if emin >= 8 * 60 and emin < orEnd
+            if na(bnsOrH)
+                bnsOrH := high
+                bnsOrL := low
+            else
+                bnsOrH := math.max(bnsOrH, high)
+                bnsOrL := math.min(bnsOrL, low)
+        if emin >= orEnd and not na(bnsOrH)
+            bnsOrReady := true
+    int htfBias = 0
+    if not na(h1C) and not na(h1E50) and not na(h1E200)
+        if h1C > h1E200 and h1E50 > h1E200
+            htfBias := 1
+        else if h1C < h1E200 and h1E50 < h1E200
+            htfBias := -1
+    string why = "no_setup"
+    bool skipForming = Bns_OnClose and not barstate.isconfirmed
+    if skipForming
+        sig := 0
+        why := "forming"
+    else if not entryOk
+        why := "outside_window"
+    else if close <= 0 or na(atrV) or atrV <= 0 or atrV / close < Bns_MinAtr
+        why := "dead_atr"
+    else if bnsVden <= 0
+        why := "no_vwap"
+    else
+        vw = bnsVnum / bnsVden
+        if Bns_Play == "VWAP_EMA"
+            if close > vw and emaF > emaS
+                sig := 1
+            else if close < vw and emaF < emaS
+                sig := -1
+        else if Bns_Play == "ATR_DRIVE"
+            if not bnsOrReady
+                why := "or_incomplete"
+            else
+                buf = Bns_OrBuf * atrV
+                if close > bnsOrH + buf and close > vw and emaF > emaS
+                    sig := 1
+                else if close < bnsOrL - buf and close < vw and emaF < emaS
+                    sig := -1
+        else if Bns_Play == "HTF_PULLBACK"
+            if emaS > 0
+                dist = (close - emaS) / close
+                if htfBias == 1 and math.abs(dist) <= Bns_Pb and close > emaS and bar_index > 0 and close > close[1] and dist <= Bns_Ext
+                    sig := 1
+                else if htfBias == -1 and math.abs(dist) <= Bns_Pb and close < emaS and bar_index > 0 and close < close[1] and -dist <= Bns_Ext
+                    sig := -1
+    if Bns_Once and sig != 0 and etKey == bnsFired
+        sig := 0
+    if Bns_Edge and bar_index > 0 and sig != 0 and sig[1] == sig
+        sig := 0
+    if sig != 0
+        bnsFired := etKey
+        why := sig > 0 ? "long" : "short"
+    if barstate.isconfirmed
+        bnsWhy := why
+    oEmaF := InpShowEmas ? emaF : na
+    oEmaS := InpShowEmas ? emaS : na
+    oVwap := vwap
+    oOrH := Bns_ShowOr and bnsOrReady ? bnsOrH : na
+    oOrL := Bns_ShowOr and bnsOrReady ? bnsOrL : na
+    oSess := inBox ? 1 : 0
+    oBias := htfBias
+    showLong := InpShowMarkers and sig == 1
+    showShort := InpShowMarkers and sig == -1
+    bgDesk := inBox
+    shpDesk := inBox and not inBox[1]
+    shpFlat := Bns_ShowFlat and emin == 11 * 60 + 30
+    lastWhy := bnsWhy
+
+// Shared plots (na when the active family does not use the slot).
+// display= is a Pine const — cannot flip display.none per family; unused series stay na.
+pCloudF = plot(showCloud ? emaF : na, "cloud fast", color=na, display=display.none)
+pCloudS = plot(showCloud ? emaS : na, "cloud slow", color=na, display=display.none)
+fill(pCloudF, pCloudS, color=showCloud ? (emaF > emaS ? color.new(#3CB371, 70) : emaF < emaS ? color.new(#CD5C5C, 70) : na) : na, title="EMA cloud")
+plot(oEmaF, "EMA Fast", color=#00BFFF, linewidth=1)
+plot(oEmaS, "EMA Slow", color=#FFA500, linewidth=2)
+plot(oEmaB, "EMA Bias", color=#FFD700, linewidth=2)
+plot(oVwap, "VWAP", color=color.white, linewidth=2)
+plot(oOrH, "OR High", color=#00FFFF, linewidth=1, style=plot.style_circles)
+plot(oOrL, "OR Low", color=#00FFFF, linewidth=1, style=plot.style_circles)
+p618 = plot(oF618, "Fib 61.8", color=#BA55D3, linewidth=2)
+p786 = plot(oF786, "Fib 78.6", color=#FF6347, linewidth=1)
+plot(oF500, "Fib 50", color=#FFA500, linewidth=1)
+plot(oF236, "Fib 23.6", color=#6495ED, linewidth=1)
+plot(oF382, "Fib 38.2", color=#1E90FF, linewidth=1)
+fill(p618, p786, color=showGold ? color.new(#282800, 70) : na, title="Golden zone")
+plot(o4hH, "4H High", color=#FF6347, linewidth=2)
+plot(o4hL, "4H Low", color=#32CD32, linewidth=2)
+plot(oDh, "D High", color=#800000, linewidth=2)
+plot(oDl, "D Low", color=#00FF00, linewidth=2)
+plot(oPdh, "PDH", color=#DC143C, linewidth=1, style=plot.style_linebr)
+plot(oPdl, "PDL", color=#32CD32, linewidth=1, style=plot.style_linebr)
+plot(oPdo, "PDO", color=#FFD700, linewidth=1, style=plot.style_linebr)
+plot(oAsiaH, "ASIA HIGH", color=#9370DB, linewidth=1)
+plot(oAsiaL, "ASIA LOW", color=#9370DB, linewidth=1)
+plot(oLonH, "LONDON HIGH", color=#1E90FF, linewidth=1)
+plot(oLonL, "LONDON LOW", color=#1E90FF, linewidth=1)
+plot(oAtrLo, "ATR Lower", color=#1E90FF, linewidth=1, style=plot.style_circles)
+plot(oAtrHi, "ATR Upper", color=#FF7F50, linewidth=1, style=plot.style_circles)
+plot(oSl, "SL ATR", color=color.red, style=plot.style_linebr)
+plot(oTp, "TP ATR", color=color.lime, style=plot.style_linebr)
+plotshape(showLong, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
+plotshape(showShort, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+plotshape(shpNy, "NY 09:30", shape.circle, location.top, #FFD700, size=size.tiny)
+plotshape(shpLon, "London open", shape.circle, location.top, #1E90FF, size=size.tiny)
+plotshape(shpTyo, "Tokyo open", shape.circle, location.top, #9370DB, size=size.tiny)
+plotshape(shpDesk, "NY desk 08:00", shape.circle, location.top, #FFD700, size=size.tiny)
+plotshape(shpFlat, "Flatten", shape.xcross, location.top, #FF8C00, size=size.tiny)
+bgcolor(bgNy ? color.new(#FFD700, 94) : bgDesk ? color.new(#FFD700, 94) : na, title="NY / desk")
+bgcolor(bgLon ? color.new(#1E90FF, 96) : na, title="London")
+bgcolor(bgTyo ? color.new(#9370DB, 96) : na, title="Tokyo")
+
+// Active-family iCustom signal. Name must stay `signal`.
+// Buffer index is family-specific (HTFFIB/UIS/BNS=8, BTP=7, FXIT=9).
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(sigBuf, "signalBuffer", color=color.gray, display=display.data_window)
+plot(oSess, "session", color=color.gray, display=display.data_window)
+plot(oBias, "bias", color=color.gray, display=display.data_window)
+
+var label lbl4hH = na
+var label lbl4hL = na
+var label lblDh = na
+var label lblDl = na
+var label famTag = na
+var table panel = table.new(position.top_left, 1, 8, bgcolor=color.new(color.black, 25), border_width=0)
+
+if barstate.islast
+    bool lab4h = isHTF and Htf_Lab4h and not na(o4hH)
+    bool lab4l = isHTF and Htf_Lab4h and not na(o4hL)
+    bool labDh = isHTF and Htf_LabD and not na(oDh)
+    bool labDl = isHTF and Htf_LabD and not na(oDl)
+    if lab4h
+        if na(lbl4hH)
+            lbl4hH := label.new(bar_index, o4hH, "4H H", xloc.bar_index, yloc.price, color.new(#FF6347, 100), textcolor=#FF6347, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hH, bar_index, o4hH)
+    else if not na(lbl4hH)
+        label.delete(lbl4hH)
+        lbl4hH := na
+    if lab4l
+        if na(lbl4hL)
+            lbl4hL := label.new(bar_index, o4hL, "4H L", xloc.bar_index, yloc.price, color.new(#32CD32, 100), textcolor=#32CD32, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hL, bar_index, o4hL)
+    else if not na(lbl4hL)
+        label.delete(lbl4hL)
+        lbl4hL := na
+    if labDh
+        if na(lblDh)
+            lblDh := label.new(bar_index, oDh, "D H", xloc.bar_index, yloc.price, color.new(#800000, 100), textcolor=#800000, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDh, bar_index, oDh)
+    else if not na(lblDh)
+        label.delete(lblDh)
+        lblDh := na
+    if labDl
+        if na(lblDl)
+            lblDl := label.new(bar_index, oDl, "D L", xloc.bar_index, yloc.price, color.new(#00FF00, 100), textcolor=#00FF00, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDl, bar_index, oDl)
+    else if not na(lblDl)
+        label.delete(lblDl)
+        lblDl := na
+
+    tag = famCode + " · buffer " + str.tostring(sigBuf) + (isBNS ? " · SCREEN_FAIL" : "")
+    if InpShowPanel
+        if na(famTag)
+            famTag := label.new(bar_index, high, tag, xloc.bar_index, yloc.price, color.new(color.black, 20), textcolor=isBNS ? color.red : color.white, style=label.style_label_left, size=size.small)
+        else
+            label.set_xy(famTag, bar_index, high)
+            label.set_text(famTag, tag)
+            label.set_textcolor(famTag, isBNS ? color.red : color.white)
+    else if not na(famTag)
+        label.delete(famTag)
+        famTag := na
+
+    if InpShowPanel
+        lastSig = sig[1]
+        sigs = lastSig > 0.5 ? "LONG" : lastSig < -0.5 ? "SHORT" : "flat"
+        famTitle = isHTF ? "FX HTF Fib (ForexHtfPivotsFib)" : isFXIT ? "FX template (ForexIndicatorTemplate)" : isUIS ? "US index scalp (UsIndexSessionScalp)" : isBTP ? "BTC H1 pullback (BtcTrendPullback)" : "BTC NY scalp (BtcNySessionScalp)"
+        statusTxt = isBNS ? "SCREEN_FAIL / promote=no — not a trading signal" : "Not a live signal. promote=no."
+        table.cell(panel, 0, 0, "Universal Overlay — observe-only / promote=no", text_color=color.white, text_halign=text.align_left)
+        table.cell(panel, 0, 1, statusTxt, text_color=isBNS ? color.red : color.silver, text_halign=text.align_left)
+        table.cell(panel, 0, 2, "Family " + famTitle, text_color=color.silver, text_halign=text.align_left)
+        table.cell(panel, 0, 3, "Signal buffer " + str.tostring(sigBuf) + "  |  " + famCode + "  |  HTFFIB/UIS/BNS=8 BTP=7 FXIT=9", text_color=color.silver, text_halign=text.align_left)
+        table.cell(panel, 0, 4, "Signal " + sigs + " | " + lastWhy + " | no orders", text_color=color.silver, text_halign=text.align_left)
+        table.cell(panel, 0, 5, "IANA DST " + TZ_NY + " / " + TZ_LON + " / " + TZ_TYO, text_color=color.gray, text_halign=text.align_left)
+        table.cell(panel, 0, 6, isBNS ? "NY desk [08:00, 11:30) " + TZ_NY + "  flatten 11:30" : "Active family only — unused plots stay na", text_color=color.gray, text_halign=text.align_left)
+        table.cell(panel, 0, 7, "merge ≠ deploy · not a live host", text_color=color.gray, text_halign=text.align_left)
+
+alertcondition(sig == 1, "UNIV long (observe-only)", "Universal overlay long — not a live signal")
+alertcondition(sig == -1, "UNIV short (observe-only)", "Universal overlay short — not a live signal")

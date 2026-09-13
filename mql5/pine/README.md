@@ -38,6 +38,26 @@ Also not converted (out of scope): Experts, Scripts, `Mt5ArchBridge` / ReadOnly,
 | US index scalp | ET / London / Tokyo with DST | `America/New_York`, `Europe/London`, `Asia/Tokyo` |
 | BTC NY scalp | ET desk box | `America/New_York` |
 
-## How to load
+## Universal overlay (one attach)
 
-TradingView → Pine Editor → paste a `.pine` file → Add to chart. These files are not compiled by MetaEditor and are not copied by `scripts/18-install-forex-indicator.sh`.
+`UniversalOverlay.pine` is an **additional** chart attach. It does not replace or delete the five standalone files.
+
+TradingView → Pine Editor → paste `UniversalOverlay.pine` → Add to chart → Settings → **Overlay family**:
+
+| Family option | Standalone | Signal buffer | Notes |
+|---------------|------------|---------------|-------|
+| FX HTF Fib | `ForexHtfPivotsFib.pine` | **8** | Confirm-bar HTF pivots + golden-zone RSI |
+| FX template | `ForexIndicatorTemplate.pine` | **9** | Buffer 8 is the short arrow, not the signal |
+| US index scalp | `UsIndexSessionScalp.pine` | **8** | IANA NY / London / Tokyo DST clocks |
+| BTC H1 pullback | `BtcTrendPullback.pine` | **7** | H4 completed-bar bias |
+| BTC NY scalp | `BtcNySessionScalp.pine` | **8** | **SCREEN_FAIL / promote=no** banner when this family is selected |
+
+Only the selected family's signal / VWAP / swing / ORB state runs each bar. `request.security` must stay registered (Pine limitation); unused families request the **chart** TF instead of H4/D1/H1 so this is not five HTF books.
+
+The data-window plot named `signal` is the active family's iCustom series. The table and last-bar label show family code + buffer index (`HTFFIB/UIS/BNS=8`, `BTP=7`, `FXIT=9`). Unused visual series stay `na` (`display=` is a Pine const and cannot flip per family).
+
+GoldSessionScalp / OilSessionScalp are not options. Do not invent them.
+
+## How to load (standalone)
+
+TradingView → Pine Editor → paste a `.pine` file → Add to chart. These files are not compiled by MetaEditor and are not copied by `scripts/18-install-forex-indicator.sh`. Merge ≠ deploy. Not a live host.

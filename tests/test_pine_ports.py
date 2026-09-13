@@ -146,10 +146,78 @@ def test_readme_maps_all_and_host_only_gold_oil() -> None:
     assert not (PINE_DIR / "OilSessionScalp.pine").exists()
 
 
+UNIVERSAL = "UniversalOverlay.pine"
+FAMILY_OPTIONS = (
+    "FX HTF Fib",
+    "FX template",
+    "US index scalp",
+    "BTC H1 pullback",
+    "BTC NY scalp",
+)
+
+
 def test_no_extra_pine_overlays() -> None:
     names = {p.name for p in PINE_DIR.glob("*.pine")}
-    expected = {s["pine"] for s in PORTS.values()}
-    assert names == expected, names - expected
+    expected = {s["pine"] for s in PORTS.values()} | {UNIVERSAL}
+    assert names == expected, names.symmetric_difference(expected)
+
+
+def test_universal_is_v5_indicator_switch() -> None:
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    code = _strip_pine_comments(src)
+    assert VERSION_RE.search(src)
+    assert INDICATOR_RE.search(src)
+    assert STRATEGY_RE.search(code) is None
+    assert ORDER_RE.search(code) is None
+    assert "observe-only" in src
+    assert "promote=no" in src
+    assert "not a live host" in src.lower() or "Not a live host" in src
+    assert "merge ≠ deploy" in src.lower() or "merge ≠ deploy" in src
+    assert 'plot(sig, "signal"' in src
+    assert "input.string" in src
+    for option in FAMILY_OPTIONS:
+        assert f'"{option}"' in src
+    for spec in PORTS.values():
+        assert spec["mq5"] in src
+        assert f"mql5/Indicators/{spec['mq5']}" in src
+    assert "if isHTF" in src
+    assert "if isFXIT" in src
+    assert "if isUIS" in src
+    assert "if isBTP" in src
+    assert "if isBNS" in src
+    assert "GoldSessionScalp" in src
+    assert "not invented" in src.lower() or "not included" in src.lower()
+    assert "OilSessionScalp" in src
+
+
+def test_universal_signal_buffers_and_bns_banner() -> None:
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    assert "buffer 8" in src
+    assert "buffer 9" in src
+    assert "buffer 7" in src
+    assert "SCREEN_FAIL" in src
+    assert "America/New_York" in src
+    assert "Europe/London" in src
+    assert "Asia/Tokyo" in src
+    assert "[08:00, 11:30)" in src
+    assert "signalBuffer" in src
+    readme = README.read_text(encoding="utf-8")
+    assert UNIVERSAL in readme
+    assert "Overlay family" in readme
+    assert "one attach" in readme.lower() or "one-chart" in readme.lower()
+    for option in FAMILY_OPTIONS:
+        assert option in readme
+
+
+def test_universal_does_not_drop_standalones() -> None:
+    for spec in PORTS.values():
+        assert (PINE_DIR / spec["pine"]).is_file()
+    assert (PINE_DIR / UNIVERSAL).is_file()
+    # wrapper is extra; standalones stay the source-faithful ports
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    assert "Standalone files stay" in src or "does not replace" in README.read_text(
+        encoding="utf-8"
+    ).lower()
 
 
 def _balance(src: str) -> None:
@@ -175,8 +243,12 @@ def _balance(src: str) -> None:
 
 def test_pine_delimiters_and_no_invalid_history_on_call() -> None:
     bad = re.compile(r"\w+\([^)]*\)\s*\[\s*1\s*\]")
-    for spec in PORTS.values():
-        src = (PINE_DIR / spec["pine"]).read_text(encoding="utf-8")
+    names = [s["pine"] for s in PORTS.values()] + [UNIVERSAL]
+    for name in names:
+        src = (PINE_DIR / name).read_text(encoding="utf-8")
         _balance(src)
-        assert bad.search(src) is None, spec["pine"]
+        assert bad.search(src) is None, name
         assert "strategy()" not in _strip_pine_comments(src)
+        assert src.count("plot(") + src.count("plotshape(") + src.count(
+            "bgcolor("
+        ) < 64, name
