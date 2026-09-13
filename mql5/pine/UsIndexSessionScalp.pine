@@ -1,0 +1,324 @@
+// UsIndexSessionScalp.pine
+// Source: mql5/Indicators/UsIndexSessionScalp.mq5 v1.41 (this repo is truth)
+// Observe-only. promote=no. Not a live signal. Never strategy / never orders.
+// Frozen default family: ny_cash_orb_vwap_ema_flat. Signal buffer 8.
+//
+// Session clock: MQL5 IndexSessionUtils.mqh converts broker server → UTC via
+// TimeCurrent()-TimeGMT() (InpServerUtcOffsetHours=-99 auto), then applies
+// US Eastern DST (2nd Sun Mar 07:00 UTC → 1st Sun Nov 06:00 UTC) and
+// UK DST (last Sun Mar 01:00 → last Sun Oct 01:00). Tokyo is UTC+9 (no DST).
+// Pine uses IANA TZ (DST via TZDB) instead of reconstructing from a broker
+// offset — do not treat this as a silent drop of DST:
+//   NY cash / OR / flatten / Friday cutoff → America/New_York
+//   London session H/L                     → Europe/London
+//   Tokyo / Asia H/L                       → Asia/Tokyo
+// InpServerUtcOffsetHours is unused here (no Wine server clock).
+//
+// STUBS: live spread-in-points (IdxSpreadPoints), IndexM5Export file dump,
+//        Wine ChartObjects / Comment(), iCustom logger.
+
+//@version=5
+indicator("US Index Session Scalp (observe-only)", shorttitle="UIS", overlay=true, max_labels_count=40, max_lines_count=50)
+
+TZ_NY = "America/New_York"
+TZ_LON = "Europe/London"
+TZ_TYO = "Asia/Tokyo"
+
+// === Clock ===
+int InpServerUtcOffsetHours = input.int(-99, "InpServerUtcOffsetHours (unused — IANA TZ)", group="=== Clock ===", tooltip="MQL5 broker UTC offset. Pine uses America/New_York, Europe/London, Asia/Tokyo.")
+
+// === Opening range / signal (frozen combo) ===
+int    InpOrMinutes = input.int(15, "InpOrMinutes", minval=1, group="=== Opening range / signal (frozen combo) ===")
+int    InpEmaFast = input.int(9, "InpEmaFast", minval=1, group="=== Opening range / signal (frozen combo) ===")
+int    InpEmaSlow = input.int(21, "InpEmaSlow", minval=1, group="=== Opening range / signal (frozen combo) ===")
+int    InpAtrPeriod = input.int(14, "InpAtrPeriod", minval=1, group="=== Opening range / signal (frozen combo) ===")
+float  InpMinAtrPct = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="=== Opening range / signal (frozen combo) ===")
+int    InpEntryEndHour = input.int(11, "InpEntryEndHour", minval=0, maxval=23, group="=== Opening range / signal (frozen combo) ===")
+int    InpEntryEndMinute = input.int(30, "InpEntryEndMinute", minval=0, maxval=59, group="=== Opening range / signal (frozen combo) ===")
+bool   InpOnePerDay = input.bool(true, "InpOnePerDay", group="=== Opening range / signal (frozen combo) ===")
+bool   InpSignalOnClose = input.bool(true, "InpSignalOnClose", group="=== Opening range / signal (frozen combo) ===")
+bool   InpEdgeTrigger = input.bool(true, "InpEdgeTrigger", group="=== Opening range / signal (frozen combo) ===")
+bool   InpShowAtrStops = input.bool(false, "InpShowAtrStops", group="=== Opening range / signal (frozen combo) ===")
+float  InpSlAtr = input.float(1.0, "InpSlAtr", step=0.1, group="=== Opening range / signal (frozen combo) ===")
+float  InpTpAtr = input.float(1.5, "InpTpAtr", step=0.1, group="=== Opening range / signal (frozen combo) ===")
+
+// === Playbook families ===
+string InpFamily = input.string("ORB", "InpFamily", options=["ORB", "VWAP_BOUNCE", "EMA_MACD"], group="=== Playbook families (observe only; default = frozen ORB) ===")
+int    InpRsiPeriod = input.int(14, "InpRsiPeriod", minval=2, group="=== Playbook families (observe only; default = frozen ORB) ===")
+float  InpRsiOb = input.float(75.0, "InpRsiOb", group="=== Playbook families (observe only; default = frozen ORB) ===")
+float  InpRsiOs = input.float(25.0, "InpRsiOs", group="=== Playbook families (observe only; default = frozen ORB) ===")
+float  InpAtrDev = input.float(1.0, "InpAtrDev", minval=0.0, group="=== Playbook families (observe only; default = frozen ORB) ===")
+int    InpMacdFast = input.int(12, "InpMacdFast", minval=1, group="=== Playbook families (observe only; default = frozen ORB) ===")
+int    InpMacdSlow = input.int(26, "InpMacdSlow", minval=1, group="=== Playbook families (observe only; default = frozen ORB) ===")
+int    InpMacdSignal = input.int(9, "InpMacdSignal", minval=1, group="=== Playbook families (observe only; default = frozen ORB) ===")
+bool   InpCrossOnly = input.bool(true, "InpCrossOnly", group="=== Playbook families (observe only; default = frozen ORB) ===")
+
+// === Spread (points, not pips) ===
+float InpMaxSpreadPoints = input.float(0.0, "InpMaxSpreadPoints (0=auto; live stub)", group="=== Spread (points, not pips) ===")
+
+// === Session drawings ===
+int   InpDrawDays = input.int(2, "InpDrawDays (bgcolor; no Wine boxes)", minval=1, maxval=12, group="=== Session drawings ===")
+bool  InpShowTokyo = input.bool(false, "InpShowTokyo", group="=== Session drawings ===")
+bool  InpShowLondon = input.bool(true, "InpShowLondon", group="=== Session drawings ===")
+bool  InpShowNyCash = input.bool(true, "InpShowNyCash", group="=== Session drawings ===")
+bool  InpShowSessionBoxes = input.bool(false, "InpShowSessionBoxes (STUB — use bgcolor)", group="=== Session drawings ===")
+bool  InpShowOrBox = input.bool(true, "InpShowOrBox", group="=== Session drawings ===")
+bool  InpShowPriorDay = input.bool(true, "InpShowPriorDay", group="=== Session drawings ===")
+bool  InpShowFlattenLine = input.bool(true, "InpShowFlattenLine", group="=== Session drawings ===")
+bool  InpShowAsiaLevels = input.bool(true, "InpShowAsiaLevels", group="=== Session drawings ===")
+bool  InpShowLondonLevels = input.bool(true, "InpShowLondonLevels", group="=== Session drawings ===")
+color InpColTokyo = input.color(#9370DB, "InpColTokyo", group="=== Session drawings ===")
+color InpColLondon = input.color(#1E90FF, "InpColLondon", group="=== Session drawings ===")
+color InpColNy = input.color(#FFD700, "InpColNy", group="=== Session drawings ===")
+color InpColOr = input.color(#00FFFF, "InpColOr", group="=== Session drawings ===")
+color InpColPdh = input.color(#DC143C, "InpColPdh", group="=== Session drawings ===")
+color InpColPdl = input.color(#32CD32, "InpColPdl", group="=== Session drawings ===")
+color InpColFlat = input.color(#FF8C00, "InpColFlat", group="=== Session drawings ===")
+
+// === Display ===
+bool  InpShowEmas = input.bool(true, "InpShowEmas", group="=== Display ===")
+bool  InpShowVwap = input.bool(true, "InpShowVwap", group="=== Display ===")
+bool  InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== Display ===")
+bool  InpShowPanel = input.bool(true, "InpShowPanel", group="=== Display ===")
+float InpArrowOffsetAtrFrac = input.float(0.15, "InpArrowOffsetAtrFrac", step=0.01, group="=== Display ===")
+
+inHm(int h, int mi, int sh, int sm, int eh, int em) =>
+    t = h * 60 + mi
+    a = sh * 60 + sm
+    b = eh * 60 + em
+    a < b ? (t >= a and t < b) : (t >= a or t < b)
+
+int etH = hour(time, TZ_NY)
+int etM = minute(time, TZ_NY)
+int etDow = dayofweek(time, TZ_NY)
+int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
+int lonH = hour(time, TZ_LON)
+int lonM = minute(time, TZ_LON)
+int tyoH = hour(time, TZ_TYO)
+int tyoM = minute(time, TZ_TYO)
+
+bool inNyCash = inHm(etH, etM, 9, 30, 16, 0)
+bool inLondon = inHm(lonH, lonM, 8, 0, 17, 0)
+bool inTokyo = inHm(tyoH, tyoM, 9, 0, 18, 0)
+int sess = inNyCash and inLondon ? 4 : inNyCash ? 3 : inLondon ? 2 : inTokyo ? 1 : 0
+string sessName = sess == 4 ? "LDN+NY" : sess == 3 ? "NY cash" : sess == 2 ? "London" : sess == 1 ? "Tokyo" : "Off"
+
+int etMin = etH * 60 + etM
+bool inOrWin = etMin >= 9 * 60 + 30 and etMin < 9 * 60 + 30 + InpOrMinutes
+bool orComplete = etMin >= 9 * 60 + 30 + InpOrMinutes
+int winOr = InpFamily == "ORB" ? InpOrMinutes : 5
+bool inEntry = etMin >= 9 * 60 + 30 + winOr and etMin < InpEntryEndHour * 60 + InpEntryEndMinute
+bool fridayCut = etDow == dayofweek.friday and etMin >= 14 * 60
+
+u = str.upper(syminfo.ticker)
+looksUs = str.contains(u, "US30") or str.contains(u, "DJ30") or str.contains(u, "DJIA") or str.contains(u, "US100") or str.contains(u, "NAS100") or str.contains(u, "USTEC") or str.contains(u, "NASDAQ") or str.contains(u, "NDX") or str.contains(u, "US500") or str.contains(u, "SPX") or str.contains(u, "SP500") or str.contains(u, "US2000")
+autoCap = str.contains(u, "US100") or str.contains(u, "NAS") or str.contains(u, "USTEC") or str.contains(u, "NDX") ? 200.0 : str.contains(u, "US30") or str.contains(u, "DJ30") ? 80.0 : 120.0
+float cap = InpMaxSpreadPoints > 0.0 ? InpMaxSpreadPoints : autoCap
+// STUB: IdxSpreadPoints needs live bid/ask. Historical bars pass.
+bool liveSpreadOk = true
+
+bool newEt = na(etKey[1]) or etKey != etKey[1]
+int tyoYmd = year(time, TZ_TYO) * 10000 + month(time, TZ_TYO) * 100 + dayofmonth(time, TZ_TYO)
+int lonYmd = year(time, TZ_LON) * 10000 + month(time, TZ_LON) * 100 + dayofmonth(time, TZ_LON)
+bool newTyoDay = na(tyoYmd[1]) or tyoYmd != tyoYmd[1]
+bool newLonDay = na(lonYmd[1]) or lonYmd != lonYmd[1]
+
+var float vnum = 0.0
+var float vden = 0.0
+var float orH = 0.0
+var float orL = 0.0
+var bool  orSet = false
+var float dayH = na
+var float dayL = na
+var float pdh = na
+var float pdl = na
+var float asiaH = na
+var float asiaL = na
+var float lonHi = na
+var float lonLo = na
+var int   firedDay = -1
+var int   lastSigSide = 0
+var float lastSigPx = na
+var float lastSigAtr = na
+var string lastWhy = "sig@8"
+
+if newEt
+    vnum := 0.0
+    vden := 0.0
+    orH := 0.0
+    orL := 0.0
+    orSet := false
+    pdh := dayH
+    pdl := dayL
+    dayH := high
+    dayL := low
+else
+    dayH := math.max(nz(dayH, high), high)
+    dayL := math.min(nz(dayL, low), low)
+
+if newTyoDay
+    asiaH := inTokyo ? high : na
+    asiaL := inTokyo ? low : na
+else if inTokyo
+    asiaH := math.max(nz(asiaH, high), high)
+    asiaL := math.min(nz(asiaL, low), low)
+
+if newLonDay
+    lonHi := inLondon ? high : na
+    lonLo := inLondon ? low : na
+else if inLondon
+    lonHi := math.max(nz(lonHi, high), high)
+    lonLo := math.min(nz(lonLo, low), low)
+
+float vwap = na
+if inNyCash
+    typ = (high + low + close) / 3.0
+    vol = math.max(nz(volume, 1.0), 1.0)
+    vnum += typ * vol
+    vden += vol
+    vwap := vden > 0 ? vnum / vden : na
+
+if inOrWin
+    if not orSet
+        orH := high
+        orL := low
+        orSet := true
+    else
+        orH := math.max(orH, high)
+        orL := math.min(orL, low)
+
+bool orReady = orSet and orComplete
+float orHplot = orReady ? orH : na
+float orLplot = orReady ? orL : na
+
+emaF = ta.ema(close, InpEmaFast)
+emaS = ta.ema(close, InpEmaSlow)
+atrV = ta.atr(InpAtrPeriod)
+rsiV = ta.rsi(close, InpRsiPeriod)
+[macdLine, macdSig, macdHist] = ta.macd(close, InpMacdFast, InpMacdSlow, InpMacdSignal)
+
+int sig = 0
+string why = "no_confluence"
+bool skipForming = InpSignalOnClose and not barstate.isconfirmed
+if skipForming
+    sig := 0
+    why := "forming"
+else if fridayCut
+    why := "friday_cutoff"
+else if not inEntry
+    why := etMin < 9 * 60 + 30 + winOr ? "before_or_end" : "outside_entry_window"
+else if InpFamily == "ORB" and not orReady
+    why := "or_incomplete"
+else if not liveSpreadOk
+    why := "spread"
+else if InpFamily != "EMA_MACD" and na(vwap)
+    why := "no_vwap"
+else if na(atrV) or atrV <= 0
+    why := "atr_warmup"
+else if InpFamily == "ORB" and (na(emaF) or na(emaS) or emaF <= 0 or emaS <= 0)
+    why := "ema_atr_warmup"
+else if close > 0 and atrV / close < InpMinAtrPct
+    why := "dead_atr"
+else if InpOnePerDay and firedDay == etKey
+    why := "already_today"
+else if InpFamily == "VWAP_BOUNCE"
+    if na(rsiV) or rsiV <= 0
+        why := "rsi_warmup"
+    else
+        ext = (close - vwap) / atrV
+        if ext <= -InpAtrDev and rsiV <= InpRsiOs
+            sig := 1
+            why := "vwap_bounce_long"
+        else if ext >= InpAtrDev and rsiV >= InpRsiOb
+            sig := -1
+            why := "vwap_bounce_short"
+else if InpFamily == "EMA_MACD"
+    if na(emaF) or na(emaS) or emaF <= 0 or emaS <= 0 or na(macdLine) or na(macdSig)
+        why := "macd_warmup"
+    else
+        hist = macdLine - macdSig
+        longOk = emaF > emaS and hist > 0
+        shortOk = emaF < emaS and hist < 0
+        if InpCrossOnly
+            longOk := longOk and emaF[1] <= emaS[1]
+            shortOk := shortOk and emaF[1] >= emaS[1]
+        if longOk
+            sig := 1
+            why := "ema_macd_long"
+        else if shortOk
+            sig := -1
+            why := "ema_macd_short"
+else if close > orH and close > vwap and emaF > emaS
+    sig := 1
+    why := "orb_vwap_ema_long"
+else if close < orL and close < vwap and emaF < emaS
+    sig := -1
+    why := "orb_vwap_ema_short"
+
+if InpEdgeTrigger and bar_index > 0 and sig != 0 and sig[1] == sig
+    sig := 0
+    why := "edge_hold"
+
+if sig != 0
+    firedDay := etKey
+    lastSigSide := sig
+    lastSigPx := close
+    lastSigAtr := atrV
+if barstate.isconfirmed
+    lastWhy := why
+
+plot(InpShowEmas ? emaF : na, "EMA9", color=#00BFFF, linewidth=1)
+plot(InpShowEmas ? emaS : na, "EMA21", color=#FFA500, linewidth=2)
+plot(InpShowVwap ? vwap : na, "NY VWAP", color=color.white, linewidth=2)
+plot(InpShowOrBox ? orHplot : na, "OR High", color=InpColOr, linewidth=1, style=plot.style_circles)
+plot(InpShowOrBox ? orLplot : na, "OR Low", color=InpColOr, linewidth=1, style=plot.style_circles)
+plot(InpShowAsiaLevels ? asiaH : na, "ASIA HIGH", color=InpColTokyo, linewidth=1)
+plot(InpShowAsiaLevels ? asiaL : na, "ASIA LOW", color=InpColTokyo, linewidth=1)
+plot(InpShowLondonLevels ? lonHi : na, "LONDON HIGH", color=InpColLondon, linewidth=1)
+plot(InpShowLondonLevels ? lonLo : na, "LONDON LOW", color=InpColLondon, linewidth=1)
+plot(InpShowPriorDay ? pdh : na, "PDH", color=InpColPdh, linewidth=1, style=plot.style_linebr)
+plot(InpShowPriorDay ? pdl : na, "PDL", color=InpColPdl, linewidth=1, style=plot.style_linebr)
+plotshape(InpShowMarkers and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
+plotshape(InpShowMarkers and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(sess, "session", color=color.gray, display=display.data_window)
+plot(atrV, "ATR", color=color.gray, display=display.data_window)
+
+bool nyOpen = inNyCash and not inNyCash[1]
+bool lonOpen = inLondon and not inLondon[1]
+bool tyoOpen = inTokyo and not inTokyo[1]
+bool flattenBar = etH == 15 and etM == 45
+bgcolor(InpShowNyCash and inNyCash ? color.new(InpColNy, 94) : na, title="NY cash")
+bgcolor(InpShowLondon and inLondon and not inNyCash ? color.new(InpColLondon, 96) : na, title="London")
+bgcolor(InpShowTokyo and inTokyo ? color.new(InpColTokyo, 96) : na, title="Tokyo")
+plotshape(InpShowNyCash and nyOpen, "NY 09:30", shape.circle, location.top, InpColNy, size=size.tiny)
+plotshape(InpShowLondon and lonOpen, "London", shape.circle, location.top, InpColLondon, size=size.tiny)
+plotshape(InpShowTokyo and tyoOpen, "Tokyo", shape.circle, location.top, InpColTokyo, size=size.tiny)
+plotshape(InpShowFlattenLine and flattenBar, "FLAT 15:45 ET", shape.xcross, location.top, InpColFlat, size=size.tiny)
+
+float slPx = InpShowAtrStops and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx - lastSigSide * InpSlAtr * lastSigAtr : na
+float tpPx = InpShowAtrStops and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx + lastSigSide * InpTpAtr * lastSigAtr : na
+plot(slPx, "SL ATR", color=color.red, style=plot.style_linebr)
+plot(tpPx, "TP ATR", color=color.lime, style=plot.style_linebr)
+
+var table panel = table.new(position.top_left, 1, 12, bgcolor=color.new(color.black, 25))
+if InpShowPanel and barstate.islast
+    fam = InpFamily == "VWAP_BOUNCE" ? "VWAP bounce+RSI" : InpFamily == "EMA_MACD" ? "EMA+MACD" : "ORB+VWAP+EMA"
+    sigs = sig[1] > 0.5 ? "LONG" : sig[1] < -0.5 ? "SHORT" : "flat"
+    orw = orReady ? str.tostring(orH - orL, "#.00") : "—"
+    warn = looksUs ? "" : "  (not US30/US100 name)"
+    tfw = timeframe.in_seconds() > 15 * 60 ? "  TF>M15: prefer M5" : ""
+    table.cell(panel, 0, 0, "UsIndexSessionScalp v1.41 observe-only", text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 0, 1, "Symbol " + syminfo.ticker + warn + tfw, text_color=color.silver, text_halign=text.align_left)
+    etClock = (etH < 10 ? "0" : "") + str.tostring(etH) + ":" + (etM < 10 ? "0" : "") + str.tostring(etM)
+    endClock = (InpEntryEndHour < 10 ? "0" : "") + str.tostring(InpEntryEndHour) + ":" + (InpEntryEndMinute < 10 ? "0" : "") + str.tostring(InpEntryEndMinute)
+    table.cell(panel, 0, 2, "ET " + etClock + "  session " + sessName + "  TZ " + TZ_NY, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 3, "IANA DST: NY/London/Tokyo (not broker offset " + str.tostring(InpServerUtcOffsetHours) + ")", text_color=color.gray, text_halign=text.align_left)
+    table.cell(panel, 0, 4, "Family " + fam + "  window-to " + endClock, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 5, "Combo NY OR" + str.tostring(InpOrMinutes) + " + VWAP + EMA " + str.tostring(InpEmaFast) + "/" + str.tostring(InpEmaSlow), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 6, "OR width " + orw + "  cap " + str.tostring(cap, "#") + " pt (spread stub)", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 7, "Signal " + sigs + " | " + lastWhy + " | sig@8 | no orders", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 8, "promote=no  frozen ORB default", text_color=color.gray, text_halign=text.align_left)
+
+alertcondition(sig == 1, "UIS long (observe-only)", "US index long — buffer 8 — not a live signal")
+alertcondition(sig == -1, "UIS short (observe-only)", "US index short — buffer 8 — not a live signal")

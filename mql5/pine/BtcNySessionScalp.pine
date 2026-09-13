@@ -1,0 +1,198 @@
+// BtcNySessionScalp.pine
+// Source: mql5/Indicators/BtcNySessionScalp.mq5 v1.00 (this repo is truth)
+// Observe-only. promote=no. Not a live signal. Never strategy / never orders.
+//
+// SCREEN_FAIL 2026-09-11 (0/96 develop-eligible). Not a trading signal.
+// Frozen a-priori family: btc_ny_overlap_vwap_ema_flat. Signal buffer 8.
+// Not the US-index cash overlay. Not the gold London overlay.
+//
+// Session clock: MQL5 BtcSessionUtils.mqh assumes broker server wall =
+// America/New_York + 7h (BTC_SERVER_MINUS_SEC) so ET = server - 7h and
+// US DST is tracked by that offset — never a constant UTC+3.
+// Pine uses America/New_York directly for [08:00, 11:30) ET and flatten
+// 11:30 ET. The +7h mapping is a Wine-broker convention, not needed here.
+// Friday cutoff 14:00 ET is defined but unreachable inside the box
+// (kept because the frozen lock / Python core define it).
+//
+// STUBS: Wine ChartObjects / Comment(), iCustom logger, MT5 tick_volume.
+
+//@version=5
+indicator("BTC NY Session Scalp (SCREEN_FAIL observe-only)", shorttitle="BNS", overlay=true)
+
+TZ_NY = "America/New_York"
+BTC_SESSION_START_MIN = 8 * 60
+BTC_SESSION_END_MIN = 11 * 60 + 30
+BTC_FLAT_MIN = 11 * 60 + 30
+BTC_FRIDAY_CUTOFF_MIN = 14 * 60
+BTC_NFP_LO_MIN = 8 * 60 + 25
+BTC_NFP_HI_MIN = 8 * 60 + 40
+
+// === Family (observe only) ===
+string InpFamily = input.string("VWAP_EMA", "InpFamily", options=["VWAP_EMA", "ATR_DRIVE", "HTF_PULLBACK"], group="=== Family (observe only) ===")
+
+// === Session / signal ===
+int    InpEmaFast = input.int(9, "InpEmaFast", minval=1, group="=== Session / signal ===")
+int    InpEmaSlow = input.int(21, "InpEmaSlow", minval=1, group="=== Session / signal ===")
+int    InpAtrPeriod = input.int(14, "InpAtrPeriod", minval=1, group="=== Session / signal ===")
+float  InpMinAtrPct = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="=== Session / signal ===")
+int    InpOrMinutes = input.int(30, "InpOrMinutes", minval=1, group="=== Session / signal ===")
+float  InpOrBufferAtrFrac = input.float(0.10, "InpOrBufferAtrFrac", step=0.01, group="=== Session / signal ===")
+bool   InpOnePerDay = input.bool(true, "InpOnePerDay", group="=== Session / signal ===")
+bool   InpSignalOnClose = input.bool(true, "InpSignalOnClose", group="=== Session / signal ===")
+bool   InpEdgeTrigger = input.bool(true, "InpEdgeTrigger", group="=== Session / signal ===")
+bool   InpNfpBlackout = input.bool(false, "InpNfpBlackout", group="=== Session / signal ===")
+
+// === HTF pullback ===
+int   InpHtfFast = input.int(50, "InpHtfFast", minval=1, group="=== HTF pullback ===")
+int   InpHtfSlow = input.int(200, "InpHtfSlow", minval=1, group="=== HTF pullback ===")
+float InpPullbackPct = input.float(0.003, "InpPullbackPct", step=0.001, group="=== HTF pullback ===")
+float InpExtensionPct = input.float(0.005, "InpExtensionPct", step=0.001, group="=== HTF pullback ===")
+
+// === Display ===
+bool  InpShowEmas = input.bool(true, "InpShowEmas", group="=== Display ===")
+bool  InpShowVwap = input.bool(true, "InpShowVwap", group="=== Display ===")
+bool  InpShowOr = input.bool(true, "InpShowOr", group="=== Display ===")
+bool  InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== Display ===")
+bool  InpShowPanel = input.bool(true, "InpShowPanel", group="=== Display ===")
+bool  InpShowFlattenLine = input.bool(true, "InpShowFlattenLine", group="=== Display ===")
+float InpArrowOffsetAtrFrac = input.float(0.15, "InpArrowOffsetAtrFrac", step=0.01, group="=== Display ===")
+color InpColFlat = input.color(#FF8C00, "InpColFlat", group="=== Display ===")
+color InpColNy = input.color(#FFD700, "InpColNy", group="=== Display ===")
+
+int etH = hour(time, TZ_NY)
+int etM = minute(time, TZ_NY)
+int etDow = dayofweek(time, TZ_NY)
+int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
+int emin = etH * 60 + etM
+bool inBox = emin >= BTC_SESSION_START_MIN and emin < BTC_SESSION_END_MIN
+bool fridayCut = etDow == dayofweek.friday and emin >= BTC_FRIDAY_CUTOFF_MIN
+bool nfpHit = InpNfpBlackout and emin >= BTC_NFP_LO_MIN and emin < BTC_NFP_HI_MIN
+bool entryOk = inBox and not fridayCut and not nfpHit
+bool newEt = na(etKey[1]) or etKey != etKey[1]
+
+u = str.upper(syminfo.ticker)
+looksBtc = str.contains(u, "BTC")
+
+var float vnum = 0.0
+var float vden = 0.0
+var float orH = na
+var float orL = na
+var bool  orReady = false
+var int   firedKey = -1
+var string lastWhy = "SCREEN_FAIL observe-only"
+
+if newEt
+    vnum := 0.0
+    vden := 0.0
+    orH := na
+    orL := na
+    orReady := false
+
+float vwap = na
+if inBox
+    typ = (high + low + close) / 3.0
+    vol = math.max(nz(volume, 1.0), 1.0)
+    vnum += typ * vol
+    vden += vol
+    if vden > 0 and InpShowVwap
+        vwap := vnum / vden
+    orEnd = BTC_SESSION_START_MIN + InpOrMinutes
+    if emin >= BTC_SESSION_START_MIN and emin < orEnd
+        if na(orH)
+            orH := high
+            orL := low
+        else
+            orH := math.max(orH, high)
+            orL := math.min(orL, low)
+    if emin >= orEnd and not na(orH)
+        orReady := true
+
+emaF = ta.ema(close, InpEmaFast)
+emaS = ta.ema(close, InpEmaSlow)
+atrV = ta.atr(InpAtrPeriod)
+
+// Completed H1 (iBarShift + 1). lookahead_off = previous completed H1.
+[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, "60", [ta.ema(close, InpHtfFast), ta.ema(close, InpHtfSlow), close], lookahead=barmerge.lookahead_off)
+int htfBias = 0
+if not na(h1C) and not na(h1E50) and not na(h1E200)
+    if h1C > h1E200 and h1E50 > h1E200
+        htfBias := 1
+    else if h1C < h1E200 and h1E50 < h1E200
+        htfBias := -1
+
+int sig = 0
+string why = "no_setup"
+bool skipForming = InpSignalOnClose and not barstate.isconfirmed
+if skipForming
+    sig := 0
+    why := "forming"
+else if not entryOk
+    why := "outside_window"
+else if close <= 0 or na(atrV) or atrV <= 0 or atrV / close < InpMinAtrPct
+    why := "dead_atr"
+else if vden <= 0
+    why := "no_vwap"
+else
+    vw = vnum / vden
+    if InpFamily == "VWAP_EMA"
+        if close > vw and emaF > emaS
+            sig := 1
+        else if close < vw and emaF < emaS
+            sig := -1
+    else if InpFamily == "ATR_DRIVE"
+        if not orReady
+            why := "or_incomplete"
+        else
+            buf = InpOrBufferAtrFrac * atrV
+            if close > orH + buf and close > vw and emaF > emaS
+                sig := 1
+            else if close < orL - buf and close < vw and emaF < emaS
+                sig := -1
+    else if InpFamily == "HTF_PULLBACK"
+        if emaS > 0
+            dist = (close - emaS) / close
+            if htfBias == 1 and math.abs(dist) <= InpPullbackPct and close > emaS and bar_index > 0 and close > close[1] and dist <= InpExtensionPct
+                sig := 1
+            else if htfBias == -1 and math.abs(dist) <= InpPullbackPct and close < emaS and bar_index > 0 and close < close[1] and -dist <= InpExtensionPct
+                sig := -1
+
+if InpOnePerDay and sig != 0 and etKey == firedKey
+    sig := 0
+if InpEdgeTrigger and bar_index > 0 and sig != 0 and sig[1] == sig
+    sig := 0
+if sig != 0
+    firedKey := etKey
+    why := sig > 0 ? "long" : "short"
+if barstate.isconfirmed
+    lastWhy := why
+
+plot(InpShowEmas ? emaF : na, "EMA9", color=#00BFFF, linewidth=1)
+plot(InpShowEmas ? emaS : na, "EMA21", color=#FFA500, linewidth=2)
+plot(vwap, "NY VWAP", color=color.white, linewidth=2)
+plot(InpShowOr and orReady ? orH : na, "OR High", color=#00FFFF, linewidth=1, style=plot.style_circles)
+plot(InpShowOr and orReady ? orL : na, "OR Low", color=#00FFFF, linewidth=1, style=plot.style_circles)
+plotshape(InpShowMarkers and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
+plotshape(InpShowMarkers and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+plot(inBox ? 1 : 0, "session", color=color.gray, display=display.data_window)
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(atrV, "ATR", color=color.gray, display=display.data_window)
+
+bool deskOpen = inBox and not inBox[1]
+bool flattenBar = emin == BTC_FLAT_MIN
+bgcolor(inBox ? color.new(InpColNy, 94) : na, title="NY desk [08:00, 11:30) ET")
+plotshape(deskOpen, "NY desk 08:00", shape.circle, location.top, InpColNy, size=size.tiny)
+plotshape(InpShowFlattenLine and flattenBar, "FLAT 11:30 ET", shape.xcross, location.top, InpColFlat, size=size.tiny)
+
+var table panel = table.new(position.top_left, 1, 8, bgcolor=color.new(color.black, 25))
+if InpShowPanel and barstate.islast
+    fam = InpFamily == "ATR_DRIVE" ? "atr_drive" : InpFamily == "HTF_PULLBACK" ? "htf_pullback" : "vwap_ema"
+    warn = looksBtc ? "" : "  (ticker has no BTC)"
+    table.cell(panel, 0, 0, "BtcNySessionScalp v1.00  SCREEN_FAIL / observe-only", text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 0, 1, "Not a trading signal. promote=no." + warn, text_color=color.red, text_halign=text.align_left)
+    table.cell(panel, 0, 2, "NY desk [08:00, 11:30) " + TZ_NY + "  flatten 11:30", text_color=color.silver, text_halign=text.align_left)
+    etClock = (etH < 10 ? "0" : "") + str.tostring(etH) + ":" + (etM < 10 ? "0" : "") + str.tostring(etM)
+    table.cell(panel, 0, 3, "ET " + etClock + "  Family " + fam, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 4, "last: " + lastWhy + "  | sig@8 | no orders", text_color=color.silver, text_halign=text.align_left)
+
+alertcondition(sig == 1, "BNS long (SCREEN_FAIL observe-only)", "BTC NY scalp long — SCREEN_FAIL — not a live signal")
+alertcondition(sig == -1, "BNS short (SCREEN_FAIL observe-only)", "BTC NY scalp short — SCREEN_FAIL — not a live signal")
