@@ -285,8 +285,43 @@ plot(sig, "signal", color=color.gray, display=display.data_window)
 plot(dir, "swingDir", color=color.gray, display=display.data_window)
 plot(rsiV, "RSI", color=color.gray, display=display.data_window)
 plot(rsiMa, "RSI-MA", color=color.gray, display=display.data_window)
-// InpShow4hLabels / InpShowDailyLabels: MQL5 OBJ_TEXT. Pine uses plot titles
-// (4H High / D High) instead of per-tick label.new (would leak on islast).
+var label lbl4hH = na
+var label lbl4hL = na
+var label lblDh = na
+var label lblDl = na
+if barstate.islast
+    if InpShow4hLabels and show4hEff and use4h and not na(latest4hH)
+        if na(lbl4hH)
+            lbl4hH := label.new(bar_index, latest4hH, "4H H", xloc.bar_index, yloc.price, color.new(InpCol4hHigh, 100), textcolor=InpCol4hHigh, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hH, bar_index, latest4hH)
+    else if not na(lbl4hH)
+        label.delete(lbl4hH)
+        lbl4hH := na
+    if InpShow4hLabels and show4hEff and use4h and not na(latest4hL)
+        if na(lbl4hL)
+            lbl4hL := label.new(bar_index, latest4hL, "4H L", xloc.bar_index, yloc.price, color.new(InpCol4hLow, 100), textcolor=InpCol4hLow, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hL, bar_index, latest4hL)
+    else if not na(lbl4hL)
+        label.delete(lbl4hL)
+        lbl4hL := na
+    if InpShowDailyLabels and InpShowDailyLines and not na(latestDh)
+        if na(lblDh)
+            lblDh := label.new(bar_index, latestDh, "D H", xloc.bar_index, yloc.price, color.new(InpColDailyHigh, 100), textcolor=InpColDailyHigh, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDh, bar_index, latestDh)
+    else if not na(lblDh)
+        label.delete(lblDh)
+        lblDh := na
+    if InpShowDailyLabels and InpShowDailyLines and not na(latestDl)
+        if na(lblDl)
+            lblDl := label.new(bar_index, latestDl, "D L", xloc.bar_index, yloc.price, color.new(InpColDailyLow, 100), textcolor=InpColDailyLow, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDl, bar_index, latestDl)
+    else if not na(lblDl)
+        label.delete(lblDl)
+        lblDl := na
 
 var table panel = table.new(position.top_left, 2, 12, bgcolor=color.new(color.black, 25), border_width=0)
 if InpShowPanel and barstate.islast

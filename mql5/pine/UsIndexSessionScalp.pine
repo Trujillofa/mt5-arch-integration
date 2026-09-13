@@ -236,7 +236,7 @@ else if InpFamily == "EMA_MACD"
     if na(emaF) or na(emaS) or emaF <= 0 or emaS <= 0 or na(macdLine) or na(macdSig)
         why := "macd_warmup"
     else
-        hist = macdLine - macdSig
+        hist = macdHist
         longOk = emaF > emaS and hist > 0
         shortOk = emaF < emaS and hist < 0
         if InpCrossOnly

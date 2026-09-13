@@ -155,7 +155,16 @@ def test_no_extra_pine_overlays() -> None:
 def _balance(src: str) -> None:
     pairs = {")": "(", "]": "[", "}": "{"}
     stack: list[str] = []
+    in_str = False
     for ch in _strip_pine_comments(src):
+        if ch == '"' and not in_str:
+            in_str = True
+            continue
+        if ch == '"' and in_str:
+            in_str = False
+            continue
+        if in_str:
+            continue
         if ch in "([{":
             stack.append(ch)
         elif ch in pairs:
