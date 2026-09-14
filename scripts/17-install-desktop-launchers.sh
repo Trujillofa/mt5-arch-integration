@@ -87,6 +87,72 @@ BRANDS = {
         "icon_name": "wsf-mt5",
         "desktop_name": "wsf-mt5.desktop",
     },
+    "fundednext": {
+        "name": "FundedNext MT5",
+        "comment": "FundedNext MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-fundednext",
+        "dir": Path.home()
+        / ".mt5-fundednext/drive_c/Program Files/FundedNext MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-fundednext/drive_c/Program Files/FundedNext MT5 Terminal/Terminal.ico",
+        "icon_name": "fundednext-mt5",
+        "desktop_name": "fundednext-mt5.desktop",
+    },
+    "ftmo": {
+        "name": "FTMO MT5",
+        "comment": "FTMO Global Markets MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-ftmo",
+        "dir": Path.home()
+        / ".mt5-ftmo/drive_c/Program Files/FTMO Global Markets MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-ftmo/drive_c/Program Files/FTMO Global Markets MT5 Terminal/Terminal.ico",
+        "icon_name": "ftmo-mt5",
+        "desktop_name": "ftmo-mt5.desktop",
+    },
+    "alphacapital": {
+        "name": "Alpha Capital MT5",
+        "comment": "ACG Markets / Alpha Capital MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-alphacapital",
+        "dir": Path.home()
+        / ".mt5-alphacapital/drive_c/Program Files/ACG Markets MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-alphacapital/drive_c/Program Files/ACG Markets MT5 Terminal/Terminal.ico",
+        "icon_name": "alphacapital-mt5",
+        "desktop_name": "alphacapital-mt5.desktop",
+    },
+    "fundingpips": {
+        "name": "FundingPips MT5",
+        "comment": "FundingPips MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-fundingpips",
+        "dir": Path.home()
+        / ".mt5-fundingpips/drive_c/Program Files/FundingPips 2 MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-fundingpips/drive_c/Program Files/FundingPips 2 MT5 Terminal/Terminal.ico",
+        "icon_name": "fundingpips-mt5",
+        "desktop_name": "fundingpips-mt5.desktop",
+    },
+    "neomaa": {
+        "name": "Neomaa MT5",
+        "comment": "Neomaaa MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-neomaa",
+        "dir": Path.home()
+        / ".mt5-neomaa/drive_c/Program Files/Neomaaa MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-neomaa/drive_c/Program Files/Neomaaa MT5 Terminal/Terminal.ico",
+        "icon_name": "neomaa-mt5",
+        "desktop_name": "neomaa-mt5.desktop",
+    },
+    "fortraders": {
+        "name": "Fortraders MT5",
+        "comment": "FT Trading / Fortraders MetaTrader 5 (Wine)",
+        "prefix": Path.home() / ".mt5-fortraders",
+        "dir": Path.home()
+        / ".mt5-fortraders/drive_c/Program Files/FT Trading MT5 Terminal",
+        "ico": Path.home()
+        / ".mt5-fortraders/drive_c/Program Files/FT Trading MT5 Terminal/Terminal.ico",
+        "icon_name": "fortraders-mt5",
+        "desktop_name": "fortraders-mt5.desktop",
+    },
 }
 
 apps = Path.home() / ".local/share/applications"
@@ -154,6 +220,7 @@ export DISPLAY="${{DISPLAY:-:0}}"
 unset WAYLAND_DISPLAY || true
 export WINEDEBUG="${{WINEDEBUG:--all}}"
 export WINEDLLOVERRIDES="${{WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}}"
+export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="${{WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:---use-angle=swiftshader --enable-unsafe-swiftshader --no-sandbox}}"
 {preload}cd "{b['dir']}"
 exec wine ./terminal64.exe /portable "$@"
 """
@@ -199,5 +266,9 @@ subprocess.run(
 subprocess.run(
     ["update-desktop-database", str(apps)], check=False, capture_output=True
 )
-print("done — search app launcher for: Exness MT5 | FP Markets MT5 | Vantage | WSFmarkets")
+print(
+    "done — search app launcher for: Exness MT5 | FP Markets MT5 | Vantage | "
+    "WSFmarkets | FundedNext MT5 | FTMO MT5 | Alpha Capital MT5 | "
+    "FundingPips MT5 | Neomaa MT5 | Fortraders MT5"
+)
 PY

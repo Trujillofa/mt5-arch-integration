@@ -209,6 +209,7 @@ def test_us30_pending_contract_is_opt_in() -> None:
 FANOUT_UNIT = ROOT / "tests" / "test_desk_copy_fanout.ts"
 FANOUT_ALIAS = ROOT / "tests" / "desk-alias-register.mjs"
 ATR_UNIT = ROOT / "tests" / "test_desk_atr_stops.ts"
+STORAGE_UNIT = ROOT / "tests" / "test_desk_storage.ts"
 
 CLIENT_NO_ENV = [
     DESK / "src" / "lib" / "copy-engine.ts",
@@ -246,6 +247,10 @@ def test_ftmo_follow_is_session_only() -> None:
     assert "ftmoFollowTerminal: false" in storage
     persist = storage.split("type PersistShape")[1].split("function migrateOperatorLogins")[0]
     assert "ftmoFollowTerminal" not in persist
+    assert "mergeSeedQuotes(parsed.quotes ?? fallback.quotes)" in storage
+    assert "wsfLiveCopy: false" in storage
+    assert "ftmoLiveMaster: false" in storage
+    assert "fundednextLiveCopy: false" in storage
     payload = storage.split("const payload: PersistShape")[1].split("window.localStorage")[0]
     assert "ftmoFollowTerminal" not in payload
     assert "Always false in loadDesk/seed" in types
@@ -394,6 +399,22 @@ def test_quote_journal_node_unit() -> None:
 def test_atr_stops_node_unit() -> None:
     result = subprocess.run(
         ["node", "--experimental-strip-types", str(ATR_UNIT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_storage_merge_seed_quotes_node_unit() -> None:
+    result = subprocess.run(
+        [
+            "node",
+            "--experimental-strip-types",
+            "--import",
+            str(FANOUT_ALIAS),
+            str(STORAGE_UNIT),
+        ],
         check=False,
         capture_output=True,
         text=True,

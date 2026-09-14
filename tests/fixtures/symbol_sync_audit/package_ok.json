@@ -29,6 +29,16 @@
       "n_rows_h1": 4,
       "time_min_server": "2026-01-05 08:00:00",
       "time_max_server": "2026-01-05 11:00:00"
+    },
+    "US30": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
+    },
+    "US100": {
+      "n_rows_h1": 4,
+      "time_min_server": "2026-01-05 08:00:00",
+      "time_max_server": "2026-01-05 11:00:00"
     }
   },
   "n_intersection_timestamps": 4,

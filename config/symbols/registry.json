@@ -7,7 +7,9 @@
     "USDJPY",
     "USDCHF",
     "XAUUSD",
-    "BTCUSD"
+    "BTCUSD",
+    "US30",
+    "US100"
   ],
   "brokers": {
     "vantage": {
@@ -33,6 +35,14 @@
       },
       "BTCUSD": {
         "broker_symbol": "BTCUSD"
+      },
+      "US30": {
+        "broker_symbol": "DJ30.r",
+        "evidence": "Bases/VantageMarkets-Live 5/history/DJ30.r cache dir 2026-09-14; specs verify at EA self-test"
+      },
+      "US100": {
+        "broker_symbol": "NAS100.r",
+        "evidence": "Bases/VantageMarkets-Live 5/history/NAS100.r cache dir 2026-09-14; specs verify at EA self-test"
       }
     },
     "fpmarkets": {

@@ -36,6 +36,10 @@ def test_shipped_registry_loads():
     assert "exness" in reg.brokers()
     assert "wsf" in reg.brokers()
     assert resolve(reg, "vantage", "XAUUSD").broker_symbol == "XAUUSD"
+    assert resolve(reg, "vantage", "US30").broker_symbol == "DJ30.r"
+    assert resolve(reg, "vantage", "US100").broker_symbol == "NAS100.r"
+    assert resolve(reg, "vantage", "DJ30.r").canonical == "US30"
+    assert resolve(reg, "vantage", "NAS100.r").canonical == "US100"
     assert resolve(reg, "fpmarkets", "XAUUSD").broker_symbol == "XAUUSD.r"
     assert resolve(reg, "fpmarkets", "XAUUSD.r").canonical == "XAUUSD"
     assert resolve(reg, "exness", "XAUUSD").broker_symbol == "XAUUSDm"
@@ -102,6 +106,8 @@ def test_inverse_unique_without_broker():
     reg = load_registry()
     assert canonical_from_broker_symbol(reg, "XAUUSD.r") == "XAUUSD"
     assert canonical_from_broker_symbol(reg, "XAUUSDm") == "XAUUSD"
+    assert canonical_from_broker_symbol(reg, "DJ30.r") == "US30"
+    assert canonical_from_broker_symbol(reg, "NAS100.r") == "US100"
     with pytest.raises(SymbolRegistryError, match="no inverse"):
         canonical_from_broker_symbol(reg, "NZDCHF.r")
 

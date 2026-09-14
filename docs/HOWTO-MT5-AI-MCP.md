@@ -106,13 +106,26 @@ Do **not** commit a project `.mcp.json` with a live URL. Cursor's project
 
 Official MCP **can trade** if you allow it. Leave trading permission off or on
 manual confirmation. Multiple `terminal64.exe` instances can fight for 22346
-(`WSAEADDRINUSE` / 10048).
+(`WSAEADDRINUSE` / 10048) — the first one to bind wins, and only its dialog
+key authenticates (see the ownership note in the Wine notes below).
 
 Wine note (verified on Vantage / Wine 11.15 / build 6140):
 
 - The portable ini is `Config/assistant.ini` (UTF-16-LE). `[MCP.MetaTrader] Enable=1` is what Tools → Options → MCP → **Enable internal server** writes. MetaEditor uses `[MCP.MetaEditor]` on 22345.
 - Always take the client URL from `ss` / `./scripts/21-official-mcp-status.sh`, not from the journal alone. The journal line `MCP started on 127.0.0.1:22346` is the *Windows* bind. If `ss` shows a LAN address instead (`192.168.0.144:22346`) and localhost refuses, `scripts/wine-net/force_src_bind.so` is rewriting the loopback listen — rebuild that helper (loopback binds must stay on 127.0.0.1) **and restart that prefix's wineserver**. `wineserver` keeps the old `.so` mapped as `(deleted)` after a rebuild; killing only `terminal64.exe` is not enough. A non-localhost bind exposes a server that **can trade**; disable MCP on every prefix that does not need it (FP/Exness/WSF).
 - Dialog API Key ≈ **42 chars** → `MT5_MCP_TOKEN`. `assistant.ini ApiKey=` ≈ **168 chars** is not that token (HTTP 401, `WWW-Authenticate: Bearer realm="MetaTrader5-MCP"`). Copy a freshly **Generate**d dialog token. Never commit it. Rotate if it was ever printed.
+- **Port ownership decides which dialog key is valid.** With several terminals
+  running, only the one that bound `22346` first serves the endpoint (its journal
+  logs `MCP started on ...`); a key Generate'd in any *other* terminal's dialog
+  401s forever, and the short dialog key exists nowhere on disk (all prefixes
+  store only the 168-char ini blob). Identify the owner (`ss -ltnp`, or
+  `scripts/23-set-official-mcp-token.sh` prints it), Generate there, then rotate
+  with `./scripts/23-set-official-mcp-token.sh`: silent prompt → live handshake
+  check **before** any write → updates `.env`, the `~/.bashrc` export,
+  `~/.config/environment.d/mt5-mcp.conf` (0600), imports into the systemd user
+  manager, and `--cursor-literal` also writes the Bearer header in
+  `~/.cursor/mcp.json` for sessions where `${env:...}` expansion in headers is
+  unreliable.
 - Gitignored Cursor / Grok HTTP config for this host (match whatever `ss` shows; localhost is current):
 
 ```json

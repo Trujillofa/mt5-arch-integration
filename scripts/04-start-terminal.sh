@@ -23,6 +23,8 @@ fi
 export DISPLAY="${DISPLAY:-:0}"
 export WINEDEBUG="${WINEDEBUG:--all}"
 export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
+export_wine_webview_env
+ensure_wine_webview_reg
 # Never enable Wine virtual desktop (breaks mouse under Hyprland)
 wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/null 2>&1 || true
 
