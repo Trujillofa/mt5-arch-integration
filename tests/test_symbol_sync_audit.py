@@ -28,7 +28,7 @@ def test_offline_sync_audit_fixture():
     report = verify_sync_audit_dump(OFFLINE, package=PACKAGE)
     assert report["ok"] is True
     assert report["broker"] == "vantage"
-    assert report["n_mapped"] == 6
+    assert report["n_mapped"] == 8
     assert report["n_intersection_timestamps"] == 4
 
 

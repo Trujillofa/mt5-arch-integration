@@ -151,6 +151,54 @@
       ],
       "ok": true,
       "error": ""
+    },
+    {
+      "canonical": "US30",
+      "requested": "US30",
+      "broker_symbol": "DJ30.r",
+      "resolved": "DJ30.r",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 4,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
+    },
+    {
+      "canonical": "US100",
+      "requested": "US100",
+      "broker_symbol": "NAS100.r",
+      "resolved": "NAS100.r",
+      "selected": true,
+      "sync_mode": 1,
+      "bars_h1": 4,
+      "closed_bars_h1": 4,
+      "first_time": "2026.01.05 08:00:00",
+      "last_time": "2026.01.05 11:00:00",
+      "last_forming": false,
+      "n_spread_positive": 4,
+      "n_missing_vs_hourly": 0,
+      "missing_sample": [],
+      "timestamps": [
+        "2026.01.05 08:00:00",
+        "2026.01.05 09:00:00",
+        "2026.01.05 10:00:00",
+        "2026.01.05 11:00:00"
+      ],
+      "ok": true,
+      "error": ""
     }
   ],
   "joint": {
