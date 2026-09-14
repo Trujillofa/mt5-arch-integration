@@ -126,6 +126,21 @@ def test_broker_install_dirs_include_funded_brands() -> None:
     assert data["_generic"] == "MetaTrader 5"
 
 
+def test_install_script_covers_every_broker_install_dir() -> None:
+    """Drift gate: 18-install must list .mt5-<key> and the JSON dir for every live book."""
+    data = json.loads((repo_root() / "config" / "broker_install_dirs.json").read_text())
+    script = (repo_root() / "scripts" / "18-install-forex-indicator.sh").read_text(
+        encoding="utf-8"
+    )
+    for key, install_dir in data.items():
+        if key.startswith("_"):
+            continue
+        assert f".mt5-{key}" in script, f"18-install missing .mt5-{key}"
+        assert install_dir in script, (
+            f"18-install missing install dir {install_dir!r} for {key}"
+        )
+
+
 def test_load_missing_profile_raises() -> None:
     with pytest.raises(FileNotFoundError):
         load_broker_profile("does-not-exist-broker-xyz")
