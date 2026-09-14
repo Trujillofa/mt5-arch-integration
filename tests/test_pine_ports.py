@@ -236,9 +236,19 @@ def test_universal_input_titles_are_unique() -> None:
 def test_universal_security_and_session_history() -> None:
     src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
     assert "isHTF ? [ta.pivothigh" in src
-    assert "isFXIT ? [high, low, open]" in src
+    assert "isFXIT ? [high[1], low[1], open[1]]" in src
     assert "isBTP ? [ta.ema" in src
     assert "isBNS ? [ta.ema" in src
+    assert "isBTP ? [ta.ema(close[1], Btp_EmaFast)" in src
+    assert "isBNS ? [ta.ema(close[1], Bns_HtfF)" in src
+    assert re.search(
+        r"\[htfE50, htfE200, htfC\]\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
+        src,
+    )
+    assert re.search(
+        r"\[h1E50, h1E200, h1C\]\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
+        src,
+    )
     assert ": [na, na]" in src
     assert "int etKey =" in src
     assert src.index("int etKey =") < src.index("else if isUIS")

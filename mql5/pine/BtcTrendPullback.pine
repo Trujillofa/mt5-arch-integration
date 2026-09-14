@@ -73,7 +73,7 @@ rsiV = ta.rsi(close, InpRsiPeriod)
 [macdLine, macdSig, macdHist] = ta.macd(close, InpMacdFast, InpMacdSlow, InpMacdSignal)
 atrV = ta.atr(InpAtrPeriod)
 
-[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, InpHtfPeriod, [ta.ema(close, InpEmaFast), ta.ema(close, InpEmaSlow), close], lookahead=barmerge.lookahead_off)
+[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, InpHtfPeriod, [ta.ema(close[1], InpEmaFast), ta.ema(close[1], InpEmaSlow), close[1]], lookahead=barmerge.lookahead_on)
 
 htfStrength = not na(htfE50) and not na(htfE200) and htfE200 != 0 ? (htfE50 - htfE200) / htfE200 : 0.0
 int htfBias = 0
@@ -181,8 +181,10 @@ plot(InpShowEmas ? ema50 : na, "EMA50", color=#00BFFF, linewidth=2)
 plot(InpShowEmas ? ema200 : na, "EMA200", color=#FFD700, linewidth=2)
 plot(InpShowAtrBands and atrV > 0 and mid > 0 ? mid - InpAtrBandMult * atrV : na, "ATR Lower", color=#1E90FF, linewidth=1, style=plot.style_circles)
 plot(InpShowAtrBands and atrV > 0 and mid > 0 ? mid + InpAtrBandMult * atrV : na, "ATR Upper", color=#FF7F50, linewidth=1, style=plot.style_circles)
-plotshape(InpShowMarkers and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
-plotshape(InpShowMarkers and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+float longMarker = InpShowMarkers and sig == 1 and atrV > 0 ? low - InpArrowOffsetAtrFrac * atrV : na
+float shortMarker = InpShowMarkers and sig == -1 and atrV > 0 ? high + InpArrowOffsetAtrFrac * atrV : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
 plot(htfBias, "htfBias", color=color.gray, display=display.data_window)
 plot(sig, "signal", color=color.gray, display=display.data_window)
 plot(macdLine, "MACD", color=color.gray, display=display.data_window)

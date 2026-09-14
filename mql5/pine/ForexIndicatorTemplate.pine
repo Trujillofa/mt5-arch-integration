@@ -138,10 +138,10 @@ rsiV = ta.rsi(close, InpRsiPeriod)
 rsiMa = InpRsiMaMethod == "EMA" ? ta.ema(rsiV, InpRsiMaPeriod) : ta.sma(rsiV, InpRsiMaPeriod)
 atrV = ta.atr(InpAtrPeriod)
 
-// Completed prior D1 (lookahead_off). Exchange/broker daily, not a custom TZ day.
-float pdh = request.security(syminfo.tickerid, "D", high, lookahead=barmerge.lookahead_off)
-float pdl = request.security(syminfo.tickerid, "D", low, lookahead=barmerge.lookahead_off)
-float pdo = request.security(syminfo.tickerid, "D", open, lookahead=barmerge.lookahead_off)
+// Completed prior D1 via [1] + lookahead_on. Exchange/broker daily, not a custom TZ day.
+float pdh = request.security(syminfo.tickerid, "D", high[1], lookahead=barmerge.lookahead_on)
+float pdl = request.security(syminfo.tickerid, "D", low[1], lookahead=barmerge.lookahead_on)
+float pdo = request.security(syminfo.tickerid, "D", open[1], lookahead=barmerge.lookahead_on)
 
 bool bullTiming = emaF > emaS
 bool bearTiming = emaF < emaS
@@ -189,8 +189,10 @@ plot(showBias ? emaB : na, "EMA Bias", color=InpColorEmaBias, linewidth=2)
 plot(InpShowPriorDay ? pdh : na, "PDH", color=InpColorPDH, linewidth=InpLevelWidth, style=plot.style_linebr)
 plot(InpShowPriorDay ? pdl : na, "PDL", color=InpColorPDL, linewidth=InpLevelWidth, style=plot.style_linebr)
 plot(InpShowPriorDay ? pdo : na, "PDO", color=InpColorPDO, linewidth=InpLevelWidth, style=plot.style_linebr)
-plotshape(InpShowArrows and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
-plotshape(InpShowArrows and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+float longMarker = InpShowArrows and sig == 1 ? low - InpArrowOffsetPips * fxPipSize() : na
+float shortMarker = InpShowArrows and sig == -1 ? high + InpArrowOffsetPips * fxPipSize() : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
 plot(sig, "signal", color=color.gray, display=display.data_window)
 plot(rsiV, "RSI", color=color.gray, display=display.data_window)
 plot(rsiMa, "RSI-MA", color=color.gray, display=display.data_window)

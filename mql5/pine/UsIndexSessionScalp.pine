@@ -278,8 +278,10 @@ plot(InpShowLondonLevels ? lonHi : na, "LONDON HIGH", color=InpColLondon, linewi
 plot(InpShowLondonLevels ? lonLo : na, "LONDON LOW", color=InpColLondon, linewidth=1)
 plot(InpShowPriorDay ? pdh : na, "PDH", color=InpColPdh, linewidth=1, style=plot.style_linebr)
 plot(InpShowPriorDay ? pdl : na, "PDL", color=InpColPdl, linewidth=1, style=plot.style_linebr)
-plotshape(InpShowMarkers and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
-plotshape(InpShowMarkers and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+float longMarker = InpShowMarkers and sig == 1 and atrV > 0 ? low - InpArrowOffsetAtrFrac * atrV : na
+float shortMarker = InpShowMarkers and sig == -1 and atrV > 0 ? high + InpArrowOffsetAtrFrac * atrV : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
 plot(sig, "signal", color=color.gray, display=display.data_window)
 plot(sess, "session", color=color.gray, display=display.data_window)
 plot(atrV, "ATR", color=color.gray, display=display.data_window)

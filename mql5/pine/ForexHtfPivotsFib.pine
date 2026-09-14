@@ -84,6 +84,11 @@ fibLevel(int direction, float hi, float lo, float ratio) =>
 rsiBias(float r, float m) =>
     na(r) or na(m) ? 0 : r > m ? 1 : r < m ? -1 : 0
 
+fxPipSize() =>
+    pt = syminfo.mintick
+    dig = pt > 0 ? math.round(math.log(1.0 / pt) / math.log(10.0)) : 0.0
+    dig == 3 or dig == 5 ? pt * 10.0 : pt
+
 // --- Mode resolve (ForexUtils.mqh FxResolveTradingMode) ---
 bool isSwing = InpTradingMode == "SWING"
 int emaFast = InpManualOverride ? InpEmaFast : (isSwing ? 50 : 20)
@@ -279,8 +284,10 @@ plot(show4hEff and use4h ? latest4hH : na, "4H High", color=InpCol4hHigh, linewi
 plot(show4hEff and use4h ? latest4hL : na, "4H Low", color=InpCol4hLow, linewidth=2)
 plot(InpShowDailyLines ? latestDh : na, "D High", color=InpColDailyHigh, linewidth=2)
 plot(InpShowDailyLines ? latestDl : na, "D Low", color=InpColDailyLow, linewidth=2)
-plotshape(InpShowMarkers and sig == 1, "Long", shape.triangleup, location.belowbar, color=#00FF00, size=size.tiny)
-plotshape(InpShowMarkers and sig == -1, "Short", shape.triangledown, location.abovebar, color=#FF4500, size=size.tiny)
+float longMarker = InpShowMarkers and sig == 1 ? low - InpArrowOffsetPips * fxPipSize() : na
+float shortMarker = InpShowMarkers and sig == -1 ? high + InpArrowOffsetPips * fxPipSize() : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
 plot(sig, "signal", color=color.gray, display=display.data_window)
 plot(dir, "swingDir", color=color.gray, display=display.data_window)
 plot(rsiV, "RSI", color=color.gray, display=display.data_window)

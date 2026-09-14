@@ -285,9 +285,9 @@ string tfBns = isBNS ? "60" : timeframe.period
 
 [h4Ph, h4Pl] = request.security(syminfo.tickerid, tfH4, isHTF ? [ta.pivothigh(high, Htf_Left4h, Htf_Right4h), ta.pivotlow(low, Htf_Left4h, Htf_Right4h)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
 [d1Ph, d1Pl] = request.security(syminfo.tickerid, tfD1p, isHTF ? [ta.pivothigh(high, Htf_LeftD, Htf_RightD), ta.pivotlow(low, Htf_LeftD, Htf_RightD)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
-[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, isFXIT ? [high, low, open] : [na, na, na], lookahead=barmerge.lookahead_off)
-[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, isBTP ? [ta.ema(close, Btp_EmaFast), ta.ema(close, Btp_EmaSlow), close] : [na, na, na], lookahead=barmerge.lookahead_off)
-[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, isBNS ? [ta.ema(close, Bns_HtfF), ta.ema(close, Bns_HtfS), close] : [na, na, na], lookahead=barmerge.lookahead_off)
+[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, isFXIT ? [high[1], low[1], open[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
+[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, isBTP ? [ta.ema(close[1], Btp_EmaFast), ta.ema(close[1], Btp_EmaSlow), close[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
+[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, isBNS ? [ta.ema(close[1], Bns_HtfF), ta.ema(close[1], Bns_HtfS), close[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
 
 // shared outputs (na unless the active family writes them)
 float oEmaF = na
