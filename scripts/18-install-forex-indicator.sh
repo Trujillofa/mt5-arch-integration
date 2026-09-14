@@ -25,6 +25,12 @@ CANDIDATES=(
   "${HOME}/.mt5-fpmarkets/drive_c/Program Files/FP Markets MT5 Terminal/MQL5"
   "${HOME}/.mt5-vantage/drive_c/Program Files/Vantage International MT5/MQL5"
   "${HOME}/.mt5-exness/drive_c/Program Files/MetaTrader 5 EXNESS/MQL5"
+  "${HOME}/.mt5-ftmo/drive_c/Program Files/FTMO Global Markets MT5 Terminal/MQL5"
+  "${HOME}/.mt5-fundednext/drive_c/Program Files/FundedNext MT5 Terminal/MQL5"
+  "${HOME}/.mt5-alphacapital/drive_c/Program Files/ACG Markets MT5 Terminal/MQL5"
+  "${HOME}/.mt5-fundingpips/drive_c/Program Files/FundingPips 2 MT5 Terminal/MQL5"
+  "${HOME}/.mt5-neomaa/drive_c/Program Files/Neomaaa MT5 Terminal/MQL5"
+  "${HOME}/.mt5-fortraders/drive_c/Program Files/FT Trading MT5 Terminal/MQL5"
 )
 
 SRC_INC=(
