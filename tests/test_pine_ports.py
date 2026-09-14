@@ -233,23 +233,47 @@ def test_universal_input_titles_are_unique() -> None:
         assert any(t.startswith(prefix) for t in titles), prefix
 
 
+TERNARY_TUPLE_RE = re.compile(r"\?\s*\[|:\s*\[")
+
+
+def test_pine_has_no_ternary_tuple_literals() -> None:
+    """TV Pine v5 rejects `[...]` inside `cond ? ... : ...` as a security expr."""
+    for path in sorted(PINE_DIR.glob("*.pine")):
+        code = _strip_pine_comments(path.read_text(encoding="utf-8"))
+        hit = TERNARY_TUPLE_RE.search(code)
+        assert hit is None, f"{path.name}: ternary tuple at {hit.group(0)!r}"
+
+
 def test_universal_security_and_session_history() -> None:
     src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
-    assert "isHTF ? [ta.pivothigh" in src
-    assert "isFXIT ? [high[1], low[1], open[1]]" in src
-    assert "isBTP ? [ta.ema" in src
-    assert "isBNS ? [ta.ema" in src
-    assert "isBTP ? [ta.ema(close[1], Btp_EmaFast)" in src
-    assert "isBNS ? [ta.ema(close[1], Bns_HtfF)" in src
+    assert 'tfH4 = isHTF ? "240" : timeframe.period' in src
+    assert 'tfD1p = isHTF ? "D" : timeframe.period' in src
+    assert 'tfD1o = isFXIT ? "D" : timeframe.period' in src
+    assert "tfBtp = isBTP ? Btp_Htf : timeframe.period" in src
+    assert 'tfBns = isBNS ? "60" : timeframe.period' in src
+    assert "isHTF ? ta.pivothigh(high, Htf_Left4h, Htf_Right4h) : na" in src
+    assert "isHTF ? ta.pivotlow(low, Htf_Left4h, Htf_Right4h) : na" in src
+    assert "isHTF ? ta.pivothigh(high, Htf_LeftD, Htf_RightD) : na" in src
+    assert "isHTF ? ta.pivotlow(low, Htf_LeftD, Htf_RightD) : na" in src
+    assert "isFXIT ? high[1] : na" in src
+    assert "isFXIT ? low[1] : na" in src
+    assert "isFXIT ? open[1] : na" in src
+    assert "isBTP ? ta.ema(close[1], Btp_EmaFast) : na" in src
+    assert "isBTP ? ta.ema(close[1], Btp_EmaSlow) : na" in src
+    assert "isBTP ? close[1] : na" in src
+    assert "isBNS ? ta.ema(close[1], Bns_HtfF) : na" in src
+    assert "isBNS ? ta.ema(close[1], Bns_HtfS) : na" in src
+    assert "isBNS ? close[1] : na" in src
     assert re.search(
-        r"\[htfE50, htfE200, htfC\]\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
+        r"float htfE50\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
         src,
     )
     assert re.search(
-        r"\[h1E50, h1E200, h1C\]\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
+        r"float h1E50\s*=\s*request\.security\([^\n]*lookahead=barmerge\.lookahead_on\)",
         src,
     )
-    assert ": [na, na]" in src
+    assert src.count("gaps=barmerge.gaps_on") >= 4
+    assert src.count("lookahead=barmerge.lookahead_off") >= 4
     assert "int etKey =" in src
     assert src.index("int etKey =") < src.index("else if isUIS")
     assert "SCREEN_FAIL observe-only" in src

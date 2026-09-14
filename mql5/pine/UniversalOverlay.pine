@@ -284,18 +284,28 @@ rsiMa = rsiMaM == "EMA" ? ta.ema(rsiV, rsiMaLen) : ta.sma(rsiV, rsiMaLen)
 atrV = ta.atr(atrLen)
 [macdLine, macdSig, macdHist] = ta.macd(close, macdF, macdS, macdG)
 
-// security: unused families hit the chart TF + na (not five HTF books / pivots)
+// security: unused families hit the chart TF + na (not five HTF books / pivots).
+// Per-series calls — Pine v5 rejects tuple literals inside a ternary as the
+// request.security expression (Syntax error at input '[').
 string tfH4 = isHTF ? "240" : timeframe.period
 string tfD1p = isHTF ? "D" : timeframe.period
 string tfD1o = isFXIT ? "D" : timeframe.period
 string tfBtp = isBTP ? Btp_Htf : timeframe.period
 string tfBns = isBNS ? "60" : timeframe.period
 
-[h4Ph, h4Pl] = request.security(syminfo.tickerid, tfH4, isHTF ? [ta.pivothigh(high, Htf_Left4h, Htf_Right4h), ta.pivotlow(low, Htf_Left4h, Htf_Right4h)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
-[d1Ph, d1Pl] = request.security(syminfo.tickerid, tfD1p, isHTF ? [ta.pivothigh(high, Htf_LeftD, Htf_RightD), ta.pivotlow(low, Htf_LeftD, Htf_RightD)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
-[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, isFXIT ? [high[1], low[1], open[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
-[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, isBTP ? [ta.ema(close[1], Btp_EmaFast), ta.ema(close[1], Btp_EmaSlow), close[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
-[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, isBNS ? [ta.ema(close[1], Bns_HtfF), ta.ema(close[1], Bns_HtfS), close[1]] : [na, na, na], lookahead=barmerge.lookahead_on)
+float h4Ph = request.security(syminfo.tickerid, tfH4, isHTF ? ta.pivothigh(high, Htf_Left4h, Htf_Right4h) : na, gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float h4Pl = request.security(syminfo.tickerid, tfH4, isHTF ? ta.pivotlow(low, Htf_Left4h, Htf_Right4h) : na, gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float d1Ph = request.security(syminfo.tickerid, tfD1p, isHTF ? ta.pivothigh(high, Htf_LeftD, Htf_RightD) : na, gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float d1Pl = request.security(syminfo.tickerid, tfD1p, isHTF ? ta.pivotlow(low, Htf_LeftD, Htf_RightD) : na, gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float d1High = request.security(syminfo.tickerid, tfD1o, isFXIT ? high[1] : na, lookahead=barmerge.lookahead_on)
+float d1Low = request.security(syminfo.tickerid, tfD1o, isFXIT ? low[1] : na, lookahead=barmerge.lookahead_on)
+float d1Open = request.security(syminfo.tickerid, tfD1o, isFXIT ? open[1] : na, lookahead=barmerge.lookahead_on)
+float htfE50 = request.security(syminfo.tickerid, tfBtp, isBTP ? ta.ema(close[1], Btp_EmaFast) : na, lookahead=barmerge.lookahead_on)
+float htfE200 = request.security(syminfo.tickerid, tfBtp, isBTP ? ta.ema(close[1], Btp_EmaSlow) : na, lookahead=barmerge.lookahead_on)
+float htfC = request.security(syminfo.tickerid, tfBtp, isBTP ? close[1] : na, lookahead=barmerge.lookahead_on)
+float h1E50 = request.security(syminfo.tickerid, tfBns, isBNS ? ta.ema(close[1], Bns_HtfF) : na, lookahead=barmerge.lookahead_on)
+float h1E200 = request.security(syminfo.tickerid, tfBns, isBNS ? ta.ema(close[1], Bns_HtfS) : na, lookahead=barmerge.lookahead_on)
+float h1C = request.security(syminfo.tickerid, tfBns, isBNS ? close[1] : na, lookahead=barmerge.lookahead_on)
 
 // shared outputs (na unless the active family writes them)
 float oEmaF = na
