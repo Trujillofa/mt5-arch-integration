@@ -137,4 +137,6 @@ export interface DeskState {
   fundingpipsLiveCopy: boolean;
   neomaaLiveCopy: boolean;
   fortradersLiveCopy: boolean;
+  /** Follow new FTMO terminal tickets. Always false in loadDesk/seed. */
+  ftmoFollowTerminal: boolean;
 }

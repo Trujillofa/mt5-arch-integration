@@ -25,6 +25,19 @@ export function armedCopyBrokers(state: DeskState): LiveBroker[] {
   return out.filter((broker) => !COPY_FANOUT_SKIP.has(broker));
 }
 
+/** FTMO live master or a slave that actually OrderSends (not Alpha). */
+export function liveOrderArmed(state: DeskState): boolean {
+  return Boolean(state.ftmoLiveMaster) || armedCopyBrokers(state).length > 0;
+}
+
+/** copySlTp must stay on while a live OrderSend path is armed (not Alpha). */
+export function liveCopySlTpError(state: DeskState): string | null {
+  if (!liveOrderArmed(state)) return null;
+  const missing = state.copySettings.filter((row) => row.enabled && !row.copySlTp);
+  if (missing.length === 0) return null;
+  return "copySlTp must stay on while live copy is armed — slaves get the same SL/TP prices";
+}
+
 export function masterLotsForGroup(state: DeskState, groupId: string): number | null {
   const master = state.blotter.find((row) => row.groupId === groupId && row.role === "master");
   return master && Number.isFinite(master.lots) ? master.lots : null;

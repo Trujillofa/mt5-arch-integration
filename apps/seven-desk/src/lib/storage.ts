@@ -146,6 +146,7 @@ export function loadDesk(): DeskState {
     fundingpipsLiveCopy: false,
     neomaaLiveCopy: false,
     fortradersLiveCopy: false,
+    ftmoFollowTerminal: false,
   }));
 }
 

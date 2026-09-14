@@ -1269,3 +1269,88 @@ export function defaultCopySettings(slaveAccountId: string): CopySettings {
     symbolMap: {},
   };
 }
+
+/** Session-only FTMO terminal follow. Not persisted. */
+export interface FollowSession {
+  baselineTickets: Set<number>;
+  followGroups: Map<number, string>;
+  pendingToGroup: Map<number, string>;
+}
+
+export type FollowDiffAction =
+  | {
+      kind: "open";
+      ticket: number;
+      source: "position" | "pending";
+      symbol: string;
+      side: Side;
+      lots: number;
+      sl: number | null;
+      tp: number | null;
+      orderType: LiveOrderType;
+      livePending: boolean;
+    }
+  | {
+      kind: "fill";
+      pendingTicket: number;
+      positionTicket: number;
+      groupId: string;
+    }
+  | {
+      kind: "close";
+      ticket: number;
+      groupId: string;
+    }
+  | {
+      kind: "cancel";
+      ticket: number;
+      groupId: string;
+    }
+  | {
+      kind: "modify";
+      ticket: number;
+      groupId: string;
+      sl: number | null;
+      tp: number | null;
+    };
+
+export interface FollowDiffResult {
+  actions: FollowDiffAction[];
+  next: FollowSession;
+}
+
+export function snapshotFollowBaseline(
+  positions: BridgeOpenPosition[],
+  pendings: BridgePendingOrder[]
+): Set<number> {
+  const tickets = new Set<number>();
+  for (const row of positions) {
+    if (row.ticket > 0) tickets.add(row.ticket);
+  }
+  for (const row of pendings) {
+    if (row.ticket > 0) tickets.add(row.ticket);
+  }
+  return tickets;
+}
+
+export function createFollowSession(
+  baselineTickets: Iterable<number> = [],
+  followGroups?: Iterable<readonly [number, string]>,
+  pendingToGroup?: Iterable<readonly [number, string]>
+): FollowSession {
+  return {
+    baselineTickets: new Set(baselineTickets),
+    followGroups: new Map(followGroups),
+    pendingToGroup: new Map(pendingToGroup),
+  };
+}
+
+/** Pure FTMO follow diff. Throws until follow is implemented. */
+export function diffFollowTickets(
+  _session: FollowSession,
+  _positions: BridgeOpenPosition[],
+  _pendings: BridgePendingOrder[],
+  _deskPositions: Position[]
+): FollowDiffResult {
+  throw new Error("diffFollowTickets: FTMO terminal follow is not implemented");
+}
