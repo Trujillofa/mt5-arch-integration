@@ -11,14 +11,15 @@ the body has `{ "live": true, "confirm": "WSF-149736" }`. Arm **WSF live copy**
 or **FundedNext live copy** or **Alpha Capital live copy** or **FundingPips live copy**
 or **Neomaa live copy** or **Fortraders live copy** on those cards
 so slaves copy the **same type** as the ticket (market / limit / stop). Arm
-**FTMO live master** so Place master trade is a real EURUSD send
-on 541163357 (standard **4** lots; FundedNext ×**0.1**; FundingPips ×**0.2**)
-before any copy. Arm **FTMO terminal follow** (same confirm token, session-only)
+**FTMO live master** so Place master trade is a real EURUSD or US30-family send
+on 541163357 (ticket lots: FX/US30 **4**, gold **0.40**, BTC **0.04**; FundedNext ×**0.1**; FundingPips ×**0.2**)
+before any copy. Live US30 requires SL (ATR 1.0 / TP 1.5×, not 1% of index price).
+Arm **FTMO terminal follow** (same confirm token, session-only)
 to copy **new** FTMO terminal tickets onto armed slaves — leftover baseline at
 arm is never copied, later SL/TP edits fan out, and a gone FTMO ticket closes
 or cancels that slave group. Follow does not OrderSend on FTMO. Alpha stays
 fetch-only. The FTMO probe polls ~2s only while follow is armed. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
-`Mt5ArchBridge` v1.27 polling `desk_live_order_request.txt` (seconds).
+`Mt5ArchBridge` v1.28 polling `desk_live_order_request.txt` (seconds).
 `action: "modify"` plus `ticket` and `sl`/`tp` is `TRADE_ACTION_SLTP` on that
 book only (no slave fan-out). Alpha Capital stays read-only — modify returns
 JSON **409**. The Positions tab ingests live `positions.json` (PositionsTotal)
@@ -50,7 +51,7 @@ pending and the EA uses a **50-point** offset from bid/ask (5.0 pips on
 5-digit FX) so a limit stays passive and a stop stays on the trigger side.
 An explicit typed price is sent even if it is on the wrong side of the
 market. Volume above 0.01 requires `volume_confirm: true`.
-Default lots are the **standard lot (4)** scaled per firm: FundedNext ×**0.1**, FundingPips ×**0.2**, everyone else ×**1.0**. An explicit **0.01** prove is not scaled.
+Default lots are **per symbol**, then scaled per firm: FundedNext ×**0.1**, FundingPips ×**0.2**, everyone else ×**1.0**. FX / US30 / NAS stay **4**; gold **0.40**; BTC **0.04**. An explicit **0.01** prove is not scaled.
 `volume_min: true` is the explicit 0.01 override. Hard max is 10 lots.
 `action: "cancel"` plus optional `ticket` removes a pending order
 (`TRADE_ACTION_REMOVE`). Close positions is pinned to the bottom of the
@@ -61,9 +62,9 @@ Already-flat
 (`no open … desk position`, `no pending desk order to cancel`, or
 `position vanished`) drops the desk row the same as `ok`.
 If the EA heartbeat is stale, trade is not allowed, or the build is older
-than v1.25 (v1.27 for modify), the route returns JSON **409** and does **not**
+than v1.25 (v1.27 for modify, v1.28 for market DEAL sl/tp), the route returns JSON **409** and does **not**
 fall back to a wine one-shot. It never talks to Vantage, FP, or official MCP
-on :22346.
+on :22346. When live copy is armed, `copySlTp` stays on so slaves get the same prices.
 
 ```bash
 cd ~/Projects/trading/mt5-arch-integration

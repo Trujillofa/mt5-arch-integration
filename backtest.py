@@ -116,6 +116,26 @@ def holdout_start(lock_path: Path = HOLDOUT_LOCK) -> pd.Timestamp | None:
     return ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
 
 
+def resolve_selection_cutoff(*, to: str | None, unbounded: bool) -> pd.Timestamp | None:
+    """Fit cutoff. Default is holdout_start (sealed). ``--to`` past the lock needs ``--unbounded``."""
+    if unbounded:
+        return None
+    lock = holdout_start()
+    cutoff = pd.Timestamp(to, tz="UTC") if to else lock
+    if to and lock is not None and cutoff >= lock:
+        raise SystemExit(
+            "WARNING: --to reaches sealed holdout — refusing selection. "
+            "Pass --unbounded to fit through holdout data; params are NOT protocol-clean."
+        )
+    return cutoff
+
+
+def holdout_is_sealed(cutoff: pd.Timestamp | None) -> bool:
+    """True only when the fit cutoff is at or before the lock (not merely non-None)."""
+    lock = holdout_start()
+    return cutoff is not None and lock is not None and cutoff <= lock
+
+
 def develop_only(raw: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
     out = raw.loc[raw["time"] < cutoff].reset_index(drop=True)
     if out.empty:
@@ -438,10 +458,10 @@ def search_score(m: Metrics) -> float:
     score = 0.0
     if m.n_trades >= 20:
         score += 50
-    if m.profit_factor > 1.5:
-        score += 200 + m.profit_factor * 20
-    else:
-        score += m.profit_factor * 5
+        if m.profit_factor > 1.5:
+            score += 200 + m.profit_factor * 20
+        else:
+            score += m.profit_factor * 5
     if m.win_rate > 55:
         score += 200 + m.win_rate
     else:
@@ -682,17 +702,15 @@ def main(argv: list[str] | None = None) -> int:
         refuse_mutated_research_costs(COSTS)
 
     raw = load_h1()
-    cutoff = None
+    cutoff = resolve_selection_cutoff(to=args.to, unbounded=args.unbounded)
     if args.unbounded:
         print("WARNING: --unbounded — selecting on holdout data; params are NOT protocol-clean.")
+    elif cutoff is None:
+        print(f"WARNING: no holdout lock at {HOLDOUT_LOCK}; fitting on the whole CSV.")
     else:
-        cutoff = pd.Timestamp(args.to, tz="UTC") if args.to else holdout_start()
-        if cutoff is None:
-            print(f"WARNING: no holdout lock at {HOLDOUT_LOCK}; fitting on the whole CSV.")
-        else:
-            full = len(raw)
-            raw = develop_only(raw, cutoff)
-            print(f"Selection window: time < {cutoff} ({len(raw)}/{full} H1 bars; holdout sealed)")
+        full = len(raw)
+        raw = develop_only(raw, cutoff)
+        print(f"Selection window: time < {cutoff} ({len(raw)}/{full} H1 bars; holdout sealed)")
 
     d = indicators(raw)
     print(f"Loaded H1 bars={len(d)} {d['time'].iloc[0]} → {d['time'].iloc[-1]}")
@@ -805,7 +823,7 @@ def main(argv: list[str] | None = None) -> int:
                     "data": {
                         **data_window(raw),
                         "selection_cutoff": str(cutoff) if cutoff is not None else None,
-                        "holdout_sealed": cutoff is not None,
+                        "holdout_sealed": holdout_is_sealed(cutoff),
                     },
                     "costs": COSTS,
                     "timeframe": "H1",

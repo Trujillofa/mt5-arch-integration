@@ -14,6 +14,14 @@ Clock: CSV timestamps are forced UTC. H4 is ``resample('4h')`` left-labeled
 (residual ≤4h optimism vs a true H4 close). This is **not** America/New_York
 and not the MQL5 ``htf_available_at`` MTF rule.
 
+Causality
+---------
+This engine is **NOT** covered by ``htf_fib_core`` H1 causality. H4→H1 uses
+``searchsorted(ts, "right") - 1`` at the H4 left edge, so fib states can live
+up to ~3 H1 bars / ≤4h early. Consumers must disclose that residual ≤4h
+optimism. A stricter future mapping is ``searchsorted(ts + 4h)``; do not
+change it silently — locked artifacts depend on the current mapping.
+
 Costs: frictionless 0.10 lot × 100k contract. No spread/slip/commission.
 That is a locked book (``results/htf_fib_offline_lock.json``), not live-matched.
 PnL is price-delta × contract × lots — **not** pip accounting.
@@ -45,6 +53,12 @@ if str(_SCRIPTS) not in sys.path:
 
 LOCK_PATH = _ROOT / "results" / "htf_fib_offline_lock.json"
 XAU_HOLDOUT_CAP = "2026-01-01"
+H4_H1_MAPPING_DISCLOSURE = (
+    "NOT covered by htf_fib_core causality. H4→H1 uses searchsorted(ts, 'right')-1 "
+    "at the H4 left edge (residual ≤4h optimism). Consumers must disclose this. "
+    "Stricter future mapping is searchsorted(ts + 4h); do not change silently — "
+    "locked artifacts depend on the current mapping."
+)
 
 
 def ema(series: pd.Series, period: int) -> pd.Series:
@@ -119,6 +133,25 @@ def refuse_mutated_htf_offline_lock(lock: dict) -> None:
         raise SystemExit("htf offline lock slippage_points must stay 0 (frictionless)")
     if float(book.get("commission_per_lot", 0.0)) != 0.0:
         raise SystemExit("htf offline lock commission_per_lot must stay 0")
+
+
+def max_drawdown_from_pnls(pnls: list[float]) -> float:
+    """Peak-to-trough from a 0 starting equity so the first-trade DD is visible."""
+    if not pnls:
+        return 0.0
+    equity = np.concatenate([[0.0], np.cumsum(pnls)])
+    peak = np.maximum.accumulate(equity)
+    dd = equity - peak
+    return float(dd.min()) if len(dd) else 0.0
+
+
+def holdout_used_flag(*, date_to: str, unbounded: bool) -> bool:
+    """True only when --unbounded actually reaches the sealed XAU holdout."""
+    if not unbounded:
+        return False
+    to = pd.Timestamp(date_to, tz="UTC")
+    cap = pd.Timestamp(XAU_HOLDOUT_CAP, tz="UTC")
+    return to >= cap
 
 
 def refuse_holdout_selection(date_to: str, *, unbounded: bool) -> None:
@@ -232,7 +265,7 @@ def run_backtest(
     h1_index = df.index
     events_h1 = []
     for ts, price, t in events_ts:
-        # pivot bar end ≈ ts (left edge of H4); use asof
+        # H4 left edge (locked). Stricter future work: searchsorted(ts + 4h).
         pos = h1_index.searchsorted(ts, side="right") - 1
         if pos >= 0:
             events_h1.append((pos, price, t))
@@ -310,10 +343,7 @@ def run_backtest(
     gross_win = sum(wins) if wins else 0.0
     gross_loss = -sum(losses) if losses else 0.0
     pf = (gross_win / gross_loss) if gross_loss > 0 else float("inf") if gross_win > 0 else 0.0
-    equity = np.cumsum(pnls) if pnls else np.array([0.0])
-    peak = np.maximum.accumulate(equity)
-    dd = equity - peak
-    max_dd = float(dd.min()) if len(dd) else 0.0
+    max_dd = max_drawdown_from_pnls(pnls)
 
     return {
         "bars": n,
@@ -383,7 +413,8 @@ def main() -> None:
     stats["use_rsi_ma_filter"] = use_filter
     stats["promote"] = False
     stats["live_go"] = False
-    stats["holdout_used"] = False
+    stats["holdout_used"] = holdout_used_flag(date_to=args.date_to, unbounded=args.unbounded)
+    stats["causality"] = H4_H1_MAPPING_DISCLOSURE
     stats["fill_contract"] = lock.get("fill_contract")
     stats["clock"] = lock.get("clock")
     stats["costs"] = {
@@ -400,7 +431,9 @@ def main() -> None:
     stats["split"] = lock.get("window", {}).get("split")
     stats["note"] = (
         "Offline approximation of HTF Fib (H4 pivots from H1). "
-        "Pivots stamped at confirmation bar c+right (causal). "
+        f"{H4_H1_MAPPING_DISCLOSURE} "
+        "Pivots stamped at confirmation bar c+right via htf_fib_core (that stamp "
+        "is causal; the H4→H1 map is not). "
         "Fill at close[i] (next-open approximation). Frictionless 0.10 lot. "
         "promote=no. Not a sealed holdout. "
         "Not identical to MT5 iCustom; use ForexHtfFibTester in Strategy Tester "

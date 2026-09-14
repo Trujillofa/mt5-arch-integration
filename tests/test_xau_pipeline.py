@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,6 +16,7 @@ from backtest import (  # noqa: E402
     HOLDOUT_LOCK,
     Metrics,
     develop_only,
+    holdout_is_sealed,
     holdout_start,
     indicators,
     load_h1,
@@ -24,6 +26,8 @@ from backtest import (  # noqa: E402
     passes,
     rank_develop_rows,
     refuse_mutated_holdout_lock,
+    resolve_selection_cutoff,
+    search_score,
     simulate,
     slice_to_window,
 )
@@ -341,3 +345,28 @@ def test_offline_backtest_paths_have_no_ordersend():
 def test_holdout_lock_file_is_the_tracked_one():
     assert HOLDOUT_LOCK.is_file()
     assert HOLDOUT_LOCK.name == "xau_holdout_lock.json"
+
+
+def test_to_past_holdout_refused_without_unbounded():
+    with pytest.raises(SystemExit, match="unbounded"):
+        resolve_selection_cutoff(to="2026-06-01", unbounded=False)
+    with pytest.raises(SystemExit, match="unbounded"):
+        resolve_selection_cutoff(to="2026-01-01", unbounded=False)
+    before = resolve_selection_cutoff(to="2025-06-01", unbounded=False)
+    assert before is not None and before < holdout_start()
+    assert resolve_selection_cutoff(to=None, unbounded=False) == holdout_start()
+    assert resolve_selection_cutoff(to="2026-06-01", unbounded=True) is None
+
+
+def test_holdout_sealed_flag_cannot_launder_past_lock():
+    lock = holdout_start()
+    assert holdout_is_sealed(lock) is True
+    assert holdout_is_sealed(lock - pd.Timedelta(days=1)) is True
+    assert holdout_is_sealed(pd.Timestamp("2026-06-01", tz="UTC")) is False
+    assert holdout_is_sealed(None) is False
+
+
+def test_search_score_ignores_one_trade_fantasy_pf():
+    fantasy = Metrics(99.0, 100.0, 99.0, 1.0, 1, 1, 0)
+    decent = Metrics(50.0, 56.0, 1.6, 8.0, 25, 15, 10)
+    assert search_score(decent) > search_score(fantasy)

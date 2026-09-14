@@ -40,6 +40,17 @@ load_dotenv() {
   fi
 }
 
+# Write HKCU\Control Panel\Desktop LogPixels (Wine user.reg). Prefix-wide.
+# Uses DPI / MT5_LOG_PIXELS (96–192). Requires WINEPREFIX. No second DPI path.
+apply_wine_logpixels() {
+  local dpi="${1:-${DPI:-${MT5_LOG_PIXELS:-120}}}"
+  [[ -n "${WINEPREFIX:-}" && -d "${WINEPREFIX}" ]] || die "WINEPREFIX missing for LogPixels"
+  if ! [[ "$dpi" =~ ^[0-9]+$ ]] || (( dpi < 96 || dpi > 192 )); then
+    die "LogPixels=$dpi out of range 96–192 (MT5_LOG_PIXELS)"
+  fi
+  wine reg add 'HKCU\Control Panel\Desktop' /v LogPixels /t REG_DWORD /d "$dpi" /f >/dev/null
+}
+
 export_wine_env() {
   export WINEPREFIX="${WINEPREFIX:-$HOME/.mt5}"
   export WINEARCH="${WINEARCH:-win64}"

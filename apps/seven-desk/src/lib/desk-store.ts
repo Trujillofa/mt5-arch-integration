@@ -22,7 +22,8 @@ import {
 } from "@/lib/copy-engine";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
-import { seedDesk } from "@/lib/seed";
+import { ACCOUNT_IDS, seedDesk } from "@/lib/seed";
+import { slaveLiveCopyArmed } from "@/lib/copy-fanout";
 import { clearDesk, loadDesk, saveDesk } from "@/lib/storage";
 import type {
   ConnectionStatus,
@@ -148,6 +149,10 @@ export function updateCopy(
       ...(existing ?? defaultCopySettings(slaveAccountId)),
       ...copyPatch,
       slaveAccountId,
+      copySlTp:
+        copyPatch.copySlTp === false && slaveLiveCopyArmed(current, slaveAccountId)
+          ? true
+          : (copyPatch.copySlTp ?? existing?.copySlTp ?? true),
     };
     const copySettings = existing
       ? current.copySettings.map((row) =>
@@ -204,8 +209,18 @@ export function resolveGroup(groupId: string) {
   persist(resolveQueuedCopies(desk, groupId));
 }
 
+function forceSlaveCopySlTp(current: DeskState, slaveAccountId: string): CopySettings[] {
+  return current.copySettings.map((row) =>
+    row.slaveAccountId === slaveAccountId ? { ...row, copySlTp: true } : row
+  );
+}
+
 export function setWsfLiveCopy(enabled: boolean) {
-  patchDesk((current) => ({ ...current, wsfLiveCopy: enabled }));
+  patchDesk((current) => ({
+    ...current,
+    wsfLiveCopy: enabled,
+    copySettings: enabled ? forceSlaveCopySlTp(current, ACCOUNT_IDS.wsf) : current.copySettings,
+  }));
 }
 
 export function setFtmoLiveMaster(enabled: boolean) {
@@ -291,7 +306,13 @@ export function dropLiveDeskRow(
 }
 
 export function setFundednextLiveCopy(enabled: boolean) {
-  patchDesk((current) => ({ ...current, fundednextLiveCopy: enabled }));
+  patchDesk((current) => ({
+    ...current,
+    fundednextLiveCopy: enabled,
+    copySettings: enabled
+      ? forceSlaveCopySlTp(current, ACCOUNT_IDS.fundednext)
+      : current.copySettings,
+  }));
 }
 
 export function setAlphacapitalLiveCopy(enabled: boolean) {
@@ -299,15 +320,33 @@ export function setAlphacapitalLiveCopy(enabled: boolean) {
 }
 
 export function setFundingpipsLiveCopy(enabled: boolean) {
-  patchDesk((current) => ({ ...current, fundingpipsLiveCopy: enabled }));
+  patchDesk((current) => ({
+    ...current,
+    fundingpipsLiveCopy: enabled,
+    copySettings: enabled
+      ? forceSlaveCopySlTp(current, ACCOUNT_IDS.fundingpips)
+      : current.copySettings,
+  }));
 }
 
 export function setNeomaaLiveCopy(enabled: boolean) {
-  patchDesk((current) => ({ ...current, neomaaLiveCopy: enabled }));
+  patchDesk((current) => ({
+    ...current,
+    neomaaLiveCopy: enabled,
+    copySettings: enabled
+      ? forceSlaveCopySlTp(current, ACCOUNT_IDS.neomaa)
+      : current.copySettings,
+  }));
 }
 
 export function setFortradersLiveCopy(enabled: boolean) {
-  patchDesk((current) => ({ ...current, fortradersLiveCopy: enabled }));
+  patchDesk((current) => ({
+    ...current,
+    fortradersLiveCopy: enabled,
+    copySettings: enabled
+      ? forceSlaveCopySlTp(current, ACCOUNT_IDS.fortraders)
+      : current.copySettings,
+  }));
 }
 
 export function applyWsfLiveCopyResult(eventId: string, result: LiveOrderResult) {

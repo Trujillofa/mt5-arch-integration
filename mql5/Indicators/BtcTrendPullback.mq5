@@ -576,7 +576,7 @@ int OnCalculate(const int rates_total,
    if(cold && rates_total - start > max_signal_bars)
       start = rates_total - max_signal_bars;
 
-   for(int j = start; j < rates_total; j++)
+   for(int j = MathMax(0, start - 2); j < rates_total; j++)
       macd_hist[j] = macd_main[j] - macd_sig[j];
 
    // Invalidate HTF cache after handle rebuild (EMA period change)

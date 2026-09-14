@@ -41,6 +41,8 @@ export interface LiveOrderResult {
   restoreNote?: string;
   stoppedPids?: number[];
   sendPath?: "ea" | "oneshot";
+  /** Set when the request→fill quote journal failed. Never flips ok. */
+  journalError?: string;
 }
 
 export interface LiveOrderInput {

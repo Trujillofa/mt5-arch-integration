@@ -15,13 +15,25 @@ import { FUNDEDNEXT_LIVE_PENDING, FUNDEDNEXT_LIVE_SYMBOLS } from "@/lib/fundedne
 import { FORTRADERS_LIVE_PENDING, FORTRADERS_LIVE_SYMBOLS } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_PENDING, FUNDINGPIPS_LIVE_SYMBOLS } from "@/lib/fundingpips/types";
 import { NEOMAA_LIVE_PENDING, NEOMAA_LIVE_SYMBOLS } from "@/lib/neomaa/types";
-import { defaultLotsForFirm, liveLotsForFirm } from "@/lib/firms";
+import { defaultLotsForFirm, defaultLotsForSymbolFirm, liveLotsForFirm } from "@/lib/firms";
 import { FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
-import { isAlreadyFlatReason, isPendingOrderType, isUs30Family } from "@/lib/live-order/guards";
+import {
+  isAlreadyFlatReason,
+  isPendingOrderType,
+  isUs30Family,
+  liveUs30SlError,
+  openSlTpSideError,
+} from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
-import { armedCopyBrokers, COPY_FANOUT_SKIP, liveUs30SlError } from "@/lib/copy-fanout";
+import {
+  armedCopyBrokers,
+  COPY_FANOUT_SKIP,
+  liveCopySlTpError,
+  liveOrderArmed,
+  liveUs30SlError as followUs30SlError,
+} from "@/lib/copy-fanout";
 import { DESK_MAGIC } from "@/lib/desk-magic";
 
 export const BLOTTER_LIMIT = 200;
@@ -114,6 +126,10 @@ export function placeMasterTrade(
   if (!master) return { state, error: "No master account selected." };
   if (input.lots < 0.01) return { state, error: "Lots must be at least 0.01." };
   if (!input.symbol) return { state, error: "Choose a symbol." };
+  const copyErr = liveCopySlTpError(state);
+  if (copyErr) return { state, error: copyErr };
+  const slErr = liveUs30SlError(input.symbol, input.sl, liveOrderArmed(state));
+  if (slErr) return { state, error: slErr };
 
   const quote = paperAdapter.getQuote(input.symbol, state.quotes);
   if (!quote) return { state, error: `No paper quote for ${input.symbol}.` };
@@ -129,6 +145,14 @@ export function placeMasterTrade(
   if (pending && !(input.price != null && input.price > 0)) {
     return { state, error: "Pending limit/stop needs a price." };
   }
+  const sideErr = openSlTpSideError(
+    input.side === "sell" ? "SELL" : "BUY",
+    input.sl,
+    input.tp,
+    requestedPrice,
+    pending ? orderType : "market"
+  );
+  if (sideErr) return { state, error: sideErr.reason };
 
   const groupId = uid("grp");
   const now = Date.now();
@@ -849,7 +873,7 @@ function liveFillLabel(broker: LiveBroker, result: LiveOrderResult): string {
   const pending =
     result.stage === "pending" || isPendingOrderType(result.orderType);
   const kind = pending ? `${result.orderType ?? "limit"}` : "fill";
-  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForFirm(broker);
+  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForSymbolFirm(broker, result.symbol);
   const ms = result.holdMs != null && result.holdMs >= 0 ? ` · ${Math.round(result.holdMs)}ms` : "";
   if (broker === "wsf") return `HTTP send · live WSF 149736 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
   if (broker === "ftmo") return `HTTP send · live FTMO 541163357 · ${lots} ${kind} · order ${result.order ?? "—"}${ms}`;
@@ -884,7 +908,7 @@ export function applyLiveFill(
       ),
     };
   }
-  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForFirm(broker);
+  const lots = result.volume && result.volume > 0 ? result.volume : defaultLotsForSymbolFirm(broker, result.symbol ?? event.symbol);
   const pending =
     result.stage === "pending" || isPendingOrderType(result.orderType ?? event.orderType);
   const price = (result.price && result.price > 0 ? result.price : null) ?? result.openPrice ?? event.requestedPrice;
@@ -1610,7 +1634,7 @@ export function placeFollowMasterFill(
     liveTicket: input.ticket,
     httpAction: "send",
   };
-  const nakedUs30 = liveUs30SlError(input.symbol, input.sl, true);
+  const nakedUs30 = followUs30SlError(input.symbol, input.sl, true);
   const skipSlaves = Boolean(input.skipSlaves) || Boolean(nakedUs30);
   const armed = skipSlaves ? [] : armedCopyBrokers(state);
   const slaveEvents: BlotterEvent[] = skipSlaves

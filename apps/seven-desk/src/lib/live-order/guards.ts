@@ -73,6 +73,62 @@ export function isSellPending(orderType: string | null | undefined): boolean {
   return orderType === "sell_limit" || orderType === "sell_stop";
 }
 
+export function ftmoLiveMasterSymbolAllowed(symbol: string): boolean {
+  return symbol === "EURUSD" || symbol === "EURUSDc" || isUs30Family(symbol);
+}
+
+export function liveUs30SlError(
+  symbol: string,
+  sl: number | null | undefined,
+  live: boolean
+): string | null {
+  if (!live || !isUs30Family(symbol)) return null;
+  if (sl == null || !Number.isFinite(sl) || sl <= 0) {
+    return "live US30 requires sl > 0";
+  }
+  return null;
+}
+
+/** Wrong-side SL/TP on an open (market or pending). 0 / null means omitted. */
+export function openSlTpSideError(
+  side: "BUY" | "SELL" | "buy" | "sell",
+  sl: number | null,
+  tp: number | null,
+  refPrice: number | null,
+  orderLabel: string
+): { stage: "sl" | "tp"; reason: string } | null {
+  const buy = side === "BUY" || side === "buy";
+  const slSet = sl != null && sl > 0;
+  const tpSet = tp != null && tp > 0;
+  if (refPrice != null && refPrice > 0) {
+    if (buy) {
+      if (slSet && sl >= refPrice) {
+        return { stage: "sl", reason: `${orderLabel} requires sl < price` };
+      }
+      if (tpSet && tp <= refPrice) {
+        return { stage: "tp", reason: `${orderLabel} requires tp > price` };
+      }
+    } else {
+      if (slSet && sl <= refPrice) {
+        return { stage: "sl", reason: `${orderLabel} requires sl > price` };
+      }
+      if (tpSet && tp >= refPrice) {
+        return { stage: "tp", reason: `${orderLabel} requires tp < price` };
+      }
+    }
+    return null;
+  }
+  if (slSet && tpSet) {
+    if (buy && sl >= tp) {
+      return { stage: "tp", reason: "buy requires sl < tp" };
+    }
+    if (!buy && sl <= tp) {
+      return { stage: "tp", reason: "sell requires sl > tp" };
+    }
+  }
+  return null;
+}
+
 export function pendingKind(orderType: string | null | undefined): "limit" | "stop" | null {
   if (orderType === "buy_limit" || orderType === "sell_limit") return "limit";
   if (orderType === "buy_stop" || orderType === "sell_stop") return "stop";
@@ -286,32 +342,36 @@ export function parseLiveOrderRequest(input: {
     }
   }
 
-  if (pending && action === "open") {
-    if (priceField.value != null && priceField.value <= 0) {
-      return { ok: false, status: 400, stage: "price", reason: "pending order requires price > 0 when set" };
+  const opening = action === "open" || action === "scratch";
+  const slOpen = slField.value != null && slField.value > 0 ? slField.value : null;
+  const tpOpen = tpField.value != null && tpField.value > 0 ? tpField.value : null;
+  if (opening) {
+    if (slField.value != null && slField.value < 0) {
+      return { ok: false, status: 400, stage: "sl", reason: "sl must be >= 0" };
     }
-    if (slField.value != null && slField.value <= 0) {
-      return { ok: false, status: 400, stage: "sl", reason: "sl must be greater than 0 when set" };
+    if (tpField.value != null && tpField.value < 0) {
+      return { ok: false, status: 400, stage: "tp", reason: "tp must be >= 0" };
     }
-    if (tpField.value != null && tpField.value <= 0) {
-      return { ok: false, status: 400, stage: "tp", reason: "tp must be greater than 0 when set" };
-    }
-    if (priceField.value != null) {
-      if (isBuyPending(orderType)) {
-        if (slField.value != null && slField.value >= priceField.value) {
-          return { ok: false, status: 400, stage: "sl", reason: `${orderType} requires sl < price` };
-        }
-        if (tpField.value != null && tpField.value <= priceField.value) {
-          return { ok: false, status: 400, stage: "tp", reason: `${orderType} requires tp > price` };
-        }
-      } else {
-        if (slField.value != null && slField.value <= priceField.value) {
-          return { ok: false, status: 400, stage: "sl", reason: `${orderType} requires sl > price` };
-        }
-        if (tpField.value != null && tpField.value >= priceField.value) {
-          return { ok: false, status: 400, stage: "tp", reason: `${orderType} requires tp < price` };
-        }
+    if (pending) {
+      if (priceField.value != null && priceField.value <= 0) {
+        return { ok: false, status: 400, stage: "price", reason: "pending order requires price > 0 when set" };
       }
+      if (slField.value != null && slField.value <= 0) {
+        return { ok: false, status: 400, stage: "sl", reason: "sl must be greater than 0 when set" };
+      }
+      if (tpField.value != null && tpField.value <= 0) {
+        return { ok: false, status: 400, stage: "tp", reason: "tp must be greater than 0 when set" };
+      }
+    }
+    const sideErr = openSlTpSideError(
+      side,
+      slOpen,
+      tpOpen,
+      pending ? priceField.value : priceField.value,
+      pending ? orderType : "market"
+    );
+    if (sideErr) {
+      return { ok: false, status: 400, stage: sideErr.stage, reason: sideErr.reason };
     }
   }
 
@@ -387,6 +447,10 @@ export function parseLiveOrderRequest(input: {
     useVolumeMin = true;
   }
 
+  if (opening && isUs30Family(symbol) && slOpen == null) {
+    return { ok: false, status: 400, stage: "sl", reason: "live US30 requires sl > 0" };
+  }
+
   return {
     ok: true,
     fields: {
@@ -397,8 +461,8 @@ export function parseLiveOrderRequest(input: {
       useVolumeMin,
       volume,
       price: pending ? priceField.value : null,
-      sl: pending ? slField.value : null,
-      tp: pending ? tpField.value : null,
+      sl: slOpen,
+      tp: tpOpen,
       ticket: ticketField.value,
       confirm,
     },
@@ -421,6 +485,19 @@ export const LIMIT_OFFSET_POINTS = 50;
 export const MIN_DESK_ORDER_VERSION = [1, 25] as const;
 /** TRADE_ACTION_SLTP / action=modify needs the v1.27 request schema. */
 export const MIN_DESK_MODIFY_VERSION = [1, 27] as const;
+/** Market DEAL with sl/tp + SLTP fallback needs v1.28. */
+export const MIN_DESK_MARKET_SLTP_VERSION = [1, 28] as const;
+
+export function marketNeedsSltpVersion(input: {
+  action: LiveOrderAction | string;
+  orderType: LiveOrderType | string;
+  sl: number | null;
+  tp: number | null;
+}): boolean {
+  if (input.action !== "open" && input.action !== "scratch") return false;
+  if (isPendingOrderType(input.orderType)) return false;
+  return (input.sl != null && input.sl > 0) || (input.tp != null && input.tp > 0);
+}
 
 export function alphaModifyBlocked(
   firmId: string,
@@ -692,6 +769,7 @@ export function eaNotReadyReason(input: {
   algoAllowed: boolean | null;
   readonly?: boolean;
   action?: LiveOrderAction | string;
+  needsMarketSltp?: boolean;
 }): string | null {
   if (!input.heartbeatFresh) {
     return "Mt5ArchBridge heartbeat is stale — refusing OrderSend (no wine one-shot fallback)";
@@ -700,7 +778,11 @@ export function eaNotReadyReason(input: {
     return "read-only bridge — refusing OrderSend (no wine one-shot fallback)";
   }
   const minVersion =
-    input.action === "modify" ? MIN_DESK_MODIFY_VERSION : MIN_DESK_ORDER_VERSION;
+    input.action === "modify"
+      ? MIN_DESK_MODIFY_VERSION
+      : input.needsMarketSltp
+        ? MIN_DESK_MARKET_SLTP_VERSION
+        : MIN_DESK_ORDER_VERSION;
   if (!versionAtLeast(input.version, minVersion)) {
     const shown = input.version ? input.version.join(".") : "unknown";
     const need = minVersion.join(".");

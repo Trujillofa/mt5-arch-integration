@@ -377,7 +377,7 @@ void FillDealsFromHistory(const ulong position_ticket, const ulong order_ticket,
 bool SendDeal(const string symbol, const ENUM_ORDER_TYPE type, const double volume,
               const ulong position, const ENUM_ORDER_TYPE_FILLING filling,
               const int digits, const string comment,
-              MqlTradeResult &res)
+              const double sl, const double tp, MqlTradeResult &res)
   {
    MqlTick tick;
    if(!SymbolInfoTick(symbol, tick) || tick.ask <= 0.0 || tick.bid <= 0.0)
@@ -397,6 +397,27 @@ bool SendDeal(const string symbol, const ENUM_ORDER_TYPE type, const double volu
    req.type_time = ORDER_TIME_GTC;
    if(position > 0)
       req.position = position;
+   if(sl > 0.0)
+      req.sl = NormalizeDouble(sl, digits);
+   if(tp > 0.0)
+      req.tp = NormalizeDouble(tp, digits);
+   ResetLastError();
+   return OrderSend(req, res);
+  }
+
+bool SendSltp(const ulong ticket, const double sl, const double tp,
+              const int digits, MqlTradeResult &res)
+  {
+   if(!PositionSelectByTicket(ticket))
+      return false;
+   MqlTradeRequest req;
+   ZeroMemory(req);
+   ZeroMemory(res);
+   req.action = TRADE_ACTION_SLTP;
+   req.position = ticket;
+   req.symbol = PositionGetString(POSITION_SYMBOL);
+   req.sl = sl > 0.0 ? NormalizeDouble(sl, digits) : 0.0;
+   req.tp = tp > 0.0 ? NormalizeDouble(tp, digits) : 0.0;
    ResetLastError();
    return OrderSend(req, res);
   }
@@ -406,6 +427,33 @@ bool TradeRetOk(const uint ret)
    return (ret == TRADE_RETCODE_DONE ||
            ret == TRADE_RETCODE_DONE_PARTIAL ||
            ret == TRADE_RETCODE_PLACED);
+  }
+
+bool EnsureOpenSltp(const string symbol, const ulong position, const double sl, const double tp,
+                    const int digits, MqlTradeResult &res)
+  {
+   if(sl <= 0.0 && tp <= 0.0)
+      return true;
+   ulong ticket = position;
+   if(ticket == 0 || !PositionSelectByTicket(ticket))
+      ticket = FindPositionTicket(symbol);
+   if(ticket == 0 || !PositionSelectByTicket(ticket))
+      return false;
+   double cur_sl = PositionGetDouble(POSITION_SL);
+   double cur_tp = PositionGetDouble(POSITION_TP);
+   bool sl_ok = (sl <= 0.0) || (cur_sl > 0.0);
+   bool tp_ok = (tp <= 0.0) || (cur_tp > 0.0);
+   if(sl_ok && tp_ok)
+      return true;
+   if(!SendSltp(ticket, sl, tp, digits, res))
+      return false;
+   if(!TradeRetOk(res.retcode))
+      return false;
+   if(!PositionSelectByTicket(ticket))
+      return false;
+   if(sl > 0.0 && PositionGetDouble(POSITION_SL) <= 0.0)
+      return false;
+   return true;
   }
 
 bool ResolveVolume(const string symbol, const long login, const string server,
@@ -748,15 +796,25 @@ void OnStart()
      {
       ENUM_ORDER_TYPE otype = (g_side == "SELL") ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
       MqlTradeResult res;
-      bool sent = SendDeal(symbol, otype, volume, 0, filling, digits, comment_open, res);
+      bool sent = SendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
+                           g_sl, g_tp, res);
       open_ret = (int)res.retcode;
       open_ms = GetTickCount();
-      if(!sent || (res.retcode != TRADE_RETCODE_DONE && res.retcode != TRADE_RETCODE_DONE_PARTIAL))
+      if(!sent || !TradeRetOk(res.retcode))
         {
-         WriteResult(FailJson("open", "OrderSend rejected — not retrying",
-                              login, server, open_ret,
-                              res.comment + " last=" + IntegerToString(GetLastError())));
-         return;
+         if((g_sl > 0.0 || g_tp > 0.0) && res.retcode == TRADE_RETCODE_INVALID_STOPS)
+           {
+            sent = SendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
+                            0.0, 0.0, res);
+            open_ret = (int)res.retcode;
+           }
+         if(!sent || !TradeRetOk(res.retcode))
+           {
+            WriteResult(FailJson("open", "OrderSend rejected — not retrying",
+                                 login, server, open_ret,
+                                 res.comment + " last=" + IntegerToString(GetLastError())));
+            return;
+           }
         }
       order_ticket = res.order;
       deal_open = res.deal;
@@ -791,6 +849,19 @@ void OnStart()
             "  \"retcode\": " + IntegerToString(open_ret) + "\n"
             "}\n");
          return;
+        }
+      if(g_sl > 0.0 || g_tp > 0.0)
+        {
+         MqlTradeResult sres;
+         ZeroMemory(sres);
+         if(!EnsureOpenSltp(symbol, position_ticket, g_sl, g_tp, digits, sres))
+           {
+            WriteResult(FailJson("sltp",
+                                 "market filled but SL/TP missing — SLTP failed; flatten the naked position",
+                                 login, server, (int)sres.retcode,
+                                 sres.comment + " deal_open=" + IntegerToString((long)deal_open)));
+            return;
+           }
         }
      }
    else
@@ -853,10 +924,10 @@ void OnStart()
         {
          MqlTradeResult res;
          bool sent = SendDeal(symbol, ctype, close_vol, position_ticket,
-                              filling, digits, comment_close, res);
+                              filling, digits, comment_close, 0.0, 0.0, res);
          if(!sent && IsNettingAccount())
             sent = SendDeal(symbol, ctype, close_vol, 0,
-                            filling, digits, comment_close, res);
+                            filling, digits, comment_close, 0.0, 0.0, res);
          close_ret = (int)res.retcode;
          close_msg = res.comment;
          if(sent && (res.retcode == TRADE_RETCODE_DONE || res.retcode == TRADE_RETCODE_DONE_PARTIAL))

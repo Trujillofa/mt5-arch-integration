@@ -18,6 +18,9 @@ WSF_LIVE = DESK / "src" / "lib" / "wsf" / "live-order.ts"
 WSF_FILE = DESK / "src" / "lib" / "wsf" / "mt5-file-backend.ts"
 CONTEXT = DESK / "src" / "lib" / "desk-context.tsx"
 GUARDS_UNIT = ROOT / "tests" / "test_desk_live_order_guards.ts"
+QUOTE_JOURNAL = DESK / "src" / "lib" / "live-order" / "quote-journal.ts"
+BRIDGE_QUOTES = DESK / "src" / "lib" / "live-order" / "bridge-quotes.ts"
+QUOTE_JOURNAL_UNIT = ROOT / "tests" / "test_desk_live_order_quote_journal.ts"
 
 
 def test_http_budget_is_bounded_and_shared() -> None:
@@ -139,6 +142,9 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     assert "parseBridgeReadonly" in runner
     assert "read-only bridge" in GUARDS.read_text(encoding="utf-8")
     assert "STANDARD_LOT = 4" in firms
+    assert "GOLD_STANDARD_LOT = 0.4" in firms
+    assert "BTC_STANDARD_LOT = 0.04" in firms
+    assert "standardLotsForSymbol" in firms
     assert "FUNDEDNEXT_SCALE = 0.1" in firms
     assert "FUNDINGPIPS_SCALE = 0.2" in firms
     assert "isMinLotProve" in firms
@@ -202,6 +208,7 @@ def test_us30_pending_contract_is_opt_in() -> None:
 
 FANOUT_UNIT = ROOT / "tests" / "test_desk_copy_fanout.ts"
 FANOUT_ALIAS = ROOT / "tests" / "desk-alias-register.mjs"
+ATR_UNIT = ROOT / "tests" / "test_desk_atr_stops.ts"
 
 CLIENT_NO_ENV = [
     DESK / "src" / "lib" / "copy-engine.ts",
@@ -306,11 +313,87 @@ def test_flatten_bar_is_always_visible() -> None:
     assert "modifyPosition" in CONTEXT.read_text(encoding="utf-8")
     assert "alphaModifyBlocked" in GUARDS.read_text(encoding="utf-8")
     assert "MIN_DESK_MODIFY_VERSION = [1, 27]" in GUARDS.read_text(encoding="utf-8")
+    assert "MIN_DESK_MARKET_SLTP_VERSION = [1, 28]" in GUARDS.read_text(encoding="utf-8")
+    assert "live US30 requires sl > 0" in GUARDS.read_text(encoding="utf-8")
+    assert "DeskOrdEnsureOpenSltp" in (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(
+        encoding="utf-8"
+    )
+    assert "TRADE_RETCODE_INVALID_STOPS" in (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(
+        encoding="utf-8"
+    )
+    assert 'BRIDGE_VERSION "1.28"' in (ROOT / "mql5" / "Mt5ArchBridge.mq5").read_text(
+        encoding="utf-8"
+    )
+    ticket_src = (DESK / "src" / "components" / "desk" / "trade-ticket.tsx").read_text(
+        encoding="utf-8"
+    )
+    quotes_src = (DESK / "src" / "lib" / "quotes.ts").read_text(encoding="utf-8")
+    assert "suggestScalpStops" in ticket_src
+    assert "defaultLotsForSymbolFirm" in ticket_src
+    assert "gold 0.40" in ticket_src
+    assert '"BTCUSD"' in quotes_src
+    assert 'if (key.startsWith("BTC")) return 1;' in quotes_src
+    assert "SCALP_SL_ATR = 1.0" in (DESK / "src" / "lib" / "live-order" / "atr-stops.ts").read_text(
+        encoding="utf-8"
+    )
+    assert "FTMO live master is EURUSD or US30 family only." in CONTEXT.read_text(encoding="utf-8")
+    assert "copySlTp must stay on while live copy is armed" in (
+        DESK / "src" / "lib" / "copy-fanout.ts"
+    ).read_text(encoding="utf-8")
+
+
+def test_quote_journal_is_before_write_request() -> None:
+    runner = RUNNER.read_text(encoding="utf-8")
+    wsf = WSF_LIVE.read_text(encoding="utf-8")
+    journal = QUOTE_JOURNAL.read_text(encoding="utf-8")
+    quotes = BRIDGE_QUOTES.read_text(encoding="utf-8")
+    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(
+        encoding="utf-8"
+    )
+    gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+    assert "openLiveQuoteJournal" in runner
+    assert "readBridgeQuote" in runner
+    assert runner.index("openLiveQuoteJournal") < runner.index(
+        "writeRequest(firm, paths, parsed, requestId)"
+    )
+    assert "openLiveQuoteJournal" in wsf
+    assert wsf.index("openLiveQuoteJournal") < wsf.index(
+        "writeRequest(paths, parsed, requestId)"
+    )
+    assert "journalBeforeSend" in journal
+    assert "requestedBid: null" in journal
+    assert 'reason: "missing"' in quotes
+    assert 'reason: "stale"' in quotes
+    assert "WriteQuotes()" in snapshots
+    assert "quotes.json" in snapshots
+    assert "apps/seven-desk/data/" in gitignore
+    assert "quote-journal" not in (DESK / "src" / "lib" / "copy-engine.ts").read_text()
+    assert "quote-journal" not in CONTEXT.read_text()
 
 
 def test_guards_node_unit() -> None:
     result = subprocess.run(
         ["node", "--experimental-strip-types", str(GUARDS_UNIT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_quote_journal_node_unit() -> None:
+    result = subprocess.run(
+        ["node", "--experimental-strip-types", "--import", str(FANOUT_ALIAS), str(QUOTE_JOURNAL_UNIT)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_atr_stops_node_unit() -> None:
+    result = subprocess.run(
+        ["node", "--experimental-strip-types", str(ATR_UNIT)],
         check=False,
         capture_output=True,
         text=True,

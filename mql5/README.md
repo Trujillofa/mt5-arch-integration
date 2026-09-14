@@ -85,6 +85,8 @@ MetaEditor **F7** compile order:
 
 Live-safe M5 dump: drop `MQL5/Files/mt5_arch/export_us_index.request` or run `Scripts/ExportUsIndexM5.mq5`. Do **not** run `ExportInstrumentHistory.mq5` on an open terminal — it kills that prefix. Operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md). Screen how-to (research): [docs/HOWTO-US-INDEX-SCALP.md](../docs/HOWTO-US-INDEX-SCALP.md).
 
+Strategy Tester: `InpServerUtcOffsetHours=-99` is silently 0 because `TimeGMT()==TimeCurrent()`. On GMT+2/+3 brokers set an explicit offset; live auto-detect is unchanged.
+
 ### Trading mode (FX / BTC indicators)
 
 | Mode | EMAs | Sessions | Spread | Fib | Chart |

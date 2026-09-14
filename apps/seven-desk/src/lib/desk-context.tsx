@@ -61,24 +61,30 @@ import {
 } from "@/lib/desk-store";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import { uid } from "@/lib/ids";
-import { alphaModifyBlocked } from "@/lib/live-order/guards";
+import {
+  alphaModifyBlocked,
+  ftmoLiveMasterSymbolAllowed,
+  liveUs30SlError,
+  openSlTpSideError,
+} from "@/lib/live-order/guards";
 import {
   COPY_FANOUT_SKIP,
   liveCopySlTpError,
-  liveUs30SlError,
+  liveOrderArmed,
+  liveUs30SlError as followUs30SlError,
   masterLotsForGroup,
 } from "@/lib/copy-fanout";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_CONFIRM, FUNDINGPIPS_LIVE_PENDING } from "@/lib/fundingpips/types";
-import { liveLotsForFirm } from "@/lib/firms";
+import { liveLotsForFirm, standardLotsForSymbol } from "@/lib/firms";
 import { NEOMAA_LIVE_CONFIRM, NEOMAA_LIVE_PENDING } from "@/lib/neomaa/types";
 import { FTMO_LIVE_CONFIRM, FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
 import { EA_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
-import { nudgeQuotes } from "@/lib/quotes";
+import { nudgeQuotes, quoteBySymbol } from "@/lib/quotes";
 import type {
   ConnectionStatus,
   CopySettings,
@@ -340,7 +346,7 @@ async function postLiveOrder(
     broker,
     action === "open" || action === "cancel" || action === "modify" ? "open" : "close"
   );
-  const volume = input.volume ?? liveLotsForFirm(broker);
+  const volume = liveLotsForFirm(broker, input.volume, standardLotsForSymbol(input.symbol));
   const orderType = input.orderType ?? "market";
   try {
     const response = await fetch(endpoint, {
@@ -643,7 +649,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             action.source === "pending"
               ? pendings.find((row) => row.ticket === action.ticket)
               : positions.find((row) => row.ticket === action.ticket);
-          const us30Err = liveUs30SlError(action.symbol, action.sl, true);
+          const us30Err = followUs30SlError(action.symbol, action.sl, true);
           placeFollowMaster({
             ticket: action.ticket,
             symbol: action.symbol,
@@ -826,26 +832,48 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   const placeTrade = useCallback((input: MasterTradeInput) => {
     const snapshot = getDeskSnapshot();
     const master = snapshot.accounts.find((row) => row.id === snapshot.masterId);
+    const copyErr = liveCopySlTpError(snapshot);
+    if (copyErr) return copyErr;
+    const slErr = liveUs30SlError(input.symbol, input.sl, liveOrderArmed(snapshot));
+    if (slErr) return slErr;
+    const quote = quoteBySymbol(snapshot.quotes, input.symbol);
+    const refPrice =
+      input.price != null && input.price > 0
+        ? input.price
+        : quote
+          ? input.side === "buy"
+            ? quote.ask
+            : quote.bid
+          : null;
+    const sideErr = openSlTpSideError(
+      input.side === "sell" ? "SELL" : "BUY",
+      input.sl,
+      input.tp,
+      refPrice,
+      input.orderType ?? "market"
+    );
+    if (sideErr) return sideErr.reason;
     if (snapshot.ftmoLiveMaster) {
       if (master?.firmId !== "ftmo") {
         return "FTMO live master is armed but FTMO is not the master.";
       }
-      if (input.symbol !== "EURUSD" && input.symbol !== "EURUSDc") {
-        return "FTMO live master is EURUSD only.";
+      if (!ftmoLiveMasterSymbolAllowed(input.symbol)) {
+        return "FTMO live master is EURUSD or US30 family only.";
       }
+      const liveSymbol = input.symbol === "EURUSDc" ? "EURUSD" : input.symbol;
       setBusy(true);
       const handle = window.setTimeout(() => {
         void (async () => {
           try {
             const liveInput: MasterTradeInput = {
               ...input,
-              symbol: "EURUSD",
+              symbol: liveSymbol,
               lots: liveLotsForFirm("ftmo", input.lots),
               orderType: input.orderType ?? "market",
             };
             const payload = await postLiveOrder("ftmo", "open", {
               confirm: ftmoConfirm.current || FTMO_LIVE_CONFIRM,
-              symbol: "EURUSD",
+              symbol: liveSymbol,
               side: liveInput.side,
               volume: liveInput.lots,
               price: liveInput.price,

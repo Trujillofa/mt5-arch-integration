@@ -426,7 +426,8 @@ bool DeskOrdSendPending(const string symbol, const ENUM_ORDER_TYPE type, const d
 
 bool DeskOrdSendDeal(const string symbol, const ENUM_ORDER_TYPE type, const double volume,
                      const ulong position, const ENUM_ORDER_TYPE_FILLING filling,
-                     const int digits, const string comment, MqlTradeResult &res)
+                     const int digits, const string comment,
+                     const double sl, const double tp, MqlTradeResult &res)
   {
    MqlTick tick;
    if(!SymbolInfoTick(symbol, tick) || tick.ask <= 0.0 || tick.bid <= 0.0)
@@ -446,6 +447,10 @@ bool DeskOrdSendDeal(const string symbol, const ENUM_ORDER_TYPE type, const doub
    req.type_time = ORDER_TIME_GTC;
    if(position > 0)
       req.position = position;
+   if(sl > 0.0)
+      req.sl = NormalizeDouble(sl, digits);
+   if(tp > 0.0)
+      req.tp = NormalizeDouble(tp, digits);
    ResetLastError();
    return OrderSend(req, res);
   }
@@ -504,6 +509,46 @@ bool DeskOrdSendSltp(const ulong ticket, const double sl, const double tp,
    req.tp = tp > 0.0 ? NormalizeDouble(tp, digits) : 0.0;
    ResetLastError();
    return OrderSend(req, res);
+  }
+
+ulong DeskOrdPositionAfterDeal(const string symbol, const ulong deal, const ulong order_hint)
+  {
+   if(deal > 0 && HistoryDealSelect(deal))
+     {
+      ulong pos = (ulong)HistoryDealGetInteger(deal, DEAL_POSITION_ID);
+      if(pos > 0 && PositionSelectByTicket(pos))
+         return pos;
+     }
+   if(order_hint > 0 && PositionSelectByTicket(order_hint))
+      return order_hint;
+   return DeskOrdFindPosition(symbol);
+  }
+
+bool DeskOrdEnsureOpenSltp(const string symbol, const ulong position, const double sl, const double tp,
+                           const int digits, MqlTradeResult &res)
+  {
+   if(sl <= 0.0 && tp <= 0.0)
+      return true;
+   ulong ticket = position;
+   if(ticket == 0 || !PositionSelectByTicket(ticket))
+      ticket = DeskOrdFindPosition(symbol);
+   if(ticket == 0 || !PositionSelectByTicket(ticket))
+      return false;
+   double cur_sl = PositionGetDouble(POSITION_SL);
+   double cur_tp = PositionGetDouble(POSITION_TP);
+   bool sl_ok = (sl <= 0.0) || (cur_sl > 0.0);
+   bool tp_ok = (tp <= 0.0) || (cur_tp > 0.0);
+   if(sl_ok && tp_ok)
+      return true;
+   if(!DeskOrdSendSltp(ticket, sl, tp, digits, res))
+      return false;
+   if(!DeskOrdTradeRetOk(res.retcode))
+      return false;
+   if(!PositionSelectByTicket(ticket))
+      return false;
+   if(sl > 0.0 && PositionGetDouble(POSITION_SL) <= 0.0)
+      return false;
+   return true;
   }
 
 ulong DeskOrdResolvePositionTicket(const string symbol)
@@ -820,10 +865,10 @@ void DeskOrdProcessRequest()
       double open_price = PositionGetDouble(POSITION_PRICE_OPEN);
       MqlTradeResult res;
       bool sent = DeskOrdSendDeal(symbol, ctype, close_vol, position_ticket,
-                                  filling, digits, comment_close, res);
+                                  filling, digits, comment_close, 0.0, 0.0, res);
       if(!sent && DeskOrdIsNetting())
          sent = DeskOrdSendDeal(symbol, ctype, close_vol, 0,
-                                filling, digits, comment_close, res);
+                                filling, digits, comment_close, 0.0, 0.0, res);
       if(!sent || (res.retcode != TRADE_RETCODE_DONE && res.retcode != TRADE_RETCODE_DONE_PARTIAL))
         {
          DeskOrdWriteResult(DeskOrdFail("close", "OrderSend close rejected — not retrying",
@@ -856,12 +901,32 @@ void DeskOrdProcessRequest()
 
    ENUM_ORDER_TYPE otype = (g_desk_side == "SELL") ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
    MqlTradeResult ores;
-   bool osent = DeskOrdSendDeal(symbol, otype, volume, 0, filling, digits, comment_open, ores);
-   if(!osent || (ores.retcode != TRADE_RETCODE_DONE && ores.retcode != TRADE_RETCODE_DONE_PARTIAL))
+   bool osent = DeskOrdSendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
+                                g_desk_sl, g_desk_tp, ores);
+   if(!osent || !DeskOrdTradeRetOk(ores.retcode))
      {
-      DeskOrdWriteResult(DeskOrdFail("open", "OrderSend rejected — not retrying",
-                           login, server, (int)ores.retcode,
-                           ores.comment + " last=" + IntegerToString(GetLastError())));
+      if((g_desk_sl > 0.0 || g_desk_tp > 0.0) && ores.retcode == TRADE_RETCODE_INVALID_STOPS)
+         osent = DeskOrdSendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
+                                 0.0, 0.0, ores);
+      if(!osent || !DeskOrdTradeRetOk(ores.retcode))
+        {
+         DeskOrdWriteResult(DeskOrdFail("open", "OrderSend rejected — not retrying",
+                              login, server, (int)ores.retcode,
+                              ores.comment + " last=" + IntegerToString(GetLastError())));
+         return;
+        }
+     }
+   if(g_desk_sl > 0.0 || g_desk_tp > 0.0)
+      Sleep(200);
+   ulong pos = DeskOrdPositionAfterDeal(symbol, ores.deal, ores.order);
+   MqlTradeResult sres;
+   ZeroMemory(sres);
+   if(!DeskOrdEnsureOpenSltp(symbol, pos, g_desk_sl, g_desk_tp, digits, sres))
+     {
+      DeskOrdWriteResult(DeskOrdFail("sltp",
+                           "market filled but SL/TP missing — SLTP failed; flatten the naked position",
+                           login, server, (int)sres.retcode,
+                           sres.comment + " deal_open=" + IntegerToString((long)ores.deal)));
       return;
      }
    DeskOrdWriteResult(
@@ -877,6 +942,8 @@ void DeskOrdProcessRequest()
       "  \"symbol\": \"" + DeskOrdEsc(symbol) + "\",\n"
       "  \"volume\": " + DoubleToString(volume, 2) + ",\n"
       "  \"side\": \"" + DeskOrdEsc(g_desk_side) + "\",\n"
+      "  \"sl\": " + DoubleToString(g_desk_sl, digits) + ",\n"
+      "  \"tp\": " + DoubleToString(g_desk_tp, digits) + ",\n"
       "  \"order\": " + IntegerToString((long)ores.order) + ",\n"
       "  \"deal_open\": " + IntegerToString((long)ores.deal) + ",\n"
       "  \"open_price\": " + DoubleToString(ores.price, digits) + ",\n"

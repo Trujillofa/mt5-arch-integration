@@ -21,6 +21,7 @@ import {
   COPY_FANOUT_SKIP,
   armedCopyBrokers,
   liveCopySlTpError,
+  liveOrderArmed,
   needsSizeConfirm,
   sizeConfirmLines,
   worstLegMs,
@@ -83,6 +84,46 @@ desk = {
 const armed = armedCopyBrokers(desk);
 assert.deepEqual(armed.sort(), ["fortraders", "fundednext", "fundingpips", "neomaa", "wsf"].sort());
 assert.equal(armed.includes("alphacapital"), false);
+assert.equal(liveOrderArmed(desk), true);
+assert.equal(liveCopySlTpError(desk), null);
+
+const copyOff = {
+  ...desk,
+  copySettings: desk.copySettings.map((row) =>
+    row.slaveAccountId === ACCOUNT_IDS.wsf ? { ...row, copySlTp: false } : row
+  ),
+};
+assert.match(liveCopySlTpError(copyOff) ?? "", /copySlTp must stay on/);
+const blockedCopy = placeMasterTrade(copyOff, {
+  symbol: "EURUSD",
+  side: "buy",
+  lots: 0.01,
+  sl: null,
+  tp: null,
+  price: 1.08,
+  orderType: "buy_limit",
+});
+assert.match(blockedCopy.error ?? "", /copySlTp must stay on/);
+
+const us30Naked = placeMasterTrade(desk, {
+  symbol: "US30",
+  side: "buy",
+  lots: 0.01,
+  sl: null,
+  tp: null,
+  orderType: "market",
+});
+assert.match(us30Naked.error ?? "", /live US30 requires sl/);
+const us30Ok = placeMasterTrade(desk, {
+  symbol: "US30",
+  side: "buy",
+  lots: 0.01,
+  sl: 39000,
+  tp: 39240,
+  orderType: "market",
+});
+assert.ok(us30Ok.groupId);
+assert.equal(us30Ok.error, undefined);
 
 const lines = sizeConfirmLines(4, armed, true);
 assert.equal(lines.some((row) => row.id === "ftmo" && row.lots === 4), true);

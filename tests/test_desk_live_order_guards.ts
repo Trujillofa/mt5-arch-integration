@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import {
   LIVE_ORDER_VOLUME_HARD_MAX,
+  MIN_DESK_MARKET_SLTP_VERSION,
   MIN_DESK_MODIFY_VERSION,
   alphaModifyBlocked,
   alphaStartupChartSymbol,
@@ -18,6 +19,8 @@ import {
   isTradeServerDisconnected,
   isUs30Family,
   oneshotChartSymbol,
+  ftmoLiveMasterSymbolAllowed,
+  marketNeedsSltpVersion,
   parseLiveOrderRequest,
   parseRequestFields,
   quotesPathMatchesSymbol,
@@ -35,10 +38,15 @@ import {
   FUNDEDNEXT_SCALE,
   FUNDINGPIPS_SCALE,
   STANDARD_LOT,
+  GOLD_STANDARD_LOT,
+  BTC_STANDARD_LOT,
   defaultLotsForFirm,
+  defaultLotsForSymbolFirm,
+  standardLotsForSymbol,
   liveLotsForFirm,
   planLiveLots,
 } from "../apps/seven-desk/src/lib/firms.ts";
+import { quoteContractSize } from "../apps/seven-desk/src/lib/quotes.ts";
 
 assert.equal(isTradeServerDisconnected(false), true);
 assert.equal(isTradeServerDisconnected(true), false);
@@ -287,13 +295,24 @@ if (limit.ok) {
 }
 
 const noPrice = parseLiveOrderRequest({
-  body: { ...base, action: "open", order_type: "buy_limit", symbol: "US30", volume: 4, volume_confirm: true },
+  body: {
+    ...base,
+    action: "open",
+    order_type: "buy_limit",
+    symbol: "US30",
+    sl: 52500,
+    volume: 4,
+    volume_confirm: true,
+  },
   expectedConfirm: "FTMO-541163357",
   defaultSymbol: "EURUSD",
   firmId: "ftmo",
 });
 assert.equal(noPrice.ok, true);
-if (noPrice.ok) assert.equal(noPrice.fields.price, null);
+if (noPrice.ok) {
+  assert.equal(noPrice.fields.price, null);
+  assert.equal(noPrice.fields.sl, 52500);
+}
 
 const defaultMarket = parseLiveOrderRequest({
   body: { ...base, action: "open", volume_min: true },
@@ -546,6 +565,78 @@ if (!alphaModify.ok) {
 assert.ok(alphaModifyBlocked("alphacapital", "modify"));
 assert.equal(alphaModifyBlocked("ftmo", "modify"), null);
 assert.deepEqual(MIN_DESK_MODIFY_VERSION, [1, 27]);
+assert.deepEqual(MIN_DESK_MARKET_SLTP_VERSION, [1, 28]);
+assert.equal(ftmoLiveMasterSymbolAllowed("EURUSD"), true);
+assert.equal(ftmoLiveMasterSymbolAllowed("US30"), true);
+assert.equal(ftmoLiveMasterSymbolAllowed("DJ30.c"), true);
+assert.equal(ftmoLiveMasterSymbolAllowed("XAUUSD"), false);
+
+const us30MarketBare = parseLiveOrderRequest({
+  body: { ...base, action: "open", order_type: "market", symbol: "US30", volume: 4, volume_confirm: true },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(us30MarketBare.ok, false);
+if (!us30MarketBare.ok) {
+  assert.equal(us30MarketBare.stage, "sl");
+  assert.match(us30MarketBare.reason, /live US30 requires sl/);
+}
+
+const us30MarketLevels = parseLiveOrderRequest({
+  body: {
+    ...base,
+    action: "open",
+    order_type: "market",
+    symbol: "US30",
+    side: "buy",
+    sl: 52420,
+    tp: 52580,
+    volume: 4,
+    volume_confirm: true,
+  },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(us30MarketLevels.ok, true);
+if (us30MarketLevels.ok) {
+  assert.equal(us30MarketLevels.fields.sl, 52420);
+  assert.equal(us30MarketLevels.fields.tp, 52580);
+  assert.equal(us30MarketLevels.fields.orderType, "market");
+  assert.equal(marketNeedsSltpVersion(us30MarketLevels.fields), true);
+}
+
+const eurusdMarketBare = parseLiveOrderRequest({
+  body: { ...base, action: "open", order_type: "market", volume_min: true },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(eurusdMarketBare.ok, true);
+if (eurusdMarketBare.ok) {
+  assert.equal(eurusdMarketBare.fields.sl, null);
+  assert.equal(marketNeedsSltpVersion(eurusdMarketBare.fields), false);
+}
+
+const marketWrongTp = parseLiveOrderRequest({
+  body: {
+    ...base,
+    action: "open",
+    order_type: "market",
+    symbol: "US30",
+    side: "buy",
+    sl: 52580,
+    tp: 52420,
+    volume: 4,
+    volume_confirm: true,
+  },
+  expectedConfirm: "FTMO-541163357",
+  defaultSymbol: "EURUSD",
+  firmId: "ftmo",
+});
+assert.equal(marketWrongTp.ok, false);
+if (!marketWrongTp.ok) assert.match(marketWrongTp.reason, /sl < tp/);
 
 const cancel = parseLiveOrderRequest({
   body: { ...base, action: "cancel", ticket: 123456 },
@@ -608,8 +699,20 @@ if (offsetStop.ok) {
 
 assert.equal(STANDARD_LOT, 4);
 assert.equal(DEFAULT_DESK_LOTS, STANDARD_LOT);
+assert.equal(GOLD_STANDARD_LOT, 0.4);
+assert.equal(BTC_STANDARD_LOT, 0.04);
 assert.equal(FUNDEDNEXT_SCALE, 0.1);
 assert.equal(FUNDINGPIPS_SCALE, 0.2);
+assert.equal(standardLotsForSymbol("EURUSD"), 4);
+assert.equal(standardLotsForSymbol("US30"), 4);
+assert.equal(standardLotsForSymbol("NAS100"), 4);
+assert.equal(standardLotsForSymbol("XAUUSD"), 0.4);
+assert.equal(standardLotsForSymbol("GOLD"), 0.4);
+assert.equal(standardLotsForSymbol("BTCUSD"), 0.04);
+assert.equal(standardLotsForSymbol("BTCUSDc"), 0.04);
+assert.equal(quoteContractSize("XAUUSD"), 100);
+assert.equal(quoteContractSize("BTCUSD"), 1);
+assert.equal(quoteContractSize("US30"), 1);
 assert.equal(defaultLotsForFirm("ftmo"), 4);
 assert.equal(defaultLotsForFirm("wsf"), 4);
 assert.equal(defaultLotsForFirm("alphacapital"), 4);
@@ -620,6 +723,13 @@ assert.equal(defaultLotsForFirm("fundingpips"), 0.8);
 assert.equal(defaultLotsForFirm("fundednext", 2), 0.2);
 assert.equal(defaultLotsForFirm("fundingpips", 2), 0.4);
 assert.equal(defaultLotsForFirm("wsf", 2), 2);
+assert.equal(defaultLotsForSymbolFirm("ftmo", "XAUUSD"), 0.4);
+assert.equal(defaultLotsForSymbolFirm("fundednext", "XAUUSD"), 0.04);
+assert.equal(defaultLotsForSymbolFirm("fundingpips", "XAUUSD"), 0.08);
+assert.equal(defaultLotsForSymbolFirm("ftmo", "BTCUSD"), 0.04);
+assert.equal(defaultLotsForSymbolFirm("fundednext", "BTCUSD"), 0.01);
+assert.equal(defaultLotsForSymbolFirm("fundingpips", "BTCUSD"), 0.01);
+assert.equal(defaultLotsForSymbolFirm("wsf", "BTCUSD"), 0.04);
 assert.equal(liveLotsForFirm("ftmo", 0.01), 0.01);
 assert.equal(liveLotsForFirm("fundednext", 0.01), 0.01);
 assert.equal(liveLotsForFirm("fundingpips", 0.01), 0.01);
@@ -701,6 +811,28 @@ assert.equal(
     tradeAllowed: true,
     algoAllowed: true,
     action: "modify",
+  }),
+  null
+);
+assert.match(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 27],
+    tradeAllowed: true,
+    algoAllowed: true,
+    action: "open",
+    needsMarketSltp: true,
+  }) ?? "",
+  /v1.28/
+);
+assert.equal(
+  eaNotReadyReason({
+    heartbeatFresh: true,
+    version: [1, 28],
+    tradeAllowed: true,
+    algoAllowed: true,
+    action: "open",
+    needsMarketSltp: true,
   }),
   null
 );

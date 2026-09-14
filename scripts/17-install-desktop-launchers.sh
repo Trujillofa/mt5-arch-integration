@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Install top-level app menu + Desktop launchers for broker MT5 prefixes.
+# Install top-level app-menu launchers for broker MT5 prefixes.
 # Wine nested wine/Programs entries often have broken tiny icons; this installs
-# proper PNGs and direct /portable launchers.
+# proper PNGs and direct /portable launchers, hides those Wine clones, and
+# removes leftover ~/Desktop/*-mt5.desktop copies (Omarchy has no desktop icons).
 #
 # Usage: ./scripts/17-install-desktop-launchers.sh
 set -euo pipefail
@@ -28,6 +29,9 @@ except ImportError as exc:  # pragma: no cover
     ) from exc
 
 script_dir = Path(sys.argv[1]).resolve()
+sys.path.insert(0, str(script_dir))
+from hide_wine_menu_shortcuts import hide_wine_programs, remove_desktop_mt5_copies
+
 force_src = script_dir / "wine-net" / "force_src_bind.c"
 force_so = script_dir / "wine-net" / "force_src_bind.so"
 if force_src.is_file() and (
@@ -86,10 +90,9 @@ BRANDS = {
 }
 
 apps = Path.home() / ".local/share/applications"
-desktop_dir = Path.home() / "Desktop"
 hicolor = Path.home() / ".local/share/icons/hicolor"
 bin_dir = Path.home() / ".local/bin"
-for d in (apps, desktop_dir, bin_dir):
+for d in (apps, bin_dir):
     d.mkdir(parents=True, exist_ok=True)
 sizes = [16, 24, 32, 48, 64, 128, 256]
 
@@ -172,15 +175,21 @@ Keywords=mt5;metatrader;forex;{key};
 StartupNotify=true
 StartupWMClass=terminal64.exe
 """
-    for dest in (apps / b["desktop_name"], desktop_dir / b["desktop_name"]):
-        dest.write_text(desktop)
-        dest.chmod(0o755)
-        subprocess.run(
-            ["gio", "set", str(dest), "metadata::trusted", "true"],
-            check=False,
-            capture_output=True,
-        )
+    dest = apps / b["desktop_name"]
+    dest.write_text(desktop)
+    dest.chmod(0o755)
+    subprocess.run(
+        ["gio", "set", str(dest), "metadata::trusted", "true"],
+        check=False,
+        capture_output=True,
+    )
     print(f"installed {key}: {b['desktop_name']} + mt5-{key}")
+
+hid = hide_wine_programs(apps)
+print(f"hid {hid} Wine Start Menu shortcut(s)")
+removed = remove_desktop_mt5_copies(Path.home() / "Desktop")
+for path in removed:
+    print(f"removed Desktop copy {path.name}")
 
 subprocess.run(
     ["gtk-update-icon-cache", "-f", "-t", str(hicolor)],

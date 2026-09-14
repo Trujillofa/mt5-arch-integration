@@ -132,4 +132,6 @@ export interface WsfLiveOrderResult {
   stoppedWsfPids?: number[];
   restoreNote?: string;
   sendPath?: "ea" | "oneshot";
+  /** Set when the request→fill quote journal failed. Never flips ok. */
+  journalError?: string;
 }

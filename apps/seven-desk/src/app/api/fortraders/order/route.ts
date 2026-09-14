@@ -1,4 +1,4 @@
-import { defaultLotsForFirm } from "@/lib/firms";
+import { defaultLotsHelp } from "@/lib/firms";
 import { handleLiveOrderPost } from "@/lib/live-order/runner";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET() {
       endpoint: "/api/fortraders/order",
       stage: "method",
       reason:
-        `GET is read-only. Live Fortraders OrderSend requires POST { live: true, confirm: "FORTRADERS-737150", action: "open" }. Default ${defaultLotsForFirm("fortraders")} lots (market / limit / stop). volume_min: true is the 0.01 prove.`,
+        `GET is read-only. Live Fortraders OrderSend requires POST { live: true, confirm: "FORTRADERS-737150", action: "open" }. ${defaultLotsHelp("fortraders")}`,
       winePrefix: ".mt5-fortraders",
     },
     { status: 405 }

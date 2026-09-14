@@ -96,6 +96,7 @@ apps/seven-desk/.env.local
 apps/seven-desk/.env*.local
 apps/seven-desk/tsconfig.tsbuildinfo
 apps/seven-desk/next-env.d.ts
+apps/seven-desk/data/
 
 # Local Cursor MCP client configs (may contain LAN binds / inherited tokens)
 .cursor/mcp.json
