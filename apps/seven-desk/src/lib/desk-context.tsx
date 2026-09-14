@@ -12,24 +12,32 @@ import {
 } from "react";
 import {
   applyQuoteMarks,
+  diffFollowTickets,
   flattenAllTargets,
   liveCloseAlreadyFlat,
   liveGroupPositions,
   pendingLiveSlaveEvents,
 } from "@/lib/copy-engine";
 import {
+  applyFollowLevels,
+  applyFollowTicketFill,
   applyLiveCopyResult,
   applyPositionModify,
+  dropLiveDeskRow,
   flattenPosition,
   getDeskSnapshot,
+  getFollowSession,
   getPersistError,
   getServerDeskSnapshot,
   ingestBridgePendings as ingestBridgePendingsStore,
   ingestBridgePositions as ingestBridgePositionsStore,
+  markFollowSlaveCatchup,
   markLiveCloseFailed,
+  placeFollowMaster,
   placeLiveMaster,
   placeTrade as placeTradeStore,
   recordLiveHttpBlotter,
+  rememberFtmoBridge as rememberFtmoBridgeStore,
   resetDemo as resetDemoStore,
   resolveGroup,
   selectAccount as selectAccountStore,
@@ -39,25 +47,34 @@ import {
   setFortradersLiveCopy as setFortradersLiveCopyStore,
   setFundingpipsLiveCopy as setFundingpipsLiveCopyStore,
   setNeomaaLiveCopy as setNeomaaLiveCopyStore,
+  setFtmoFollowTerminal as setFtmoFollowTerminalStore,
   setFtmoLiveMaster as setFtmoLiveMasterStore,
+  setFollowSession,
   setMaster as setMasterStore,
   setSymbolMap as setSymbolMapStore,
   setWsfLiveCopy as setWsfLiveCopyStore,
+  takeFollowSlaveCatchup,
   subscribeDesk,
   updateAccount as updateAccountStore,
   updateCopy as updateCopyStore,
   patchDesk,
 } from "@/lib/desk-store";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
+import { uid } from "@/lib/ids";
 import { alphaModifyBlocked } from "@/lib/live-order/guards";
-import { COPY_FANOUT_SKIP, masterLotsForGroup } from "@/lib/copy-fanout";
+import {
+  COPY_FANOUT_SKIP,
+  liveCopySlTpError,
+  liveUs30SlError,
+  masterLotsForGroup,
+} from "@/lib/copy-fanout";
 import { ALPHACAPITAL_LIVE_CONFIRM, ALPHACAPITAL_LIVE_PENDING } from "@/lib/alphacapital/types";
 import { FUNDEDNEXT_LIVE_CONFIRM, FUNDEDNEXT_LIVE_PENDING } from "@/lib/fundednext/types";
 import { FORTRADERS_LIVE_CONFIRM, FORTRADERS_LIVE_PENDING } from "@/lib/fortraders/types";
 import { FUNDINGPIPS_LIVE_CONFIRM, FUNDINGPIPS_LIVE_PENDING } from "@/lib/fundingpips/types";
 import { liveLotsForFirm } from "@/lib/firms";
 import { NEOMAA_LIVE_CONFIRM, NEOMAA_LIVE_PENDING } from "@/lib/neomaa/types";
-import { FTMO_LIVE_CONFIRM } from "@/lib/ftmo/types";
+import { FTMO_LIVE_CONFIRM, FTMO_LIVE_PENDING } from "@/lib/ftmo/types";
 import { EA_ORDER_CLIENT_BUDGET_MS } from "@/lib/live-order/guards";
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_CONFIRM, WSF_LIVE_PENDING } from "@/lib/wsf/constants";
@@ -91,6 +108,7 @@ interface DeskApi {
   resetDemo: () => void;
   setWsfLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFtmoLiveMaster: (enabled: boolean, confirm: string) => string | null;
+  setFtmoFollowTerminal: (enabled: boolean, confirm: string) => string | null;
   setFundednextLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setAlphacapitalLiveCopy: (enabled: boolean, confirm: string) => string | null;
   setFundingpipsLiveCopy: (enabled: boolean, confirm: string) => string | null;
@@ -106,6 +124,11 @@ interface DeskApi {
     broker: LiveBroker,
     positions: BridgeOpenPosition[]
   ) => void;
+  rememberFtmoBridge: (positions: BridgeOpenPosition[], pendings: BridgePendingOrder[]) => void;
+  followFtmoTerminal: (
+    positions: BridgeOpenPosition[],
+    pendings: BridgePendingOrder[]
+  ) => Promise<void>;
 }
 
 const DeskContext = createContext<DeskApi | null>(null);
@@ -149,6 +172,16 @@ function brokerForPendingReason(reason: string | undefined): LiveBroker | null {
   return null;
 }
 
+function pendingReasonFor(broker: LiveBroker): string {
+  if (broker === "wsf") return WSF_LIVE_PENDING;
+  if (broker === "fundednext") return FUNDEDNEXT_LIVE_PENDING;
+  if (broker === "fundingpips") return FUNDINGPIPS_LIVE_PENDING;
+  if (broker === "neomaa") return NEOMAA_LIVE_PENDING;
+  if (broker === "fortraders") return FORTRADERS_LIVE_PENDING;
+  if (broker === "alphacapital") return ALPHACAPITAL_LIVE_PENDING;
+  return FTMO_LIVE_PENDING;
+}
+
 function winePrefixFor(broker: LiveBroker): string {
   if (broker === "wsf") return ".mt5-wsf";
   if (broker === "ftmo") return ".mt5-ftmo";
@@ -168,6 +201,62 @@ type ConfirmRefs = {
   neo: string;
   ftt: string;
 };
+
+async function closeFollowGroup(
+  groupId: string,
+  refs: ConfirmRefs,
+  failures: string[]
+): Promise<void> {
+  const snapshot = getDeskSnapshot();
+  const targets = snapshot.positions.filter(
+    (row) => row.liveBroker && row.groupId === groupId
+  );
+  for (const row of targets) {
+    if (!row.liveBroker || COPY_FANOUT_SKIP.has(row.liveBroker) || row.liveBroker === "ftmo") {
+      dropLiveDeskRow(
+        row.id,
+        `follow · FTMO ticket ${row.liveOrder ?? "—"} · ${row.livePending ? "cancel" : "close"} local`,
+        row.livePending ? "cancel" : "close"
+      );
+      continue;
+    }
+    const symbol =
+      row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+    const payload = await postLiveOrder(row.liveBroker, row.livePending ? "cancel" : "close", {
+      confirm: confirmFor(row.liveBroker, refs),
+      symbol,
+      side: row.side,
+      ticket: row.liveOrder ?? null,
+      orderType: row.orderType ?? (row.livePending ? (row.side === "sell" ? "sell_limit" : "buy_limit") : "market"),
+    });
+    const ms = payload.holdMs;
+    const ticket = payload.order ?? payload.ticket ?? row.liveOrder;
+    recordLiveHttpBlotter({
+      accountId: row.accountId,
+      role: "slave",
+      symbol,
+      side: row.side,
+      lots: row.lots,
+      price: row.entry,
+      orderType: row.orderType,
+      status: liveCloseAlreadyFlat(payload) ? "filled" : "error",
+      reason: liveCloseAlreadyFlat(payload)
+        ? `follow · FTMO ticket ${ticket ?? "—"} · HTTP ${row.livePending ? "cancel" : "close"} · ${ms ?? "—"}ms`
+        : payload.reason || `${row.liveBroker} live close failed`,
+      liveTicket: ticket ?? undefined,
+      latencyMs: ms,
+      httpAction: row.livePending ? "cancel" : "close",
+      groupId: row.groupId,
+    });
+    if (liveCloseAlreadyFlat(payload)) {
+      flattenPosition(row.id);
+    } else {
+      const reason = payload.reason || `${row.liveBroker} live close failed`;
+      markLiveCloseFailed(row.id, `${reason} — desk row kept`);
+      failures.push(`${row.liveBroker}: ${reason}`);
+    }
+  }
+}
 
 async function closeLiveGroup(
   positionId: string,
@@ -342,6 +431,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     if (!account || account.firmId !== "ftmo") {
       ftmoConfirm.current = "";
       setFtmoLiveMasterStore(false);
+      setFtmoFollowTerminalStore(false);
     }
     setMasterStore(id);
   }, []);
@@ -396,6 +486,19 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     return null;
   }, []);
 
+  const setFtmoFollowTerminal = useCallback((enabled: boolean, confirm: string) => {
+    if (enabled && confirm !== FTMO_LIVE_CONFIRM) {
+      return `Type ${FTMO_LIVE_CONFIRM} to arm FTMO terminal follow.`;
+    }
+    const master = getDeskSnapshot().accounts.find((row) => row.id === getDeskSnapshot().masterId);
+    if (enabled && master?.firmId !== "ftmo") {
+      return "Make FTMO the master before arming terminal follow.";
+    }
+    ftmoConfirm.current = enabled ? confirm || ftmoConfirm.current : ftmoConfirm.current;
+    setFtmoFollowTerminalStore(enabled);
+    return null;
+  }, []);
+
   const setFundednextLiveCopy = useCallback((enabled: boolean, confirm: string) => {
     if (enabled && confirm !== FUNDEDNEXT_LIVE_CONFIRM) {
       return `Type ${FUNDEDNEXT_LIVE_CONFIRM} to arm FundedNext live copy.`;
@@ -442,6 +545,13 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
   const ingestBridgePositions = useCallback(
     (accountId: string, broker: LiveBroker, positions: BridgeOpenPosition[]) => {
       ingestBridgePositionsStore(accountId, broker, positions);
+    },
+    []
+  );
+
+  const rememberFtmoBridge = useCallback(
+    (positions: BridgeOpenPosition[], pendings: BridgePendingOrder[]) => {
+      rememberFtmoBridgeStore(positions, pendings);
     },
     []
   );
@@ -506,6 +616,212 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       })
     );
   }, []);
+
+  const followFtmoTerminal = useCallback(
+    async (positions: BridgeOpenPosition[], pendings: BridgePendingOrder[]) => {
+      const snapshot = getDeskSnapshot();
+      if (!snapshot.ftmoFollowTerminal) return;
+      const refs = {
+        wsf: wsfConfirm.current,
+        ftmo: ftmoConfirm.current,
+        fn: fnConfirm.current,
+        acg: acgConfirm.current,
+        fpips: fpipsConfirm.current,
+        neo: neoConfirm.current,
+        ftt: fttConfirm.current,
+      };
+      const catchup = takeFollowSlaveCatchup();
+      const diff = diffFollowTickets(getFollowSession(), positions, pendings, snapshot.positions);
+      setFollowSession(diff.next);
+      const sltpErr = liveCopySlTpError(snapshot);
+      for (const action of diff.actions) {
+        if (action.kind === "open") {
+          const groupId =
+            diff.next.pendingToGroup.get(action.ticket) ?? diff.next.followGroups.get(action.ticket);
+          if (!groupId) continue;
+          const src =
+            action.source === "pending"
+              ? pendings.find((row) => row.ticket === action.ticket)
+              : positions.find((row) => row.ticket === action.ticket);
+          const us30Err = liveUs30SlError(action.symbol, action.sl, true);
+          placeFollowMaster({
+            ticket: action.ticket,
+            symbol: action.symbol,
+            side: action.side,
+            lots: action.lots,
+            sl: action.sl,
+            tp: action.tp,
+            orderType: action.orderType,
+            livePending: action.livePending,
+            groupId,
+            price: src?.price ?? null,
+            skipSlaves: Boolean(sltpErr) || Boolean(us30Err),
+          });
+          if (sltpErr) {
+            const ftmo = getDeskSnapshot().accounts.find((row) => row.firmId === "ftmo");
+            recordLiveHttpBlotter({
+              accountId: ftmo?.id ?? snapshot.masterId,
+              role: "master",
+              symbol: action.symbol,
+              side: action.side,
+              lots: action.lots,
+              price: src?.price ?? 0,
+              orderType: action.orderType,
+              status: "error",
+              reason: `follow · FTMO ticket ${action.ticket} · ${sltpErr}`,
+              liveTicket: action.ticket,
+              httpAction: "send",
+              groupId,
+            });
+            continue;
+          }
+          if (us30Err) continue;
+          resolveGroup(groupId);
+          await fanOutLiveSlaves(groupId);
+          continue;
+        }
+        if (action.kind === "fill") {
+          applyFollowTicketFill({
+            pendingTicket: action.pendingTicket,
+            positionTicket: action.positionTicket,
+            groupId: action.groupId,
+            position: positions.find((row) => row.ticket === action.positionTicket),
+          });
+          markFollowSlaveCatchup(action.groupId);
+          continue;
+        }
+        if (action.kind === "close" || action.kind === "cancel") {
+          const failures: string[] = [];
+          await closeFollowGroup(action.groupId, refs, failures);
+          if (failures.length) setActionError(failures.join(" · "));
+          continue;
+        }
+        if (action.kind === "modify") {
+          applyFollowLevels(action.groupId, action.sl, action.tp);
+          const legs = getDeskSnapshot().positions.filter(
+            (row) =>
+              row.groupId === action.groupId &&
+              row.liveBroker &&
+              row.liveBroker !== "ftmo" &&
+              !COPY_FANOUT_SKIP.has(row.liveBroker)
+          );
+          for (const row of legs) {
+            if (!row.liveBroker) continue;
+            const symbol =
+              row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+            const payload = await postLiveOrder(row.liveBroker, "modify", {
+              confirm: confirmFor(row.liveBroker, refs),
+              symbol,
+              side: row.side,
+              sl: action.sl,
+              tp: action.tp,
+              ticket: row.liveOrder ?? null,
+              orderType: "market",
+            });
+            const ms = payload.holdMs;
+            const ticket = payload.ticket ?? payload.position ?? row.liveOrder;
+            recordLiveHttpBlotter({
+              accountId: row.accountId,
+              role: "slave",
+              symbol,
+              side: row.side,
+              lots: row.lots,
+              price: row.entry,
+              orderType: row.orderType,
+              status: payload.ok ? "filled" : "error",
+              reason: payload.ok
+                ? `follow · FTMO ticket ${action.ticket} · HTTP modify · ticket ${ticket ?? "—"} · ${ms ?? "—"}ms`
+                : `follow · FTMO ticket ${action.ticket} · ${payload.reason || `${row.liveBroker} modify failed`}`,
+              liveTicket: ticket ?? undefined,
+              latencyMs: ms,
+              httpAction: "modify",
+              groupId: action.groupId,
+            });
+            if (payload.ok) applyPositionModify(row.id, action.sl, action.tp);
+          }
+        }
+      }
+      for (const groupId of catchup) {
+        const pendingSlaves = getDeskSnapshot().positions.filter(
+          (row) =>
+            row.groupId === groupId &&
+            row.liveBroker &&
+            row.liveBroker !== "ftmo" &&
+            !COPY_FANOUT_SKIP.has(row.liveBroker) &&
+            row.livePending
+        );
+        for (const row of pendingSlaves) {
+          if (!row.liveBroker) continue;
+          const symbol =
+            row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+          const cancelled = await postLiveOrder(row.liveBroker, "cancel", {
+            confirm: confirmFor(row.liveBroker, refs),
+            symbol,
+            side: row.side,
+            ticket: row.liveOrder ?? null,
+            orderType: row.orderType ?? (row.side === "sell" ? "sell_limit" : "buy_limit"),
+          });
+          recordLiveHttpBlotter({
+            accountId: row.accountId,
+            role: "slave",
+            symbol,
+            side: row.side,
+            lots: row.lots,
+            price: row.entry,
+            orderType: row.orderType,
+            status: liveCloseAlreadyFlat(cancelled) ? "filled" : "error",
+            reason: liveCloseAlreadyFlat(cancelled)
+              ? `follow · FTMO ticket ${row.liveOrder ?? "—"} · HTTP cancel · ${cancelled.holdMs ?? "—"}ms`
+              : cancelled.reason || `${row.liveBroker} cancel failed`,
+            liveTicket: row.liveOrder,
+            latencyMs: cancelled.holdMs,
+            httpAction: "cancel",
+            groupId,
+          });
+          if (!liveCloseAlreadyFlat(cancelled)) {
+            markLiveCloseFailed(row.id, `${cancelled.reason || "cancel failed"} — desk row kept`);
+            continue;
+          }
+          flattenPosition(row.id);
+          const eventId = uid("blt");
+          patchDesk((current) => ({
+            ...current,
+            blotter: [
+              {
+                id: eventId,
+                groupId,
+                accountId: row.accountId,
+                role: "slave" as const,
+                symbol,
+                side: row.side,
+                lots: row.lots,
+                requestedPrice: row.entry,
+                orderType: "market" as const,
+                sl: row.sl,
+                tp: row.tp,
+                status: "queued" as const,
+                reason: pendingReasonFor(row.liveBroker),
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              },
+              ...current.blotter,
+            ].slice(0, 200),
+          }));
+          const opened = await postLiveOrder(row.liveBroker, "open", {
+            confirm: confirmFor(row.liveBroker, refs),
+            symbol,
+            side: row.side,
+            volume: row.lots,
+            sl: row.sl,
+            tp: row.tp,
+            orderType: "market",
+          });
+          applyLiveCopyResult(eventId, opened, row.liveBroker);
+        }
+      }
+    },
+    [fanOutLiveSlaves]
+  );
 
   const placeTrade = useCallback((input: MasterTradeInput) => {
     const snapshot = getDeskSnapshot();
@@ -718,6 +1034,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
     fttConfirm.current = "";
     setWsfLiveCopyStore(false);
     setFtmoLiveMasterStore(false);
+    setFtmoFollowTerminalStore(false);
     setFundednextLiveCopyStore(false);
     setAlphacapitalLiveCopyStore(false);
     setFundingpipsLiveCopyStore(false);
@@ -747,6 +1064,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,
+      setFtmoFollowTerminal,
       setFundednextLiveCopy,
       setAlphacapitalLiveCopy,
       setFundingpipsLiveCopy,
@@ -754,6 +1072,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFortradersLiveCopy,
       ingestBridgePendings,
       ingestBridgePositions,
+      rememberFtmoBridge,
+      followFtmoTerminal,
     }),
     [
       persistError,
@@ -773,6 +1093,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       resetDemo,
       setWsfLiveCopy,
       setFtmoLiveMaster,
+      setFtmoFollowTerminal,
       setFundednextLiveCopy,
       setAlphacapitalLiveCopy,
       setFundingpipsLiveCopy,
@@ -780,6 +1101,8 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
       setFortradersLiveCopy,
       ingestBridgePendings,
       ingestBridgePositions,
+      rememberFtmoBridge,
+      followFtmoTerminal,
     ]
   );
 

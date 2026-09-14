@@ -87,6 +87,8 @@ export interface Position {
   orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
   /** Copy-group id so flatten can close sibling live books. */
   groupId?: string;
+  /** True when the FTMO row was opened by terminal follow, not Place master. */
+  followOrigin?: boolean;
 }
 
 export interface BlotterEvent {

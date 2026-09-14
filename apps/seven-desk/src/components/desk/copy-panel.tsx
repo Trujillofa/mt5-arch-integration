@@ -20,6 +20,7 @@ import { FundingPipsLiveCopy } from "@/components/desk/fundingpips-live-copy";
 import { FundingPipsLiveProbe } from "@/components/desk/fundingpips-live-probe";
 import { NeomaaLiveCopy } from "@/components/desk/neomaa-live-copy";
 import { NeomaaLiveProbe } from "@/components/desk/neomaa-live-probe";
+import { FtmoLiveFollow } from "@/components/desk/ftmo-live-follow";
 import { FtmoLiveMaster } from "@/components/desk/ftmo-live-master";
 import { FtmoLiveProbe } from "@/components/desk/ftmo-live-probe";
 import { WsfLiveProbe } from "@/components/desk/wsf-live-probe";
@@ -159,6 +160,7 @@ export function CopyPanel() {
           <>
             <FtmoLiveProbe />
             <FtmoLiveMaster />
+            <FtmoLiveFollow />
           </>
         ) : null}
 

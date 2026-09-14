@@ -21,7 +21,8 @@ import { isAlreadyFlatReason, isPendingOrderType, isUs30Family } from "@/lib/liv
 import type { LiveBroker, LiveOrderResult, LiveOrderType } from "@/lib/live-order/types";
 import { WSF_LIVE_PENDING, WSF_LIVE_SYMBOLS } from "@/lib/wsf/constants";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
-import { COPY_FANOUT_SKIP } from "@/lib/copy-fanout";
+import { armedCopyBrokers, COPY_FANOUT_SKIP, liveUs30SlError } from "@/lib/copy-fanout";
+import { DESK_MAGIC } from "@/lib/desk-magic";
 
 export const BLOTTER_LIMIT = 200;
 
@@ -1118,6 +1119,7 @@ export function upsertSnapshotPendings(
     if (row.accountId !== accountId) return true;
     if (!row.fromSnapshot) return true;
     if (!row.livePending) return true;
+    if (row.leftover === false && row.groupId) return true;
     return false;
   });
   const existingTickets = new Set(
@@ -1345,12 +1347,452 @@ export function createFollowSession(
   };
 }
 
-/** Pure FTMO follow diff. Throws until follow is implemented. */
+function cloneFollowSession(session: FollowSession): FollowSession {
+  return {
+    baselineTickets: new Set(session.baselineTickets),
+    followGroups: new Map(session.followGroups),
+    pendingToGroup: new Map(session.pendingToGroup),
+  };
+}
+
+function followLevel(value: number | null | undefined): number | null {
+  if (value == null || !Number.isFinite(value) || value === 0) return null;
+  return value;
+}
+
+function followLevelsChanged(a: number | null | undefined, b: number | null | undefined): boolean {
+  return followLevel(a) !== followLevel(b);
+}
+
+function followLotsClose(a: number | null | undefined, b: number | null | undefined): boolean {
+  return Math.abs((a ?? 0) - (b ?? 0)) <= 0.001;
+}
+
+function followSide(value: string | null | undefined): Side {
+  return value === "sell" ? "sell" : "buy";
+}
+
+function followTrim(symbol: string | null | undefined): string {
+  return (symbol ?? "").trim();
+}
+
+function isFtmoDeskOrigin(
+  ticket: number,
+  magic: number | null | undefined,
+  deskPositions: Position[]
+): boolean {
+  if (magic === DESK_MAGIC.ftmo) return true;
+  return deskPositions.some(
+    (row) =>
+      row.liveBroker === "ftmo" &&
+      row.liveOrder === ticket &&
+      row.leftover === false &&
+      Boolean(row.groupId)
+  );
+}
+
+function pendingMatchesPosition(
+  pending: { symbol: string; side: Side; lots: number },
+  position: BridgeOpenPosition
+): boolean {
+  if (followTrim(pending.symbol) !== followTrim(position.symbol)) return false;
+  if (pending.side !== followSide(position.side)) return false;
+  return followLotsClose(pending.lots, position.volume);
+}
+
+/** Pure FTMO follow diff. Baseline leftovers and desk-magic tickets never open. */
 export function diffFollowTickets(
-  _session: FollowSession,
-  _positions: BridgeOpenPosition[],
-  _pendings: BridgePendingOrder[],
-  _deskPositions: Position[]
+  session: FollowSession,
+  positions: BridgeOpenPosition[],
+  pendings: BridgePendingOrder[],
+  deskPositions: Position[]
 ): FollowDiffResult {
-  throw new Error("diffFollowTickets: FTMO terminal follow is not implemented");
+  const next = cloneFollowSession(session);
+  const actions: FollowDiffAction[] = [];
+  const currentPos = new Set(positions.map((row) => row.ticket));
+  const currentPend = new Set(pendings.map((row) => row.ticket));
+
+  for (const [pendTicket, groupId] of session.pendingToGroup) {
+    if (currentPend.has(pendTicket)) continue;
+    const desk = deskPositions.find(
+      (row) => row.liveBroker === "ftmo" && row.liveOrder === pendTicket
+    );
+    const pendingShape = desk
+      ? { symbol: desk.symbol, side: desk.side, lots: desk.lots }
+      : null;
+    const candidates = pendingShape
+      ? positions.filter(
+          (row) =>
+            !next.baselineTickets.has(row.ticket) &&
+            !next.followGroups.has(row.ticket) &&
+            !isFtmoDeskOrigin(row.ticket, row.magic, deskPositions) &&
+            pendingMatchesPosition(pendingShape, row)
+        )
+      : [];
+    const match = candidates.find((row) => !next.followGroups.has(row.ticket)) ?? null;
+    if (match) {
+      actions.push({
+        kind: "fill",
+        pendingTicket: pendTicket,
+        positionTicket: match.ticket,
+        groupId,
+      });
+      next.followGroups.delete(pendTicket);
+      next.followGroups.set(match.ticket, groupId);
+      next.pendingToGroup.delete(pendTicket);
+      continue;
+    }
+    actions.push({ kind: "cancel", ticket: pendTicket, groupId });
+    next.followGroups.delete(pendTicket);
+    next.pendingToGroup.delete(pendTicket);
+  }
+
+  for (const pending of pendings) {
+    if (next.baselineTickets.has(pending.ticket)) continue;
+    const existingGroup =
+      next.pendingToGroup.get(pending.ticket) ?? next.followGroups.get(pending.ticket);
+    if (existingGroup) {
+      const desk = deskPositions.find(
+        (row) => row.liveBroker === "ftmo" && row.liveOrder === pending.ticket
+      );
+      if (
+        desk &&
+        (followLevelsChanged(desk.sl, pending.sl) || followLevelsChanged(desk.tp, pending.tp))
+      ) {
+        actions.push({
+          kind: "modify",
+          ticket: pending.ticket,
+          groupId: existingGroup,
+          sl: followLevel(pending.sl),
+          tp: followLevel(pending.tp),
+        });
+      }
+      continue;
+    }
+    if (isFtmoDeskOrigin(pending.ticket, null, deskPositions)) continue;
+    const groupId = uid("grp");
+    next.followGroups.set(pending.ticket, groupId);
+    next.pendingToGroup.set(pending.ticket, groupId);
+    actions.push({
+      kind: "open",
+      ticket: pending.ticket,
+      source: "pending",
+      symbol: pending.symbol,
+      side: followSide(pending.side),
+      lots: pending.volume ?? 0,
+      sl: followLevel(pending.sl),
+      tp: followLevel(pending.tp),
+      orderType: asLiveOrderType(pending.type),
+      livePending: true,
+    });
+  }
+
+  for (const position of positions) {
+    if (next.baselineTickets.has(position.ticket)) continue;
+    const existingGroup = next.followGroups.get(position.ticket);
+    if (existingGroup) {
+      const desk = deskPositions.find(
+        (row) => row.liveBroker === "ftmo" && row.liveOrder === position.ticket
+      );
+      if (
+        desk &&
+        (followLevelsChanged(desk.sl, position.sl) || followLevelsChanged(desk.tp, position.tp))
+      ) {
+        actions.push({
+          kind: "modify",
+          ticket: position.ticket,
+          groupId: existingGroup,
+          sl: followLevel(position.sl),
+          tp: followLevel(position.tp),
+        });
+      }
+      continue;
+    }
+    if (isFtmoDeskOrigin(position.ticket, position.magic, deskPositions)) continue;
+    const groupId = uid("grp");
+    next.followGroups.set(position.ticket, groupId);
+    actions.push({
+      kind: "open",
+      ticket: position.ticket,
+      source: "position",
+      symbol: position.symbol,
+      side: followSide(position.side),
+      lots: position.volume ?? 0,
+      sl: followLevel(position.sl),
+      tp: followLevel(position.tp),
+      orderType: "market",
+      livePending: false,
+    });
+  }
+
+  for (const [ticket, groupId] of session.followGroups) {
+    if (session.pendingToGroup.has(ticket)) continue;
+    if (currentPos.has(ticket)) continue;
+    if (currentPend.has(ticket)) continue;
+    if (!next.followGroups.has(ticket)) continue;
+    actions.push({ kind: "close", ticket, groupId });
+    next.followGroups.delete(ticket);
+  }
+
+  return { actions, next };
+}
+
+function dropFtmoTicket(state: DeskState, ticket: number): Position[] {
+  return state.positions.filter(
+    (row) =>
+      !(
+        row.liveBroker === "ftmo" &&
+        row.liveOrder === ticket &&
+        (row.leftover !== false || !row.groupId)
+      )
+  );
+}
+
+export function placeFollowMasterFill(
+  state: DeskState,
+  input: {
+    ticket: number;
+    symbol: string;
+    side: Side;
+    lots: number;
+    sl: number | null;
+    tp: number | null;
+    orderType: LiveOrderType;
+    livePending: boolean;
+    groupId: string;
+    price?: number | null;
+    skipSlaves?: boolean;
+  }
+): DeskState {
+  const master = state.accounts.find((account) => account.firmId === "ftmo");
+  if (!master) return state;
+  const now = Date.now();
+  const fillPrice = input.price != null && input.price > 0 ? input.price : 0;
+  const positions = dropFtmoTicket(state, input.ticket);
+  const masterPosition: Position = {
+    id: uid("pos"),
+    accountId: master.id,
+    symbol: input.symbol,
+    side: input.side,
+    lots: input.lots,
+    entry: fillPrice,
+    sl: input.sl,
+    tp: input.tp,
+    openedAt: now,
+    mark: fillPrice,
+    pnl: 0,
+    liveBroker: "ftmo",
+    liveOrder: input.ticket,
+    livePending: input.livePending,
+    leftover: false,
+    fromSnapshot: true,
+    followOrigin: true,
+    orderType: input.orderType,
+    groupId: input.groupId,
+  };
+  const masterEvent: BlotterEvent = {
+    id: uid("blt"),
+    groupId: input.groupId,
+    accountId: master.id,
+    role: "master",
+    symbol: input.symbol,
+    side: input.side,
+    lots: input.lots,
+    requestedPrice: fillPrice,
+    fillPrice,
+    orderType: input.orderType,
+    sl: input.sl,
+    tp: input.tp,
+    status: "filled",
+    reason: `follow · FTMO ticket ${input.ticket}`,
+    createdAt: now,
+    updatedAt: now,
+    liveTicket: input.ticket,
+    httpAction: "send",
+  };
+  const nakedUs30 = liveUs30SlError(input.symbol, input.sl, true);
+  const skipSlaves = Boolean(input.skipSlaves) || Boolean(nakedUs30);
+  const armed = skipSlaves ? [] : armedCopyBrokers(state);
+  const slaveEvents: BlotterEvent[] = skipSlaves
+    ? []
+    : state.accounts
+        .filter((account) => account.id !== master.id && armed.includes(account.firmId as LiveBroker))
+        .map((account) => ({
+          id: uid("blt"),
+          groupId: input.groupId,
+          accountId: account.id,
+          role: "slave" as const,
+          symbol: input.symbol,
+          side: input.side,
+          lots: input.lots,
+          requestedPrice: fillPrice,
+          orderType: input.orderType,
+          sl: input.sl,
+          tp: input.tp,
+          status: "queued" as const,
+          reason: "waiting on copy engine",
+          createdAt: now,
+          updatedAt: now,
+        }));
+  const blotterEvents = nakedUs30
+    ? [
+        masterEvent,
+        {
+          ...masterEvent,
+          id: uid("blt"),
+          status: "error" as const,
+          reason: `follow · FTMO ticket ${input.ticket} · ${nakedUs30}`,
+        },
+      ]
+    : [masterEvent, ...slaveEvents];
+  return applyQuoteMarks({
+    ...state,
+    positions: [masterPosition, ...positions],
+    blotter: [...blotterEvents, ...state.blotter].slice(0, BLOTTER_LIMIT),
+  });
+}
+
+export function applyFollowFill(
+  state: DeskState,
+  input: {
+    pendingTicket: number;
+    positionTicket: number;
+    groupId: string;
+    position?: BridgeOpenPosition;
+  }
+): DeskState {
+  const now = Date.now();
+  let found = false;
+  const nextPositions: Position[] = [];
+  for (const row of state.positions) {
+    if (
+      row.liveBroker === "ftmo" &&
+      row.liveOrder === input.positionTicket &&
+      (row.leftover !== false || row.groupId !== input.groupId)
+    ) {
+      continue;
+    }
+    if (
+      row.groupId === input.groupId &&
+      row.liveBroker === "ftmo" &&
+      (row.liveOrder === input.pendingTicket || row.livePending)
+    ) {
+      found = true;
+      nextPositions.push({
+        ...row,
+        liveOrder: input.positionTicket,
+        livePending: false,
+        leftover: false,
+        fromSnapshot: true,
+        followOrigin: true,
+        orderType: "market",
+        entry: input.position?.price ?? row.entry,
+        sl: input.position ? followLevel(input.position.sl) : row.sl,
+        tp: input.position ? followLevel(input.position.tp) : row.tp,
+        mark: input.position?.price ?? row.mark,
+        pnl: input.position?.profit ?? row.pnl,
+      });
+      continue;
+    }
+    nextPositions.push(row);
+  }
+  if (!found && input.position) {
+    const master = state.accounts.find((account) => account.firmId === "ftmo");
+    if (master) {
+      nextPositions.unshift({
+        id: uid("pos"),
+        accountId: master.id,
+        symbol: input.position.symbol,
+        side: followSide(input.position.side),
+        lots: input.position.volume ?? 0,
+        entry: input.position.price ?? 0,
+        sl: followLevel(input.position.sl),
+        tp: followLevel(input.position.tp),
+        openedAt: now,
+        mark: input.position.price ?? 0,
+        pnl: input.position.profit ?? 0,
+        liveBroker: "ftmo",
+        liveOrder: input.positionTicket,
+        livePending: false,
+        leftover: false,
+        fromSnapshot: true,
+        followOrigin: true,
+        orderType: "market",
+        groupId: input.groupId,
+      });
+    }
+  }
+  const event: BlotterEvent = {
+    id: uid("blt"),
+    groupId: input.groupId,
+    accountId: state.accounts.find((account) => account.firmId === "ftmo")?.id ?? state.masterId,
+    role: "master",
+    symbol: input.position?.symbol ?? "EURUSD",
+    side: followSide(input.position?.side),
+    lots: input.position?.volume ?? 0,
+    requestedPrice: input.position?.price ?? 0,
+    fillPrice: input.position?.price ?? 0,
+    orderType: "market",
+    sl: followLevel(input.position?.sl),
+    tp: followLevel(input.position?.tp),
+    status: "filled",
+    reason: `follow · FTMO ticket ${input.positionTicket}`,
+    createdAt: now,
+    updatedAt: now,
+    liveTicket: input.positionTicket,
+    httpAction: "send",
+  };
+  return applyQuoteMarks({
+    ...state,
+    positions: nextPositions,
+    blotter: pushBlotter(state.blotter, event),
+  });
+}
+
+export function applyFollowMasterLevels(
+  state: DeskState,
+  groupId: string,
+  sl: number | null,
+  tp: number | null
+): DeskState {
+  return {
+    ...state,
+    positions: state.positions.map((row) =>
+      row.groupId === groupId && row.liveBroker === "ftmo" ? { ...row, sl, tp } : row
+    ),
+  };
+}
+
+export function dropDeskPosition(
+  state: DeskState,
+  positionId: string,
+  reason: string,
+  httpAction: "close" | "cancel" = "close"
+): DeskState {
+  const position = state.positions.find((row) => row.id === positionId);
+  if (!position) return state;
+  const now = Date.now();
+  const event: BlotterEvent = {
+    id: uid("blt"),
+    groupId: position.groupId ?? uid("cls"),
+    accountId: position.accountId,
+    role: position.accountId === state.masterId ? "master" : "slave",
+    symbol: position.symbol,
+    side: position.side,
+    lots: position.lots,
+    requestedPrice: position.mark,
+    sl: position.sl,
+    tp: position.tp,
+    status: "filled",
+    reason,
+    createdAt: now,
+    updatedAt: now,
+    liveTicket: position.liveOrder,
+    httpAction,
+  };
+  return {
+    ...state,
+    positions: state.positions.filter((row) => row.id !== position.id),
+    blotter: pushBlotter(state.blotter, event),
+  };
 }

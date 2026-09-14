@@ -3,6 +3,7 @@ import {
   FUNDINGPIPS_SCALE,
   planLiveLots,
 } from "@/lib/firms";
+import { isUs30Family } from "@/lib/live-order/guards";
 import type { LiveBroker } from "@/lib/live-order/types";
 import type { DeskState } from "@/lib/types";
 
@@ -25,9 +26,25 @@ export function armedCopyBrokers(state: DeskState): LiveBroker[] {
   return out.filter((broker) => !COPY_FANOUT_SKIP.has(broker));
 }
 
-/** FTMO live master or a slave that actually OrderSends (not Alpha). */
+/** FTMO live master, terminal follow, or a slave that actually OrderSends (not Alpha). */
 export function liveOrderArmed(state: DeskState): boolean {
-  return Boolean(state.ftmoLiveMaster) || armedCopyBrokers(state).length > 0;
+  return (
+    Boolean(state.ftmoLiveMaster) ||
+    Boolean(state.ftmoFollowTerminal) ||
+    armedCopyBrokers(state).length > 0
+  );
+}
+
+/** Live US30/DJ30 legs need a stop. Naked index tickets skip fan-out. */
+export function liveUs30SlError(
+  symbol: string,
+  sl: number | null | undefined,
+  liveArmed: boolean
+): string | null {
+  if (!liveArmed) return null;
+  if (!isUs30Family(symbol)) return null;
+  if (sl != null && Number.isFinite(sl) && sl > 0) return null;
+  return "US30 live legs need a stop loss — refusing naked US30";
 }
 
 /** copySlTp must stay on while a live OrderSend path is armed (not Alpha). */

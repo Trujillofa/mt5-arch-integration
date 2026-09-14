@@ -1,17 +1,24 @@
 import {
+  applyFollowFill,
+  applyFollowMasterLevels,
   applyLiveFill,
   applyQuoteMarks,
   applyWsfLiveFill,
   closePosition,
+  createFollowSession,
   defaultCopySettings,
+  dropDeskPosition,
   markLiveCloseError,
+  placeFollowMasterFill,
   placeLiveMasterFill,
   placeMasterTrade,
   recordHttpBlotter,
   resolveQueuedCopies,
+  snapshotFollowBaseline,
   applyLiveModify,
   upsertSnapshotPendings,
   upsertSnapshotPositions,
+  type FollowSession,
 } from "@/lib/copy-engine";
 import type { BridgeOpenPosition, BridgePendingOrder } from "@/lib/bridge-orders";
 import type { LiveBroker, LiveOrderResult } from "@/lib/live-order/types";
@@ -31,6 +38,11 @@ let persistError: string | null = null;
 let hydrated = false;
 let clientReleased = false;
 const listeners = new Set<() => void>();
+
+let followSession: FollowSession = createFollowSession();
+const followSlaveCatchup = new Set<string>();
+let lastFtmoPositions: BridgeOpenPosition[] = [];
+let lastFtmoPendings: BridgePendingOrder[] = [];
 
 function emit() {
   listeners.forEach((listener) => listener());
@@ -200,6 +212,84 @@ export function setFtmoLiveMaster(enabled: boolean) {
   patchDesk((current) => ({ ...current, ftmoLiveMaster: enabled }));
 }
 
+export function rememberFtmoBridge(
+  positions: BridgeOpenPosition[],
+  pendings: BridgePendingOrder[]
+) {
+  lastFtmoPositions = positions;
+  lastFtmoPendings = pendings;
+}
+
+export function getFollowSession(): FollowSession {
+  return followSession;
+}
+
+export function setFollowSession(next: FollowSession) {
+  followSession = next;
+}
+
+export function takeFollowSlaveCatchup(): string[] {
+  const ids = [...followSlaveCatchup];
+  followSlaveCatchup.clear();
+  return ids;
+}
+
+export function markFollowSlaveCatchup(groupId: string) {
+  followSlaveCatchup.add(groupId);
+}
+
+function baselineTicketsAtArm(current: DeskState): Set<number> {
+  const tickets = snapshotFollowBaseline(lastFtmoPositions, lastFtmoPendings);
+  for (const row of current.positions) {
+    if (row.liveBroker === "ftmo" && row.liveOrder && row.liveOrder > 0) {
+      tickets.add(row.liveOrder);
+    }
+  }
+  return tickets;
+}
+
+export function clearFollowSession() {
+  followSession = createFollowSession();
+  followSlaveCatchup.clear();
+}
+
+export function setFtmoFollowTerminal(enabled: boolean) {
+  patchDesk((current) => {
+    if (enabled) {
+      followSession = createFollowSession(baselineTicketsAtArm(current));
+      followSlaveCatchup.clear();
+    } else {
+      followSession = createFollowSession();
+      followSlaveCatchup.clear();
+    }
+    return { ...current, ftmoFollowTerminal: enabled };
+  });
+}
+
+export function placeFollowMaster(
+  input: Parameters<typeof placeFollowMasterFill>[1]
+) {
+  persist(placeFollowMasterFill(desk, input));
+}
+
+export function applyFollowTicketFill(
+  input: Parameters<typeof applyFollowFill>[1]
+) {
+  persist(applyFollowFill(desk, input));
+}
+
+export function applyFollowLevels(groupId: string, sl: number | null, tp: number | null) {
+  persist(applyFollowMasterLevels(desk, groupId, sl, tp));
+}
+
+export function dropLiveDeskRow(
+  positionId: string,
+  reason: string,
+  httpAction: "close" | "cancel" = "close"
+) {
+  persist(dropDeskPosition(desk, positionId, reason, httpAction));
+}
+
 export function setFundednextLiveCopy(enabled: boolean) {
   patchDesk((current) => ({ ...current, fundednextLiveCopy: enabled }));
 }
@@ -275,5 +365,7 @@ export function applyPositionModify(
 export function resetDemo() {
   clearDesk();
   persistError = null;
+  followSession = createFollowSession();
+  followSlaveCatchup.clear();
   persist(applyQuoteMarks(seedDesk()));
 }

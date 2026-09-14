@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PendingOrdersBlock } from "@/components/desk/pending-orders-block";
 import { Button } from "@/components/ui/button";
 import { useDesk } from "@/lib/desk-context";
-import { useLiveProbePoll } from "@/lib/use-live-probe-poll";
+import { LIVE_FOLLOW_POLL_MS, useLiveProbePoll } from "@/lib/use-live-probe-poll";
 import {
   FTMO_EXPECTED_LOGIN,
   FTMO_EXPECTED_SERVER,
@@ -16,10 +16,18 @@ import { ACCOUNT_IDS } from "@/lib/seed";
 let lastReport: FtmoLiveReport | null = null;
 
 export function FtmoLiveProbe() {
-  const { updateAccount, ingestBridgePendings, ingestBridgePositions } = useDesk();
+  const {
+    state,
+    updateAccount,
+    ingestBridgePendings,
+    ingestBridgePositions,
+    rememberFtmoBridge,
+    followFtmoTerminal,
+  } = useDesk();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [report, setReport] = useState<FtmoLiveReport | null>(lastReport);
+  const followArmed = state.ftmoFollowTerminal;
 
   const run = useCallback(async (poll = false) => {
     setBusy(true);
@@ -35,16 +43,29 @@ export function FtmoLiveProbe() {
       lastReport = next;
       setReport(next);
       applyToDesk(next, updateAccount);
-      ingestBridgePendings(ACCOUNT_IDS.ftmo, "ftmo", next.pendingOrders ?? []);
-      ingestBridgePositions(ACCOUNT_IDS.ftmo, "ftmo", next.openPositions ?? []);
+      const positions = next.openPositions ?? [];
+      const pendings = next.pendingOrders ?? [];
+      rememberFtmoBridge(positions, pendings);
+      ingestBridgePendings(ACCOUNT_IDS.ftmo, "ftmo", pendings);
+      ingestBridgePositions(ACCOUNT_IDS.ftmo, "ftmo", positions);
+      if (followArmed && next.connectionStatus === "connected") {
+        await followFtmoTerminal(positions, pendings);
+      }
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Probe failed.");
     } finally {
       setBusy(false);
     }
-  }, [updateAccount, ingestBridgePendings, ingestBridgePositions]);
+  }, [
+    updateAccount,
+    ingestBridgePendings,
+    ingestBridgePositions,
+    rememberFtmoBridge,
+    followFtmoTerminal,
+    followArmed,
+  ]);
 
-  useLiveProbePoll(() => run(true), busy);
+  useLiveProbePoll(() => run(true), busy, followArmed ? LIVE_FOLLOW_POLL_MS : undefined);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
