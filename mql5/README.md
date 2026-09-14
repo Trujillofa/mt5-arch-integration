@@ -23,6 +23,7 @@
 | `Scripts/ExportSymbolSyncAudit.mq5` | Read-only H1 calendar / spread sync audit (no orders) |
 | `Mt5ArchBridge.mq5` | File bridge EA for Linux Python (v1.23) |
 | `Files/forex_sr_levels.csv` | Generated S/R level table — see below |
+| `pine/*.pine` | TradingView observe-only ports + `UniversalOverlay.pine` family switcher — [pine/README.md](pine/README.md). Merge ≠ deploy; not a live host. |
 
 ### Mt5ArchBridge symbols (v1.23)
 

@@ -1,0 +1,223 @@
+// ForexIndicatorTemplate.pine
+// Source: mql5/Indicators/ForexIndicatorTemplate.mq5 v1.41 (this repo is truth)
+// Observe-only. promote=no. Not a live signal. Never strategy / never orders.
+//
+// Signal buffer is 9. Buffer 8 in MQL5 is the short arrow — NOT the signal.
+//
+// Session clock: MQL5 uses broker SERVER hours on the bar timestamp
+// (ForexUtils.mqh FxDetectSession — not America/New_York, not DST tables).
+// Pine default is exchange timezone (syminfo.timezone). Set InpSessionTimezone
+// to the broker server TZ if you need MQL5 hour windows to line up.
+//
+// STUBS (cannot match MQL5 — do not fake parity):
+//   - Live bid/ask spread gate (FxSpreadPips). Historical TV has no MT5 spread.
+//   - Wine Comment() panel / ChartObjects / Alert popup-push-sound files
+//   - iCustom / ForexSignalLogger
+
+//@version=5
+indicator("FX Template (observe-only)", shorttitle="FXIT", overlay=true, max_labels_count=20)
+
+// === Trading mode ===
+string InpTradingMode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="=== Trading mode ===")
+bool   InpManualSessionOverride = input.bool(false, "InpManualSessionOverride", group="=== Trading mode ===")
+bool   InpManualEmaOverride = input.bool(false, "InpManualEmaOverride", group="=== Trading mode ===")
+
+// === EMAs / cloud ===
+int   InpEmaFastPeriod = input.int(20, "InpEmaFastPeriod", minval=1, group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+int   InpEmaSlowPeriod = input.int(50, "InpEmaSlowPeriod", minval=1, group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+int   InpEmaBiasPeriod = input.int(200, "InpEmaBiasPeriod", minval=1, group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+bool  InpShowCloud = input.bool(true, "InpShowCloud", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+bool  InpShowEmaLines = input.bool(false, "InpShowEmaLines", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+bool  InpShowBiasEma = input.bool(true, "InpShowBiasEma", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+color InpColorBullCloud = input.color(#3CB371, "InpColorBullCloud", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+color InpColorBearCloud = input.color(#CD5C5C, "InpColorBearCloud", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+color InpColorEmaFast = input.color(#00BFFF, "InpColorEmaFast", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+color InpColorEmaSlow = input.color(#FFA500, "InpColorEmaSlow", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+color InpColorEmaBias = input.color(#FFD700, "InpColorEmaBias", group="=== EMAs / cloud (ignored unless Manual EMA override) ===")
+
+// === Prior-day levels ===
+bool  InpShowPriorDay = input.bool(true, "InpShowPriorDay", group="=== Prior-day levels (forex S/R) ===")
+color InpColorPDH = input.color(#DC143C, "InpColorPDH", group="=== Prior-day levels (forex S/R) ===")
+color InpColorPDL = input.color(#32CD32, "InpColorPDL", group="=== Prior-day levels (forex S/R) ===")
+color InpColorPDO = input.color(#FFD700, "InpColorPDO", group="=== Prior-day levels (forex S/R) ===")
+int   InpLevelWidth = input.int(1, "InpLevelWidth", minval=1, group="=== Prior-day levels (forex S/R) ===")
+bool  InpLevelExtendRight = input.bool(true, "InpLevelExtendRight (visual only)", group="=== Prior-day levels (forex S/R) ===")
+
+// === RSI + RSI MA ===
+int    InpRsiPeriod = input.int(14, "InpRsiPeriod", minval=1, group="=== RSI + RSI MA ===")
+int    InpRsiMaPeriod = input.int(14, "InpRsiMaPeriod", minval=1, group="=== RSI + RSI MA ===")
+string InpRsiMaMethod = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="=== RSI + RSI MA ===")
+int    InpRsiLongMax = input.int(35, "InpRsiLongMax", group="=== RSI + RSI MA ===")
+int    InpRsiShortMin = input.int(65, "InpRsiShortMin", group="=== RSI + RSI MA ===")
+bool   InpUseRsiMaFilter = input.bool(true, "InpUseRsiMaFilter", group="=== RSI + RSI MA ===")
+bool   InpRsiMaCross = input.bool(false, "InpRsiMaCross", group="=== RSI + RSI MA ===")
+
+// === Signal rules ===
+bool   InpRequireTrend = input.bool(true, "InpRequireTrend", group="=== Signal rules ===")
+bool   InpUseSessionFilter = input.bool(true, "InpUseSessionFilter", group="=== Signal rules ===")
+bool   InpAllowAsian = input.bool(false, "InpAllowAsian", group="=== Signal rules ===")
+bool   InpAllowLondon = input.bool(true, "InpAllowLondon", group="=== Signal rules ===")
+bool   InpAllowNY = input.bool(true, "InpAllowNY", group="=== Signal rules ===")
+bool   InpAllowOverlap = input.bool(true, "InpAllowOverlap", group="=== Signal rules ===")
+float  InpMaxSpreadPips = input.float(2.5, "InpMaxSpreadPips (0=off; live-only stub)", step=0.1, group="=== Signal rules ===")
+bool   InpSignalOnClose = input.bool(true, "InpSignalOnClose", group="=== Signal rules ===")
+
+// === Session hours (MQL5 = broker SERVER time) ===
+string InpSessionTimezone = input.string("exchange", "InpSessionTimezone", group="=== Session hours (broker SERVER time) ===", tooltip="IANA zone (e.g. America/New_York) or 'exchange' = symbol exchange TZ. Invalid names fail on TradingView. MQL5 uses broker server hours.")
+int    InpAsianStart = input.int(0, "InpAsianStart", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+int    InpAsianEnd = input.int(8, "InpAsianEnd", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+int    InpLondonStart = input.int(7, "InpLondonStart", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+int    InpLondonEnd = input.int(16, "InpLondonEnd", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+int    InpNyStart = input.int(12, "InpNyStart", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+int    InpNyEnd = input.int(21, "InpNyEnd", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
+
+// === Display / alerts ===
+bool   InpShowDashboard = input.bool(true, "InpShowDashboard", group="=== Display / alerts ===")
+bool   InpShowArrows = input.bool(true, "InpShowArrows", group="=== Display / alerts ===")
+float  InpArrowOffsetPips = input.float(5.0, "InpArrowOffsetPips", step=0.1, group="=== Display / alerts ===")
+bool   InpAlertPopup = input.bool(false, "InpAlertPopup (Pine alert())", group="=== Display / alerts ===")
+bool   InpAlertPush = input.bool(false, "InpAlertPush (STUB — no MT5 push)", group="=== Display / alerts ===")
+bool   InpAlertSound = input.bool(false, "InpAlertSound (STUB — no wav)", group="=== Display / alerts ===")
+string InpAlertSoundFile = input.string("alert.wav", "InpAlertSoundFile (STUB)", group="=== Display / alerts ===")
+
+// === ATR (dashboard only) ===
+int InpAtrPeriod = input.int(14, "InpAtrPeriod", minval=1, group="=== ATR (dashboard only) ===")
+
+inHourWindow(int h, int startH, int endH) =>
+    startH == endH ? true : startH < endH ? (h >= startH and h < endH) : (h >= startH or h < endH)
+
+fxPipSize() =>
+    pt = syminfo.mintick
+    dig = pt > 0 ? math.round(math.log(1.0 / pt) / math.log(10.0)) : 0.0
+    dig == 3 or dig == 5 ? pt * 10.0 : pt
+
+rsiBias(float r, float m) =>
+    na(r) or na(m) ? 0 : r > m ? 1 : r < m ? -1 : 0
+
+rsiCrossUp(float r1, float m1, float r0, float m0) =>
+    not na(r1) and not na(m1) and not na(r0) and not na(m0) and r1 <= m1 and r0 > m0
+
+rsiCrossDown(float r1, float m1, float r0, float m0) =>
+    not na(r1) and not na(m1) and not na(r0) and not na(m0) and r1 >= m1 and r0 < m0
+
+// Mode resolve
+bool isSwing = InpTradingMode == "SWING"
+int emaFastLen = InpManualEmaOverride ? InpEmaFastPeriod : (isSwing ? 50 : 20)
+int emaSlowLen = InpManualEmaOverride ? InpEmaSlowPeriod : (isSwing ? 200 : 50)
+int emaBiasLen = InpManualEmaOverride ? InpEmaBiasPeriod : 200
+bool useSession = InpManualSessionOverride ? InpUseSessionFilter : not isSwing
+bool allowAsian = InpManualSessionOverride ? InpAllowAsian : isSwing
+bool allowLondon = InpManualSessionOverride ? InpAllowLondon : true
+bool allowNY = InpManualSessionOverride ? InpAllowNY : true
+bool allowOverlap = InpManualSessionOverride ? InpAllowOverlap : true
+float maxSpread = InpManualSessionOverride ? InpMaxSpreadPips : (isSwing ? 0.0 : 2.5)
+bool useBiasEma = true
+string modeName = isSwing ? "SWING" : "INTRADAY"
+string chartHint = isSwing ? "H4-D1 (or H1 for entries)" : "M15-H1 (structure from 4H/D)"
+
+string tzSess = InpSessionTimezone == "exchange" or str.length(InpSessionTimezone) < 1 ? syminfo.timezone : InpSessionTimezone
+
+int sessH = hour(time, tzSess)
+bool asian = inHourWindow(sessH, InpAsianStart, InpAsianEnd)
+bool london = inHourWindow(sessH, InpLondonStart, InpLondonEnd)
+bool ny = inHourWindow(sessH, InpNyStart, InpNyEnd)
+// 0 none, 1 asian, 2 london, 3 ny, 4 overlap
+int sess = london and ny ? 4 : london ? 2 : ny ? 3 : asian ? 1 : 0
+string sessName = sess == 4 ? "LDN+NY" : sess == 2 ? "London" : sess == 3 ? "NewYork" : sess == 1 ? "Asian" : "Off"
+
+bool sessionAllowed = sess == 1 ? allowAsian : sess == 2 ? allowLondon : sess == 3 ? allowNY : sess == 4 ? allowOverlap : false
+
+// STUB: historical spread is not MT5 bid/ask. Gate is off unless a live spread series exists.
+float liveSpreadPips = na
+bool spreadOk = maxSpread <= 0.0 or na(liveSpreadPips) or liveSpreadPips <= maxSpread
+
+emaF = ta.ema(close, emaFastLen)
+emaS = ta.ema(close, emaSlowLen)
+emaB = ta.ema(close, emaBiasLen)
+rsiV = ta.rsi(close, InpRsiPeriod)
+rsiMa = InpRsiMaMethod == "EMA" ? ta.ema(rsiV, InpRsiMaPeriod) : ta.sma(rsiV, InpRsiMaPeriod)
+atrV = ta.atr(InpAtrPeriod)
+
+// Completed prior D1 via [1] + lookahead_on. Exchange/broker daily, not a custom TZ day.
+float pdh = request.security(syminfo.tickerid, "D", high[1], lookahead=barmerge.lookahead_on)
+float pdl = request.security(syminfo.tickerid, "D", low[1], lookahead=barmerge.lookahead_on)
+float pdo = request.security(syminfo.tickerid, "D", open[1], lookahead=barmerge.lookahead_on)
+
+bool bullTiming = emaF > emaS
+bool bearTiming = emaF < emaS
+bool bullRegime = not useBiasEma or close > emaB
+bool bearRegime = not useBiasEma or close < emaB
+bool bullTrend = bullRegime and (not InpRequireTrend or bullTiming)
+bool bearTrend = bearRegime and (not InpRequireTrend or bearTiming)
+
+bool rsiUp = rsiV[1] <= InpRsiLongMax and rsiV > InpRsiLongMax
+bool rsiDn = rsiV[1] >= InpRsiShortMin and rsiV < InpRsiShortMin
+if InpRsiMaCross
+    rsiUp := rsiUp or rsiCrossUp(rsiV[1], rsiMa[1], rsiV, rsiMa)
+    rsiDn := rsiDn or rsiCrossDown(rsiV[1], rsiMa[1], rsiV, rsiMa)
+if InpUseRsiMaFilter
+    rsiUp := rsiUp and rsiBias(rsiV, rsiMa) == 1
+    rsiDn := rsiDn and rsiBias(rsiV, rsiMa) == -1
+
+int sig = 0
+bool skipForming = InpSignalOnClose and not barstate.isconfirmed
+if skipForming or bar_index < 1
+    sig := 0
+else if not spreadOk
+    sig := 0
+else if useSession and not sessionAllowed
+    sig := 0
+else if bullTrend and rsiUp
+    sig := 1
+else if bearTrend and rsiDn
+    sig := -1
+
+bool showBias = false
+if InpShowBiasEma and emaBiasLen != emaSlowLen
+    showBias := true
+else if InpShowBiasEma and InpShowEmaLines
+    showBias := false
+else if InpShowBiasEma and emaBiasLen == emaSlowLen and not InpShowEmaLines
+    showBias := true
+
+pFast = plot(InpShowCloud ? emaF : na, "cloud fast", color=na, display=display.none)
+pSlow = plot(InpShowCloud ? emaS : na, "cloud slow", color=na, display=display.none)
+fill(pFast, pSlow, color=InpShowCloud ? (emaF > emaS ? color.new(InpColorBullCloud, 70) : emaF < emaS ? color.new(InpColorBearCloud, 70) : na) : na, title="EMA cloud")
+plot(InpShowEmaLines ? emaF : na, "EMA Fast", color=InpColorEmaFast, linewidth=1)
+plot(InpShowEmaLines ? emaS : na, "EMA Slow", color=InpColorEmaSlow, linewidth=2)
+plot(showBias ? emaB : na, "EMA Bias", color=InpColorEmaBias, linewidth=2)
+plot(InpShowPriorDay ? pdh : na, "PDH", color=InpColorPDH, linewidth=InpLevelWidth, style=plot.style_linebr)
+plot(InpShowPriorDay ? pdl : na, "PDL", color=InpColorPDL, linewidth=InpLevelWidth, style=plot.style_linebr)
+plot(InpShowPriorDay ? pdo : na, "PDO", color=InpColorPDO, linewidth=InpLevelWidth, style=plot.style_linebr)
+float longMarker = InpShowArrows and sig == 1 ? low - InpArrowOffsetPips * fxPipSize() : na
+float shortMarker = InpShowArrows and sig == -1 ? high + InpArrowOffsetPips * fxPipSize() : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(rsiV, "RSI", color=color.gray, display=display.data_window)
+plot(rsiMa, "RSI-MA", color=color.gray, display=display.data_window)
+
+var table panel = table.new(position.top_left, 1, 12, bgcolor=color.new(color.black, 25))
+if InpShowDashboard and barstate.islast
+    bias = close > emaB and emaF > emaS ? "BULL" : close < emaB and emaF < emaS ? "BEAR" : "FLAT"
+    rb = rsiBias(rsiV, rsiMa)
+    rsiRel = rb > 0 ? "above MA" : rb < 0 ? "below MA" : "flat"
+    atrPips = atrV > 0 ? atrV / fxPipSize() : 0.0
+    distBias = (close - emaB) / fxPipSize()
+    lastSig = sig[1]
+    table.cell(panel, 0, 0, "FX Template v1.41 observe-only", text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 0, 1, "Mode " + modeName + " (" + chartHint + ")", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 2, "EMAs " + str.tostring(emaFastLen) + "/" + str.tostring(emaSlowLen) + " bias " + str.tostring(emaBiasLen), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 3, syminfo.ticker + " | " + timeframe.period + " | TZ " + tzSess, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 4, "Session " + sessName + (useSession ? "" : " (filter off)"), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 5, "Spread stub (max " + (maxSpread > 0 ? str.tostring(maxSpread, "#.0") : "off") + ")", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 6, "ATR(" + str.tostring(InpAtrPeriod) + ") " + str.tostring(atrPips, "#.0") + " p", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 7, "RSI " + str.tostring(rsiV, "#.0") + "  MA " + str.tostring(rsiMa, "#.0") + " (" + rsiRel + ")", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 8, "vs EMA" + str.tostring(emaBiasLen) + " " + str.tostring(distBias, "#.0") + " p  Bias " + bias, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 9, "Signal " + str.tostring(lastSig, "#") + "  | sig@9 | no orders", text_color=color.silver, text_halign=text.align_left)
+
+if InpAlertPopup and sig != 0 and barstate.isconfirmed
+    alert(syminfo.ticker + " " + timeframe.period + " " + (sig > 0 ? "LONG" : "SHORT") + " RSI=" + str.tostring(rsiV, "#.0") + " (observe-only)", alert.freq_once_per_bar_close)
+
+alertcondition(sig == 1, "FXIT long (observe-only)", "FX template long — buffer 9 — not a live signal")
+alertcondition(sig == -1, "FXIT short (observe-only)", "FX template short — buffer 9 — not a live signal")

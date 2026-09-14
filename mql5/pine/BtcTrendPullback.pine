@@ -1,0 +1,207 @@
+// BtcTrendPullback.pine
+// Source: mql5/Indicators/BtcTrendPullback.mq5 v1.10 (this repo is truth)
+// Observe-only. promote=no. Not a live signal. Never strategy / never orders.
+//
+// H4 completed-bar EMA50/200 bias + chart-TF (H1) pullback reclaim.
+// DNA: crypto-agent TrendPullback — NOT Forex Fib pivots. Signal buffer 7.
+//
+// HTF close: request.security(..., [1], lookahead_on) matches CompletedHtfShift
+// (still-forming HTF bar → previous completed bar). No session DST clock.
+//
+// STUBS: Wine ChartObjects / Comment(), iCustom logger, MT5 tick_volume
+//        (Pine uses chart volume; CFDs may be 1).
+
+//@version=5
+indicator("BTC Trend Pullback (observe-only)", shorttitle="BTP", overlay=true)
+
+// === EMAs (chart TF) ===
+int  InpEmaFast = input.int(50, "InpEmaFast", minval=1, group="=== EMAs (chart TF) ===")
+int  InpEmaSlow = input.int(200, "InpEmaSlow", minval=1, group="=== EMAs (chart TF) ===")
+bool InpShowEmas = input.bool(true, "InpShowEmas", group="=== EMAs (chart TF) ===")
+
+// === HTF bias ===
+string InpHtfPeriod = input.timeframe("240", "InpHtfPeriod", group="=== HTF bias ===")
+float  InpMinTrendStrengthPct = input.float(0.01, "InpMinTrendStrengthPct", step=0.001, group="=== HTF bias ===")
+float  InpStrongTrendStrengthPct = input.float(0.015, "InpStrongTrendStrengthPct", step=0.001, group="=== HTF bias ===")
+
+// === RSI ===
+int   InpRsiPeriod = input.int(14, "InpRsiPeriod", minval=2, group="=== RSI ===")
+float InpRsiReclaim = input.float(50.0, "InpRsiReclaim", group="=== RSI ===")
+float InpContinuationRsi = input.float(54.0, "InpContinuationRsi", group="=== RSI ===")
+
+// === MACD ===
+int   InpMacdFast = input.int(12, "InpMacdFast", minval=1, group="=== MACD ===")
+int   InpMacdSlow = input.int(26, "InpMacdSlow", minval=1, group="=== MACD ===")
+int   InpMacdSignal = input.int(9, "InpMacdSignal", minval=1, group="=== MACD ===")
+float InpMinMacdHist = input.float(0.0, "InpMinMacdHist", group="=== MACD ===")
+
+// === ATR / liveliness / bands ===
+int    InpAtrPeriod = input.int(14, "InpAtrPeriod", minval=1, group="=== ATR / liveliness / bands ===")
+float  InpMinAtrPct = input.float(0.01, "InpMinAtrPct", step=0.001, group="=== ATR / liveliness / bands ===")
+float  InpAtrBandMult = input.float(2.0, "InpAtrBandMult", step=0.1, group="=== ATR / liveliness / bands ===")
+string InpAtrBandMid = input.string("EMA50", "InpAtrBandMid", options=["EMA50", "CLOSE"], group="=== ATR / liveliness / bands ===")
+bool   InpShowAtrBands = input.bool(true, "InpShowAtrBands", group="=== ATR / liveliness / bands ===")
+
+// === Pullback / extension ===
+float InpMaxPullbackPct = input.float(0.015, "InpMaxPullbackPct", step=0.001, group="=== Pullback / extension ===")
+float InpMaxEma50ExtensionPct = input.float(0.03, "InpMaxEma50ExtensionPct", step=0.001, group="=== Pullback / extension ===")
+
+// === VWAP (optional; OFF by default) ===
+bool  InpUseVwap = input.bool(false, "InpUseVwap", group="=== VWAP (optional; OFF by default) ===")
+float InpVwapPullbackPct = input.float(0.01, "InpVwapPullbackPct", step=0.001, group="=== VWAP (optional; OFF by default) ===")
+int   InpVwapLookback = input.int(24, "InpVwapLookback", minval=1, group="=== VWAP (optional; OFF by default) ===")
+
+// === Modes ===
+bool  InpAllowContinuation = input.bool(true, "InpAllowContinuation", group="=== Modes ===")
+bool  InpDeepReclaimEnabled = input.bool(false, "InpDeepReclaimEnabled", group="=== Modes ===")
+int   InpDeepReclaimArmBars = input.int(3, "InpDeepReclaimArmBars", minval=1, group="=== Modes ===")
+float InpDeepReclaimArmMaxPct = input.float(0.03, "InpDeepReclaimArmMaxPct", step=0.001, group="=== Modes ===")
+bool  InpAllowShorts = input.bool(true, "InpAllowShorts", group="=== Modes ===")
+bool  InpPanicBlock = input.bool(true, "InpPanicBlock", group="=== Modes ===")
+float InpPanicRsi = input.float(35.0, "InpPanicRsi", group="=== Modes ===")
+float InpPanicAtrPct = input.float(0.08, "InpPanicAtrPct", step=0.001, group="=== Modes ===")
+bool  InpEdgeTrigger = input.bool(true, "InpEdgeTrigger", group="=== Modes ===")
+
+// === Display ===
+bool  InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== Display ===")
+bool  InpShowPanel = input.bool(true, "InpShowPanel", group="=== Display ===")
+float InpArrowOffsetAtrFrac = input.float(0.15, "InpArrowOffsetAtrFrac", step=0.01, group="=== Display ===")
+
+ema50 = ta.ema(close, InpEmaFast)
+ema200 = ta.ema(close, InpEmaSlow)
+rsiV = ta.rsi(close, InpRsiPeriod)
+[macdLine, macdSig, macdHist] = ta.macd(close, InpMacdFast, InpMacdSlow, InpMacdSignal)
+atrV = ta.atr(InpAtrPeriod)
+
+[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, InpHtfPeriod, [ta.ema(close[1], InpEmaFast), ta.ema(close[1], InpEmaSlow), close[1]], lookahead=barmerge.lookahead_on)
+
+htfStrength = not na(htfE50) and not na(htfE200) and htfE200 != 0 ? (htfE50 - htfE200) / htfE200 : 0.0
+int htfBias = 0
+if not na(htfC) and not na(htfE50) and not na(htfE200) and htfE50 > 0 and htfE200 > 0
+    if htfC > htfE200 and htfE50 > htfE200 and htfStrength >= InpMinTrendStrengthPct
+        htfBias := 1
+    else if htfC < htfE200 and htfE50 < htfE200 and (-htfStrength) >= InpMinTrendStrengthPct
+        htfBias := -1
+
+float vnum = 0.0
+float vden = 0.0
+for k = 0 to InpVwapLookback - 1
+    typ = (high[k] + low[k] + close[k]) / 3.0
+    vol = math.max(nz(volume[k], 1.0), 1.0)
+    vnum += typ * vol
+    vden += vol
+float rollVwap = vden > 0 ? vnum / vden : close
+
+panicLong = InpPanicBlock and ((rsiV <= InpPanicRsi) or (atrV / close >= InpPanicAtrPct)) and close < ema200
+panicShort = InpPanicBlock and ((rsiV >= (100.0 - InpPanicRsi)) or (atrV / close >= InpPanicAtrPct)) and close > ema200
+
+deepLong = false
+if InpDeepReclaimEnabled and bar_index >= InpDeepReclaimArmBars + 1
+    under = 0
+    stopped = false
+    for k = 1 to InpDeepReclaimArmBars
+        if not stopped
+            ek = ema50[k]
+            ck = close[k]
+            if na(ek) or ek <= 0
+                stopped := true
+            else
+                dist = (ek - ck) / ek
+                if ck < ek and dist >= 0 and dist <= InpDeepReclaimArmMaxPct
+                    under += 1
+                else
+                    stopped := true
+    if under >= InpDeepReclaimArmBars and close >= ema50
+        ext = (close - ema50) / ema50
+        deepLong := ext >= 0 and ext <= InpMaxEma50ExtensionPct and rsiV >= InpRsiReclaim and rsiV > rsiV[1] and macdHist >= InpMinMacdHist and macdHist > macdHist[1]
+
+deepShort = false
+if InpDeepReclaimEnabled and bar_index >= InpDeepReclaimArmBars + 1
+    over = 0
+    stoppedS = false
+    for k = 1 to InpDeepReclaimArmBars
+        if not stoppedS
+            ek = ema50[k]
+            ck = close[k]
+            if na(ek) or ek <= 0
+                stoppedS := true
+            else
+                dist = (ck - ek) / ek
+                if ck > ek and dist >= 0 and dist <= InpDeepReclaimArmMaxPct
+                    over += 1
+                else
+                    stoppedS := true
+    if over >= InpDeepReclaimArmBars and close <= ema50
+        ext = (ema50 - close) / ema50
+        deepShort := ext >= 0 and ext <= InpMaxEma50ExtensionPct and rsiV <= (100.0 - InpRsiReclaim) and rsiV < rsiV[1] and macdHist <= -InpMinMacdHist and macdHist < macdHist[1]
+
+nearE50 = ema50 > 0 and math.abs(close - ema50) / ema50 <= InpMaxPullbackPct
+nearVwap = not InpUseVwap or rollVwap <= 0 or math.abs(close - rollVwap) / rollVwap <= InpVwapPullbackPct
+recovLong = rsiV >= InpRsiReclaim and rsiV > rsiV[1] and macdHist >= InpMinMacdHist and macdHist > macdHist[1] and close > close[1]
+recovShort = rsiV <= (100.0 - InpRsiReclaim) and rsiV < rsiV[1] and macdHist <= -InpMinMacdHist and macdHist < macdHist[1] and close < close[1]
+setupPbLong = nearE50 and nearVwap and recovLong
+setupPbShort = nearE50 and nearVwap and recovShort
+
+setupContLong = false
+setupContShort = false
+if InpAllowContinuation and ema50 > 0
+    extL = (close - ema50) / ema50
+    extS = (ema50 - close) / ema50
+    momL = rsiV >= InpContinuationRsi and (rsiV > rsiV[1] or macdHist > macdHist[1])
+    momS = rsiV <= (100.0 - InpContinuationRsi) and (rsiV < rsiV[1] or macdHist < macdHist[1])
+    setupContLong := htfStrength >= InpStrongTrendStrengthPct and close >= ema50 and extL >= 0 and extL <= InpMaxEma50ExtensionPct and momL
+    setupContShort := (-htfStrength) >= InpStrongTrendStrengthPct and close <= ema50 and extS >= 0 and extS <= InpMaxEma50ExtensionPct and momS
+
+longSetup = htfBias == 1 and not panicLong and ema50 > 0 and (setupPbLong or setupContLong or deepLong)
+shortSetup = InpAllowShorts and htfBias == -1 and not panicShort and ema50 > 0 and (setupPbShort or setupContShort or deepShort)
+
+atrPct = close > 0 and atrV > 0 ? atrV / close : 0.0
+canTrade = close > 0 and atrV > 0 and atrPct >= InpMinAtrPct
+longNow = canTrade and longSetup
+shortNow = canTrade and shortSetup
+longPrev = canTrade[1] and longSetup[1]
+shortPrev = canTrade[1] and shortSetup[1]
+
+int sig = 0
+if bar_index < 1 or not barstate.isconfirmed
+    sig := 0
+else
+    longFire = longNow
+    shortFire = shortNow
+    if InpEdgeTrigger and bar_index >= 2
+        longFire := longNow and not longPrev
+        shortFire := shortNow and not shortPrev
+    if longFire
+        sig := 1
+    else if shortFire
+        sig := -1
+
+mid = InpAtrBandMid == "EMA50" ? ema50 : close
+plot(InpShowEmas ? ema50 : na, "EMA50", color=#00BFFF, linewidth=2)
+plot(InpShowEmas ? ema200 : na, "EMA200", color=#FFD700, linewidth=2)
+plot(InpShowAtrBands and atrV > 0 and mid > 0 ? mid - InpAtrBandMult * atrV : na, "ATR Lower", color=#1E90FF, linewidth=1, style=plot.style_circles)
+plot(InpShowAtrBands and atrV > 0 and mid > 0 ? mid + InpAtrBandMult * atrV : na, "ATR Upper", color=#FF7F50, linewidth=1, style=plot.style_circles)
+float longMarker = InpShowMarkers and sig == 1 and atrV > 0 ? low - InpArrowOffsetAtrFrac * atrV : na
+float shortMarker = InpShowMarkers and sig == -1 and atrV > 0 ? high + InpArrowOffsetAtrFrac * atrV : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
+plot(htfBias, "htfBias", color=color.gray, display=display.data_window)
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(macdLine, "MACD", color=color.gray, display=display.data_window)
+plot(macdSig, "MACD signal", color=color.gray, display=display.data_window)
+plot(macdHist, "MACD hist", color=color.gray, display=display.data_window)
+
+var table panel = table.new(position.top_left, 1, 10, bgcolor=color.new(color.black, 25))
+if InpShowPanel and barstate.islast
+    bias = htfBias > 0 ? "BULL" : htfBias < 0 ? "BEAR" : "CHOP"
+    sigs = sig[1] > 0.5 ? "LONG" : sig[1] < -0.5 ? "SHORT" : "flat"
+    table.cell(panel, 0, 0, "BtcTrendPullback v1.10 observe-only", text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 0, 1, "EMAs " + str.tostring(InpEmaFast) + " / " + str.tostring(InpEmaSlow), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 2, "HTF " + InpHtfPeriod + ": " + bias + "  str=" + str.tostring(htfStrength * 100.0, "#.00") + "%", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 3, "Close " + str.tostring(close, format.mintick), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 4, "ATR% " + str.tostring(atrPct * 100.0, "#.00") + "  VWAP " + (InpUseVwap ? "ON" : "OFF"), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 5, "Signal " + sigs + "  | sig@7 | no orders", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 6, "promote=no", text_color=color.gray, text_halign=text.align_left)
+
+alertcondition(sig == 1, "BTP long (observe-only)", "BTC pullback long — buffer 7 — not a live signal")
+alertcondition(sig == -1, "BTP short (observe-only)", "BTC pullback short — buffer 7 — not a live signal")

@@ -1,0 +1,350 @@
+// ForexHtfPivotsFib.pine
+// Source: mql5/Indicators/ForexHtfPivotsFib.mq5 v1.45 (this repo is truth)
+// Observe-only. promote=no. Not a live signal. Never strategy / never orders.
+//
+// Ported FROM current MQL5 (confirm-bar *close* fib snaps, SignalContract buffer 8).
+// Do not revert to the older manual-trading-agent tradingview_pivot_rsi_ema.pine dialect.
+//
+// STUBS (cannot match MQL5 — do not fake parity):
+//   - forex_sr_levels.csv / .tpl S/R import (Wine MQL5\Files)
+//   - mt5_arch/htf_fib_effective_*.txt writer
+//   - iCustom / ForexSignalLogger / ChartObjects GDI
+//   - tester H1 fallback when HTF CopyRates is empty
+//
+// iCustom signal buffer = 8  (+1 long / -1 short / 0)
+
+//@version=5
+indicator("HTF Fib (observe-only)", shorttitle="HTFFIB", overlay=true, max_labels_count=50, max_lines_count=50, max_boxes_count=20)
+
+// === Trading mode ===
+string InpTradingMode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="=== Trading mode ===")
+bool   InpManualOverride = input.bool(false, "InpManualOverride", group="=== Trading mode ===")
+
+// === EMAs (ignored unless Manual override) ===
+int  InpEmaFast     = input.int(20, "InpEmaFast", minval=1, group="=== EMAs (ignored unless Manual override) ===")
+int  InpEmaSlow     = input.int(50, "InpEmaSlow", minval=1, group="=== EMAs (ignored unless Manual override) ===")
+int  InpEmaBias     = input.int(200, "InpEmaBias", minval=1, group="=== EMAs (ignored unless Manual override) ===")
+bool InpShowEmas    = input.bool(true, "InpShowEmas", group="=== EMAs (ignored unless Manual override) ===")
+bool InpShowBiasEma = input.bool(true, "InpShowBiasEma", group="=== EMAs (ignored unless Manual override) ===")
+
+// === HTF Pivots 4H ===
+int   InpLeft4h    = input.int(5, "InpLeft4h", minval=1, group="=== HTF Pivots 4H ===")
+int   InpRight4h   = input.int(5, "InpRight4h", minval=1, group="=== HTF Pivots 4H ===")
+bool  InpShow4hLines = input.bool(true, "InpShow4hLines", group="=== HTF Pivots 4H ===")
+bool  InpShow4hLabels = input.bool(false, "InpShow4hLabels", group="=== HTF Pivots 4H ===")
+color InpCol4hHigh = input.color(#FF6347, "InpCol4hHigh", group="=== HTF Pivots 4H ===")
+color InpCol4hLow  = input.color(#32CD32, "InpCol4hLow", group="=== HTF Pivots 4H ===")
+
+// === HTF Pivots Daily ===
+int   InpLeftDaily  = input.int(5, "InpLeftDaily", minval=1, group="=== HTF Pivots Daily ===")
+int   InpRightDaily = input.int(5, "InpRightDaily", minval=1, group="=== HTF Pivots Daily ===")
+bool  InpShowDailyLines = input.bool(true, "InpShowDailyLines", group="=== HTF Pivots Daily ===")
+bool  InpShowDailyLabels = input.bool(false, "InpShowDailyLabels", group="=== HTF Pivots Daily ===")
+color InpColDailyHigh = input.color(#800000, "InpColDailyHigh", group="=== HTF Pivots Daily ===")
+color InpColDailyLow  = input.color(#00FF00, "InpColDailyLow", group="=== HTF Pivots Daily ===")
+
+// === Fibonacci ===
+string InpFibSource = input.string("H4", "InpFibSource", options=["H4", "Daily"], group="=== Fibonacci ===")
+bool   InpShowFib = input.bool(true, "InpShowFib", group="=== Fibonacci ===")
+bool   InpShowFib236 = input.bool(false, "InpShowFib236", group="=== Fibonacci ===")
+bool   InpShowFib382 = input.bool(false, "InpShowFib382", group="=== Fibonacci ===")
+bool   InpShowFib500 = input.bool(true, "InpShowFib500", group="=== Fibonacci ===")
+bool   InpShowFib618 = input.bool(true, "InpShowFib618", group="=== Fibonacci ===")
+bool   InpShowFib786 = input.bool(true, "InpShowFib786", group="=== Fibonacci ===")
+bool   InpShowGoldenZone = input.bool(true, "InpShowGoldenZone", group="=== Fibonacci ===")
+color  InpColFib500 = input.color(#FFA500, "InpColFib500", group="=== Fibonacci ===")
+color  InpColFib618 = input.color(#BA55D3, "InpColFib618", group="=== Fibonacci ===")
+color  InpColFib786 = input.color(#FF6347, "InpColFib786", group="=== Fibonacci ===")
+color  InpColGolden = input.color(#282800, "InpColGolden", group="=== Fibonacci ===")
+
+// === RSI + RSI MA confluence ===
+bool   InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== RSI + RSI MA confluence ===")
+int    InpRsiPeriod = input.int(14, "InpRsiPeriod", minval=1, group="=== RSI + RSI MA confluence ===")
+int    InpRsiMaPeriod = input.int(14, "InpRsiMaPeriod", minval=1, group="=== RSI + RSI MA confluence ===")
+string InpRsiMaMethod = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="=== RSI + RSI MA confluence ===")
+int    InpRsiLongMax = input.int(35, "InpRsiLongMax", group="=== RSI + RSI MA confluence ===")
+int    InpRsiShortMin = input.int(65, "InpRsiShortMin", group="=== RSI + RSI MA confluence ===")
+bool   InpUseRsiMaFilter = input.bool(true, "InpUseRsiMaFilter", group="=== RSI + RSI MA confluence ===")
+bool   InpRequireCandle = input.bool(false, "InpRequireCandle", group="=== RSI + RSI MA confluence ===")
+bool   InpRequireGoldenZone = input.bool(true, "InpRequireGoldenZone", group="=== RSI + RSI MA confluence ===")
+bool   InpRequireBiasFilter = input.bool(true, "InpRequireBiasFilter", group="=== RSI + RSI MA confluence ===")
+
+// === Display ===
+bool   InpShowPanel = input.bool(true, "InpShowPanel", group="=== Display ===")
+float  InpArrowOffsetPips = input.float(4.0, "InpArrowOffsetPips", step=0.1, group="=== Display ===")
+
+// === S/R levels (imported from .tpl templates) ===
+// STUB: MQL5 reads MQL5\Files\forex_sr_levels.csv. Pine cannot load that file.
+bool   InpShowSrLevels = input.bool(false, "InpShowSrLevels (STUB — CSV not in Pine)", group="=== S/R levels (imported from .tpl templates) ===")
+string InpSrFile = input.string("forex_sr_levels.csv", "InpSrFile (STUB)", group="=== S/R levels (imported from .tpl templates) ===")
+
+fibLevel(int direction, float hi, float lo, float ratio) =>
+    direction == 1 ? hi - (hi - lo) * ratio : lo + (hi - lo) * ratio
+
+rsiBias(float r, float m) =>
+    na(r) or na(m) ? 0 : r > m ? 1 : r < m ? -1 : 0
+
+fxPipSize() =>
+    pt = syminfo.mintick
+    dig = pt > 0 ? math.round(math.log(1.0 / pt) / math.log(10.0)) : 0.0
+    dig == 3 or dig == 5 ? pt * 10.0 : pt
+
+// --- Mode resolve (ForexUtils.mqh FxResolveTradingMode) ---
+bool isSwing = InpTradingMode == "SWING"
+int emaFast = InpManualOverride ? InpEmaFast : (isSwing ? 50 : 20)
+int emaSlow = InpManualOverride ? InpEmaSlow : (isSwing ? 200 : 50)
+int emaBiasLen = InpManualOverride ? InpEmaBias : 200
+int fibSrc = InpManualOverride ? (InpFibSource == "Daily" ? 1 : 0) : (isSwing ? 1 : 0)
+bool show4hEff = InpManualOverride ? InpShow4hLines : (not isSwing and InpShow4hLines)
+bool useBiasEma = true
+string modeName = isSwing ? "SWING" : "INTRADAY"
+string chartHint = isSwing ? "H4-D1 (or H1 for entries)" : "M15-H1 (structure from 4H/D)"
+
+bool use4h = timeframe.in_seconds() <= timeframe.in_seconds("240")
+bool fibFrom4h = fibSrc == 0 and use4h
+
+// HTF pivots: ta.pivothigh/low confirm at center+right (non-repaint).
+// gaps_on + lookahead_off ≈ MQL5 stamp at confirm-bar close (not the center).
+float h4Ph = request.security(syminfo.tickerid, "240", ta.pivothigh(high, InpLeft4h, InpRight4h), gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float h4Pl = request.security(syminfo.tickerid, "240", ta.pivotlow(low, InpLeft4h, InpRight4h), gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float d1Ph = request.security(syminfo.tickerid, "D", ta.pivothigh(high, InpLeftDaily, InpRightDaily), gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+float d1Pl = request.security(syminfo.tickerid, "D", ta.pivotlow(low, InpLeftDaily, InpRightDaily), gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+
+var float latest4hH = na
+var float latest4hL = na
+var float latestDh = na
+var float latestDl = na
+if not na(h4Ph)
+    latest4hH := h4Ph
+if not na(h4Pl)
+    latest4hL := h4Pl
+if not na(d1Ph)
+    latestDh := d1Ph
+if not na(d1Pl)
+    latestDl := d1Pl
+
+// Swing machine = ProcessPivotEvent in ForexHtfPivotsFib.mq5 (not the Python research core).
+var int   lastPivotType = 0
+var float lastPivotPrice = 0.0
+var float swingHigh = 0.0
+var float swingLow = 0.0
+var int   swingDir = 0
+var float lastSrcHigh = 0.0
+var float lastSrcLow = 0.0
+var int   lastSrcHighBar = 0
+var int   lastSrcLowBar = 0
+var bool  fibValid = false
+var float g236 = na
+var float g382 = na
+var float g500 = na
+var float g618 = na
+var float g786 = na
+
+srcPh = fibFrom4h ? h4Ph : d1Ph
+srcPl = fibFrom4h ? h4Pl : d1Pl
+both = not na(srcPh) and not na(srcPl)
+newH = not na(srcPh) and not both
+newL = not na(srcPl) and not both
+
+if newH or newL
+    ptype = newH ? 1 : -1
+    price = newH ? srcPh : srcPl
+    if ptype == 1
+        lastSrcHigh := price
+        lastSrcHighBar := bar_index
+        if lastPivotType == 0
+            lastPivotType := 1
+            lastPivotPrice := price
+        else if lastPivotType == 1
+            if price > lastPivotPrice
+                lastPivotPrice := price
+                if swingDir == 1
+                    swingHigh := price
+        else
+            if price > lastPivotPrice or swingDir == 0
+                swingLow := lastPivotPrice
+                swingHigh := price
+                swingDir := 1
+            lastPivotType := 1
+            lastPivotPrice := price
+    else
+        lastSrcLow := price
+        lastSrcLowBar := bar_index
+        if lastPivotType == 0
+            lastPivotType := -1
+            lastPivotPrice := price
+        else if lastPivotType == -1
+            if price < lastPivotPrice
+                lastPivotPrice := price
+                if swingDir == -1
+                    swingLow := price
+        else
+            if price < lastPivotPrice or swingDir == 0
+                swingHigh := lastPivotPrice
+                swingLow := price
+                swingDir := -1
+            lastPivotType := -1
+            lastPivotPrice := price
+    if swingDir != 0 and swingHigh > swingLow
+        g236 := fibLevel(swingDir, swingHigh, swingLow, 0.236)
+        g382 := fibLevel(swingDir, swingHigh, swingLow, 0.382)
+        g500 := fibLevel(swingDir, swingHigh, swingLow, 0.500)
+        g618 := fibLevel(swingDir, swingHigh, swingLow, 0.618)
+        g786 := fibLevel(swingDir, swingHigh, swingLow, 0.786)
+        fibValid := true
+    else if swingDir == 0 and lastSrcHigh > 0.0 and lastSrcLow > 0.0 and lastSrcHigh > lastSrcLow
+        swingHigh := lastSrcHigh
+        swingLow := lastSrcLow
+        swingDir := lastSrcHighBar >= lastSrcLowBar ? 1 : -1
+        g236 := fibLevel(swingDir, swingHigh, swingLow, 0.236)
+        g382 := fibLevel(swingDir, swingHigh, swingLow, 0.382)
+        g500 := fibLevel(swingDir, swingHigh, swingLow, 0.500)
+        g618 := fibLevel(swingDir, swingHigh, swingLow, 0.618)
+        g786 := fibLevel(swingDir, swingHigh, swingLow, 0.786)
+        fibValid := true
+
+emaF = ta.ema(close, emaFast)
+emaS = ta.ema(close, emaSlow)
+emaB = ta.ema(close, emaBiasLen)
+rsiV = ta.rsi(close, InpRsiPeriod)
+rsiMa = InpRsiMaMethod == "EMA" ? ta.ema(rsiV, InpRsiMaPeriod) : ta.sma(rsiV, InpRsiMaPeriod)
+
+have = fibValid and swingDir != 0 and not na(g618) and not na(g786) and g618 > 0 and g786 > 0
+int dir = have ? swingDir : 0
+float f618 = have ? g618 : na
+float f786 = have ? g786 : na
+
+bool bullZone = true
+bool bearZone = true
+if InpRequireGoldenZone
+    bullZone := have and dir == 1 and close <= f618 and close >= f786
+    bearZone := have and dir == -1 and close >= f618 and close <= f786
+else if dir != 0
+    bullZone := dir == 1
+    bearZone := dir == -1
+
+bool rsiLongOk = rsiV <= InpRsiLongMax
+bool rsiShortOk = rsiV >= InpRsiShortMin
+if InpUseRsiMaFilter
+    rsiLongOk := rsiLongOk and rsiBias(rsiV, rsiMa) == 1
+    rsiShortOk := rsiShortOk and rsiBias(rsiV, rsiMa) == -1
+
+bool regimeLong = not InpRequireBiasFilter or not useBiasEma or close > emaB
+bool regimeShort = not InpRequireBiasFilter or not useBiasEma or close < emaB
+bool bullishCandle = close > open and close > close[1]
+bool bearishCandle = close < open and close < close[1]
+
+bool longOk = bullZone and regimeLong and rsiLongOk and (not InpRequireCandle or bullishCandle)
+bool shortOk = bearZone and regimeShort and rsiShortOk and (not InpRequireCandle or bearishCandle)
+
+// Previous-bar edge uses the *current* fib snapshot (MQL5 FibAt(this bar close)).
+bool bz1 = true
+bool ez1 = true
+if InpRequireGoldenZone and have
+    bz1 := dir == 1 and close[1] <= f618 and close[1] >= f786
+    ez1 := dir == -1 and close[1] >= f618 and close[1] <= f786
+else if not InpRequireGoldenZone and dir != 0
+    bz1 := dir == 1
+    ez1 := dir == -1
+else if InpRequireGoldenZone
+    bz1 := false
+    ez1 := false
+
+bool pl = rsiV[1] <= InpRsiLongMax
+bool ps = rsiV[1] >= InpRsiShortMin
+if InpUseRsiMaFilter
+    pl := pl and rsiBias(rsiV[1], rsiMa[1]) == 1
+    ps := ps and rsiBias(rsiV[1], rsiMa[1]) == -1
+bool rl = not InpRequireBiasFilter or not useBiasEma or close[1] > emaB[1]
+bool rs = not InpRequireBiasFilter or not useBiasEma or close[1] < emaB[1]
+bool prevLong = bz1 and rl and pl
+bool prevShort = ez1 and rs and ps
+
+int sig = 0
+if InpRequireGoldenZone and not have
+    sig := 0
+else if bar_index < 1 or not barstate.isconfirmed
+    sig := 0
+else if longOk and not prevLong
+    sig := 1
+else if shortOk and not prevShort
+    sig := -1
+
+// Plots (buffers 0–4 visual; 5–10 data window ≈ iCustom map)
+plot(InpShowEmas ? emaF : na, "EMA Fast", color=#00BFFF, linewidth=1)
+plot(InpShowEmas ? emaS : na, "EMA Slow", color=#FFA500, linewidth=2)
+plot((InpShowEmas and not InpShowBiasEma) ? na : emaB, "EMA Bias", color=#FFD700, linewidth=2)
+p618 = plot(InpShowFib and InpShowFib618 and have ? g618 : na, "Fib 61.8", color=InpColFib618, linewidth=2)
+p786 = plot(InpShowFib and InpShowFib786 and have ? g786 : na, "Fib 78.6", color=InpColFib786, linewidth=1)
+plot(InpShowFib and InpShowFib500 and have ? g500 : na, "Fib 50", color=InpColFib500, linewidth=1)
+plot(InpShowFib and InpShowFib236 and have ? g236 : na, "Fib 23.6", color=#6495ED, linewidth=1)
+plot(InpShowFib and InpShowFib382 and have ? g382 : na, "Fib 38.2", color=#1E90FF, linewidth=1)
+fill(p618, p786, color=InpShowGoldenZone ? color.new(InpColGolden, 70) : na, title="Golden zone")
+plot(show4hEff and use4h ? latest4hH : na, "4H High", color=InpCol4hHigh, linewidth=2)
+plot(show4hEff and use4h ? latest4hL : na, "4H Low", color=InpCol4hLow, linewidth=2)
+plot(InpShowDailyLines ? latestDh : na, "D High", color=InpColDailyHigh, linewidth=2)
+plot(InpShowDailyLines ? latestDl : na, "D Low", color=InpColDailyLow, linewidth=2)
+float longMarker = InpShowMarkers and sig == 1 ? low - InpArrowOffsetPips * fxPipSize() : na
+float shortMarker = InpShowMarkers and sig == -1 ? high + InpArrowOffsetPips * fxPipSize() : na
+plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
+plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
+plot(sig, "signal", color=color.gray, display=display.data_window)
+plot(dir, "swingDir", color=color.gray, display=display.data_window)
+plot(rsiV, "RSI", color=color.gray, display=display.data_window)
+plot(rsiMa, "RSI-MA", color=color.gray, display=display.data_window)
+var label lbl4hH = na
+var label lbl4hL = na
+var label lblDh = na
+var label lblDl = na
+if barstate.islast
+    if InpShow4hLabels and show4hEff and use4h and not na(latest4hH)
+        if na(lbl4hH)
+            lbl4hH := label.new(bar_index, latest4hH, "4H H", xloc.bar_index, yloc.price, color.new(InpCol4hHigh, 100), textcolor=InpCol4hHigh, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hH, bar_index, latest4hH)
+    else if not na(lbl4hH)
+        label.delete(lbl4hH)
+        lbl4hH := na
+    if InpShow4hLabels and show4hEff and use4h and not na(latest4hL)
+        if na(lbl4hL)
+            lbl4hL := label.new(bar_index, latest4hL, "4H L", xloc.bar_index, yloc.price, color.new(InpCol4hLow, 100), textcolor=InpCol4hLow, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lbl4hL, bar_index, latest4hL)
+    else if not na(lbl4hL)
+        label.delete(lbl4hL)
+        lbl4hL := na
+    if InpShowDailyLabels and InpShowDailyLines and not na(latestDh)
+        if na(lblDh)
+            lblDh := label.new(bar_index, latestDh, "D H", xloc.bar_index, yloc.price, color.new(InpColDailyHigh, 100), textcolor=InpColDailyHigh, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDh, bar_index, latestDh)
+    else if not na(lblDh)
+        label.delete(lblDh)
+        lblDh := na
+    if InpShowDailyLabels and InpShowDailyLines and not na(latestDl)
+        if na(lblDl)
+            lblDl := label.new(bar_index, latestDl, "D L", xloc.bar_index, yloc.price, color.new(InpColDailyLow, 100), textcolor=InpColDailyLow, style=label.style_none, size=size.small)
+        else
+            label.set_xy(lblDl, bar_index, latestDl)
+    else if not na(lblDl)
+        label.delete(lblDl)
+        lblDl := na
+
+var table panel = table.new(position.top_left, 2, 12, bgcolor=color.new(color.black, 25), border_width=0)
+if InpShowPanel and barstate.islast
+    rb = rsiBias(rsiV, rsiMa)
+    rsiRel = rb > 0 ? "above MA" : rb < 0 ? "below MA" : "flat"
+    dirTxt = swingDir == 1 ? "BULL" : swingDir == -1 ? "BEAR" : "none"
+    gz = fibValid ? str.tostring(math.min(g618, g786), format.mintick) + " - " + str.tostring(math.max(g618, g786), format.mintick) : "(need swing)"
+    lastSig = sig[1]
+    table.cell(panel, 0, 0, "HTF Fib v1.45 observe-only", text_color=color.white, text_halign=text.align_left)
+    table.cell(panel, 0, 1, "Mode " + modeName + " (" + chartHint + ")", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 2, "EMAs " + str.tostring(emaFast) + "/" + str.tostring(emaSlow) + " bias " + str.tostring(emaBiasLen), text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 3, "Fib src " + (fibFrom4h ? "4H" : "Daily") + "  Swing " + dirTxt, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 4, "Golden " + gz, text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 5, "RSI " + str.tostring(rsiV, "#.0") + "  MA " + str.tostring(rsiMa, "#.0") + " (" + rsiRel + ")", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 6, "Signal " + str.tostring(lastSig, "#") + "  | sig@8 | no orders", text_color=color.silver, text_halign=text.align_left)
+    table.cell(panel, 0, 7, "promote=no  (S/R CSV stubbed)", text_color=color.gray, text_halign=text.align_left)
+
+alertcondition(sig == 1, "HTFFIB long (observe-only)", "HTF Fib long marker — not a live signal")
+alertcondition(sig == -1, "HTFFIB short (observe-only)", "HTF Fib short marker — not a live signal")
