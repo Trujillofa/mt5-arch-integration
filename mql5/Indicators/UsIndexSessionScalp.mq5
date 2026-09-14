@@ -69,6 +69,7 @@
 #include <IndexM5Export.mqh>
 #include <SignalContract.mqh>
 #include <ChartObjects.mqh>
+#include <SessionVwapOr.mqh>
 
 #define IDX_MAX_BOXES 12
 
@@ -658,11 +659,8 @@ int OnCalculate(const int rates_total,
       first = MathMax(0, first - bars_per_day);
      }
 
-   double vnum = 0.0, vden = 0.0;
-   int    vday = -1;
-   double or_h = 0.0, or_l = 0.0;
-   bool   or_set = false;
-   int    or_day = -1;
+   SessionVwapOr svo;
+   SvoInit(svo);
    int    fired_day = -1;
    double pdh = 0.0, pdl = 0.0;
    int    pdh_day = -1;
@@ -717,20 +715,14 @@ int OnCalculate(const int rates_total,
       ENUM_IDX_SESSION sess = IdxDetectSession(time[i], g_offset);
       BufSession[i] = (double)sess;
 
-      if(day != vday)
+      int prev_day = svo.day_key;
+      if(SvoOnDayChange(svo, day, 0.0))
         {
-         if(vday > 0 && vday != today_key)
+         if(prev_day > 0 && prev_day != today_key)
            {
             // previous completed ET day becomes PDH/PDL
-            pdh_day = vday;
+            pdh_day = prev_day;
            }
-         vday  = day;
-         vnum  = 0.0;
-         vden  = 0.0;
-         or_h  = 0.0;
-         or_l  = 0.0;
-         or_set = false;
-         or_day = day;
         }
 
       // Prior-day range: all bars of the last fully finished ET date
@@ -757,45 +749,31 @@ int OnCalculate(const int rates_total,
 
       if(IdxIsNyCash(et))
         {
-         double typ = (high[i] + low[i] + close[i]) / 3.0;
-         double vol = (double)MathMax(tick_volume[i], 1);
-         vnum += typ * vol;
-         vden += vol;
-         BufVwap[i] = (InpShowVwap && vden > 0.0) ? (vnum / vden) : EMPTY_VALUE;
+         SvoAccumulate(svo, high[i], low[i], close[i], tick_volume[i]);
+         BufVwap[i] = (InpShowVwap && svo.vden > 0.0) ? SvoVwap(svo) : EMPTY_VALUE;
         }
       else
          BufVwap[i] = EMPTY_VALUE;
 
       if(IdxInOrWindow(et, InpOrMinutes))
         {
-         if(!or_set)
-           {
-            or_h = high[i];
-            or_l = low[i];
-            or_set = true;
-            if(day == today_key)
-               today_or_t0 = time[i];
-           }
-         else
-           {
-            if(high[i] > or_h)
-               or_h = high[i];
-            if(low[i] < or_l)
-               or_l = low[i];
-           }
+         bool first_or = !svo.or_set;
+         SvoOrBar(svo, high[i], low[i]);
+         if(first_or && day == today_key)
+            today_or_t0 = time[i];
          if(day == today_key)
             today_or_t1 = time[i] + psec;
         }
 
-      bool or_ready = or_set && IdxOrComplete(et, InpOrMinutes);
+      bool or_ready = svo.or_set && IdxOrComplete(et, InpOrMinutes);
       if(or_ready)
         {
-         BufOrHigh[i] = or_h;
-         BufOrLow[i]  = or_l;
+         BufOrHigh[i] = svo.or_hi;
+         BufOrLow[i]  = svo.or_lo;
          if(day == today_key)
            {
-            today_or_h  = or_h;
-            today_or_l  = or_l;
+            today_or_h  = svo.or_hi;
+            today_or_l  = svo.or_lo;
             today_or_ok = true;
            }
         }
@@ -901,12 +879,12 @@ int OnCalculate(const int rates_total,
               }
            }
         }
-      else if(px > or_h && px > vwap && ef > es)
+      else if(px > svo.or_hi && px > vwap && ef > es)
         {
          sig = +1;
          why = "orb_vwap_ema_long";
         }
-      else if(px < or_l && px < vwap && ef < es)
+      else if(px < svo.or_lo && px < vwap && ef < es)
         {
          sig = -1;
          why = "orb_vwap_ema_short";

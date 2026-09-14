@@ -6,6 +6,7 @@
 | `Include/IndexSessionUtils.mqh` | US-index DST clock (ET / London / Tokyo) + point spread |
 | `Include/SignalContract.mqh` | Overlay SIGNAL buffer indices (UIS/BNS/HTFFIB=8, BTP=7, FXIT=9) |
 | `Include/ChartObjects.mqh` | Prefix-scoped upsert + OnDeinit wipe (REMOVE/CHARTCLOSE/RECOMPILE only) |
+| `Include/SessionVwapOr.mqh` | ET-day VWAP (vnum/vden) + OR hi/lo (UIS/BNS). BTP RollingVwap stays lookback |
 | `Indicators/ForexIndicatorTemplate.mq5` | EMA cloud + prior-day H/L/O + RSI template signals |
 | `Indicators/ForexHtfPivotsFib.mq5` | **FX/gold primary:** HTF pivots + Fib — **[How to use](../docs/HOWTO-HTF-FIB.md)** |
 | `Indicators/BtcTrendPullback.mq5` | **BTCUSD H1:** H4 bias + H1 EMA pullback reclaim (ATR guides, buffer 7) |

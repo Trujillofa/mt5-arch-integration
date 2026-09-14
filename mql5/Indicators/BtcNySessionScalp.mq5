@@ -68,6 +68,7 @@
 #include <BtcSessionUtils.mqh>
 #include <SignalContract.mqh>
 #include <ChartObjects.mqh>
+#include <SessionVwapOr.mqh>
 
 enum ENUM_BTC_FAMILY
   {
@@ -284,10 +285,9 @@ int OnCalculate(const int rates_total,
       BufAtr[z]     = atr[z];
      }
 
-   double vnum = 0.0, vden = 0.0;
-   double or_h = EMPTY_VALUE, or_l = EMPTY_VALUE;
+   SessionVwapOr svo;
+   SvoInit(svo);
    bool or_ready = false;
-   int last_key = -1;
    int fired_key = -1;
    datetime last_et_day = 0;
 
@@ -296,11 +296,8 @@ int OnCalculate(const int rates_total,
       datetime et = BtcEtFromServer(time[i]);
       int key = BtcEtKey(et);
       int emin = BtcEtMinuteOfDay(et);
-      if(key != last_key)
+      if(SvoOnDayChange(svo, key, EMPTY_VALUE))
         {
-         last_key = key;
-         vnum = vden = 0.0;
-         or_h = or_l = EMPTY_VALUE;
          or_ready = false;
          last_et_day = et - emin * 60;
         }
@@ -308,32 +305,18 @@ int OnCalculate(const int rates_total,
       BufSession[i] = in_box ? 1.0 : 0.0;
       if(in_box)
         {
-         double typ = (high[i] + low[i] + close[i]) / 3.0;
-         double vol = (double)MathMax(tick_volume[i], 1);
-         vnum += typ * vol;
-         vden += vol;
-         if(vden > 0.0 && InpShowVwap)
-            BufVwap[i] = vnum / vden;
+         SvoAccumulate(svo, high[i], low[i], close[i], tick_volume[i]);
+         if(svo.vden > 0.0 && InpShowVwap)
+            BufVwap[i] = SvoVwap(svo);
          int or_end = BTC_SESSION_START_MIN + InpOrMinutes;
          if(emin >= BTC_SESSION_START_MIN && emin < or_end)
-           {
-            if(or_h == EMPTY_VALUE)
-              {
-               or_h = high[i];
-               or_l = low[i];
-              }
-            else
-              {
-               or_h = MathMax(or_h, high[i]);
-               or_l = MathMin(or_l, low[i]);
-              }
-           }
-         if(emin >= or_end && or_h != EMPTY_VALUE)
+            SvoOrBar(svo, high[i], low[i]);
+         if(emin >= or_end && svo.or_set)
             or_ready = true;
          if(InpShowOr && or_ready)
            {
-            BufOrHigh[i] = or_h;
-            BufOrLow[i]  = or_l;
+            BufOrHigh[i] = svo.or_hi;
+            BufOrLow[i]  = svo.or_lo;
            }
         }
 
@@ -349,11 +332,11 @@ int OnCalculate(const int rates_total,
          g_last_reason = "outside_window";
       else if(close[i] <= 0.0 || atr[i] <= 0.0 || atr[i] / close[i] < InpMinAtrPct)
          g_last_reason = "dead_atr";
-      else if(vden <= 0.0)
+      else if(svo.vden <= 0.0)
          g_last_reason = "no_vwap";
       else
         {
-         double vw = vnum / vden;
+         double vw = SvoVwap(svo);
          double ef = ema_f[i];
          double es = ema_s[i];
          double px = close[i];
@@ -371,9 +354,9 @@ int OnCalculate(const int rates_total,
             else
               {
                double buf = InpOrBufferAtrFrac * atr[i];
-               if(px > or_h + buf && px > vw && ef > es)
+               if(px > svo.or_hi + buf && px > vw && ef > es)
                   sig = 1;
-               else if(px < or_l - buf && px < vw && ef < es)
+               else if(px < svo.or_lo - buf && px < vw && ef < es)
                   sig = -1;
               }
            }
