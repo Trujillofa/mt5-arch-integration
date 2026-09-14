@@ -215,6 +215,8 @@ CLIENT_NO_ENV = [
     DESK / "src" / "components" / "desk" / "blotter-table.tsx",
     DESK / "src" / "components" / "desk" / "positions-panel.tsx",
     DESK / "src" / "components" / "desk" / "pending-orders-block.tsx",
+    DESK / "src" / "components" / "desk" / "ftmo-live-follow.tsx",
+    DESK / "src" / "components" / "desk" / "ftmo-live-probe.tsx",
 ]
 
 
@@ -223,6 +225,30 @@ def test_client_modules_do_not_import_env() -> None:
         text = path.read_text(encoding="utf-8")
         assert '/env"' not in text, path
         assert "/env'" not in text, path
+
+
+def test_ftmo_follow_is_session_only() -> None:
+    storage = (DESK / "src" / "lib" / "storage.ts").read_text(encoding="utf-8")
+    seed = (DESK / "src" / "lib" / "seed.ts").read_text(encoding="utf-8")
+    types = (DESK / "src" / "lib" / "types.ts").read_text(encoding="utf-8")
+    context = CONTEXT.read_text(encoding="utf-8")
+    probe = (DESK / "src" / "components" / "desk" / "ftmo-live-probe.tsx").read_text(
+        encoding="utf-8"
+    )
+    assert "ftmoFollowTerminal: false" in seed
+    assert "ftmoFollowTerminal: false" in storage
+    persist = storage.split("type PersistShape")[1].split("function migrateOperatorLogins")[0]
+    assert "ftmoFollowTerminal" not in persist
+    payload = storage.split("const payload: PersistShape")[1].split("window.localStorage")[0]
+    assert "ftmoFollowTerminal" not in payload
+    assert "Always false in loadDesk/seed" in types
+    assert "followFtmoTerminal" in context
+    assert 'row.liveBroker === "ftmo"' in context
+    assert "LIVE_FOLLOW_POLL_MS" in probe
+    assert "followFtmoTerminal" in probe
+    engine = (DESK / "src" / "lib" / "copy-engine.ts").read_text(encoding="utf-8")
+    assert "diffFollowTickets" in engine
+    assert "placeFollowMasterFill" in engine
 
 
 def test_confirm_tokens_unchanged() -> None:

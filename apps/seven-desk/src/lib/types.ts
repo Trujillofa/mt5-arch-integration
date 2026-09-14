@@ -87,6 +87,8 @@ export interface Position {
   orderType?: "market" | "buy_limit" | "sell_limit" | "buy_stop" | "sell_stop";
   /** Copy-group id so flatten can close sibling live books. */
   groupId?: string;
+  /** True when the FTMO row was opened by terminal follow, not Place master. */
+  followOrigin?: boolean;
 }
 
 export interface BlotterEvent {
@@ -137,4 +139,6 @@ export interface DeskState {
   fundingpipsLiveCopy: boolean;
   neomaaLiveCopy: boolean;
   fortradersLiveCopy: boolean;
+  /** Follow new FTMO terminal tickets. Always false in loadDesk/seed. */
+  ftmoFollowTerminal: boolean;
 }

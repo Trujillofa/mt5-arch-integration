@@ -166,5 +166,6 @@ export function seedDesk(): DeskState {
     fundingpipsLiveCopy: false,
     neomaaLiveCopy: false,
     fortradersLiveCopy: false,
+    ftmoFollowTerminal: false,
   };
 }

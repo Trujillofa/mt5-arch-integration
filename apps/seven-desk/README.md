@@ -109,6 +109,10 @@ Select the FTMO card and click **Fetch FTMO**, or:
 
 Uses `FTMO_MT5_*` from the gitignored repo `.env` (login `541163357`, server `FTMO-Server4`, prefix `~/.mt5-ftmo`). It does **not** read WSF `MT5_*` / `WINEPREFIX`. Title-only auto-login (balance 0, empty currency) is treated as `auth_failed`. Attaching `Mt5ArchBridge` is an FTMO add-on risk the operator accepted for the snapshot. Arm **FTMO live master** on the FTMO card (`confirm: "FTMO-541163357"`) so Place master trade is a real EURUSD `POST /api/ftmo/order` (standard 4 lots; market / limit / stop). Copies wait until that send.
 
+### FTMO terminal follow
+
+A second origin, not Place master. Arm **FTMO terminal follow** on the same card (`confirm: "FTMO-541163357"`). The switch is session-only (always off after reload). On arm, current FTMO positions and pendings become the leftover baseline and are never copied. Tickets that appear after arm fan out to **armed** live slaves (Alpha stays skip). Later SL/TP edits modify those slave legs. When the FTMO ticket is gone, the slave group closes or cancels. Follow never `OrderSend`s on FTMO. Probe stays 8s idle and polls ~2s only while follow is armed. Merge ≠ deploy.
+
 ## Alpha Capital live fetch (read-only)
 
 Select the Alpha Capital card and click **Fetch Alpha Capital**, or:

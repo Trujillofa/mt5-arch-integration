@@ -13,7 +13,11 @@ or **Neomaa live copy** or **Fortraders live copy** on those cards
 so slaves copy the **same type** as the ticket (market / limit / stop). Arm
 **FTMO live master** so Place master trade is a real EURUSD send
 on 541163357 (standard **4** lots; FundedNext ×**0.1**; FundingPips ×**0.2**)
-before any copy. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
+before any copy. Arm **FTMO terminal follow** (same confirm token, session-only)
+to copy **new** FTMO terminal tickets onto armed slaves — leftover baseline at
+arm is never copied, later SL/TP edits fan out, and a gone FTMO ticket closes
+or cancels that slave group. Follow does not OrderSend on FTMO. Alpha stays
+fetch-only. The FTMO probe polls ~2s only while follow is armed. Market Buy/Sell stay available; limit and stop are extra. Other books stay paper. The happy path is in-process
 `Mt5ArchBridge` v1.27 polling `desk_live_order_request.txt` (seconds).
 `action: "modify"` plus `ticket` and `sl`/`tp` is `TRADE_ACTION_SLTP` on that
 book only (no slave fan-out). Alpha Capital stays read-only — modify returns

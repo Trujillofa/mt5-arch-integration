@@ -2,13 +2,16 @@ import assert from "node:assert/strict";
 import { parsePendingOrders } from "../apps/seven-desk/src/lib/bridge-orders.ts";
 import {
   applyLiveFill,
+  createFollowSession,
   describeFlattenTargets,
+  diffFollowTickets,
   flattenAllTargets,
   isBrokerLeftover,
   pendingLiveSlaveEvents,
   placeMasterTrade,
   recordHttpBlotter,
   resolveQueuedCopies,
+  snapshotFollowBaseline,
   upsertSnapshotPendings,
   upsertSnapshotPositions,
 } from "../apps/seven-desk/src/lib/copy-engine.ts";
@@ -17,6 +20,7 @@ import { DESK_MAGIC } from "../apps/seven-desk/src/lib/desk-magic.ts";
 import {
   COPY_FANOUT_SKIP,
   armedCopyBrokers,
+  liveCopySlTpError,
   needsSizeConfirm,
   sizeConfirmLines,
   worstLegMs,
@@ -337,5 +341,248 @@ const orphan = deskMagicUs30.positions.find((row) => row.liveOrder === 165085534
 assert.ok(orphan);
 assert.equal(orphan.leftover, true);
 assert.equal(flattenAllTargets(deskMagicUs30).liveRepIds.includes(orphan.id), false);
+
+function followPos(
+  ticket: number,
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    ticket,
+    symbol: "EURUSD",
+    side: "buy",
+    volume: 0.01,
+    open_price: 1.08,
+    stop_loss: 0,
+    take_profit: 0,
+    profit: 0,
+    magic: 0,
+    ...extra,
+  };
+}
+
+function followPend(
+  ticket: number,
+  extra: Record<string, unknown> = {}
+): Record<string, unknown> {
+  return {
+    ticket,
+    symbol: "EURUSD",
+    type: "buy_limit",
+    side: "buy",
+    volume: 0.01,
+    price_open: 1.08,
+    stop_loss: 0,
+    take_profit: 0,
+    status: "pending",
+    ...extra,
+  };
+}
+
+function followDeskRow(
+  ticket: number,
+  extra: Record<string, unknown> = {}
+) {
+  return {
+    id: `pos_ftmo_${ticket}`,
+    accountId: ACCOUNT_IDS.ftmo,
+    symbol: "EURUSD",
+    side: "buy" as const,
+    lots: 0.01,
+    entry: 1.08,
+    sl: null as number | null,
+    tp: null as number | null,
+    openedAt: 1,
+    mark: 1.08,
+    pnl: 0,
+    liveBroker: "ftmo" as const,
+    liveOrder: ticket,
+    leftover: false,
+    groupId: `grp_follow_${ticket}`,
+    orderType: "market" as const,
+    ...extra,
+  };
+}
+
+const leftoverAtArm = parseOpenPositions({
+  positions: [followPos(6001, { symbol: "US30.cash", volume: 4, open_price: 52500 })],
+});
+const leftoverPendingAtArm = parsePendingOrders({
+  orders: [followPend(6002, { type: "sell_limit", side: "sell" })],
+});
+const baselineTickets = snapshotFollowBaseline(leftoverAtArm, leftoverPendingAtArm);
+assert.equal(baselineTickets.has(6001), true);
+assert.equal(baselineTickets.has(6002), true);
+
+const stillLeftovers = parseOpenPositions({
+  positions: [
+    followPos(6001, { symbol: "US30.cash", volume: 4, open_price: 52500 }),
+    followPos(7001),
+  ],
+});
+const baselineDiff = diffFollowTickets(
+  createFollowSession(baselineTickets),
+  stillLeftovers,
+  leftoverPendingAtArm,
+  []
+);
+assert.equal(
+  baselineDiff.actions.some((row) => row.kind === "open" && row.ticket === 6001),
+  false,
+  "baseline tickets never appear in opens"
+);
+assert.equal(
+  baselineDiff.actions.some((row) => row.kind === "open" && row.ticket === 6002),
+  false,
+  "baseline pendings never appear in opens"
+);
+
+const afterArm = parseOpenPositions({ positions: [followPos(7001)] });
+const opened = diffFollowTickets(createFollowSession(baselineTickets), afterArm, [], []);
+const openPos = opened.actions.filter((row) => row.kind === "open");
+assert.equal(openPos.length, 1, "new position after arm → one master follow group");
+assert.equal(openPos[0]?.ticket, 7001);
+assert.equal(openPos[0]?.source, "position");
+assert.equal(openPos[0]?.livePending, false);
+assert.equal(openPos[0]?.orderType, "market");
+assert.ok(opened.next.followGroups.has(7001));
+
+const deskMagicProbe = parseOpenPositions({
+  positions: [followPos(165085534, { magic: DESK_MAGIC.ftmo, symbol: "US30.cash", volume: 4 })],
+});
+const deskMagicDiff = diffFollowTickets(
+  createFollowSession(),
+  deskMagicProbe,
+  [],
+  [
+    followDeskRow(165085534, {
+      symbol: "US30.cash",
+      lots: 4,
+      magic: DESK_MAGIC.ftmo,
+      groupId: "grp_desk",
+    }),
+  ]
+);
+assert.equal(
+  deskMagicDiff.actions.some((row) => row.kind === "open"),
+  false,
+  "desk-magic FTMO ticket ignored"
+);
+
+const newPending = parsePendingOrders({ orders: [followPend(8001)] });
+const pendingOpened = diffFollowTickets(createFollowSession(), [], newPending, []);
+const openPend = pendingOpened.actions.filter((row) => row.kind === "open");
+assert.equal(openPend.length, 1, "new pending → pending follow group");
+assert.equal(openPend[0]?.ticket, 8001);
+assert.equal(openPend[0]?.source, "pending");
+assert.equal(openPend[0]?.livePending, true);
+assert.equal(openPend[0]?.orderType, "buy_limit");
+assert.ok(pendingOpened.next.pendingToGroup.has(8001));
+
+const fillProbe = parseOpenPositions({
+  positions: [followPos(9001, { volume: 0.01 })],
+});
+const filledFollow = diffFollowTickets(
+  createFollowSession([], [[8001, "grp_pend_8001"]], [[8001, "grp_pend_8001"]]),
+  fillProbe,
+  [],
+  [
+    followDeskRow(8001, {
+      livePending: true,
+      orderType: "buy_limit",
+      groupId: "grp_pend_8001",
+    }),
+  ]
+);
+assert.equal(
+  filledFollow.actions.some((row) => row.kind === "close"),
+  false,
+  "pending gone + matching position is fill not close"
+);
+assert.equal(
+  filledFollow.actions.some((row) => row.kind === "cancel"),
+  false
+);
+const fillAct = filledFollow.actions.filter((row) => row.kind === "fill");
+assert.equal(fillAct.length, 1);
+assert.equal(fillAct[0]?.pendingTicket, 8001);
+assert.equal(fillAct[0]?.positionTicket, 9001);
+assert.equal(fillAct[0]?.groupId, "grp_pend_8001");
+assert.equal(filledFollow.next.followGroups.get(9001), "grp_pend_8001");
+assert.equal(filledFollow.next.followGroups.has(8001), false);
+assert.equal(filledFollow.next.pendingToGroup.has(8001), false);
+
+const closedFollow = diffFollowTickets(
+  createFollowSession([], [[7001, "grp_follow_7001"]]),
+  [],
+  [],
+  [followDeskRow(7001, { groupId: "grp_follow_7001" })]
+);
+const closeAct = closedFollow.actions.filter((row) => row.kind === "close");
+assert.equal(closeAct.length, 1, "followed position gone is close");
+assert.equal(closeAct[0]?.ticket, 7001);
+assert.equal(closeAct[0]?.groupId, "grp_follow_7001");
+
+const cancelledFollow = diffFollowTickets(
+  createFollowSession([], [[8001, "grp_pend_8001"]], [[8001, "grp_pend_8001"]]),
+  [],
+  [],
+  [
+    followDeskRow(8001, {
+      livePending: true,
+      orderType: "buy_limit",
+      groupId: "grp_pend_8001",
+    }),
+  ]
+);
+const cancelAct = cancelledFollow.actions.filter((row) => row.kind === "cancel");
+assert.equal(cancelAct.length, 1, "pending gone no position is cancel");
+assert.equal(cancelAct[0]?.ticket, 8001);
+assert.equal(cancelAct[0]?.groupId, "grp_pend_8001");
+assert.equal(
+  cancelledFollow.actions.some((row) => row.kind === "close"),
+  false
+);
+
+const sltpProbe = parseOpenPositions({
+  positions: [followPos(7001, { stop_loss: 0, take_profit: 1.1 })],
+});
+const modified = diffFollowTickets(
+  createFollowSession([], [[7001, "grp_follow_7001"]]),
+  sltpProbe,
+  [],
+  [followDeskRow(7001, { sl: 1.07, tp: 1.09, groupId: "grp_follow_7001" })]
+);
+const modAct = modified.actions.filter((row) => row.kind === "modify");
+assert.equal(modAct.length, 1, "SL/TP change is modify");
+assert.equal(modAct[0]?.ticket, 7001);
+assert.equal(modAct[0]?.groupId, "grp_follow_7001");
+assert.equal(modAct[0]?.sl, null, "0 → null SL");
+assert.equal(modAct[0]?.tp, 1.1);
+
+const followCopyOff = {
+  ...seedDesk(),
+  ftmoFollowTerminal: true,
+  ftmoLiveMaster: false,
+  wsfLiveCopy: false,
+  fundednextLiveCopy: false,
+  fundingpipsLiveCopy: false,
+  neomaaLiveCopy: false,
+  fortradersLiveCopy: false,
+  alphacapitalLiveCopy: false,
+  copySettings: seedDesk().copySettings.map((row) => ({ ...row, copySlTp: false })),
+};
+assert.match(
+  liveCopySlTpError(followCopyOff) ?? "",
+  /copySlTp must stay on/,
+  "liveCopySlTpError when follow armed and copySlTp off"
+);
+
+const followArmedAlpha = {
+  ...desk,
+  ftmoFollowTerminal: true,
+  alphacapitalLiveCopy: true,
+};
+assert.equal(armedCopyBrokers(followArmedAlpha).includes("alphacapital"), false);
+assert.equal(COPY_FANOUT_SKIP.has("alphacapital"), true);
 
 console.log("test_desk_copy_fanout ok");
