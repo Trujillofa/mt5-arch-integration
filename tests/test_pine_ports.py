@@ -342,7 +342,11 @@ def test_btp_completed_bar_docs_use_lookahead_on() -> None:
     )
     assert "lookahead_off" not in mapping
     assert "lookahead_on" in mapping
-    univ = next(line for line in readme.splitlines() if "BTC H1 pullback" in line)
+    univ = next(
+        line
+        for line in readme.splitlines()
+        if "BTC H1 pullback (BtcTrendPullback)" in line
+    )
     assert "lookahead_on" in univ
     assert "completed-bar" in univ
 
