@@ -52,7 +52,7 @@ TradingView → Pine Editor → paste `UniversalOverlay.pine` → Add to chart �
 | BTC H1 pullback (BtcTrendPullback) | `BtcTrendPullback.pine` | **7** | H4 completed-bar bias (`[1]`+`lookahead_on`) |
 | BTC NY scalp (BtcNySessionScalp) | `BtcNySessionScalp.pine` | **8** | **SCREEN_FAIL / promote=no** banner + alerts when this family is selected |
 
-Only the selected family's signal / VWAP / swing / ORB state runs each bar. `request.security` must stay registered (Pine limitation); unused families request the **chart** TF and a `na` expression (not H4/D1/H1 books, not pivots).
+Only the selected family's signal / VWAP / swing / ORB state runs each bar. `request.security` must stay registered (Pine limitation); unused families request the **chart** TF and a `na` expression (not H4/D1/H1 books, not pivots). Pine v5 rejects tuple literals inside a ternary as that expression (`Syntax error at input '['`), so the wrapper requests each series separately (`isHTF ? ta.pivothigh(...) : na`, …). Standalone BTP / BNS still pass a tuple *without* a ternary, which TV accepts.
 
 Session day-keys (`etKey`) are computed at global scope so `[1]` history works. Declaring them inside `if isUIS` can make `etKey[1]` na and reset VWAP every bar.
 
