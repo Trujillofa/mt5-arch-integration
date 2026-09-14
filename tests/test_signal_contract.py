@@ -153,3 +153,16 @@ def test_installer_copies_signal_contract() -> None:
     contract = CONTRACT.read_text(encoding="utf-8")
     assert "GoldSessionScalp excluded" in contract
     assert "GoldSessionScalp.mq5" not in contract
+
+
+def test_universal_overlay_maps_contract_buffers() -> None:
+    """Wrapper buffer switch must follow SignalContract, not a guessed 8/9/7."""
+    defines = _defines()
+    src = (ROOT / "mql5" / "pine" / "UniversalOverlay.pine").read_text(encoding="utf-8")
+    assert f"isHTF ? {defines['HTFFIB']}" in src
+    assert f"isFXIT ? {defines['FXIT']}" in src
+    assert f"isUIS ? {defines['UIS']}" in src
+    assert f"isBTP ? {defines['BTP']}" in src
+    assert f"isBNS ? {defines['BNS']}" in src
+    assert "GoldSessionScalp" in src
+    assert "not invented" in src.lower() or "not included" in src.lower()

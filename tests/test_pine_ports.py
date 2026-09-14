@@ -148,11 +148,14 @@ def test_readme_maps_all_and_host_only_gold_oil() -> None:
 
 UNIVERSAL = "UniversalOverlay.pine"
 FAMILY_OPTIONS = (
-    "FX HTF Fib",
-    "FX template",
-    "US index scalp",
-    "BTC H1 pullback",
-    "BTC NY scalp",
+    "FX HTF Fib (ForexHtfPivotsFib)",
+    "FX template (ForexIndicatorTemplate)",
+    "US index scalp (UsIndexSessionScalp)",
+    "BTC H1 pullback (BtcTrendPullback)",
+    "BTC NY scalp (BtcNySessionScalp)",
+)
+INPUT_TITLE_RE = re.compile(
+    r"input\.\w+\(\s*(?:false|true|-?\d+(?:\.\d+)?|\"[^\"]+\")\s*,\s*\"([^\"]+)\""
 )
 
 
@@ -218,6 +221,36 @@ def test_universal_does_not_drop_standalones() -> None:
     assert "Standalone files stay" in src or "does not replace" in README.read_text(
         encoding="utf-8"
     ).lower()
+
+
+def test_universal_input_titles_are_unique() -> None:
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    titles = INPUT_TITLE_RE.findall(src)
+    assert titles
+    dups = [t for t in titles if titles.count(t) > 1]
+    assert dups == [], dups
+    for prefix in ("HTF ", "FXIT ", "UIS ", "BTP ", "BNS "):
+        assert any(t.startswith(prefix) for t in titles), prefix
+
+
+def test_universal_security_and_session_history() -> None:
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    assert "isHTF ? [ta.pivothigh" in src
+    assert "isFXIT ? [high, low, open]" in src
+    assert "isBTP ? [ta.ema" in src
+    assert "isBNS ? [ta.ema" in src
+    assert ": [na, na]" in src
+    assert "int etKey =" in src
+    assert src.index("int etKey =") < src.index("else if isUIS")
+    assert "SCREEN_FAIL observe-only" in src
+    assert "btc_ny_overlap_vwap_ema_flat" in src
+    assert "InpShowSrLevels (STUB" in src
+    assert "InpSrFile (STUB)" in src
+    assert "alertcondition(sig == 1 and isBNS" in src
+    assert "isHTF ? 8" in src and "isFXIT ? 9" in src and "isBTP ? 7" in src
+    assert "else if isFXIT" in src
+    assert "else if isBNS" in src
+    assert "table.delete(panel)" in src
 
 
 def _balance(src: str) -> None:

@@ -16,7 +16,9 @@
 //
 // Compute: only the selected family's signal/VWAP/swing/ORB state runs each bar.
 // request.security is always registered (Pine limitation); unused families
-// request the chart TF instead of H4/D1/H1 so we do not pull five HTF books.
+// request the chart TF and a `na` expression (not H4/D1/H1 books, not pivots).
+// Session clocks are cheap IANA reads at global scope so `[1]` day-keys work
+// (declaring etKey inside `if isUIS` makes etKey[1] na → VWAP resets every bar).
 
 //@version=5
 indicator("Universal Overlay (observe-only)", shorttitle="UNIV", overlay=true, max_labels_count=50, max_lines_count=50, max_boxes_count=20)
@@ -26,172 +28,176 @@ TZ_LON = "Europe/London"
 TZ_TYO = "Asia/Tokyo"
 
 // === Overlay family ===
-string InpOverlay = input.string("FX HTF Fib", "Overlay family", options=["FX HTF Fib", "FX template", "US index scalp", "BTC H1 pullback", "BTC NY scalp"], group="=== Overlay family ===", tooltip="Computes only this family. BTC NY scalp is SCREEN_FAIL / promote=no.")
+string InpOverlay = input.string("FX HTF Fib (ForexHtfPivotsFib)", "Overlay family", options=["FX HTF Fib (ForexHtfPivotsFib)", "FX template (ForexIndicatorTemplate)", "US index scalp (UsIndexSessionScalp)", "BTC H1 pullback (BtcTrendPullback)", "BTC NY scalp (BtcNySessionScalp)"], group="=== Overlay family ===", tooltip="Computes only this family. Other groups apply only when that family is selected. BTC NY scalp is SCREEN_FAIL / promote=no.")
 bool InpShowPanel = input.bool(true, "InpShowPanel", group="=== Overlay family ===")
 bool InpShowMarkers = input.bool(true, "InpShowMarkers", group="=== Overlay family ===")
 bool InpShowEmas = input.bool(true, "InpShowEmas", group="=== Overlay family ===")
 
-bool isHTF = InpOverlay == "FX HTF Fib"
-bool isFXIT = InpOverlay == "FX template"
-bool isUIS = InpOverlay == "US index scalp"
-bool isBTP = InpOverlay == "BTC H1 pullback"
-bool isBNS = InpOverlay == "BTC NY scalp"
-int sigBuf = isBTP ? 7 : isFXIT ? 9 : 8
-string famCode = isHTF ? "HTFFIB" : isFXIT ? "FXIT" : isUIS ? "UIS" : isBTP ? "BTP" : "BNS"
+bool isHTF = InpOverlay == "FX HTF Fib (ForexHtfPivotsFib)"
+bool isFXIT = InpOverlay == "FX template (ForexIndicatorTemplate)"
+bool isUIS = InpOverlay == "US index scalp (UsIndexSessionScalp)"
+bool isBTP = InpOverlay == "BTC H1 pullback (BtcTrendPullback)"
+bool isBNS = InpOverlay == "BTC NY scalp (BtcNySessionScalp)"
+// SignalContract.mqh: HTFFIB=8 UIS=8 BNS=8 BTP=7 FXIT=9
+int sigBuf = isHTF ? 8 : isFXIT ? 9 : isUIS ? 8 : isBTP ? 7 : isBNS ? 8 : -1
+string famCode = isHTF ? "HTFFIB" : isFXIT ? "FXIT" : isUIS ? "UIS" : isBTP ? "BTP" : isBNS ? "BNS" : "?"
 
 // --- HTFFIB inputs ---
-string Htf_Mode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="HTFFIB — Trading mode")
-bool   Htf_Manual = input.bool(false, "InpManualOverride", group="HTFFIB — Trading mode")
-int    Htf_EmaFast = input.int(20, "InpEmaFast", minval=1, group="HTFFIB — EMAs")
-int    Htf_EmaSlow = input.int(50, "InpEmaSlow", minval=1, group="HTFFIB — EMAs")
-int    Htf_EmaBias = input.int(200, "InpEmaBias", minval=1, group="HTFFIB — EMAs")
-bool   Htf_ShowBias = input.bool(true, "InpShowBiasEma", group="HTFFIB — EMAs")
-int    Htf_Left4h = input.int(5, "InpLeft4h", minval=1, group="HTFFIB — Pivots")
-int    Htf_Right4h = input.int(5, "InpRight4h", minval=1, group="HTFFIB — Pivots")
-bool   Htf_Show4h = input.bool(true, "InpShow4hLines", group="HTFFIB — Pivots")
-bool   Htf_Lab4h = input.bool(false, "InpShow4hLabels", group="HTFFIB — Pivots")
-int    Htf_LeftD = input.int(5, "InpLeftDaily", minval=1, group="HTFFIB — Pivots")
-int    Htf_RightD = input.int(5, "InpRightDaily", minval=1, group="HTFFIB — Pivots")
-bool   Htf_ShowD = input.bool(true, "InpShowDailyLines", group="HTFFIB — Pivots")
-bool   Htf_LabD = input.bool(false, "InpShowDailyLabels", group="HTFFIB — Pivots")
-string Htf_FibSrc = input.string("H4", "InpFibSource", options=["H4", "Daily"], group="HTFFIB — Fibonacci")
-bool   Htf_ShowFib = input.bool(true, "InpShowFib", group="HTFFIB — Fibonacci")
-bool   Htf_Show236 = input.bool(false, "InpShowFib236", group="HTFFIB — Fibonacci")
-bool   Htf_Show382 = input.bool(false, "InpShowFib382", group="HTFFIB — Fibonacci")
-bool   Htf_Show500 = input.bool(true, "InpShowFib500", group="HTFFIB — Fibonacci")
-bool   Htf_Show618 = input.bool(true, "InpShowFib618", group="HTFFIB — Fibonacci")
-bool   Htf_Show786 = input.bool(true, "InpShowFib786", group="HTFFIB — Fibonacci")
-bool   Htf_ShowGold = input.bool(true, "InpShowGoldenZone", group="HTFFIB — Fibonacci")
-int    Htf_Rsi = input.int(14, "InpRsiPeriod", minval=1, group="HTFFIB — RSI")
-int    Htf_RsiMa = input.int(14, "InpRsiMaPeriod", minval=1, group="HTFFIB — RSI")
-string Htf_RsiMaM = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="HTFFIB — RSI")
-int    Htf_RsiLong = input.int(35, "InpRsiLongMax", group="HTFFIB — RSI")
-int    Htf_RsiShort = input.int(65, "InpRsiShortMin", group="HTFFIB — RSI")
-bool   Htf_RsiMaF = input.bool(true, "InpUseRsiMaFilter", group="HTFFIB — RSI")
-bool   Htf_ReqCandle = input.bool(false, "InpRequireCandle", group="HTFFIB — RSI")
-bool   Htf_ReqZone = input.bool(true, "InpRequireGoldenZone", group="HTFFIB — RSI")
-bool   Htf_ReqBias = input.bool(true, "InpRequireBiasFilter", group="HTFFIB — RSI")
+string Htf_Mode = input.string("INTRADAY", "HTF InpTradingMode", options=["INTRADAY", "SWING"], group="HTFFIB — Trading mode")
+bool   Htf_Manual = input.bool(false, "HTF InpManualOverride", group="HTFFIB — Trading mode")
+int    Htf_EmaFast = input.int(20, "HTF InpEmaFast", minval=1, group="HTFFIB — EMAs")
+int    Htf_EmaSlow = input.int(50, "HTF InpEmaSlow", minval=1, group="HTFFIB — EMAs")
+int    Htf_EmaBias = input.int(200, "HTF InpEmaBias", minval=1, group="HTFFIB — EMAs")
+bool   Htf_ShowBias = input.bool(true, "HTF InpShowBiasEma", group="HTFFIB — EMAs")
+int    Htf_Left4h = input.int(5, "HTF InpLeft4h", minval=1, group="HTFFIB — Pivots")
+int    Htf_Right4h = input.int(5, "HTF InpRight4h", minval=1, group="HTFFIB — Pivots")
+bool   Htf_Show4h = input.bool(true, "HTF InpShow4hLines", group="HTFFIB — Pivots")
+bool   Htf_Lab4h = input.bool(false, "HTF InpShow4hLabels", group="HTFFIB — Pivots")
+int    Htf_LeftD = input.int(5, "HTF InpLeftDaily", minval=1, group="HTFFIB — Pivots")
+int    Htf_RightD = input.int(5, "HTF InpRightDaily", minval=1, group="HTFFIB — Pivots")
+bool   Htf_ShowD = input.bool(true, "HTF InpShowDailyLines", group="HTFFIB — Pivots")
+bool   Htf_LabD = input.bool(false, "HTF InpShowDailyLabels", group="HTFFIB — Pivots")
+string Htf_FibSrc = input.string("H4", "HTF InpFibSource", options=["H4", "Daily"], group="HTFFIB — Fibonacci")
+bool   Htf_ShowFib = input.bool(true, "HTF InpShowFib", group="HTFFIB — Fibonacci")
+bool   Htf_Show236 = input.bool(false, "HTF InpShowFib236", group="HTFFIB — Fibonacci")
+bool   Htf_Show382 = input.bool(false, "HTF InpShowFib382", group="HTFFIB — Fibonacci")
+bool   Htf_Show500 = input.bool(true, "HTF InpShowFib500", group="HTFFIB — Fibonacci")
+bool   Htf_Show618 = input.bool(true, "HTF InpShowFib618", group="HTFFIB — Fibonacci")
+bool   Htf_Show786 = input.bool(true, "HTF InpShowFib786", group="HTFFIB — Fibonacci")
+bool   Htf_ShowGold = input.bool(true, "HTF InpShowGoldenZone", group="HTFFIB — Fibonacci")
+int    Htf_Rsi = input.int(14, "HTF InpRsiPeriod", minval=1, group="HTFFIB — RSI")
+int    Htf_RsiMa = input.int(14, "HTF InpRsiMaPeriod", minval=1, group="HTFFIB — RSI")
+string Htf_RsiMaM = input.string("SMA", "HTF InpRsiMaMethod", options=["SMA", "EMA"], group="HTFFIB — RSI")
+int    Htf_RsiLong = input.int(35, "HTF InpRsiLongMax", group="HTFFIB — RSI")
+int    Htf_RsiShort = input.int(65, "HTF InpRsiShortMin", group="HTFFIB — RSI")
+bool   Htf_RsiMaF = input.bool(true, "HTF InpUseRsiMaFilter", group="HTFFIB — RSI")
+bool   Htf_ReqCandle = input.bool(false, "HTF InpRequireCandle", group="HTFFIB — RSI")
+bool   Htf_ReqZone = input.bool(true, "HTF InpRequireGoldenZone", group="HTFFIB — RSI")
+bool   Htf_ReqBias = input.bool(true, "HTF InpRequireBiasFilter", group="HTFFIB — RSI")
+// STUB: MQL5 reads MQL5\Files\forex_sr_levels.csv. Pine cannot load that file.
+bool   Htf_ShowSr = input.bool(false, "HTF InpShowSrLevels (STUB — CSV not in Pine)", group="HTFFIB — S/R stub")
+string Htf_SrFile = input.string("forex_sr_levels.csv", "HTF InpSrFile (STUB)", group="HTFFIB — S/R stub")
 
 // --- FXIT inputs ---
-string Fxit_Mode = input.string("INTRADAY", "InpTradingMode", options=["INTRADAY", "SWING"], group="FXIT — Trading mode")
-bool   Fxit_ManSess = input.bool(false, "InpManualSessionOverride", group="FXIT — Trading mode")
-bool   Fxit_ManEma = input.bool(false, "InpManualEmaOverride", group="FXIT — Trading mode")
-int    Fxit_EmaFast = input.int(20, "InpEmaFastPeriod", minval=1, group="FXIT — EMAs / cloud")
-int    Fxit_EmaSlow = input.int(50, "InpEmaSlowPeriod", minval=1, group="FXIT — EMAs / cloud")
-int    Fxit_EmaBias = input.int(200, "InpEmaBiasPeriod", minval=1, group="FXIT — EMAs / cloud")
-bool   Fxit_ShowCloud = input.bool(true, "InpShowCloud", group="FXIT — EMAs / cloud")
-bool   Fxit_ShowLines = input.bool(false, "InpShowEmaLines", group="FXIT — EMAs / cloud")
-bool   Fxit_ShowBias = input.bool(true, "InpShowBiasEma", group="FXIT — EMAs / cloud")
-bool   Fxit_ShowPD = input.bool(true, "InpShowPriorDay", group="FXIT — Prior day")
-int    Fxit_Rsi = input.int(14, "InpRsiPeriod", minval=1, group="FXIT — RSI / signal")
-int    Fxit_RsiMa = input.int(14, "InpRsiMaPeriod", minval=1, group="FXIT — RSI / signal")
-string Fxit_RsiMaM = input.string("SMA", "InpRsiMaMethod", options=["SMA", "EMA"], group="FXIT — RSI / signal")
-int    Fxit_RsiLong = input.int(35, "InpRsiLongMax", group="FXIT — RSI / signal")
-int    Fxit_RsiShort = input.int(65, "InpRsiShortMin", group="FXIT — RSI / signal")
-bool   Fxit_RsiMaF = input.bool(true, "InpUseRsiMaFilter", group="FXIT — RSI / signal")
-bool   Fxit_RsiX = input.bool(false, "InpRsiMaCross", group="FXIT — RSI / signal")
-bool   Fxit_ReqTrend = input.bool(true, "InpRequireTrend", group="FXIT — RSI / signal")
-bool   Fxit_UseSess = input.bool(true, "InpUseSessionFilter", group="FXIT — RSI / signal")
-bool   Fxit_AlAsian = input.bool(false, "InpAllowAsian", group="FXIT — RSI / signal")
-bool   Fxit_AlLon = input.bool(true, "InpAllowLondon", group="FXIT — RSI / signal")
-bool   Fxit_AlNy = input.bool(true, "InpAllowNY", group="FXIT — RSI / signal")
-bool   Fxit_AlOv = input.bool(true, "InpAllowOverlap", group="FXIT — RSI / signal")
-float  Fxit_MaxSpr = input.float(2.5, "InpMaxSpreadPips", step=0.1, group="FXIT — RSI / signal")
-bool   Fxit_OnClose = input.bool(true, "InpSignalOnClose", group="FXIT — RSI / signal")
-string Fxit_Tz = input.string("exchange", "InpSessionTimezone", options=["exchange", "America/New_York", "Europe/London", "Etc/UTC"], group="FXIT — Session hours")
-int    Fxit_As0 = input.int(0, "InpAsianStart", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_As1 = input.int(8, "InpAsianEnd", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_Ln0 = input.int(7, "InpLondonStart", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_Ln1 = input.int(16, "InpLondonEnd", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_Ny0 = input.int(12, "InpNyStart", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_Ny1 = input.int(21, "InpNyEnd", minval=0, maxval=23, group="FXIT — Session hours")
-int    Fxit_Atr = input.int(14, "InpAtrPeriod", minval=1, group="FXIT — ATR")
+string Fxit_Mode = input.string("INTRADAY", "FXIT InpTradingMode", options=["INTRADAY", "SWING"], group="FXIT — Trading mode")
+bool   Fxit_ManSess = input.bool(false, "FXIT InpManualSessionOverride", group="FXIT — Trading mode")
+bool   Fxit_ManEma = input.bool(false, "FXIT InpManualEmaOverride", group="FXIT — Trading mode")
+int    Fxit_EmaFast = input.int(20, "FXIT InpEmaFastPeriod", minval=1, group="FXIT — EMAs / cloud")
+int    Fxit_EmaSlow = input.int(50, "FXIT InpEmaSlowPeriod", minval=1, group="FXIT — EMAs / cloud")
+int    Fxit_EmaBias = input.int(200, "FXIT InpEmaBiasPeriod", minval=1, group="FXIT — EMAs / cloud")
+bool   Fxit_ShowCloud = input.bool(true, "FXIT InpShowCloud", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowLines = input.bool(false, "FXIT InpShowEmaLines", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowBias = input.bool(true, "FXIT InpShowBiasEma", group="FXIT — EMAs / cloud")
+bool   Fxit_ShowPD = input.bool(true, "FXIT InpShowPriorDay", group="FXIT — Prior day")
+int    Fxit_Rsi = input.int(14, "FXIT InpRsiPeriod", minval=1, group="FXIT — RSI / signal")
+int    Fxit_RsiMa = input.int(14, "FXIT InpRsiMaPeriod", minval=1, group="FXIT — RSI / signal")
+string Fxit_RsiMaM = input.string("SMA", "FXIT InpRsiMaMethod", options=["SMA", "EMA"], group="FXIT — RSI / signal")
+int    Fxit_RsiLong = input.int(35, "FXIT InpRsiLongMax", group="FXIT — RSI / signal")
+int    Fxit_RsiShort = input.int(65, "FXIT InpRsiShortMin", group="FXIT — RSI / signal")
+bool   Fxit_RsiMaF = input.bool(true, "FXIT InpUseRsiMaFilter", group="FXIT — RSI / signal")
+bool   Fxit_RsiX = input.bool(false, "FXIT InpRsiMaCross", group="FXIT — RSI / signal")
+bool   Fxit_ReqTrend = input.bool(true, "FXIT InpRequireTrend", group="FXIT — RSI / signal")
+bool   Fxit_UseSess = input.bool(true, "FXIT InpUseSessionFilter", group="FXIT — RSI / signal")
+bool   Fxit_AlAsian = input.bool(false, "FXIT InpAllowAsian", group="FXIT — RSI / signal")
+bool   Fxit_AlLon = input.bool(true, "FXIT InpAllowLondon", group="FXIT — RSI / signal")
+bool   Fxit_AlNy = input.bool(true, "FXIT InpAllowNY", group="FXIT — RSI / signal")
+bool   Fxit_AlOv = input.bool(true, "FXIT InpAllowOverlap", group="FXIT — RSI / signal")
+float  Fxit_MaxSpr = input.float(2.5, "FXIT InpMaxSpreadPips", step=0.1, group="FXIT — RSI / signal")
+bool   Fxit_OnClose = input.bool(true, "FXIT InpSignalOnClose", group="FXIT — RSI / signal")
+string Fxit_Tz = input.string("exchange", "FXIT InpSessionTimezone", options=["exchange", "America/New_York", "Europe/London", "Etc/UTC"], group="FXIT — Session hours")
+int    Fxit_As0 = input.int(0, "FXIT InpAsianStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_As1 = input.int(8, "FXIT InpAsianEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ln0 = input.int(7, "FXIT InpLondonStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ln1 = input.int(16, "FXIT InpLondonEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ny0 = input.int(12, "FXIT InpNyStart", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Ny1 = input.int(21, "FXIT InpNyEnd", minval=0, maxval=23, group="FXIT — Session hours")
+int    Fxit_Atr = input.int(14, "FXIT InpAtrPeriod", minval=1, group="FXIT — ATR")
 
 // --- UIS inputs ---
-int    Uis_OrMin = input.int(15, "InpOrMinutes", minval=1, group="UIS — OR / signal")
-int    Uis_EmaFast = input.int(9, "InpEmaFast", minval=1, group="UIS — OR / signal")
-int    Uis_EmaSlow = input.int(21, "InpEmaSlow", minval=1, group="UIS — OR / signal")
-int    Uis_Atr = input.int(14, "InpAtrPeriod", minval=1, group="UIS — OR / signal")
-float  Uis_MinAtr = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="UIS — OR / signal")
-int    Uis_EndH = input.int(11, "InpEntryEndHour", minval=0, maxval=23, group="UIS — OR / signal")
-int    Uis_EndM = input.int(30, "InpEntryEndMinute", minval=0, maxval=59, group="UIS — OR / signal")
-bool   Uis_Once = input.bool(true, "InpOnePerDay", group="UIS — OR / signal")
-bool   Uis_OnClose = input.bool(true, "InpSignalOnClose", group="UIS — OR / signal")
-bool   Uis_Edge = input.bool(true, "InpEdgeTrigger", group="UIS — OR / signal")
-bool   Uis_AtrStops = input.bool(false, "InpShowAtrStops", group="UIS — OR / signal")
-float  Uis_SlAtr = input.float(1.0, "InpSlAtr", step=0.1, group="UIS — OR / signal")
-float  Uis_TpAtr = input.float(1.5, "InpTpAtr", step=0.1, group="UIS — OR / signal")
-string Uis_Play = input.string("ORB", "InpFamily", options=["ORB", "VWAP_BOUNCE", "EMA_MACD"], group="UIS — Playbook")
-int    Uis_Rsi = input.int(14, "InpRsiPeriod", minval=2, group="UIS — Playbook")
-float  Uis_RsiOb = input.float(75.0, "InpRsiOb", group="UIS — Playbook")
-float  Uis_RsiOs = input.float(25.0, "InpRsiOs", group="UIS — Playbook")
-float  Uis_AtrDev = input.float(1.0, "InpAtrDev", minval=0.0, group="UIS — Playbook")
-int    Uis_MacdF = input.int(12, "InpMacdFast", minval=1, group="UIS — Playbook")
-int    Uis_MacdS = input.int(26, "InpMacdSlow", minval=1, group="UIS — Playbook")
-int    Uis_MacdG = input.int(9, "InpMacdSignal", minval=1, group="UIS — Playbook")
-bool   Uis_Cross = input.bool(true, "InpCrossOnly", group="UIS — Playbook")
-bool   Uis_ShowTyo = input.bool(false, "InpShowTokyo", group="UIS — Sessions")
-bool   Uis_ShowLon = input.bool(true, "InpShowLondon", group="UIS — Sessions")
-bool   Uis_ShowNy = input.bool(true, "InpShowNyCash", group="UIS — Sessions")
-bool   Uis_ShowOr = input.bool(true, "InpShowOrBox", group="UIS — Sessions")
-bool   Uis_ShowPD = input.bool(true, "InpShowPriorDay", group="UIS — Sessions")
-bool   Uis_ShowFlat = input.bool(true, "InpShowFlattenLine", group="UIS — Sessions")
-bool   Uis_ShowAsia = input.bool(true, "InpShowAsiaLevels", group="UIS — Sessions")
-bool   Uis_ShowLonLv = input.bool(true, "InpShowLondonLevels", group="UIS — Sessions")
-bool   Uis_ShowVwap = input.bool(true, "InpShowVwap", group="UIS — Sessions")
+int    Uis_OrMin = input.int(15, "UIS InpOrMinutes", minval=1, group="UIS — OR / signal")
+int    Uis_EmaFast = input.int(9, "UIS InpEmaFast", minval=1, group="UIS — OR / signal")
+int    Uis_EmaSlow = input.int(21, "UIS InpEmaSlow", minval=1, group="UIS — OR / signal")
+int    Uis_Atr = input.int(14, "UIS InpAtrPeriod", minval=1, group="UIS — OR / signal")
+float  Uis_MinAtr = input.float(0.00015, "UIS InpMinAtrPct", step=0.00001, group="UIS — OR / signal")
+int    Uis_EndH = input.int(11, "UIS InpEntryEndHour", minval=0, maxval=23, group="UIS — OR / signal")
+int    Uis_EndM = input.int(30, "UIS InpEntryEndMinute", minval=0, maxval=59, group="UIS — OR / signal")
+bool   Uis_Once = input.bool(true, "UIS InpOnePerDay", group="UIS — OR / signal")
+bool   Uis_OnClose = input.bool(true, "UIS InpSignalOnClose", group="UIS — OR / signal")
+bool   Uis_Edge = input.bool(true, "UIS InpEdgeTrigger", group="UIS — OR / signal")
+bool   Uis_AtrStops = input.bool(false, "UIS InpShowAtrStops", group="UIS — OR / signal")
+float  Uis_SlAtr = input.float(1.0, "UIS InpSlAtr", step=0.1, group="UIS — OR / signal")
+float  Uis_TpAtr = input.float(1.5, "UIS InpTpAtr", step=0.1, group="UIS — OR / signal")
+string Uis_Play = input.string("ORB", "UIS InpFamily", options=["ORB", "VWAP_BOUNCE", "EMA_MACD"], group="UIS — Playbook")
+int    Uis_Rsi = input.int(14, "UIS InpRsiPeriod", minval=2, group="UIS — Playbook")
+float  Uis_RsiOb = input.float(75.0, "UIS InpRsiOb", group="UIS — Playbook")
+float  Uis_RsiOs = input.float(25.0, "UIS InpRsiOs", group="UIS — Playbook")
+float  Uis_AtrDev = input.float(1.0, "UIS InpAtrDev", minval=0.0, group="UIS — Playbook")
+int    Uis_MacdF = input.int(12, "UIS InpMacdFast", minval=1, group="UIS — Playbook")
+int    Uis_MacdS = input.int(26, "UIS InpMacdSlow", minval=1, group="UIS — Playbook")
+int    Uis_MacdG = input.int(9, "UIS InpMacdSignal", minval=1, group="UIS — Playbook")
+bool   Uis_Cross = input.bool(true, "UIS InpCrossOnly", group="UIS — Playbook")
+bool   Uis_ShowTyo = input.bool(false, "UIS InpShowTokyo", group="UIS — Sessions")
+bool   Uis_ShowLon = input.bool(true, "UIS InpShowLondon", group="UIS — Sessions")
+bool   Uis_ShowNy = input.bool(true, "UIS InpShowNyCash", group="UIS — Sessions")
+bool   Uis_ShowOr = input.bool(true, "UIS InpShowOrBox", group="UIS — Sessions")
+bool   Uis_ShowPD = input.bool(true, "UIS InpShowPriorDay", group="UIS — Sessions")
+bool   Uis_ShowFlat = input.bool(true, "UIS InpShowFlattenLine", group="UIS — Sessions")
+bool   Uis_ShowAsia = input.bool(true, "UIS InpShowAsiaLevels", group="UIS — Sessions")
+bool   Uis_ShowLonLv = input.bool(true, "UIS InpShowLondonLevels", group="UIS — Sessions")
+bool   Uis_ShowVwap = input.bool(true, "UIS InpShowVwap", group="UIS — Sessions")
 
 // --- BTP inputs ---
-int    Btp_EmaFast = input.int(50, "InpEmaFast", minval=1, group="BTP — EMAs / HTF")
-int    Btp_EmaSlow = input.int(200, "InpEmaSlow", minval=1, group="BTP — EMAs / HTF")
-string Btp_Htf = input.timeframe("240", "InpHtfPeriod", group="BTP — EMAs / HTF")
-float  Btp_MinStr = input.float(0.01, "InpMinTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
-float  Btp_StrStr = input.float(0.015, "InpStrongTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
-int    Btp_Rsi = input.int(14, "InpRsiPeriod", minval=2, group="BTP — RSI / MACD / ATR")
-float  Btp_RsiReclaim = input.float(50.0, "InpRsiReclaim", group="BTP — RSI / MACD / ATR")
-float  Btp_ContRsi = input.float(54.0, "InpContinuationRsi", group="BTP — RSI / MACD / ATR")
-int    Btp_MacdF = input.int(12, "InpMacdFast", minval=1, group="BTP — RSI / MACD / ATR")
-int    Btp_MacdS = input.int(26, "InpMacdSlow", minval=1, group="BTP — RSI / MACD / ATR")
-int    Btp_MacdG = input.int(9, "InpMacdSignal", minval=1, group="BTP — RSI / MACD / ATR")
-float  Btp_MinHist = input.float(0.0, "InpMinMacdHist", group="BTP — RSI / MACD / ATR")
-int    Btp_Atr = input.int(14, "InpAtrPeriod", minval=1, group="BTP — RSI / MACD / ATR")
-float  Btp_MinAtr = input.float(0.01, "InpMinAtrPct", step=0.001, group="BTP — RSI / MACD / ATR")
-float  Btp_BandMult = input.float(2.0, "InpAtrBandMult", step=0.1, group="BTP — RSI / MACD / ATR")
-string Btp_BandMid = input.string("EMA50", "InpAtrBandMid", options=["EMA50", "CLOSE"], group="BTP — RSI / MACD / ATR")
-bool   Btp_ShowBands = input.bool(true, "InpShowAtrBands", group="BTP — RSI / MACD / ATR")
-float  Btp_MaxPb = input.float(0.015, "InpMaxPullbackPct", step=0.001, group="BTP — Modes")
-float  Btp_MaxExt = input.float(0.03, "InpMaxEma50ExtensionPct", step=0.001, group="BTP — Modes")
-bool   Btp_UseVwap = input.bool(false, "InpUseVwap", group="BTP — Modes")
-float  Btp_VwapPb = input.float(0.01, "InpVwapPullbackPct", step=0.001, group="BTP — Modes")
-int    Btp_VwapN = input.int(24, "InpVwapLookback", minval=1, group="BTP — Modes")
-bool   Btp_Cont = input.bool(true, "InpAllowContinuation", group="BTP — Modes")
-bool   Btp_Deep = input.bool(false, "InpDeepReclaimEnabled", group="BTP — Modes")
-int    Btp_DeepN = input.int(3, "InpDeepReclaimArmBars", minval=1, group="BTP — Modes")
-float  Btp_DeepMax = input.float(0.03, "InpDeepReclaimArmMaxPct", step=0.001, group="BTP — Modes")
-bool   Btp_Shorts = input.bool(true, "InpAllowShorts", group="BTP — Modes")
-bool   Btp_Panic = input.bool(true, "InpPanicBlock", group="BTP — Modes")
-float  Btp_PanicRsi = input.float(35.0, "InpPanicRsi", group="BTP — Modes")
-float  Btp_PanicAtr = input.float(0.08, "InpPanicAtrPct", step=0.001, group="BTP — Modes")
-bool   Btp_Edge = input.bool(true, "InpEdgeTrigger", group="BTP — Modes")
+int    Btp_EmaFast = input.int(50, "BTP InpEmaFast", minval=1, group="BTP — EMAs / HTF")
+int    Btp_EmaSlow = input.int(200, "BTP InpEmaSlow", minval=1, group="BTP — EMAs / HTF")
+string Btp_Htf = input.timeframe("240", "BTP InpHtfPeriod", group="BTP — EMAs / HTF")
+float  Btp_MinStr = input.float(0.01, "BTP InpMinTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
+float  Btp_StrStr = input.float(0.015, "BTP InpStrongTrendStrengthPct", step=0.001, group="BTP — EMAs / HTF")
+int    Btp_Rsi = input.int(14, "BTP InpRsiPeriod", minval=2, group="BTP — RSI / MACD / ATR")
+float  Btp_RsiReclaim = input.float(50.0, "BTP InpRsiReclaim", group="BTP — RSI / MACD / ATR")
+float  Btp_ContRsi = input.float(54.0, "BTP InpContinuationRsi", group="BTP — RSI / MACD / ATR")
+int    Btp_MacdF = input.int(12, "BTP InpMacdFast", minval=1, group="BTP — RSI / MACD / ATR")
+int    Btp_MacdS = input.int(26, "BTP InpMacdSlow", minval=1, group="BTP — RSI / MACD / ATR")
+int    Btp_MacdG = input.int(9, "BTP InpMacdSignal", minval=1, group="BTP — RSI / MACD / ATR")
+float  Btp_MinHist = input.float(0.0, "BTP InpMinMacdHist", group="BTP — RSI / MACD / ATR")
+int    Btp_Atr = input.int(14, "BTP InpAtrPeriod", minval=1, group="BTP — RSI / MACD / ATR")
+float  Btp_MinAtr = input.float(0.01, "BTP InpMinAtrPct", step=0.001, group="BTP — RSI / MACD / ATR")
+float  Btp_BandMult = input.float(2.0, "BTP InpAtrBandMult", step=0.1, group="BTP — RSI / MACD / ATR")
+string Btp_BandMid = input.string("EMA50", "BTP InpAtrBandMid", options=["EMA50", "CLOSE"], group="BTP — RSI / MACD / ATR")
+bool   Btp_ShowBands = input.bool(true, "BTP InpShowAtrBands", group="BTP — RSI / MACD / ATR")
+float  Btp_MaxPb = input.float(0.015, "BTP InpMaxPullbackPct", step=0.001, group="BTP — Modes")
+float  Btp_MaxExt = input.float(0.03, "BTP InpMaxEma50ExtensionPct", step=0.001, group="BTP — Modes")
+bool   Btp_UseVwap = input.bool(false, "BTP InpUseVwap", group="BTP — Modes")
+float  Btp_VwapPb = input.float(0.01, "BTP InpVwapPullbackPct", step=0.001, group="BTP — Modes")
+int    Btp_VwapN = input.int(24, "BTP InpVwapLookback", minval=1, group="BTP — Modes")
+bool   Btp_Cont = input.bool(true, "BTP InpAllowContinuation", group="BTP — Modes")
+bool   Btp_Deep = input.bool(false, "BTP InpDeepReclaimEnabled", group="BTP — Modes")
+int    Btp_DeepN = input.int(3, "BTP InpDeepReclaimArmBars", minval=1, group="BTP — Modes")
+float  Btp_DeepMax = input.float(0.03, "BTP InpDeepReclaimArmMaxPct", step=0.001, group="BTP — Modes")
+bool   Btp_Shorts = input.bool(true, "BTP InpAllowShorts", group="BTP — Modes")
+bool   Btp_Panic = input.bool(true, "BTP InpPanicBlock", group="BTP — Modes")
+float  Btp_PanicRsi = input.float(35.0, "BTP InpPanicRsi", group="BTP — Modes")
+float  Btp_PanicAtr = input.float(0.08, "BTP InpPanicAtrPct", step=0.001, group="BTP — Modes")
+bool   Btp_Edge = input.bool(true, "BTP InpEdgeTrigger", group="BTP — Modes")
 
 // --- BNS inputs ---
-string Bns_Play = input.string("VWAP_EMA", "InpFamily", options=["VWAP_EMA", "ATR_DRIVE", "HTF_PULLBACK"], group="BNS — Family (SCREEN_FAIL)")
-int    Bns_EmaFast = input.int(9, "InpEmaFast", minval=1, group="BNS — Session / signal")
-int    Bns_EmaSlow = input.int(21, "InpEmaSlow", minval=1, group="BNS — Session / signal")
-int    Bns_Atr = input.int(14, "InpAtrPeriod", minval=1, group="BNS — Session / signal")
-float  Bns_MinAtr = input.float(0.00015, "InpMinAtrPct", step=0.00001, group="BNS — Session / signal")
-int    Bns_OrMin = input.int(30, "InpOrMinutes", minval=1, group="BNS — Session / signal")
-float  Bns_OrBuf = input.float(0.10, "InpOrBufferAtrFrac", step=0.01, group="BNS — Session / signal")
-bool   Bns_Once = input.bool(true, "InpOnePerDay", group="BNS — Session / signal")
-bool   Bns_OnClose = input.bool(true, "InpSignalOnClose", group="BNS — Session / signal")
-bool   Bns_Edge = input.bool(true, "InpEdgeTrigger", group="BNS — Session / signal")
-bool   Bns_Nfp = input.bool(false, "InpNfpBlackout", group="BNS — Session / signal")
-int    Bns_HtfF = input.int(50, "InpHtfFast", minval=1, group="BNS — HTF pullback")
-int    Bns_HtfS = input.int(200, "InpHtfSlow", minval=1, group="BNS — HTF pullback")
-float  Bns_Pb = input.float(0.003, "InpPullbackPct", step=0.001, group="BNS — HTF pullback")
-float  Bns_Ext = input.float(0.005, "InpExtensionPct", step=0.001, group="BNS — HTF pullback")
-bool   Bns_ShowVwap = input.bool(true, "InpShowVwap", group="BNS — Display")
-bool   Bns_ShowOr = input.bool(true, "InpShowOr", group="BNS — Display")
-bool   Bns_ShowFlat = input.bool(true, "InpShowFlattenLine", group="BNS — Display")
+string Bns_Play = input.string("VWAP_EMA", "BNS InpFamily", options=["VWAP_EMA", "ATR_DRIVE", "HTF_PULLBACK"], group="BNS — Family (SCREEN_FAIL)")
+int    Bns_EmaFast = input.int(9, "BNS InpEmaFast", minval=1, group="BNS — Session / signal")
+int    Bns_EmaSlow = input.int(21, "BNS InpEmaSlow", minval=1, group="BNS — Session / signal")
+int    Bns_Atr = input.int(14, "BNS InpAtrPeriod", minval=1, group="BNS — Session / signal")
+float  Bns_MinAtr = input.float(0.00015, "BNS InpMinAtrPct", step=0.00001, group="BNS — Session / signal")
+int    Bns_OrMin = input.int(30, "BNS InpOrMinutes", minval=1, group="BNS — Session / signal")
+float  Bns_OrBuf = input.float(0.10, "BNS InpOrBufferAtrFrac", step=0.01, group="BNS — Session / signal")
+bool   Bns_Once = input.bool(true, "BNS InpOnePerDay", group="BNS — Session / signal")
+bool   Bns_OnClose = input.bool(true, "BNS InpSignalOnClose", group="BNS — Session / signal")
+bool   Bns_Edge = input.bool(true, "BNS InpEdgeTrigger", group="BNS — Session / signal")
+bool   Bns_Nfp = input.bool(false, "BNS InpNfpBlackout", group="BNS — Session / signal")
+int    Bns_HtfF = input.int(50, "BNS InpHtfFast", minval=1, group="BNS — HTF pullback")
+int    Bns_HtfS = input.int(200, "BNS InpHtfSlow", minval=1, group="BNS — HTF pullback")
+float  Bns_Pb = input.float(0.003, "BNS InpPullbackPct", step=0.001, group="BNS — HTF pullback")
+float  Bns_Ext = input.float(0.005, "BNS InpExtensionPct", step=0.001, group="BNS — HTF pullback")
+bool   Bns_ShowVwap = input.bool(true, "BNS InpShowVwap", group="BNS — Display")
+bool   Bns_ShowOr = input.bool(true, "BNS InpShowOr", group="BNS — Display")
+bool   Bns_ShowFlat = input.bool(true, "BNS InpShowFlattenLine", group="BNS — Display")
 
 // --- helpers ---
 fibLevel(int direction, float hi, float lo, float ratio) =>
@@ -218,6 +224,36 @@ inHm(int h, int mi, int sh, int sm, int eh, int em) =>
 pad2(int n) =>
     (n < 10 ? "0" : "") + str.tostring(n)
 
+// IANA clocks at global scope (cheap). Local `etKey` inside `if isUIS`/`if isBNS`
+// has no `[1]` history in Pine v5 — na(etKey[1]) would reset VWAP/OR every bar.
+int etH = hour(time, TZ_NY)
+int etM = minute(time, TZ_NY)
+int etDow = dayofweek(time, TZ_NY)
+int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
+int lonH = hour(time, TZ_LON)
+int lonM = minute(time, TZ_LON)
+int tyoH = hour(time, TZ_TYO)
+int tyoM = minute(time, TZ_TYO)
+int tyoYmd = year(time, TZ_TYO) * 10000 + month(time, TZ_TYO) * 100 + dayofmonth(time, TZ_TYO)
+int lonYmd = year(time, TZ_LON) * 10000 + month(time, TZ_LON) * 100 + dayofmonth(time, TZ_LON)
+int etMin = etH * 60 + etM
+bool inNyCash = inHm(etH, etM, 9, 30, 16, 0)
+bool inLondon = inHm(lonH, lonM, 8, 0, 17, 0)
+bool inTokyo = inHm(tyoH, tyoM, 9, 0, 18, 0)
+bool inBnsBox = etMin >= 8 * 60 and etMin < 11 * 60 + 30
+bool newEt = na(etKey[1]) or etKey != etKey[1]
+bool newTyoDay = na(tyoYmd[1]) or tyoYmd != tyoYmd[1]
+bool newLonDay = na(lonYmd[1]) or lonYmd != lonYmd[1]
+string etClock = pad2(etH) + ":" + pad2(etM)
+string uTick = str.upper(syminfo.ticker)
+bool looksUs = str.contains(uTick, "US30") or str.contains(uTick, "DJ30") or str.contains(uTick, "DJIA") or str.contains(uTick, "US100") or str.contains(uTick, "NAS100") or str.contains(uTick, "USTEC") or str.contains(uTick, "NASDAQ") or str.contains(uTick, "NDX") or str.contains(uTick, "US500") or str.contains(uTick, "SPX") or str.contains(uTick, "SP500") or str.contains(uTick, "US2000")
+bool looksBtc = str.contains(uTick, "BTC")
+
+// BTP edge history must live at global scope (same [1] gotcha as etKey).
+bool btpCanTrade = false
+bool btpLongSetup = false
+bool btpShortSetup = false
+
 // --- selected lengths (input-const) so one EMA/RSI/ATR/MACD stack runs ---
 bool htfSwing = Htf_Mode == "SWING"
 bool fxitSwing = Fxit_Mode == "SWING"
@@ -240,18 +276,18 @@ rsiMa = rsiMaM == "EMA" ? ta.ema(rsiV, rsiMaLen) : ta.sma(rsiV, rsiMaLen)
 atrV = ta.atr(atrLen)
 [macdLine, macdSig, macdHist] = ta.macd(close, macdF, macdS, macdG)
 
-// security: unused families hit the chart TF (not five HTF books)
+// security: unused families hit the chart TF + na (not five HTF books / pivots)
 string tfH4 = isHTF ? "240" : timeframe.period
 string tfD1p = isHTF ? "D" : timeframe.period
 string tfD1o = isFXIT ? "D" : timeframe.period
 string tfBtp = isBTP ? Btp_Htf : timeframe.period
 string tfBns = isBNS ? "60" : timeframe.period
 
-[h4Ph, h4Pl] = request.security(syminfo.tickerid, tfH4, [ta.pivothigh(high, Htf_Left4h, Htf_Right4h), ta.pivotlow(low, Htf_Left4h, Htf_Right4h)], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
-[d1Ph, d1Pl] = request.security(syminfo.tickerid, tfD1p, [ta.pivothigh(high, Htf_LeftD, Htf_RightD), ta.pivotlow(low, Htf_LeftD, Htf_RightD)], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
-[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, [high, low, open], lookahead=barmerge.lookahead_off)
-[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, [ta.ema(close, Btp_EmaFast), ta.ema(close, Btp_EmaSlow), close], lookahead=barmerge.lookahead_off)
-[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, [ta.ema(close, Bns_HtfF), ta.ema(close, Bns_HtfS), close], lookahead=barmerge.lookahead_off)
+[h4Ph, h4Pl] = request.security(syminfo.tickerid, tfH4, isHTF ? [ta.pivothigh(high, Htf_Left4h, Htf_Right4h), ta.pivotlow(low, Htf_Left4h, Htf_Right4h)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+[d1Ph, d1Pl] = request.security(syminfo.tickerid, tfD1p, isHTF ? [ta.pivothigh(high, Htf_LeftD, Htf_RightD), ta.pivotlow(low, Htf_LeftD, Htf_RightD)] : [na, na], gaps=barmerge.gaps_on, lookahead=barmerge.lookahead_off)
+[d1High, d1Low, d1Open] = request.security(syminfo.tickerid, tfD1o, isFXIT ? [high, low, open] : [na, na, na], lookahead=barmerge.lookahead_off)
+[htfE50, htfE200, htfC] = request.security(syminfo.tickerid, tfBtp, isBTP ? [ta.ema(close, Btp_EmaFast), ta.ema(close, Btp_EmaSlow), close] : [na, na, na], lookahead=barmerge.lookahead_off)
+[h1E50, h1E200, h1C] = request.security(syminfo.tickerid, tfBns, isBNS ? [ta.ema(close, Bns_HtfF), ta.ema(close, Bns_HtfS), close] : [na, na, na], lookahead=barmerge.lookahead_off)
 
 // shared outputs (na unless the active family writes them)
 float oEmaF = na
@@ -480,9 +516,9 @@ if isHTF
     showGold := Htf_ShowGold
     showLong := InpShowMarkers and sig == 1
     showShort := InpShowMarkers and sig == -1
-    lastWhy := "sig@8"
+    lastWhy := Htf_ShowSr ? "sig@8 S/R CSV stubbed" : "sig@8 (S/R CSV stub)"
 
-if isFXIT
+else if isFXIT
     bool useSession = Fxit_ManSess ? Fxit_UseSess : not fxitSwing
     bool allowAsian = Fxit_ManSess ? Fxit_AlAsian : fxitSwing
     bool allowLondon = Fxit_ManSess ? Fxit_AlLon : true
@@ -537,32 +573,17 @@ if isFXIT
     showCloud := Fxit_ShowCloud
     showLong := InpShowMarkers and sig == 1
     showShort := InpShowMarkers and sig == -1
-    lastWhy := "sig@9"
+    lastWhy := "sig@9 spread stub"
 
-if isUIS
-    int etH = hour(time, TZ_NY)
-    int etM = minute(time, TZ_NY)
-    int etDow = dayofweek(time, TZ_NY)
-    int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
-    int lonH = hour(time, TZ_LON)
-    int lonM = minute(time, TZ_LON)
-    int tyoH = hour(time, TZ_TYO)
-    int tyoM = minute(time, TZ_TYO)
-    bool inNyCash = inHm(etH, etM, 9, 30, 16, 0)
-    bool inLondon = inHm(lonH, lonM, 8, 0, 17, 0)
-    bool inTokyo = inHm(tyoH, tyoM, 9, 0, 18, 0)
+else if isUIS
     int sess = inNyCash and inLondon ? 4 : inNyCash ? 3 : inLondon ? 2 : inTokyo ? 1 : 0
-    int etMin = etH * 60 + etM
     bool inOrWin = etMin >= 9 * 60 + 30 and etMin < 9 * 60 + 30 + Uis_OrMin
     bool orComplete = etMin >= 9 * 60 + 30 + Uis_OrMin
     int winOr = Uis_Play == "ORB" ? Uis_OrMin : 5
     bool inEntry = etMin >= 9 * 60 + 30 + winOr and etMin < Uis_EndH * 60 + Uis_EndM
     bool fridayCut = etDow == dayofweek.friday and etMin >= 14 * 60
-    bool newEt = na(etKey[1]) or etKey != etKey[1]
-    int tyoYmd = year(time, TZ_TYO) * 10000 + month(time, TZ_TYO) * 100 + dayofmonth(time, TZ_TYO)
-    int lonYmd = year(time, TZ_LON) * 10000 + month(time, TZ_LON) * 100 + dayofmonth(time, TZ_LON)
-    bool newTyoDay = na(tyoYmd[1]) or tyoYmd != tyoYmd[1]
-    bool newLonDay = na(lonYmd[1]) or lonYmd != lonYmd[1]
+    // STUB: IdxSpreadPoints needs live bid/ask. Historical bars pass.
+    bool liveSpreadOk = true
     if newEt
         uisVnum := 0.0
         uisVden := 0.0
@@ -615,6 +636,8 @@ if isUIS
         why := etMin < 9 * 60 + 30 + winOr ? "before_or_end" : "outside_entry_window"
     else if Uis_Play == "ORB" and not orReady
         why := "or_incomplete"
+    else if not liveSpreadOk
+        why := "spread"
     else if Uis_Play != "EMA_MACD" and na(vwap)
         why := "no_vwap"
     else if na(atrV) or atrV <= 0
@@ -693,7 +716,7 @@ if isUIS
     shpFlat := Uis_ShowFlat and etH == 15 and etM == 45
     lastWhy := uisWhy
 
-if isBTP
+else if isBTP
     htfStrength = not na(htfE50) and not na(htfE200) and htfE200 != 0 ? (htfE50 - htfE200) / htfE200 : 0.0
     int htfBias = 0
     if not na(htfC) and not na(htfE50) and not na(htfE200) and htfE50 > 0 and htfE200 > 0
@@ -763,20 +786,20 @@ if isBTP
         momS = rsiV <= (100.0 - Btp_ContRsi) and (rsiV < rsiV[1] or macdHist < macdHist[1])
         setupContLong := htfStrength >= Btp_StrStr and close >= emaF and extL >= 0 and extL <= Btp_MaxExt and momL
         setupContShort := (-htfStrength) >= Btp_StrStr and close <= emaF and extS >= 0 and extS <= Btp_MaxExt and momS
-    longSetup = htfBias == 1 and not panicLong and emaF > 0 and ((nearE50 and nearVwap and recovLong) or setupContLong or deepLong)
-    shortSetup = Btp_Shorts and htfBias == -1 and not panicShort and emaF > 0 and ((nearE50 and nearVwap and recovShort) or setupContShort or deepShort)
+    btpLongSetup := htfBias == 1 and not panicLong and emaF > 0 and ((nearE50 and nearVwap and recovLong) or setupContLong or deepLong)
+    btpShortSetup := Btp_Shorts and htfBias == -1 and not panicShort and emaF > 0 and ((nearE50 and nearVwap and recovShort) or setupContShort or deepShort)
     atrPct = close > 0 and atrV > 0 ? atrV / close : 0.0
-    canTrade = close > 0 and atrV > 0 and atrPct >= Btp_MinAtr
-    longNow = canTrade and longSetup
-    shortNow = canTrade and shortSetup
+    btpCanTrade := close > 0 and atrV > 0 and atrPct >= Btp_MinAtr
+    longNow = btpCanTrade and btpLongSetup
+    shortNow = btpCanTrade and btpShortSetup
     if bar_index < 1 or not barstate.isconfirmed
         sig := 0
     else
         longFire = longNow
         shortFire = shortNow
         if Btp_Edge and bar_index >= 2
-            longFire := longNow and not (canTrade[1] and longSetup[1])
-            shortFire := shortNow and not (canTrade[1] and shortSetup[1])
+            longFire := longNow and not (btpCanTrade[1] and btpLongSetup[1])
+            shortFire := shortNow and not (btpCanTrade[1] and btpShortSetup[1])
         if longFire
             sig := 1
         else if shortFire
@@ -792,17 +815,10 @@ if isBTP
     showShort := InpShowMarkers and sig == -1
     lastWhy := "sig@7"
 
-if isBNS
-    int etH = hour(time, TZ_NY)
-    int etM = minute(time, TZ_NY)
-    int etDow = dayofweek(time, TZ_NY)
-    int etKey = year(time, TZ_NY) * 10000 + month(time, TZ_NY) * 100 + dayofmonth(time, TZ_NY)
-    int emin = etH * 60 + etM
-    bool inBox = emin >= 8 * 60 and emin < 11 * 60 + 30
-    bool fridayCut = etDow == dayofweek.friday and emin >= 14 * 60
-    bool nfpHit = Bns_Nfp and emin >= 8 * 60 + 25 and emin < 8 * 60 + 40
-    bool entryOk = inBox and not fridayCut and not nfpHit
-    bool newEt = na(etKey[1]) or etKey != etKey[1]
+else if isBNS
+    bool fridayCut = etDow == dayofweek.friday and etMin >= 14 * 60
+    bool nfpHit = Bns_Nfp and etMin >= 8 * 60 + 25 and etMin < 8 * 60 + 40
+    bool entryOk = inBnsBox and not fridayCut and not nfpHit
     if newEt
         bnsVnum := 0.0
         bnsVden := 0.0
@@ -810,7 +826,7 @@ if isBNS
         bnsOrL := na
         bnsOrReady := false
     float vwap = na
-    if inBox
+    if inBnsBox
         typ = (high + low + close) / 3.0
         vol = math.max(nz(volume, 1.0), 1.0)
         bnsVnum += typ * vol
@@ -818,14 +834,14 @@ if isBNS
         if bnsVden > 0 and Bns_ShowVwap
             vwap := bnsVnum / bnsVden
         orEnd = 8 * 60 + Bns_OrMin
-        if emin >= 8 * 60 and emin < orEnd
+        if etMin >= 8 * 60 and etMin < orEnd
             if na(bnsOrH)
                 bnsOrH := high
                 bnsOrL := low
             else
                 bnsOrH := math.max(bnsOrH, high)
                 bnsOrL := math.min(bnsOrL, low)
-        if emin >= orEnd and not na(bnsOrH)
+        if etMin >= orEnd and not na(bnsOrH)
             bnsOrReady := true
     int htfBias = 0
     if not na(h1C) and not na(h1E50) and not na(h1E200)
@@ -881,13 +897,13 @@ if isBNS
     oVwap := vwap
     oOrH := Bns_ShowOr and bnsOrReady ? bnsOrH : na
     oOrL := Bns_ShowOr and bnsOrReady ? bnsOrL : na
-    oSess := inBox ? 1 : 0
+    oSess := inBnsBox ? 1 : 0
     oBias := htfBias
     showLong := InpShowMarkers and sig == 1
     showShort := InpShowMarkers and sig == -1
-    bgDesk := inBox
-    shpDesk := inBox and not inBox[1]
-    shpFlat := Bns_ShowFlat and emin == 11 * 60 + 30
+    bgDesk := inBnsBox
+    shpDesk := inBnsBox and not inBnsBox[1]
+    shpFlat := Bns_ShowFlat and etMin == 11 * 60 + 30
     lastWhy := bnsWhy
 
 // Shared plots (na when the active family does not use the slot).
@@ -945,7 +961,7 @@ var label lbl4hL = na
 var label lblDh = na
 var label lblDl = na
 var label famTag = na
-var table panel = table.new(position.top_left, 1, 8, bgcolor=color.new(color.black, 25), border_width=0)
+var table panel = na
 
 if barstate.islast
     bool lab4h = isHTF and Htf_Lab4h and not na(o4hH)
@@ -998,18 +1014,27 @@ if barstate.islast
         famTag := na
 
     if InpShowPanel
+        if na(panel)
+            panel := table.new(position.top_left, 1, 8, bgcolor=color.new(color.black, 25), border_width=0)
         lastSig = sig[1]
         sigs = lastSig > 0.5 ? "LONG" : lastSig < -0.5 ? "SHORT" : "flat"
-        famTitle = isHTF ? "FX HTF Fib (ForexHtfPivotsFib)" : isFXIT ? "FX template (ForexIndicatorTemplate)" : isUIS ? "US index scalp (UsIndexSessionScalp)" : isBTP ? "BTC H1 pullback (BtcTrendPullback)" : "BTC NY scalp (BtcNySessionScalp)"
+        famTitle = isHTF ? "FX HTF Fib (ForexHtfPivotsFib)" : isFXIT ? "FX template (ForexIndicatorTemplate)" : isUIS ? "US index scalp (UsIndexSessionScalp)" : isBTP ? "BTC H1 pullback (BtcTrendPullback)" : isBNS ? "BTC NY scalp (BtcNySessionScalp)" : InpOverlay
         statusTxt = isBNS ? "SCREEN_FAIL / promote=no — not a trading signal" : "Not a live signal. promote=no."
-        table.cell(panel, 0, 0, "Universal Overlay — observe-only / promote=no", text_color=color.white, text_halign=text.align_left)
+        stubTxt = isHTF ? "S/R CSV stubbed (" + Htf_SrFile + ")" : isFXIT ? "Spread stub (no MT5 bid/ask)" : isUIS ? "Spread/M5-export stub" + (looksUs ? "" : "  (not US30/US100 name)") : isBTP ? "tick_volume stub (TV volume)" : isBNS ? "Frozen btc_ny_overlap_vwap_ema_flat" + (looksBtc ? "" : "  (ticker has no BTC)") : ""
+        extraTxt = isBNS ? "NY desk [08:00, 11:30) " + TZ_NY + "  flatten 11:30  ET " + etClock : isUIS ? "ET " + etClock + "  IANA " + TZ_NY + "/" + TZ_LON + "/" + TZ_TYO : "IANA DST " + TZ_NY + " / " + TZ_LON + " / " + TZ_TYO
+        table.cell(panel, 0, 0, isBNS ? "BtcNySessionScalp SCREEN_FAIL / observe-only" : "Universal Overlay — observe-only / promote=no", text_color=isBNS ? color.red : color.white, text_halign=text.align_left)
         table.cell(panel, 0, 1, statusTxt, text_color=isBNS ? color.red : color.silver, text_halign=text.align_left)
         table.cell(panel, 0, 2, "Family " + famTitle, text_color=color.silver, text_halign=text.align_left)
         table.cell(panel, 0, 3, "Signal buffer " + str.tostring(sigBuf) + "  |  " + famCode + "  |  HTFFIB/UIS/BNS=8 BTP=7 FXIT=9", text_color=color.silver, text_halign=text.align_left)
         table.cell(panel, 0, 4, "Signal " + sigs + " | " + lastWhy + " | no orders", text_color=color.silver, text_halign=text.align_left)
-        table.cell(panel, 0, 5, "IANA DST " + TZ_NY + " / " + TZ_LON + " / " + TZ_TYO, text_color=color.gray, text_halign=text.align_left)
-        table.cell(panel, 0, 6, isBNS ? "NY desk [08:00, 11:30) " + TZ_NY + "  flatten 11:30" : "Active family only — unused plots stay na", text_color=color.gray, text_halign=text.align_left)
+        table.cell(panel, 0, 5, extraTxt, text_color=color.gray, text_halign=text.align_left)
+        table.cell(panel, 0, 6, stubTxt, text_color=isBNS ? color.red : color.gray, text_halign=text.align_left)
         table.cell(panel, 0, 7, "merge ≠ deploy · not a live host", text_color=color.gray, text_halign=text.align_left)
+    else if not na(panel)
+        table.delete(panel)
+        panel := na
 
-alertcondition(sig == 1, "UNIV long (observe-only)", "Universal overlay long — not a live signal")
-alertcondition(sig == -1, "UNIV short (observe-only)", "Universal overlay short — not a live signal")
+alertcondition(sig == 1 and not isBNS, "UNIV long (observe-only)", "Universal overlay long — not a live signal")
+alertcondition(sig == -1 and not isBNS, "UNIV short (observe-only)", "Universal overlay short — not a live signal")
+alertcondition(sig == 1 and isBNS, "BNS long (SCREEN_FAIL observe-only)", "BTC NY scalp long — SCREEN_FAIL — not a live signal")
+alertcondition(sig == -1 and isBNS, "BNS short (SCREEN_FAIL observe-only)", "BTC NY scalp short — SCREEN_FAIL — not a live signal")

@@ -46,15 +46,19 @@ TradingView → Pine Editor → paste `UniversalOverlay.pine` → Add to chart �
 
 | Family option | Standalone | Signal buffer | Notes |
 |---------------|------------|---------------|-------|
-| FX HTF Fib | `ForexHtfPivotsFib.pine` | **8** | Confirm-bar HTF pivots + golden-zone RSI |
-| FX template | `ForexIndicatorTemplate.pine` | **9** | Buffer 8 is the short arrow, not the signal |
-| US index scalp | `UsIndexSessionScalp.pine` | **8** | IANA NY / London / Tokyo DST clocks |
-| BTC H1 pullback | `BtcTrendPullback.pine` | **7** | H4 completed-bar bias |
-| BTC NY scalp | `BtcNySessionScalp.pine` | **8** | **SCREEN_FAIL / promote=no** banner when this family is selected |
+| FX HTF Fib (ForexHtfPivotsFib) | `ForexHtfPivotsFib.pine` | **8** | Confirm-bar HTF pivots + golden-zone RSI. S/R CSV stays a stub. |
+| FX template (ForexIndicatorTemplate) | `ForexIndicatorTemplate.pine` | **9** | Buffer 8 is the short arrow, not the signal. Spread gate stubbed. |
+| US index scalp (UsIndexSessionScalp) | `UsIndexSessionScalp.pine` | **8** | IANA NY / London / Tokyo DST clocks |
+| BTC H1 pullback (BtcTrendPullback) | `BtcTrendPullback.pine` | **7** | H4 completed-bar bias |
+| BTC NY scalp (BtcNySessionScalp) | `BtcNySessionScalp.pine` | **8** | **SCREEN_FAIL / promote=no** banner + alerts when this family is selected |
 
-Only the selected family's signal / VWAP / swing / ORB state runs each bar. `request.security` must stay registered (Pine limitation); unused families request the **chart** TF instead of H4/D1/H1 so this is not five HTF books.
+Only the selected family's signal / VWAP / swing / ORB state runs each bar. `request.security` must stay registered (Pine limitation); unused families request the **chart** TF and a `na` expression (not H4/D1/H1 books, not pivots).
 
-The data-window plot named `signal` is the active family's iCustom series. The table and last-bar label show family code + buffer index (`HTFFIB/UIS/BNS=8`, `BTP=7`, `FXIT=9`). Unused visual series stay `na` (`display=` is a Pine const and cannot flip per family).
+Session day-keys (`etKey`) are computed at global scope so `[1]` history works. Declaring them inside `if isUIS` can make `etKey[1]` na and reset VWAP every bar.
+
+Family input titles are prefixed (`HTF InpEmaFast`, `UIS InpEmaFast`, …) so settings do not collide across groups.
+
+The data-window plot named `signal` is the active family's iCustom series. The table and last-bar label show family code + buffer index (`HTFFIB/UIS/BNS=8`, `BTP=7`, `FXIT=9`). Unused visual series stay `na` (`display=` is a Pine const and cannot flip per family). The panel is created only when `InpShowPanel` is on.
 
 GoldSessionScalp / OilSessionScalp are not options. Do not invent them.
 
