@@ -57,7 +57,7 @@ bool   InpCrossOnly = input.bool(true, "InpCrossOnly", group="=== Playbook famil
 float InpMaxSpreadPoints = input.float(0.0, "InpMaxSpreadPoints (0=auto; live stub)", group="=== Spread (points, not pips) ===")
 
 // === Session drawings ===
-int   InpDrawDays = input.int(2, "InpDrawDays (bgcolor; no Wine boxes)", minval=1, maxval=12, group="=== Session drawings ===")
+int   InpDrawDays = input.int(2, "InpDrawDays (ET-date plot cutoff; no Wine boxes)", minval=1, maxval=12, group="=== Session drawings ===")
 bool  InpShowTokyo = input.bool(false, "InpShowTokyo", group="=== Session drawings ===")
 bool  InpShowLondon = input.bool(true, "InpShowLondon", group="=== Session drawings ===")
 bool  InpShowNyCash = input.bool(true, "InpShowNyCash", group="=== Session drawings ===")
@@ -87,6 +87,13 @@ inHm(int h, int mi, int sh, int sm, int eh, int em) =>
     a = sh * 60 + sm
     b = eh * 60 + em
     a < b ? (t >= a and t < b) : (t >= a or t < b)
+
+// Plot cutoff only (signal / VWAP accum stay on all bars).
+// ET midnights — not MQL5 rates_total * bars_per_day.
+inEtDrawWindow(int days) =>
+    bar0 = timestamp(TZ_NY, year(time, TZ_NY), month(time, TZ_NY), dayofmonth(time, TZ_NY), 0, 0, 0)
+    now0 = timestamp(TZ_NY, year(timenow, TZ_NY), month(timenow, TZ_NY), dayofmonth(timenow, TZ_NY), 0, 0, 0)
+    (now0 - bar0) < days * 86400000
 
 int etH = hour(time, TZ_NY)
 int etM = minute(time, TZ_NY)
@@ -176,7 +183,9 @@ if inNyCash
     vol = math.max(nz(volume, 1.0), 1.0)
     vnum += typ * vol
     vden += vol
-    vwap := vden > 0 ? vnum / vden : na
+    // MQL5 BufVwap empties when display is off → ORB/VWAP_BOUNCE fail na(vwap).
+    if InpShowVwap and vden > 0
+        vwap := vnum / vden
 
 if inOrWin
     if not orSet
@@ -267,19 +276,20 @@ if sig != 0
 if barstate.isconfirmed
     lastWhy := why
 
-plot(InpShowEmas ? emaF : na, "EMA9", color=#00BFFF, linewidth=1)
-plot(InpShowEmas ? emaS : na, "EMA21", color=#FFA500, linewidth=2)
-plot(InpShowVwap ? vwap : na, "NY VWAP", color=color.white, linewidth=2)
-plot(InpShowOrBox ? orHplot : na, "OR High", color=InpColOr, linewidth=1, style=plot.style_circles)
-plot(InpShowOrBox ? orLplot : na, "OR Low", color=InpColOr, linewidth=1, style=plot.style_circles)
-plot(InpShowAsiaLevels ? asiaH : na, "ASIA HIGH", color=InpColTokyo, linewidth=1)
-plot(InpShowAsiaLevels ? asiaL : na, "ASIA LOW", color=InpColTokyo, linewidth=1)
-plot(InpShowLondonLevels ? lonHi : na, "LONDON HIGH", color=InpColLondon, linewidth=1)
-plot(InpShowLondonLevels ? lonLo : na, "LONDON LOW", color=InpColLondon, linewidth=1)
-plot(InpShowPriorDay ? pdh : na, "PDH", color=InpColPdh, linewidth=1, style=plot.style_linebr)
-plot(InpShowPriorDay ? pdl : na, "PDL", color=InpColPdl, linewidth=1, style=plot.style_linebr)
-float longMarker = InpShowMarkers and sig == 1 and atrV > 0 ? low - InpArrowOffsetAtrFrac * atrV : na
-float shortMarker = InpShowMarkers and sig == -1 and atrV > 0 ? high + InpArrowOffsetAtrFrac * atrV : na
+bool drawVis = inEtDrawWindow(InpDrawDays)
+plot(InpShowEmas and drawVis ? emaF : na, "EMA9", color=#00BFFF, linewidth=1)
+plot(InpShowEmas and drawVis ? emaS : na, "EMA21", color=#FFA500, linewidth=2)
+plot(drawVis ? vwap : na, "NY VWAP", color=color.white, linewidth=2)
+plot(InpShowOrBox and drawVis ? orHplot : na, "OR High", color=InpColOr, linewidth=1, style=plot.style_circles)
+plot(InpShowOrBox and drawVis ? orLplot : na, "OR Low", color=InpColOr, linewidth=1, style=plot.style_circles)
+plot(InpShowAsiaLevels and drawVis ? asiaH : na, "ASIA HIGH", color=InpColTokyo, linewidth=1)
+plot(InpShowAsiaLevels and drawVis ? asiaL : na, "ASIA LOW", color=InpColTokyo, linewidth=1)
+plot(InpShowLondonLevels and drawVis ? lonHi : na, "LONDON HIGH", color=InpColLondon, linewidth=1)
+plot(InpShowLondonLevels and drawVis ? lonLo : na, "LONDON LOW", color=InpColLondon, linewidth=1)
+plot(InpShowPriorDay and drawVis ? pdh : na, "PDH", color=InpColPdh, linewidth=1, style=plot.style_linebr)
+plot(InpShowPriorDay and drawVis ? pdl : na, "PDL", color=InpColPdl, linewidth=1, style=plot.style_linebr)
+float longMarker = InpShowMarkers and drawVis and sig == 1 and atrV > 0 ? low - InpArrowOffsetAtrFrac * atrV : na
+float shortMarker = InpShowMarkers and drawVis and sig == -1 and atrV > 0 ? high + InpArrowOffsetAtrFrac * atrV : na
 plotshape(longMarker, "Long", shape.triangleup, location.absolute, color=#00FF00, size=size.tiny)
 plotshape(shortMarker, "Short", shape.triangledown, location.absolute, color=#FF4500, size=size.tiny)
 plot(sig, "signal", color=color.gray, display=display.data_window)
@@ -290,16 +300,16 @@ bool nyOpen = inNyCash and not inNyCash[1]
 bool lonOpen = inLondon and not inLondon[1]
 bool tyoOpen = inTokyo and not inTokyo[1]
 bool flattenBar = etH == 15 and etM == 45
-bgcolor(InpShowNyCash and inNyCash ? color.new(InpColNy, 94) : na, title="NY cash")
-bgcolor(InpShowLondon and inLondon and not inNyCash ? color.new(InpColLondon, 96) : na, title="London")
-bgcolor(InpShowTokyo and inTokyo ? color.new(InpColTokyo, 96) : na, title="Tokyo")
-plotshape(InpShowNyCash and nyOpen, "NY 09:30", shape.circle, location.top, InpColNy, size=size.tiny)
-plotshape(InpShowLondon and lonOpen, "London", shape.circle, location.top, InpColLondon, size=size.tiny)
-plotshape(InpShowTokyo and tyoOpen, "Tokyo", shape.circle, location.top, InpColTokyo, size=size.tiny)
-plotshape(InpShowFlattenLine and flattenBar, "FLAT 15:45 ET", shape.xcross, location.top, InpColFlat, size=size.tiny)
+bgcolor(InpShowNyCash and drawVis and inNyCash ? color.new(InpColNy, 94) : na, title="NY cash")
+bgcolor(InpShowLondon and drawVis and inLondon and not inNyCash ? color.new(InpColLondon, 96) : na, title="London")
+bgcolor(InpShowTokyo and drawVis and inTokyo ? color.new(InpColTokyo, 96) : na, title="Tokyo")
+plotshape(InpShowNyCash and drawVis and nyOpen, "NY 09:30", shape.circle, location.top, InpColNy, size=size.tiny)
+plotshape(InpShowLondon and drawVis and lonOpen, "London", shape.circle, location.top, InpColLondon, size=size.tiny)
+plotshape(InpShowTokyo and drawVis and tyoOpen, "Tokyo", shape.circle, location.top, InpColTokyo, size=size.tiny)
+plotshape(InpShowFlattenLine and drawVis and flattenBar, "FLAT 15:45 ET", shape.xcross, location.top, InpColFlat, size=size.tiny)
 
-float slPx = InpShowAtrStops and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx - lastSigSide * InpSlAtr * lastSigAtr : na
-float tpPx = InpShowAtrStops and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx + lastSigSide * InpTpAtr * lastSigAtr : na
+float slPx = InpShowAtrStops and drawVis and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx - lastSigSide * InpSlAtr * lastSigAtr : na
+float tpPx = InpShowAtrStops and drawVis and lastSigSide != 0 and lastSigAtr > 0 ? lastSigPx + lastSigSide * InpTpAtr * lastSigAtr : na
 plot(slPx, "SL ATR", color=color.red, style=plot.style_linebr)
 plot(tpPx, "TP ATR", color=color.lime, style=plot.style_linebr)
 

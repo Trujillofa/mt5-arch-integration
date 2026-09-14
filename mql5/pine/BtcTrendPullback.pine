@@ -5,7 +5,7 @@
 // H4 completed-bar EMA50/200 bias + chart-TF (H1) pullback reclaim.
 // DNA: crypto-agent TrendPullback — NOT Forex Fib pivots. Signal buffer 7.
 //
-// HTF close: request.security(..., lookahead_off) matches CompletedHtfShift
+// HTF close: request.security(..., [1], lookahead_on) matches CompletedHtfShift
 // (still-forming HTF bar → previous completed bar). No session DST clock.
 //
 // STUBS: Wine ChartObjects / Comment(), iCustom logger, MT5 tick_volume

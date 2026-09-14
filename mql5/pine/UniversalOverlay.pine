@@ -104,7 +104,7 @@ bool   Fxit_AlNy = input.bool(true, "FXIT InpAllowNY", group="FXIT — RSI / sig
 bool   Fxit_AlOv = input.bool(true, "FXIT InpAllowOverlap", group="FXIT — RSI / signal")
 float  Fxit_MaxSpr = input.float(2.5, "FXIT InpMaxSpreadPips", step=0.1, group="FXIT — RSI / signal")
 bool   Fxit_OnClose = input.bool(true, "FXIT InpSignalOnClose", group="FXIT — RSI / signal")
-string Fxit_Tz = input.string("exchange", "FXIT InpSessionTimezone", options=["exchange", "America/New_York", "Europe/London", "Etc/UTC"], group="FXIT — Session hours")
+string Fxit_Tz = input.string("exchange", "FXIT InpSessionTimezone", tooltip="IANA zone (e.g. America/New_York) or 'exchange' = symbol exchange TZ. Invalid names fail on TradingView.", group="FXIT — Session hours")
 int    Fxit_As0 = input.int(0, "FXIT InpAsianStart", minval=0, maxval=23, group="FXIT — Session hours")
 int    Fxit_As1 = input.int(8, "FXIT InpAsianEnd", minval=0, maxval=23, group="FXIT — Session hours")
 int    Fxit_Ln0 = input.int(7, "FXIT InpLondonStart", minval=0, maxval=23, group="FXIT — Session hours")
@@ -136,6 +136,7 @@ int    Uis_MacdF = input.int(12, "UIS InpMacdFast", minval=1, group="UIS — Pla
 int    Uis_MacdS = input.int(26, "UIS InpMacdSlow", minval=1, group="UIS — Playbook")
 int    Uis_MacdG = input.int(9, "UIS InpMacdSignal", minval=1, group="UIS — Playbook")
 bool   Uis_Cross = input.bool(true, "UIS InpCrossOnly", group="UIS — Playbook")
+int    Uis_DrawDays = input.int(2, "UIS InpDrawDays", minval=1, maxval=12, group="UIS — Sessions")
 bool   Uis_ShowTyo = input.bool(false, "UIS InpShowTokyo", group="UIS — Sessions")
 bool   Uis_ShowLon = input.bool(true, "UIS InpShowLondon", group="UIS — Sessions")
 bool   Uis_ShowNy = input.bool(true, "UIS InpShowNyCash", group="UIS — Sessions")
@@ -223,6 +224,13 @@ inHm(int h, int mi, int sh, int sm, int eh, int em) =>
 
 pad2(int n) =>
     (n < 10 ? "0" : "") + str.tostring(n)
+
+// UIS plot cutoff only (signal / VWAP accum stay on all bars).
+// ET midnights — not MQL5 rates_total * bars_per_day.
+inEtDrawWindow(int days) =>
+    bar0 = timestamp(TZ_NY, year(time, TZ_NY), month(time, TZ_NY), dayofmonth(time, TZ_NY), 0, 0, 0)
+    now0 = timestamp(TZ_NY, year(timenow, TZ_NY), month(timenow, TZ_NY), dayofmonth(timenow, TZ_NY), 0, 0, 0)
+    (now0 - bar0) < days * 86400000
 
 // IANA clocks at global scope (cheap). Local `etKey` inside `if isUIS`/`if isBNS`
 // has no `[1]` history in Pine v5 — na(etKey[1]) would reset VWAP/OR every bar.
@@ -353,6 +361,9 @@ var float g382 = na
 var float g500 = na
 var float g618 = na
 var float g786 = na
+var int   prevDir = 0
+var float prevF618 = na
+var float prevF786 = na
 var float uisVnum = 0.0
 var float uisVden = 0.0
 var float uisOrH = 0.0
@@ -382,7 +393,9 @@ var string bnsWhy = "SCREEN_FAIL observe-only"
 if isHTF
     int fibSrc = Htf_Manual ? (Htf_FibSrc == "Daily" ? 1 : 0) : (htfSwing ? 1 : 0)
     bool use4h = timeframe.in_seconds() <= timeframe.in_seconds("240")
-    bool fibFrom4h = fibSrc == 0 and use4h
+    // request.security("240") works from any chart TF. MQL5/standalone
+    // Daily-fallback when TF>H4; wrapper keeps H4 fib source.
+    bool fibFrom4h = fibSrc == 0
     bool show4hEff = Htf_Manual ? Htf_Show4h : (not htfSwing and Htf_Show4h)
     if not na(h4Ph)
         latest4hH := h4Ph
@@ -476,12 +489,12 @@ if isHTF
     bool shortOk = bearZone and regimeShort and rsiShortOk and (not Htf_ReqCandle or (close < open and close < close[1]))
     bool bz1 = true
     bool ez1 = true
-    if Htf_ReqZone and have
-        bz1 := dir == 1 and close[1] <= f618 and close[1] >= f786
-        ez1 := dir == -1 and close[1] >= f618 and close[1] <= f786
-    else if not Htf_ReqZone and dir != 0
-        bz1 := dir == 1
-        ez1 := dir == -1
+    if Htf_ReqZone and not na(prevF618) and not na(prevF786) and prevDir != 0
+        bz1 := prevDir == 1 and close[1] <= prevF618 and close[1] >= prevF786
+        ez1 := prevDir == -1 and close[1] >= prevF618 and close[1] <= prevF786
+    else if not Htf_ReqZone and prevDir != 0
+        bz1 := prevDir == 1
+        ez1 := prevDir == -1
     else if Htf_ReqZone
         bz1 := false
         ez1 := false
@@ -502,7 +515,7 @@ if isHTF
         sig := -1
     oEmaF := InpShowEmas ? emaF : na
     oEmaS := InpShowEmas ? emaS : na
-    oEmaB := (InpShowEmas and not Htf_ShowBias) ? na : emaB
+    oEmaB := InpShowEmas and Htf_ShowBias ? emaB : na
     oF236 := Htf_ShowFib and Htf_Show236 and have ? g236 : na
     oF382 := Htf_ShowFib and Htf_Show382 and have ? g382 : na
     oF500 := Htf_ShowFib and Htf_Show500 and have ? g500 : na
@@ -517,6 +530,9 @@ if isHTF
     showLong := InpShowMarkers and sig == 1
     showShort := InpShowMarkers and sig == -1
     lastWhy := Htf_ShowSr ? "sig@8 S/R CSV stubbed" : "sig@8 (S/R CSV stub)"
+    prevDir := dir
+    prevF618 := f618
+    prevF786 := f786
 
 else if isFXIT
     bool useSession = Fxit_ManSess ? Fxit_UseSess : not fxitSwing
@@ -525,7 +541,7 @@ else if isFXIT
     bool allowNY = Fxit_ManSess ? Fxit_AlNy : true
     bool allowOverlap = Fxit_ManSess ? Fxit_AlOv : true
     float maxSpread = Fxit_ManSess ? Fxit_MaxSpr : (fxitSwing ? 0.0 : 2.5)
-    string tzSess = Fxit_Tz == "exchange" ? syminfo.timezone : Fxit_Tz
+    string tzSess = Fxit_Tz == "exchange" or str.length(Fxit_Tz) < 1 ? syminfo.timezone : Fxit_Tz
     int sessH = hour(time, tzSess)
     bool asian = inHourWindow(sessH, Fxit_As0, Fxit_As1)
     bool london = inHourWindow(sessH, Fxit_Ln0, Fxit_Ln1)
@@ -563,14 +579,14 @@ else if isFXIT
         showBias := false
     else if Fxit_ShowBias and emaBiasLen == emaSlowLen and not Fxit_ShowLines
         showBias := true
-    oEmaF := Fxit_ShowLines ? emaF : na
-    oEmaS := Fxit_ShowLines ? emaS : na
-    oEmaB := showBias ? emaB : na
+    oEmaF := InpShowEmas and Fxit_ShowLines ? emaF : na
+    oEmaS := InpShowEmas and Fxit_ShowLines ? emaS : na
+    oEmaB := InpShowEmas and showBias ? emaB : na
     oPdh := Fxit_ShowPD ? d1High : na
     oPdl := Fxit_ShowPD ? d1Low : na
     oPdo := Fxit_ShowPD ? d1Open : na
     oSess := sess
-    showCloud := Fxit_ShowCloud
+    showCloud := InpShowEmas and Fxit_ShowCloud
     showLong := InpShowMarkers and sig == 1
     showShort := InpShowMarkers and sig == -1
     lastWhy := "sig@9 spread stub"
@@ -615,7 +631,9 @@ else if isUIS
         vol = math.max(nz(volume, 1.0), 1.0)
         uisVnum += typ * vol
         uisVden += vol
-        vwap := uisVden > 0 ? uisVnum / uisVden : na
+        // MQL5 BufVwap empties when display is off → ORB/VWAP_BOUNCE fail na(vwap).
+        if Uis_ShowVwap and uisVden > 0
+            vwap := uisVnum / uisVden
     if inOrWin
         if not uisOrSet
             uisOrH := high
@@ -691,29 +709,30 @@ else if isUIS
         uisSigAtr := atrV
     if barstate.isconfirmed
         uisWhy := why
-    oEmaF := InpShowEmas ? emaF : na
-    oEmaS := InpShowEmas ? emaS : na
-    oVwap := Uis_ShowVwap ? vwap : na
-    oOrH := Uis_ShowOr and orReady ? uisOrH : na
-    oOrL := Uis_ShowOr and orReady ? uisOrL : na
-    oAsiaH := Uis_ShowAsia ? uisAsiaH : na
-    oAsiaL := Uis_ShowAsia ? uisAsiaL : na
-    oLonH := Uis_ShowLonLv ? uisLonH : na
-    oLonL := Uis_ShowLonLv ? uisLonL : na
-    oPdh := Uis_ShowPD ? uisPdh : na
-    oPdl := Uis_ShowPD ? uisPdl : na
+    bool uisDraw = inEtDrawWindow(Uis_DrawDays)
+    oEmaF := InpShowEmas and uisDraw ? emaF : na
+    oEmaS := InpShowEmas and uisDraw ? emaS : na
+    oVwap := uisDraw ? vwap : na
+    oOrH := uisDraw and Uis_ShowOr and orReady ? uisOrH : na
+    oOrL := uisDraw and Uis_ShowOr and orReady ? uisOrL : na
+    oAsiaH := uisDraw and Uis_ShowAsia ? uisAsiaH : na
+    oAsiaL := uisDraw and Uis_ShowAsia ? uisAsiaL : na
+    oLonH := uisDraw and Uis_ShowLonLv ? uisLonH : na
+    oLonL := uisDraw and Uis_ShowLonLv ? uisLonL : na
+    oPdh := uisDraw and Uis_ShowPD ? uisPdh : na
+    oPdl := uisDraw and Uis_ShowPD ? uisPdl : na
     oSess := sess
-    oSl := Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx - uisSide * Uis_SlAtr * uisSigAtr : na
-    oTp := Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx + uisSide * Uis_TpAtr * uisSigAtr : na
-    showLong := InpShowMarkers and sig == 1
-    showShort := InpShowMarkers and sig == -1
-    bgNy := Uis_ShowNy and inNyCash
-    bgLon := Uis_ShowLon and inLondon and not inNyCash
-    bgTyo := Uis_ShowTyo and inTokyo
-    shpNy := Uis_ShowNy and inNyCash and not inNyCash[1]
-    shpLon := Uis_ShowLon and inLondon and not inLondon[1]
-    shpTyo := Uis_ShowTyo and inTokyo and not inTokyo[1]
-    shpFlat := Uis_ShowFlat and etH == 15 and etM == 45
+    oSl := uisDraw and Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx - uisSide * Uis_SlAtr * uisSigAtr : na
+    oTp := uisDraw and Uis_AtrStops and uisSide != 0 and uisSigAtr > 0 ? uisSigPx + uisSide * Uis_TpAtr * uisSigAtr : na
+    showLong := InpShowMarkers and uisDraw and sig == 1
+    showShort := InpShowMarkers and uisDraw and sig == -1
+    bgNy := Uis_ShowNy and uisDraw and inNyCash
+    bgLon := Uis_ShowLon and uisDraw and inLondon and not inNyCash
+    bgTyo := Uis_ShowTyo and uisDraw and inTokyo
+    shpNy := Uis_ShowNy and uisDraw and inNyCash and not inNyCash[1]
+    shpLon := Uis_ShowLon and uisDraw and inLondon and not inLondon[1]
+    shpTyo := Uis_ShowTyo and uisDraw and inTokyo and not inTokyo[1]
+    shpFlat := Uis_ShowFlat and uisDraw and etH == 15 and etM == 45
     lastWhy := uisWhy
 
 else if isBTP

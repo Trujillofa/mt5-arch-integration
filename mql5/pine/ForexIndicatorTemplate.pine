@@ -63,7 +63,7 @@ float  InpMaxSpreadPips = input.float(2.5, "InpMaxSpreadPips (0=off; live-only s
 bool   InpSignalOnClose = input.bool(true, "InpSignalOnClose", group="=== Signal rules ===")
 
 // === Session hours (MQL5 = broker SERVER time) ===
-string InpSessionTimezone = input.string("exchange", "InpSessionTimezone", options=["exchange", "America/New_York", "Europe/London", "Etc/UTC"], group="=== Session hours (broker SERVER time) ===", tooltip="MQL5 uses broker server hours. 'exchange' = syminfo.timezone.")
+string InpSessionTimezone = input.string("exchange", "InpSessionTimezone", group="=== Session hours (broker SERVER time) ===", tooltip="IANA zone (e.g. America/New_York) or 'exchange' = symbol exchange TZ. Invalid names fail on TradingView. MQL5 uses broker server hours.")
 int    InpAsianStart = input.int(0, "InpAsianStart", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
 int    InpAsianEnd = input.int(8, "InpAsianEnd", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
 int    InpLondonStart = input.int(7, "InpLondonStart", minval=0, maxval=23, group="=== Session hours (broker SERVER time) ===")
@@ -115,7 +115,7 @@ bool useBiasEma = true
 string modeName = isSwing ? "SWING" : "INTRADAY"
 string chartHint = isSwing ? "H4-D1 (or H1 for entries)" : "M15-H1 (structure from 4H/D)"
 
-string tzSess = InpSessionTimezone == "exchange" ? syminfo.timezone : InpSessionTimezone
+string tzSess = InpSessionTimezone == "exchange" or str.length(InpSessionTimezone) < 1 ? syminfo.timezone : InpSessionTimezone
 
 int sessH = hour(time, tzSess)
 bool asian = inHourWindow(sessH, InpAsianStart, InpAsianEnd)

@@ -295,3 +295,65 @@ def test_pine_delimiters_and_no_invalid_history_on_call() -> None:
         assert src.count("plot(") + src.count("plotshape(") + src.count(
             "bgcolor("
         ) < 64, name
+
+
+def test_universal_htf_ema_fib_and_prev_bar_snapshots() -> None:
+    src = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    assert "oEmaB := InpShowEmas and Htf_ShowBias ? emaB : na" in src
+    assert "oEmaF := InpShowEmas and Fxit_ShowLines ? emaF : na" in src
+    assert "oEmaS := InpShowEmas and Fxit_ShowLines ? emaS : na" in src
+    assert "oEmaB := InpShowEmas and showBias ? emaB : na" in src
+    assert "showCloud := InpShowEmas and Fxit_ShowCloud" in src
+    assert "bool fibFrom4h = fibSrc == 0" in src
+    assert "fibFrom4h = fibSrc == 0 and use4h" not in src
+    assert "show4hEff and use4h" in src
+    assert "close[1] <= prevF618" in src
+    assert "close[1] >= prevF786" in src
+    assert "prevDir := dir" in src
+    assert "prevF618 := f618" in src
+    assert "prevF786 := f786" in src
+
+
+def test_fxit_session_timezone_is_freeform_iana() -> None:
+    for name in ("ForexIndicatorTemplate.pine", UNIVERSAL):
+        src = (PINE_DIR / name).read_text(encoding="utf-8")
+        tz_lines = [
+            line
+            for line in src.splitlines()
+            if "input.string" in line and "InpSessionTimezone" in line
+        ]
+        assert tz_lines, name
+        for line in tz_lines:
+            assert "options=" not in line, line
+        assert '== "exchange"' in src
+
+
+def test_btp_completed_bar_docs_use_lookahead_on() -> None:
+    header = "\n".join(
+        (PINE_DIR / "BtcTrendPullback.pine").read_text(encoding="utf-8").splitlines()[:12]
+    )
+    assert "lookahead_off" not in header
+    assert "lookahead_on" in header
+    readme = README.read_text(encoding="utf-8")
+    mapping = next(
+        line
+        for line in readme.splitlines()
+        if "BtcTrendPullback.pine" in line and "Indicators/BtcTrendPullback" in line
+    )
+    assert "lookahead_off" not in mapping
+    assert "lookahead_on" in mapping
+    univ = next(line for line in readme.splitlines() if "BTC H1 pullback" in line)
+    assert "lookahead_on" in univ
+    assert "completed-bar" in univ
+
+
+def test_uis_vwap_display_gates_signal_and_draw_days() -> None:
+    uis = (PINE_DIR / "UsIndexSessionScalp.pine").read_text(encoding="utf-8")
+    univ = (PINE_DIR / UNIVERSAL).read_text(encoding="utf-8")
+    assert "if InpShowVwap and vden > 0" in uis
+    assert "if Uis_ShowVwap and uisVden > 0" in univ
+    assert "inEtDrawWindow(InpDrawDays)" in uis
+    assert "Uis_DrawDays" in univ
+    assert "inEtDrawWindow(Uis_DrawDays)" in univ
+    assert univ.count("Uis_DrawDays") >= 2
+    assert "drawVis" in uis
