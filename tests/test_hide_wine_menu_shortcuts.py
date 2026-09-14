@@ -109,3 +109,19 @@ def test_script_17_hides_wine_and_skips_desktop() -> None:
     assert "hide_wine_programs" in text
     assert "remove_desktop_mt5_copies" in text
     assert 'desktop_dir / b["desktop_name"]' not in text
+
+
+def test_script_17_lists_live_book_brands() -> None:
+    text = (
+        Path(__file__).resolve().parents[1]
+        / "scripts"
+        / "17-install-desktop-launchers.sh"
+    ).read_text(encoding="utf-8")
+    assert ".mt5-ftmo" in text
+    assert "FTMO Global Markets" in text
+    assert ".mt5-fundednext" in text
+    assert ".mt5-alphacapital" in text
+    assert ".mt5-fundingpips" in text
+    assert ".mt5-neomaa" in text
+    assert ".mt5-fortraders" in text
+    assert "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS" in text

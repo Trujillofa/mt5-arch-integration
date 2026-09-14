@@ -120,6 +120,18 @@ bool FxRegistryLookup(const string broker, const string requested,
          broker_symbol = "BTCUSD";
          return true;
         }
+      if(r == "US30" || r == "DJ30.R")
+        {
+         canonical = "US30";
+         broker_symbol = "DJ30.r";
+         return true;
+        }
+      if(r == "US100" || r == "NAS100.R")
+        {
+         canonical = "US100";
+         broker_symbol = "NAS100.r";
+         return true;
+        }
       return false;
      }
    return false;
@@ -156,6 +168,11 @@ string FxCanonicalFromBrokerSymbolAny(const string broker_symbol)
       hit = "BTCUSD";
       n++;
      }
+   if(r == "DJ30.R")
+     {
+      hit = "US30";
+      n++;
+     }
    if(r == "EURUSD")
      {
       hit = "EURUSD";
@@ -164,6 +181,11 @@ string FxCanonicalFromBrokerSymbolAny(const string broker_symbol)
    if(r == "GBPUSD")
      {
       hit = "GBPUSD";
+      n++;
+     }
+   if(r == "NAS100.R")
+     {
+      hit = "US100";
       n++;
      }
    if(r == "USDCHF")

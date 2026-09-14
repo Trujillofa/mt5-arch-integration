@@ -50,6 +50,7 @@ fi
 export DISPLAY="${DISPLAY:-:0}"
 export WINEDEBUG="${WINEDEBUG:--all}"
 export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
+export_wine_webview_env
 
 for broker in "$@"; do
   profile="$REPO_ROOT/config/brokers/${broker}.env"

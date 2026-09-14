@@ -25,6 +25,12 @@ SCRIPT17_DESKTOP_NAMES = frozenset(
         "fpmarkets-mt5.desktop",
         "vantage-mt5.desktop",
         "wsf-mt5.desktop",
+        "fundednext-mt5.desktop",
+        "ftmo-mt5.desktop",
+        "alphacapital-mt5.desktop",
+        "fundingpips-mt5.desktop",
+        "neomaa-mt5.desktop",
+        "fortraders-mt5.desktop",
     }
 )
 

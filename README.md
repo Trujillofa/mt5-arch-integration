@@ -141,8 +141,9 @@ Symlink brand folder → `MetaTrader 5` so scripts find `terminal64.exe` (see tr
 
 ```bash
 ./scripts/17-install-desktop-launchers.sh
-# App launcher: "Exness MT5" · "FP Markets MT5" · "Vantage International MT5" · "WSFmarkets MT5"
-# CLI: mt5-exness | mt5-fpmarkets | mt5-vantage | mt5-wsf
+# App launcher: Exness / FP Markets / Vantage / WSF / FundedNext / FTMO /
+#               Alpha Capital / FundingPips / Neomaa / Fortraders MT5
+# CLI: mt5-<broker>  (mt5-exness, mt5-ftmo, mt5-fundednext, …)
 ```
 
 ## Configuration

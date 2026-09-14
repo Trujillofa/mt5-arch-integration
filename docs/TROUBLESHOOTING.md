@@ -288,16 +288,17 @@ only when each company server is present and Wine can auth. Brand installers pre
 `servers.dat`; cross-company login fails (`Invalid account`). Concurrent live bridges
 usually mean separate prefixes/processes.
 
-### App menu / Desktop icons missing or broken (FP Markets, etc.)
+### App menu icons missing or broken (FP Markets, etc.)
 
 Wine installers often only create nested entries under
 `~/.local/share/applications/wine/Programs/...` with **tiny broken icons**.
-Install top-level launchers (app menu + Desktop + `~/.local/bin/mt5-*`):
+Install top-level launchers (app menu + `~/.local/bin/mt5-*`) and hide those
+Wine clones:
 
 ```bash
 ./scripts/17-install-desktop-launchers.sh
-# then open launcher and search: Exness MT5 | FP Markets MT5 | Vantage | WSFmarkets
-# or: mt5-exness | mt5-fpmarkets | mt5-vantage | mt5-wsf
+# then open launcher and search: Exness MT5 | FTMO MT5 | FundedNext MT5 | …
+# or: mt5-exness | mt5-ftmo | mt5-fundednext | mt5-<broker>
 ```
 
 Each launcher sets the correct `WINEPREFIX` and runs `terminal64.exe /portable`
@@ -386,6 +387,10 @@ winetricks -q corefonts vcrun2019
 ```
 
 Update Wine (`pacman -Syu wine`) — MT5 tracks recent builds better with current Wine.
+
+### Market / AI pane is a white empty window
+
+Wine on this host pinned `msedgewebview2.exe` to **winxp64**. Edge 151 cannot paint on XP. `ensure_wine_webview_reg` in `scripts/lib.sh` forces **win11** on that child and sets `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--use-angle=swiftshader --enable-unsafe-swiftshader --no-sandbox`. Restart the same prefix only. A Market window floating over a chart can stay blank even then — dock it or close the chart underneath. Do not drop `WINEDLLOVERRIDES=d3d11=b` globally.
 
 ## Symbol not found
 

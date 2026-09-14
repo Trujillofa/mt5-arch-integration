@@ -40,6 +40,16 @@ load_dotenv() {
   fi
 }
 
+# Charts stay on Wine builtin d3d11/dxgi (start scripts set WINEDLLOVERRIDES).
+# Market / AI / reports use Edge WebView2, which paints blank on that stub.
+# Software-render the WebView only — do not drop the d3d overrides globally.
+# --disable-gpu fights ANGLE; swiftshader is the path that actually paints.
+MT5_WEBVIEW2_BROWSER_ARGUMENTS_DEFAULT='--use-angle=swiftshader --enable-unsafe-swiftshader --no-sandbox'
+
+export_wine_webview_env() {
+  export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="${WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:-$MT5_WEBVIEW2_BROWSER_ARGUMENTS_DEFAULT}"
+}
+
 # Write HKCU\Control Panel\Desktop LogPixels (Wine user.reg). Prefix-wide.
 # Uses DPI / MT5_LOG_PIXELS (96–192). Requires WINEPREFIX. No second DPI path.
 apply_wine_logpixels() {
@@ -51,11 +61,26 @@ apply_wine_logpixels() {
   wine reg add 'HKCU\Control Panel\Desktop' /v LogPixels /t REG_DWORD /d "$dpi" /f >/dev/null
 }
 
+ensure_wine_webview_reg() {
+  export_wine_webview_env
+  command -v wine >/dev/null 2>&1 || return 0
+  [[ -n "${WINEPREFIX:-}" && -d "${WINEPREFIX}" ]] || return 0
+  # Edge 151 paints nothing if Wine pins the child to XP (seen on this host).
+  wine reg add 'HKCU\Software\Wine' /v Version /t REG_SZ /d win11 /f >/dev/null 2>&1 || true
+  wine reg add 'HKCU\Software\Wine\AppDefaults\msedgewebview2.exe' \
+    /v Version /t REG_SZ /d win11 /f >/dev/null 2>&1 || true
+  wine reg add 'HKCU\Software\Wine\AppDefaults\msedge.exe' \
+    /v Version /t REG_SZ /d win11 /f >/dev/null 2>&1 || true
+  wine reg add 'HKCU\Environment' /v WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS \
+    /t REG_SZ /d "${WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS}" /f >/dev/null 2>&1 || true
+}
+
 export_wine_env() {
   export WINEPREFIX="${WINEPREFIX:-$HOME/.mt5}"
   export WINEARCH="${WINEARCH:-win64}"
   # Reduce noise; keep GUI working
   export WINEDEBUG="${WINEDEBUG:--all}"
+  export_wine_webview_env
 }
 
 # Rebuild force_src_bind.so when the .c is newer. Loopback listens must stay
@@ -301,6 +326,7 @@ start_terminal64_detached() {
     export WINEARCH="${WINEARCH:-win64}"
     export WINEDEBUG="${WINEDEBUG:--all}"
     export WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
+    export_wine_webview_env
     setsid -f wine ./terminal64.exe "$@" </dev/null >>"$log" 2>&1
   )
   info "detached $prefix_name pid-session (log $log)"

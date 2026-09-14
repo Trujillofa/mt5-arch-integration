@@ -1,4 +1,5 @@
 import { DEFAULT_DESK_LOTS, defaultLotsForFirm } from "@/lib/firms";
+import { SEED_QUOTES } from "@/lib/quotes";
 import { seedDesk } from "@/lib/seed";
 import type { DeskState } from "@/lib/types";
 
@@ -106,6 +107,14 @@ function migrateOperatorLogins(state: DeskState): DeskState {
   };
 }
 
+export function mergeSeedQuotes(quotes: DeskState["quotes"]): DeskState["quotes"] {
+  const have = new Set(quotes.map((quote) => quote.symbol));
+  const missing = SEED_QUOTES.filter((quote) => !have.has(quote.symbol)).map((quote) => ({
+    ...quote,
+  }));
+  return missing.length === 0 ? quotes : [...quotes, ...missing];
+}
+
 function migrateCopyLots(state: DeskState): DeskState {
   return {
     ...state,
@@ -137,7 +146,7 @@ export function loadDesk(): DeskState {
     masterId: parsed.masterId ?? fallback.masterId,
     blotter: parsed.blotter ?? [],
     positions: parsed.positions ?? [],
-    quotes: parsed.quotes ?? fallback.quotes,
+    quotes: mergeSeedQuotes(parsed.quotes ?? fallback.quotes),
     selectedAccountId: parsed.selectedAccountId ?? fallback.selectedAccountId,
     wsfLiveCopy: false,
     ftmoLiveMaster: false,

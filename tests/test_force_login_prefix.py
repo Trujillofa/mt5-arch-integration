@@ -35,6 +35,16 @@ def test_lib_wineserver_kill_is_env_prefixed() -> None:
     assert "killall wineserver" not in text
 
 
+def test_lib_has_wine_webview_reg() -> None:
+    text = LIB.read_text(encoding="utf-8")
+    assert "ensure_wine_webview_reg" in text
+    assert "export_wine_webview_env" in text
+    assert "apply_wine_logpixels" in text
+    assert "msedgewebview2.exe" in text
+    assert "win11" in text
+    assert "swiftshader" in text
+
+
 def _bash(snippet: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     merged = os.environ.copy()
     if env:
