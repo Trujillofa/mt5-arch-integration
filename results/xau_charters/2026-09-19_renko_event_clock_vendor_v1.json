@@ -1,0 +1,344 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "charter_version": 1,
+  "family_id": "renko_event_clock_vendor",
+  "display_name": "Event-clock (fixed-brick Renko) resampling of XAUUSD with the vendor's published ADX/DI and Bollinger rule sets, parameters frozen verbatim from MQL5 Code Base 77234 / 77236",
+  "thesis_class": "price_event_clock_resampling",
+  "thesis_memo": "docs/research/XAU-THESIS-renko_event_clock_vendor_v1.md",
+  "hypothesis": "Time-bar sampling of XAUUSD has repeatedly failed this program's screens (11 dead families, including bb_rsi and Donchian). This family tests one specific alternative: that sampling the same price series on a PRICE-EVENT clock (fixed-size Renko bricks, two-brick reversal) rather than a time clock restores a tradeable trend/band edge. The test is deliberately zero-knob: the five candidate rule sets are taken verbatim from two publicly published MQL5 Code Base expert advisors (77234 GDS Renko ADX Demo v1.10; 77236 GDS Renko Bollinger 4-Mode Demo v1.30) whose author reports profit factors of 3.14 and 4.22 on XAUUSD. Nothing is tuned here. If the published parameter sets carry no edge on this program's develop window after Standard STP spread costs, the event-clock thesis is rejected for this vehicle and the family is closed. Thin develop n below gates.soft.n_trades_min is SCREEN_FAIL, not a waiver.",
+  "provenance": {
+    "source": "MQL5 Code Base (freeware)",
+    "vehicles": [
+      {
+        "code_id": 77234,
+        "url": "https://www.mql5.com/en/code/77234",
+        "file": "GDS_Renko_ADX_Demo.mq5",
+        "version": "1.10",
+        "author": "Andrey Goida (gavaav)",
+        "copyright": "Golden Delta",
+        "sha256": "851979c965c5f97f9449a0d463e0341818c6dcef2982d84271752b44756296ed",
+        "vendor_reported": {
+          "symbol": "XAUUSD",
+          "timeframe": "M1",
+          "window": "2026-05 .. 2026-09",
+          "trades": 46,
+          "win_rate_pct": 67.39,
+          "net_profit_usd": 1095.53,
+          "profit_factor": 3.14,
+          "max_drawdown_pct": 1.36
+        }
+      },
+      {
+        "code_id": 77236,
+        "url": "https://www.mql5.com/en/code/77236",
+        "file": "GDS_Renko_Bollinger_4Mode_Demo.mq5",
+        "version": "1.30",
+        "author": "Andrey Goida (gavaav)",
+        "copyright": "Golden Delta",
+        "sha256": "0e53dbb7af1b1234b2089fe85baff537cd4f8c855117fa6c675bc071901cf1cd",
+        "vendor_reported": {
+          "symbol": "XAUUSD",
+          "timeframe": "M1",
+          "window": "2026-05 .. 2026-09",
+          "trades": 108,
+          "profit_factor": 4.22,
+          "max_drawdown_pct": 2.06
+        }
+      }
+    ],
+    "vendor_window_is_inside_our_holdout": true,
+    "vendor_window_note": "The vendor's reported window (2026-05 .. 2026-09) lies entirely inside this program's pre-registered holdout (holdout_start 2026-01-01, results/xau_holdout_lock.json). Those numbers are therefore NOT admissible evidence for selection here and are recorded as the vendor's claim only. Selection happens strictly on time < holdout_start."
+  },
+  "clock_contract": {
+    "source": "MqlRates time via Mt5ArchBridge TimeToString; fetch_data tags as UTC without conversion",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "asia_tokyo_wall_clock_claimed": false,
+    "dst_conversion": false,
+    "hours_are_eligibility_not_alpha": true,
+    "event_clock_note": "Signals are indexed by completed Renko brick, not by bar. A brick is stamped at the bar whose intrabar path completes it; the brick is never knowable before that bar. Bar timestamps are carried only to attach the cost model and to apply the window filter."
+  },
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "M15",
+    "timeframe_note": "M15 is the finest series in xauusd_data.csv. The vendor builds Renko from M1 real bid ticks. This is a KNOWN FIDELITY GAP, declared up front, not discovered after the fact: see data_fidelity.",
+    "multi_symbol_in_scope": false
+  },
+  "data_fidelity": {
+    "vendor_input": "live BID tick stream",
+    "our_input": "M15 OHLC bars from xauusd_data.csv",
+    "intrabar_path_model": "MT5 tester OHLC convention: bullish bar (close >= open) traverses open -> low -> high -> close; bearish bar traverses open -> high -> low -> close",
+    "path_sensitivity_required": true,
+    "path_sensitivity_role": "falsifier_not_tuning",
+    "path_sensitivity_rule": "The screen MUST also run the reversed intrabar path convention. If the sign of net profit or the pass/fail verdict flips between conventions, the result is path-artefactual and the family is SCREEN_FAIL regardless of the base-convention metrics.",
+    "known_bias": "M15 bars hide intrabar oscillation, so this reconstruction UNDER-counts bricks relative to a tick feed. Under-counting removes trades; it does not manufacture them. A negative result is therefore still informative, while a positive result would require tick-data confirmation before any promotion."
+  },
+  "rule": {
+    "direction": "long_and_short",
+    "intraday_flat": false,
+    "overnight_holds": true,
+    "overnight_note": "The vendor rules hold positions across sessions (max hold 1060..2580 minutes). Swap is NOT modeled by the bar simulator (results/xau_research_costs.json swap_modeled=false), so reported net profit is OPTIMISTIC by the unmodeled carry. Declared here rather than waived later.",
+    "renko_builder": {
+      "quantization": "integer tick units: p = round(price / tick_size), tick_size = 0.01",
+      "reversal": "two_brick",
+      "bricks_per_push": "unbounded up to 4096; above that the builder fails closed and new entries stop",
+      "source": "verbatim port of CRenkoBuilder from both vendor experts"
+    },
+    "vehicles_frozen": 5,
+    "vehicle_adx": {
+      "indicator": "Wilder ADX/+DI/-DI over synthetic brick OHLC (high=max(open,close), low=min(open,close), close=brick close)",
+      "brick_size": 16.0,
+      "adx_period": 14,
+      "adx_threshold": 8.5,
+      "min_di_separation": 2.5,
+      "entry_run_bricks": 3,
+      "tp_bricks": 9.5,
+      "sl_bricks": 42.0,
+      "max_hold_minutes": 1060,
+      "cooldown_bricks": 6,
+      "max_spread_fraction": 0.35,
+      "entry": "on a completed brick: adx >= adx_threshold AND abs(+DI - -DI) >= min_di_separation AND brick.direction == sign(+DI - -DI) AND brick.run >= entry_run_bricks AND flat AND cooldown expired",
+      "exit": "raw DI flip against the position (ADX threshold deliberately NOT applied to exits), OR virtual TP, OR virtual SL, OR max hold"
+    },
+    "vehicle_bb_breakout": {
+      "brick_size": 17.0, "bb_period": 20, "deviation": 1.0, "entry_run_bricks": 2,
+      "tp_bricks": 24.0, "sl_bricks": 42.0, "max_hold_minutes": 1230, "cooldown_bricks": 5,
+      "entry": "completed brick closes beyond the outer band in the brick's own direction",
+      "exit": "opposite raw band signal, TP, SL, or max hold"
+    },
+    "vehicle_bb_reentry": {
+      "brick_size": 30.0, "bb_period": 31, "deviation": 1.2, "entry_run_bricks": 1,
+      "tp_bricks": 28.0, "sl_bricks": 48.5, "max_hold_minutes": 2580, "cooldown_bricks": 3,
+      "entry": "previous brick was outside a band and the current brick has returned inside, brick direction agrees",
+      "exit": "band midline reached, TP, SL, or max hold"
+    },
+    "vehicle_bb_midline": {
+      "brick_size": 30.0, "bb_period": 5, "deviation": 3.0, "entry_run_bricks": 1,
+      "tp_bricks": 10.0, "sl_bricks": 34.5, "max_hold_minutes": 2220, "cooldown_bricks": 3,
+      "entry": "completed brick crosses the band midline in the brick's own direction",
+      "exit": "opposite raw signal, TP, SL, or max hold"
+    },
+    "vehicle_bb_squeeze": {
+      "brick_size": 14.0, "bb_period": 18, "deviation": 2.4, "squeeze_max_width_bricks": 34.5,
+      "entry_run_bricks": 1, "tp_bricks": 26.0, "sl_bricks": 31.0, "max_hold_minutes": 2050,
+      "cooldown_bricks": 1,
+      "entry": "band width <= squeeze_max_width_bricks AND completed brick closes beyond the outer band in its own direction",
+      "exit": "opposite raw signal, TP, SL, or max hold"
+    },
+    "bollinger_contract": {
+      "input": "completed brick closes only",
+      "current_brick_excluded": true,
+      "stdev": "population (divide by N), matching the vendor source",
+      "note": "bands are evaluated BEFORE the new close is appended, so the evaluated brick never contributes to its own band"
+    },
+    "one_position_per_vehicle": true,
+    "vehicles_scored_independently": true,
+    "portfolio_combination_out_of_scope": true,
+    "thin_n_policy": "if develop-eligible trade count for a vehicle < gates.soft.n_trades_min then that vehicle is SCREEN_FAIL; not a waiver; do not lower n_trades_min",
+    "no_retune": true
+  },
+  "fixed": {
+    "lots": 0.01,
+    "lots_note": "FIXED lot, matching the vendor contract (InpLots=0.01). This program's usual risk_pct sizing cannot express these rules: at risk_pct 0.01 on a 10000 balance the ADX vehicle's 42-brick stop (42 * 16.0 = 672.0 price units = 67200 USD-per-lot of stop distance) sizes below min_lot 0.01 and every trade would be skipped. Fixed lot is therefore the only faithful contract, and the implied risk per trade is reported as a headline, not hidden.",
+    "start_balance": 10000.0,
+    "contract_size": 100.0,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "account_type": "STANDARD_STP",
+      "login": 27496181,
+      "server": "VantageMarkets-Live 5",
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0,
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "cost_label": "account_matched_spread_commission_only",
+      "costs_document_sha256": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+      "cost_timing": "measured_at_entry_deducted_at_exit_booking"
+    },
+    "costs_sensitivity_alternatives_not_base": {
+      "RAW_ECN_commission_per_lot": 3.0,
+      "role": "declared_sensitivity_only_never_base"
+    },
+    "swap_modeled": false
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 5,
+  "search_cardinality_note": "Five pre-registered vehicles, every parameter copied verbatim from the published vendor defaults. No grid, no refinement loop, no per-vehicle variation. Changing ANY frozen number requires a new charter version and counts as a new look.",
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false,
+    "develop_span_available": "M15 2022-05-17 .. 2025-12-31"
+  },
+  "gates": {
+    "classic": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.5,
+      "profit_factor_strict_gt": true,
+      "win_rate_min": 55.0,
+      "win_rate_strict_gt": true,
+      "max_drawdown_pct_max": 10.0,
+      "max_drawdown_strict_lt": true,
+      "used_for": "report_only"
+    },
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft",
+    "thin_n_is_screen_fail": true
+  },
+  "null": {
+    "method": "within_day_ohlc_increment_rotate_v1",
+    "implementation_id": "within_day_ohlc_increment_rotate_v1",
+    "n_trials": 999,
+    "min_null_trials": 999,
+    "base_seed": 20260919,
+    "run_only_if": "at least one vehicle clears the soft gates on develop; a zero-passer screen is SCREEN_FAIL and terminal without spending the null",
+    "notes": "base_seed is the freeze-date convention (no seed shopping)."
+  },
+  "multiplicity": {
+    "method": "finite_catalog_bonferroni_open_catalog",
+    "alpha_uncorrected": 0.05,
+    "K_prior": 11,
+    "K": 12,
+    "alpha_adjusted": 0.004166666666666667,
+    "prior_scored_family_ids": [
+      "tod_london_ny_flat",
+      "server_hour_window_flat",
+      "early_server_range_break_flat",
+      "day_open_reclaim_flat",
+      "joint_london_open_cosign_fade_flat",
+      "bb_rsi",
+      "Donchian",
+      "prior_day_high_break",
+      "exog_london_fx_cosign_xau_follow_flat",
+      "asia_box_london_sweep_fade_flat",
+      "multi_day_variance_expansion_flat"
+    ],
+    "pass_status": "provisional_while_catalog_open",
+    "paper_live_while_open": false,
+    "revalidation_on_K_increase": true
+  },
+  "dead_line_adjacency_declaration": {
+    "closest_dead_lines": ["bb_rsi", "Donchian"],
+    "why_this_is_not_a_revival": "bb_rsi was a Bollinger/RSI rule on TIME bars; the killed object was the rule on the time clock. This family changes the sampling clock, not the rule, and the ADX vehicle shares no primitive with any dead line. The event clock is the whole hypothesis: if it fails, the finding is that resampling does not rescue band/trend rules on XAUUSD, which closes a real question rather than renaming an old one.",
+    "binding_consequence": "If the Bollinger vehicles fail, they are recorded as confirmation of KILL_BB_RSI_LINE across clocks and may never be reopened on any clock. A future event-clock attempt must use a primitive that is not on the dead list."
+  },
+  "success": {
+    "screen": {
+      "primary": "soft gates, per vehicle, on develop only",
+      "zero_passers_is_terminal": true
+    },
+    "slippage_sensitivity": {
+      "points": [0, 5, 10, 20],
+      "role": "report_only_frozen",
+      "no_rescue_tuning": true
+    },
+    "path_convention_sensitivity": {
+      "conventions": ["ohlc_tester_default", "reversed"],
+      "role": "falsifier",
+      "verdict_flip_is_screen_fail": true
+    },
+    "tick_confirmation": {
+      "required_before_any_promotion": true,
+      "reason": "M15 reconstruction cannot establish a positive result; only a real-tick MT5 Strategy Tester run (MODEL=4) on the same develop window can."
+    },
+    "walk_forward": { "only_after_null_pass": true, "costed": true }
+  },
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "on_null_fail": "KILL_RENKO_EVENT_CLOCK_VENDOR",
+    "on_path_flip": "SCREEN_FAIL",
+    "refine_loops": false
+  },
+  "explicitly_forbidden": [
+    "tune any vendor parameter; the verbatim values ARE the hypothesis",
+    "add a vehicle, a filter, a session gate or a regime filter after seeing develop metrics",
+    "combine vehicles into a portfolio to rescue a failing individual vehicle",
+    "treat the vendor's 2026-05..2026-09 numbers as evidence; that window is inside the locked holdout",
+    "evaluate or peek at the holdout during this screen",
+    "lower n_trades_min or waive thin-n SCREEN_FAIL after seeing develop counts",
+    "use RAW_ECN commission 3.0 as the base cost",
+    "reopen bb_rsi or Donchian on any clock",
+    "promote, paper-trade or run live from this family",
+    "pass --live to live_trader.py",
+    "attach the vendor experts to a live chart at any point in this work"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat",
+    "joint_london_open_cosign_fade_flat",
+    "exog_london_fx_cosign_xau_follow_flat",
+    "asia_box_london_sweep_fade_flat",
+    "multi_day_variance_expansion_flat"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false,
+    "vendor_ea_orders_disabled_in_repo": "The vendored .mq5 files are kept verbatim for provenance and for Strategy Tester use only. They are NOT deployed to a live chart by any script in this repo."
+  },
+  "execution_contract": {
+    "event": "completed Renko brick",
+    "warmup": "vehicle-specific: ADX needs 2 * adx_period bricks before Ready(); Bollinger needs bb_period completed closes before bands exist",
+    "entry": {
+      "trigger_bar": "the M15 bar whose intrabar path completes the signalling brick",
+      "fill_price": "brick close price (the price level at which the brick completed); no next-bar delay, matching the vendor's market-order-on-tick contract",
+      "spread_gate": "skip entry when spread_pts * point_size > max_spread_fraction * brick_size",
+      "spread_gate_note": "at brick 14..30 price units this threshold is 490..1050 points while measured XAUUSD spread is ~11 points, so the gate is expected never to bind; it is ported for fidelity, not as a filter",
+      "costs": {
+        "formula": "(spread_pts[entry] + 2*slippage_points)*point_size*CONTRACT_SIZE*lots + 2*commission_per_lot*lots",
+        "measured_at": "the bar that completed the entry brick",
+        "stored_as": "trade_cost captured at entry",
+        "deducted_at": "exit PnL booking only",
+        "round_trip": true
+      }
+    },
+    "exit": {
+      "checked_on": "every M15 bar after entry, using that bar's traversed path",
+      "priority_same_bar_when_multiple": ["1_stop_loss", "2_take_profit", "3_signal_exit", "4_max_hold"],
+      "sl_fill": "at the stop price when the traversed path reaches it",
+      "tp_fill": "at the target price when the traversed path reaches it and the stop was not reached first on that path",
+      "signal_exit_fill": "at the close of the brick that produced the exit signal",
+      "max_hold_fill": "at the close of the first bar at or beyond max_hold_minutes after entry",
+      "end_of_series": "force close at the last available close with trade_cost already charged"
+    },
+    "capital": {
+      "start_balance": 10000.0,
+      "lots": "fixed 0.01",
+      "compounding": "none (fixed lot)",
+      "pnl_on_exit": "pnl = (exit_px - entry_px) * CONTRACT_SIZE * lots * direction - trade_cost",
+      "max_drawdown_pct": "peak = running maximum of the equity series; dd = (peak - eq)/peak; max_drawdown_pct = max(dd) * 100"
+    },
+    "required_fixtures": [
+      "renko_builder_matches_mql5_two_brick_reversal",
+      "renko_builder_multi_brick_single_push",
+      "renko_builder_gap_above_cap_fails_closed",
+      "adx_wilder_warmup_matches_vendor_state_machine",
+      "adx_exit_ignores_threshold_on_di_flip",
+      "bollinger_excludes_current_brick",
+      "bollinger_population_stdev",
+      "squeeze_width_gate_blocks_wide_bands",
+      "reentry_exits_at_midline",
+      "entry_run_below_minimum_is_no_signal",
+      "cooldown_blocks_entry_for_n_bricks",
+      "virtual_sl_priority_over_tp_same_bar",
+      "max_hold_forces_exit",
+      "cost_measured_at_entry_deducted_at_exit",
+      "path_convention_reversed_is_reported_not_selected"
+    ]
+  }
+}
