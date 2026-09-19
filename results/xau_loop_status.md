@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `eur_gbp_logspread_ou_fade_v1` **SCREEN_FAIL** (off-gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `eur_gbp_logspread_ou_fade_v1` |
+| **tape** | Phase 0 EUR∩GBP daily 2021-09-07→2025-12-31 |
+| **result** | n **29** · WR **62.1%** · PF **2.01** · NP **+$519** · DD **1.60%** · AL-EUR report **+$1.8k** |
+| **disposition** | **SCREEN_FAIL** — **thin-n** (29<40) · PF/NP/DD pass · holdout untouched |
+| **artifact** | `results/eur_gbp_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 252/2/5 to farm n · reopen NY scalp · add XAU · `--live` |
+| **multiplicity** | **K_prior=19 for the next family** |
+
+Off-gold OU is too rare on this window. Do not cut `n_trades_min`.
+
+---
+
 ## 2026-09-19 — Freeze · `eur_gbp_logspread_ou_fade_v1` · **FROZEN** (off-gold)
 
 | Field | Value |

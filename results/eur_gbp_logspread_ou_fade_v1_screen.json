@@ -1,0 +1,24 @@
+{
+  "family_id": "eur_gbp_logspread_ou_fade_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "join_days": 1121,
+  "first_day": "2021-09-07 00:00:00",
+  "last_day": "2025-12-31 00:00:00",
+  "develop": {
+    "n": 29,
+    "wr": 62.06896551724138,
+    "pf": 2.0140369732230488,
+    "np": 518.579324352924,
+    "dd": 1.5954905876503218,
+    "wins": 18,
+    "losses": 11
+  },
+  "always_long_eur_report_only": {
+    "np": 1783.1000000000008,
+    "lots": 0.1
+  },
+  "holdout": null,
+  "notes": "Off-gold. Expanding \u03b2 min 252. 2026 unused."
+}
