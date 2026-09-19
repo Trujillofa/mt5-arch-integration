@@ -1,5 +1,35 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `renko_event_clock_vendor` **SCREEN_FAIL** (deterministic)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `renko_event_clock_vendor` |
+| **charter v1 (operative)** | `results/xau_charters/2026-09-19_renko_event_clock_vendor_v1.json` · SHA `ddeae18a71bcb141d7033bfcf1d6fab4ed56cf03c21535d6b3ab326a244ab614` (zero free knobs; all five vehicles copied verbatim from MQL5 Code Base 77234 / 77236) |
+| **screen** | develop 85,802 M15 bars · 2022-05-17 → 2025-12-31 · holdout **untouched** |
+| **result** | primary passers **0 / 5**. ADX/DI n **123** · PF **0.84** · NP **−268.88**; BB breakout n 121 · PF 1.07; BB re-entry n 28 (thin) · PF 2.40; BB midline n 49 · PF 0.52 · NP −522.51; BB squeeze n 67 · PF 1.11 |
+| **disposition** | **SCREEN_FAIL — ZERO_PRIMARY_PASSERS** · terminal · null **skipped** (charter: a zero-passer screen is terminal without spending the null) · `r1_burned=false` |
+| **artifact** | `results/xau_renko_event_clock_vendor_screen.{json,md}` · review `docs/research/RENKO-VENDOR-EDGE-REVIEW-2026-09-19.md` · ledger row in `results/xau_family_attempts.jsonl` |
+| **falsifiers confirmed** | thin-n (re-entry 28 < 40); path artefact (BB breakout flips verdict PF 1.07 → 1.20 under the reversed intrabar convention); stop geometry (TP+SL account for **0–0.8%** of exits — the advertised 1:0.23 R:R never binds, these are 18–43h time-exit systems); cost slope monotone across 0/5/10/20 pt with no rescue |
+| **multiplicity** | look consumed · **K_prior=12 for the next family** · dead-lines list gains this family |
+| **dead-line consequence** | Bollinger vehicles confirm `KILL_BB_RSI_LINE` **across clocks** — do not reopen Bollinger on any clock. ADX/DI on the brick clock closes on the largest sample in the screen (n=123, PF 0.84) |
+| **null / paper / live** | **forbidden** — family closed; sealed r1 **not run** |
+| **do not** | retune any vendor parameter · lower n_trades_min · combine vehicles into a portfolio · cite the vendor's 2026-05..2026-09 PF 3.14 / 4.22 as evidence (that window is inside the locked holdout) · attach either expert to a live chart |
+
+Thesis dead as frozen: sampling XAUUSD on a price-event clock (fixed-brick Renko) does **not**
+rescue trend or band rules that failed on the time clock. Five published, independently tuned
+parameter sets all fail after Standard STP costs, and swap is unmodeled so the true numbers are
+worse. Standing: 12 dead families. One open verification remains and is cheap —
+`scripts/25-run-renko-vendor-backtest.sh` re-runs the same frozen parameters on real ticks
+(`MODEL=4`, holdout-guarded) to confirm the M15 brick reconstruction was faithful; it cannot
+revive the family, only corroborate or impeach the reconstruction.
+
+---
+
 ## 2026-08-21 — Develop screen · `multi_day_variance_expansion_flat` **SCREEN_FAIL** (deterministic)
 
 | Field | Value |
