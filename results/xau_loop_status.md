@@ -1,5 +1,25 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `xau_xag_logspread_ou_fade_v1` · **BLOCKED_ON_DATA**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`BLOCKED_ON_DATA`** — need **XAGUSD H1** 2018-04-02+ · **do not screen gold-only** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_xag_logspread_ou_fade_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_xag_logspread_ou_fade_v1.json` |
+| **role** | Market-neutral **XAU–XAG** log-spread fade — not a gold sizer |
+| **n_free_knobs** | **0** · expanding β min **252** · \|z\|**>2** · exit 0 or **5**d · 0.5 XAU |
+| **data gate** | Vantage MCP **XAGUSD not found** (2026-09-19). XAU dump exists. Forbid gold-only screen |
+| **control** | always-flat primary · always-long XAU report-only |
+| **article** | [14035](https://www.mql5.com/en/articles/14035) · intake **defer** · no seasonal months |
+| **K** | 18 (K_prior=17) |
+| **do not** | retune 252/2/5 · reopen XAU–EUR OU · peek holdout · `--live` |
+
+GVZ and GARCH are dead. This freeze is the metals ratio, stalled on silver history.
+
+---
+
 ## 2026-09-19 — Develop screen · `xau_gvz_voltarget_always_long_v1` **SCREEN_FAIL**
 
 | Field | Value |
