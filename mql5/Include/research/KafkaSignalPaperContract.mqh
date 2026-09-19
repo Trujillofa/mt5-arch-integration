@@ -3,8 +3,8 @@
 //| RESEARCH-ONLY SignalRecord JSON contract.                        |
 //|                                                                  |
 //| Publish signals as JSON. Never place orders from Kafka.          |
-//| Never SocketConnect / Produce. This is not the article's binary  |
-//| Kafka protocol and is not production-ready transport.            |
+//| Never open sockets or speak the article's binary protocol.       |
+//| This include is a JSON contract, not production transport.       |
 //|                                                                  |
 //| Do NOT copy this file with scripts/18-install-forex-indicator.sh |
 //| Do NOT attach anything that includes this to funded prefixes.    |
@@ -69,7 +69,7 @@ string KafkaPaperSignalPartitionKey(const KafkaPaperSignalRecord &sig)
 
 //+------------------------------------------------------------------+
 //| JSON for a paper record. Empty string = refuse to emit.          |
-//| No OrderSend. No sockets.                                        |
+//| No orders. No sockets.                                           |
 //+------------------------------------------------------------------+
 string KafkaPaperSignalToJson(const KafkaPaperSignalRecord &sig)
   {

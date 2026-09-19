@@ -152,9 +152,10 @@ def validate_record(obj: Any, *, schema: dict[str, Any] | None = None) -> dict[s
         ts_ns = obj["timestamp_ns"]
         if not isinstance(ts_ns, int) or isinstance(ts_ns, bool) or ts_ns < 0:
             errors.append("timestamp_ns must be a non-negative integer or null")
-    if "partition_key" in obj and obj["partition_key"] is not None:
-        if not isinstance(obj["partition_key"], str):
-            errors.append("partition_key must be a string")
+    if "partition_key" in obj and obj["partition_key"] is not None and not isinstance(
+        obj["partition_key"], str
+    ):
+        errors.append("partition_key must be a string")
     if "notes" in obj and obj["notes"] is not None and not isinstance(obj["notes"], str):
         errors.append("notes must be a string")
 

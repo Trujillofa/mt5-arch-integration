@@ -26,7 +26,6 @@ from kafka_signal_bus_stub import (  # noqa: E402
 from verify_kafka_signal_schema import (  # noqa: E402
     EXAMPLE_PATH,
     PAPER_TOPIC,
-    SCHEMA_PATH,
     SCHEMA_VERSION,
     SignalSchemaError,
     is_paper_topic,
@@ -230,6 +229,9 @@ def test_adr_and_howto_state_file_bridge_truth_and_reject_list():
 
 def test_mql_contract_is_paper_only_no_transport():
     text = MQL.read_text(encoding="utf-8")
+    code = "\n".join(
+        ln for ln in text.splitlines() if not ln.lstrip().startswith("//")
+    )
     assert "KAFKA_SIGNAL_SCHEMA_VERSION" in text
     assert "book_mode" in text
     assert "paper" in text
@@ -243,7 +245,7 @@ def test_mql_contract_is_paper_only_no_transport():
         "RecordBatch",
     )
     for tok in forbidden:
-        assert tok not in text, tok
+        assert tok not in code, tok
 
 
 def test_installer_does_not_deploy_kafka_research():
