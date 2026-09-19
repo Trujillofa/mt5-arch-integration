@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `audjpy_carry_long_hold_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `audjpy_carry_long_hold_v1` |
+| **tape** | Vantage AUDJPY H1 2018-01-02→2025-12-31 |
+| **result** | NP **+$1.07k** · DD **17.0%** · swap **unread (fail-closed 0)** · no-swap arm **identical** |
+| **disposition** | **SCREEN_FAIL** — swap>0 fail · DD>15% · does not beat no-swap · holdout untouched |
+| **artifact** | `results/audjpy_carry_long_hold_v1_screen.{json,md}` |
+| **do not** | invent a web swap · retune 0.10 · `--live` |
+| **multiplicity** | **K_prior=20 for the next family** |
+
+Bridge was stale; charter fail-closed. Price path alone already breaks DD≤15%.
+
+---
+
 ## 2026-09-19 — Freeze · `audjpy_carry_long_hold_v1` · **FROZEN** (carry, not gold)
 
 | Field | Value |
