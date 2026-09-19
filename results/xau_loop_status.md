@@ -1,5 +1,24 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `xau_cot_gc_mm_fade_long_or_flat_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** download COT or compute PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_cot_gc_mm_fade_long_or_flat_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_cot_gc_mm_fade_long_or_flat_v1.json` |
+| **role** | COMEX GC **managed-money** net % OI → long-or-flat Vantage XAU |
+| **n_free_knobs** | **0** · z**< −2** long 0.5 · flatten z**> −0.5** · min **52**w · Friday close → next open |
+| **data** | XAU dump on disk · CFTC Disaggregated **at screen** · never Tuesday-as-of before Friday 15:30 ET |
+| **control** | always-long 0.5 lot |
+| **K** | 21 (K_prior=20) |
+| **do not** | retune −2/−0.5/52 · Legacy COT · short · Bookmap · peek holdout · `--live` |
+
+Exogenous positioning, still vs sitting. Fetch COT only when screening.
+
+---
+
 ## 2026-09-19 — Develop screen · `audjpy_carry_long_hold_v1` **SCREEN_FAIL**
 
 | Field | Value |
