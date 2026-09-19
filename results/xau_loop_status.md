@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `audjpy_carry_long_hold_v1` · **FROZEN** (carry, not gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `audjpy_carry_long_hold_v1` |
+| **charter** | `results/xau_charters/2026-09-19_audjpy_carry_long_hold_v1.json` |
+| **role** | Always-long **0.10 AUDJPY** · harvest frozen `SYMBOL_SWAP_LONG` (Wed×3) |
+| **n_free_knobs** | **0** |
+| **control** | identical long **swap=0** (must beat) |
+| **K** | 20 (K_prior=19) |
+| **do not** | retune 0.10 · short JPY · peek holdout · `--live` |
+
+Interest, not a price forecast. Swap path caveat in the charter.
+
+---
+
 ## 2026-09-19 — Develop screen · `eur_gbp_logspread_ou_fade_v1` **SCREEN_FAIL** (off-gold)
 
 | Field | Value |
