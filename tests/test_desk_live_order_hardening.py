@@ -104,7 +104,10 @@ def test_mql_requires_terminal_connected_and_caps_waits() -> None:
     assert "WaitConnected(20000)" in desk
     assert "WaitSymbolReady(symbol, 20000)" in desk
     assert "WaitConnected(20000)" in wsf
-    assert "return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login)" not in desk
+    assert (
+        "return (g_expect_login > 0 && AccountInfoInteger(ACCOUNT_LOGIN) == g_expect_login)"
+        not in desk
+    )
     assert "return (AccountInfoInteger(ACCOUNT_LOGIN) == EXPECT_LOGIN)" not in wsf
     assert "return false;" in desk
     assert "TERMINAL_CONNECTED" in desk
@@ -128,9 +131,7 @@ def test_client_fetch_has_abort_deadline() -> None:
 def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     runner = RUNNER.read_text(encoding="utf-8")
     firms = (DESK / "src" / "lib" / "firms.ts").read_text(encoding="utf-8")
-    ticket = (DESK / "src" / "components" / "desk" / "trade-ticket.tsx").read_text(
-        encoding="utf-8"
-    )
+    ticket = (DESK / "src" / "components" / "desk" / "trade-ticket.tsx").read_text(encoding="utf-8")
     ea = (ROOT / "mql5" / "Mt5ArchBridge.mq5").read_text(encoding="utf-8")
     include = (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(encoding="utf-8")
     assert "DeskOrderProcessIfRequested" in ea
@@ -153,8 +154,8 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     assert "Sell limit" in ticket
     assert "Buy stop" in ticket
     assert "Sell stop" in ticket
-    assert "submit(\"buy\")" in ticket
-    assert "submit(\"sell\")" in ticket
+    assert 'submit("buy")' in ticket
+    assert 'submit("sell")' in ticket
     assert "ORDER_TYPE_BUY_STOP" in include
     assert "ORDER_TYPE_SELL_STOP" in include
     assert "TRADE_ACTION_SLTP" in include
@@ -164,9 +165,7 @@ def test_ea_path_is_primary_and_lots_are_firm_defaults() -> None:
     ]
     assert "if(g_desk_ticket > 0)" in resolver
     assert resolver.index("return 0;") < resolver.index("DeskOrdFindPosition")
-    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(
-        encoding="utf-8"
-    )
+    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(encoding="utf-8")
     assert "POSITION_MAGIC" in snapshots
 
 
@@ -264,19 +263,34 @@ def test_ftmo_follow_is_session_only() -> None:
 
 
 def test_confirm_tokens_unchanged() -> None:
-    assert 'FTMO_LIVE_CONFIRM = "FTMO-541163357"' in (DESK / "src" / "lib" / "ftmo" / "types.ts").read_text()
-    assert 'WSF_LIVE_CONFIRM = "WSF-149736"' in (DESK / "src" / "lib" / "wsf" / "constants.ts").read_text()
-    assert 'FUNDEDNEXT_LIVE_CONFIRM = "FN-13981906"' in (DESK / "src" / "lib" / "fundednext" / "types.ts").read_text()
-    assert 'FUNDINGPIPS_LIVE_CONFIRM = "FUNDINGPIPS-11669306"' in (
-        DESK / "src" / "lib" / "fundingpips" / "types.ts"
-    ).read_text()
-    assert 'FORTRADERS_LIVE_CONFIRM = "FORTRADERS-737150"' in (
-        DESK / "src" / "lib" / "fortraders" / "types.ts"
-    ).read_text()
-    assert 'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"' in (DESK / "src" / "lib" / "neomaa" / "types.ts").read_text()
-    assert 'ALPHACAPITAL_LIVE_CONFIRM = "ACG-2765247"' in (
-        DESK / "src" / "lib" / "alphacapital" / "types.ts"
-    ).read_text()
+    assert (
+        'FTMO_LIVE_CONFIRM = "FTMO-541163357"'
+        in (DESK / "src" / "lib" / "ftmo" / "types.ts").read_text()
+    )
+    assert (
+        'WSF_LIVE_CONFIRM = "WSF-149736"'
+        in (DESK / "src" / "lib" / "wsf" / "constants.ts").read_text()
+    )
+    assert (
+        'FUNDEDNEXT_LIVE_CONFIRM = "FN-13981906"'
+        in (DESK / "src" / "lib" / "fundednext" / "types.ts").read_text()
+    )
+    assert (
+        'FUNDINGPIPS_LIVE_CONFIRM = "FUNDINGPIPS-11669306"'
+        in (DESK / "src" / "lib" / "fundingpips" / "types.ts").read_text()
+    )
+    assert (
+        'FORTRADERS_LIVE_CONFIRM = "FORTRADERS-737150"'
+        in (DESK / "src" / "lib" / "fortraders" / "types.ts").read_text()
+    )
+    assert (
+        'NEOMAA_LIVE_CONFIRM = "NEOMAA-7745107"'
+        in (DESK / "src" / "lib" / "neomaa" / "types.ts").read_text()
+    )
+    assert (
+        'ALPHACAPITAL_LIVE_CONFIRM = "ACG-2765247"'
+        in (DESK / "src" / "lib" / "alphacapital" / "types.ts").read_text()
+    )
 
 
 def test_fanout_skips_alpha_and_confirms_size() -> None:
@@ -300,7 +314,7 @@ def test_flatten_bar_is_always_visible() -> None:
     engine = (DESK / "src" / "lib" / "copy-engine.ts").read_text(encoding="utf-8")
     assert "FlattenBar" in terminal
     assert "flattenAll" not in terminal
-    assert 'state.positions.length > 0' not in bar
+    assert "state.positions.length > 0" not in bar
     assert "Close positions" in bar
     assert "cancel pendings" in bar
     assert "min-h-11" in bar
@@ -323,10 +337,10 @@ def test_flatten_bar_is_always_visible() -> None:
     assert "DeskOrdEnsureOpenSltp" in (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(
         encoding="utf-8"
     )
-    assert "TRADE_RETCODE_INVALID_STOPS" in (ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh").read_text(
-        encoding="utf-8"
-    )
-    assert 'BRIDGE_VERSION "1.28"' in (ROOT / "mql5" / "Mt5ArchBridge.mq5").read_text(
+    assert "TRADE_RETCODE_INVALID_STOPS" in (
+        ROOT / "mql5" / "Include" / "DeskOrderBridge.mqh"
+    ).read_text(encoding="utf-8")
+    assert 'BRIDGE_VERSION "1.29"' in (ROOT / "mql5" / "Mt5ArchBridge.mq5").read_text(
         encoding="utf-8"
     )
     ticket_src = (DESK / "src" / "components" / "desk" / "trade-ticket.tsx").read_text(
@@ -352,9 +366,7 @@ def test_quote_journal_is_before_write_request() -> None:
     wsf = WSF_LIVE.read_text(encoding="utf-8")
     journal = QUOTE_JOURNAL.read_text(encoding="utf-8")
     quotes = BRIDGE_QUOTES.read_text(encoding="utf-8")
-    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(
-        encoding="utf-8"
-    )
+    snapshots = (ROOT / "mql5" / "Include" / "FileBridgeSnapshots.mqh").read_text(encoding="utf-8")
     gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
     assert "openLiveQuoteJournal" in runner
     assert "readBridgeQuote" in runner
@@ -362,9 +374,7 @@ def test_quote_journal_is_before_write_request() -> None:
         "writeRequest(firm, paths, parsed, requestId)"
     )
     assert "openLiveQuoteJournal" in wsf
-    assert wsf.index("openLiveQuoteJournal") < wsf.index(
-        "writeRequest(paths, parsed, requestId)"
-    )
+    assert wsf.index("openLiveQuoteJournal") < wsf.index("writeRequest(paths, parsed, requestId)")
     assert "journalBeforeSend" in journal
     assert "requestedBid: null" in journal
     assert 'reason: "missing"' in quotes
@@ -388,7 +398,13 @@ def test_guards_node_unit() -> None:
 
 def test_quote_journal_node_unit() -> None:
     result = subprocess.run(
-        ["node", "--experimental-strip-types", "--import", str(FANOUT_ALIAS), str(QUOTE_JOURNAL_UNIT)],
+        [
+            "node",
+            "--experimental-strip-types",
+            "--import",
+            str(FANOUT_ALIAS),
+            str(QUOTE_JOURNAL_UNIT),
+        ],
         check=False,
         capture_output=True,
         text=True,

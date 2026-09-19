@@ -236,7 +236,22 @@ void WriteSymbols()
       j += "\"point\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_POINT), 8) + ",";
       j += "\"tick_value\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE), 8) + ",";
       j += "\"tick_size\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE), 8) + ",";
-      j += "\"trade_mode\":\"" + mode_s + "\"";
+      j += "\"trade_mode\":\"" + mode_s + "\",";
+      string swap_s = "UNKNOWN";
+      long sm = SymbolInfoInteger(sym, SYMBOL_SWAP_MODE);
+      if(sm == SYMBOL_SWAP_MODE_DISABLED)            swap_s = "DISABLED";
+      else if(sm == SYMBOL_SWAP_MODE_POINTS)         swap_s = "POINTS";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_SYMBOL) swap_s = "CURRENCY_SYMBOL";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_MARGIN) swap_s = "CURRENCY_MARGIN";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_DEPOSIT) swap_s = "CURRENCY_DEPOSIT";
+      else if(sm == SYMBOL_SWAP_MODE_INTEREST_CURRENT) swap_s = "INTEREST_CURRENT";
+      else if(sm == SYMBOL_SWAP_MODE_INTEREST_OPEN)   swap_s = "INTEREST_OPEN";
+      else if(sm == SYMBOL_SWAP_MODE_REOPEN_CURRENT)  swap_s = "REOPEN_CURRENT";
+      else if(sm == SYMBOL_SWAP_MODE_REOPEN_BID)      swap_s = "REOPEN_BID";
+      j += "\"swap_long\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_LONG), 8) + ",";
+      j += "\"swap_short\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_SHORT), 8) + ",";
+      j += "\"swap_mode\":\"" + swap_s + "\",";
+      j += "\"swap_rollover3days\":" + IntegerToString((int)SymbolInfoInteger(sym, SYMBOL_SWAP_ROLLOVER3DAYS));
       j += "}";
      }
    j += "]";

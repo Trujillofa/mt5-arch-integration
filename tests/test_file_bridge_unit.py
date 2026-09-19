@@ -226,9 +226,7 @@ def test_non_ascii_account_json_does_not_leak_unicode_error(tmp_path: Path) -> N
     account = bridge / "account.json"
     raw = json.loads(account.read_text(encoding="utf-8"))
     raw["company"] = "CAFE_MARKER"
-    account.write_bytes(
-        json.dumps(raw).encode("ascii").replace(b"CAFE_MARKER", b"Caf\xe9 Markets")
-    )
+    account.write_bytes(json.dumps(raw).encode("ascii").replace(b"CAFE_MARKER", b"Caf\xe9 Markets"))
     info = FileBridgeClient(bridge, max_age_seconds=30.0).account_info()
     assert info.company == "Caf\u00e9 Markets"
 
@@ -300,3 +298,32 @@ def test_non_ascii_symbol_json_does_not_leak_unicode_error(tmp_path: Path) -> No
     )
     spec = FileBridgeClient(bridge, max_age_seconds=30.0).symbol_info(rows[0]["symbol"])
     assert spec.symbol == rows[0]["symbol"]
+
+
+def test_symbol_info_swap_missing_stays_none(tmp_path: Path) -> None:
+    """Pre-1.29 snapshots must not invent swap=0."""
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    sym = client.symbol_info("EURUSD")
+    assert sym.swap_long is None
+    assert sym.swap_short is None
+    assert sym.swap_mode == ""
+    assert sym.swap_rollover3days is None
+
+
+def test_symbol_info_swap_fields(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    symbols = bridge / "symbols.json"
+    rows = json.loads(symbols.read_text(encoding="utf-8"))
+    rows[0]["swap_long"] = -3.21
+    rows[0]["swap_short"] = 0.55
+    rows[0]["swap_mode"] = "POINTS"
+    rows[0]["swap_rollover3days"] = 3
+    symbols.write_text(json.dumps(rows), encoding="utf-8")
+    sym = FileBridgeClient(bridge, max_age_seconds=30.0).symbol_info("EURUSD")
+    assert sym.swap_long == pytest.approx(-3.21)
+    assert sym.swap_short == pytest.approx(0.55)
+    assert sym.swap_mode == "POINTS"
+    assert sym.swap_rollover3days == 3

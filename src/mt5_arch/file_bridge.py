@@ -90,6 +90,19 @@ def parse_bridge_readonly(text: str) -> bool:
     return bool(m and m.group("flag").lower() == "true")
 
 
+def _opt_float(row: dict[str, Any], key: str) -> float | None:
+    """Missing swap keys stay None — never invent 0 from a pre-1.29 snapshot."""
+    if key not in row or row[key] is None or row[key] == "":
+        return None
+    return float(row[key])
+
+
+def _opt_int(row: dict[str, Any], key: str) -> int | None:
+    if key not in row or row[key] is None or row[key] == "":
+        return None
+    return int(row[key])
+
+
 class FileBridgeError(Exception):
     """Raised when the EA file bridge is unavailable or stale."""
 
@@ -97,15 +110,7 @@ class FileBridgeError(Exception):
 def default_bridge_dir(wineprefix: Path | None = None) -> Path:
     """Portable-mode default: <prefix>/drive_c/Program Files/MetaTrader 5/MQL5/Files/mt5_arch."""
     prefix = (wineprefix or Path.home() / ".mt5").expanduser()
-    return (
-        prefix
-        / "drive_c"
-        / "Program Files"
-        / "MetaTrader 5"
-        / "MQL5"
-        / "Files"
-        / "mt5_arch"
-    )
+    return prefix / "drive_c" / "Program Files" / "MetaTrader 5" / "MQL5" / "Files" / "mt5_arch"
 
 
 class FileBridgeClient:
@@ -239,6 +244,10 @@ class FileBridgeClient:
                     tick_value=float(row.get("tick_value", 0)),
                     tick_size=float(row.get("tick_size", 0)),
                     trade_mode=str(row.get("trade_mode", "FULL")),
+                    swap_long=_opt_float(row, "swap_long"),
+                    swap_short=_opt_float(row, "swap_short"),
+                    swap_mode=str(row.get("swap_mode") or ""),
+                    swap_rollover3days=_opt_int(row, "swap_rollover3days"),
                 )
         raise FileBridgeError(
             f"Symbol {symbol!r} not in bridge export. "
@@ -487,9 +496,7 @@ def _fresh_deal_dump_ready(
     if st.st_mtime_ns < req_mtime_ns:
         return False
     stale_previous = (
-        prev_mtime_ns >= 0
-        and st.st_mtime_ns <= prev_mtime_ns
-        and content == prev_content
+        prev_mtime_ns >= 0 and st.st_mtime_ns <= prev_mtime_ns and content == prev_content
     )
     return not stale_previous
 
