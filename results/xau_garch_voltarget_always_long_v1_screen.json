@@ -1,0 +1,34 @@
+{
+  "family_id": "xau_garch_voltarget_always_long_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "h1_start": "2018-04-02 01:00:00",
+  "h1_end": "2025-12-31 23:00:00",
+  "daily_bars": 2002,
+  "first_sized_day": "2019-03-25 01:00:00",
+  "n_days": 1749,
+  "n_sized_days": 1749,
+  "n_mle_fail": 0,
+  "develop": {
+    "np": 145434.195,
+    "dd": 45.888508542357016,
+    "calmar": 3169.2944403664405,
+    "wr": 54.088050314465406,
+    "pf": 1.2653279288732222,
+    "mean_lots": 0.47294453973699263
+  },
+  "constant_lot": {
+    "np": 150254.75,
+    "dd": 46.355307497893754,
+    "calmar": 3241.371012517329,
+    "lots": 0.5
+  },
+  "gates": {
+    "net_profit_gt_0": true,
+    "dd_lt_control": true,
+    "calmar_gt_control": false
+  },
+  "holdout": null,
+  "notes": "Expanding GARCH(1,1) MLE; fail-closed flat on MLE failure. Swap unmodeled both arms."
+}

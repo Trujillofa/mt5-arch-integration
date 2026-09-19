@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `xau_garch_voltarget_always_long_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_garch_voltarget_always_long_v1` |
+| **tape** | daily from MCP H1 2018-04-02→2025-12-31 · first size 2019-03-25 |
+| **result** | 1749 days · mean lots **0.473** · NP **+$145.4k** · DD **45.89%** · Calmar **3169** vs control NP **+$150.3k** · DD **46.36%** · Calmar **3241** |
+| **disposition** | **SCREEN_FAIL** — NP>0 and DD&lt;control pass · **Calmar loses** · holdout untouched |
+| **artifact** | `results/xau_garch_voltarget_always_long_v1_screen.{json,md}` |
+| **do not** | retune 15/252/GARCH(1,1) · EGARCH/H1 salvage · attach to dead families · `--live` |
+| **multiplicity** | **K_prior=16 for the next family** |
+
+Vol targeting barely left 0.5 lot (gold often under 15% vol). Sitting with a constant 0.5 lot still wins Calmar.
+
+---
+
 ## 2026-09-19 — Freeze · `xau_garch_voltarget_always_long_v1` · **FROZEN**
 
 | Field | Value |
