@@ -1,5 +1,26 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `xau_gvz_voltarget_always_long_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_gvz_voltarget_always_long_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_gvz_voltarget_always_long_v1.json` |
+| **role** | **Risk module** on always-long — **implied** vol (GVZCLS), not realized GARCH |
+| **n_free_knobs** | **0** · `lots = 0.5 × 15 / GVZ_<D` · cap **0.5** · as-of join · missing → flat |
+| **tape** | XAU MCP H1 2018-04-02→2025-12-31 · GVZ **FRED at screen** (not this commit) |
+| **article** | [23734](https://www.mql5.com/en/articles/23734) observe-only · intake **defer** · do **not** copy 1.20 cuts |
+| **control** | constant 0.5 lot, same eligible days, same costs |
+| **gates** | NP>0 · DD **<** control DD · Calmar **>** control Calmar |
+| **K** | 17 (K_prior=16) |
+| **do not** | retune 15 · flatten-ratio salvage · GARCH/EGARCH · peek holdout · `--live` |
+
+GARCH realized-vol sizer is dead. This freeze asks whether **options-implied** vol sits with less pain. No metric yet.
+
+---
+
 ## 2026-09-19 — Develop screen · `xau_garch_voltarget_always_long_v1` **SCREEN_FAIL**
 
 | Field | Value |
