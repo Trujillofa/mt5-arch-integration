@@ -1,0 +1,18 @@
+{
+  "family_id": "xau_eur_logspread_ou_fade_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "develop": {
+    "n": 27,
+    "wr": 48.148148148148145,
+    "pf": 0.4686420473390263,
+    "np": -47190.436233593,
+    "dd": 471.90436233592993,
+    "wins": 13,
+    "losses": 14,
+    "days": 1115
+  },
+  "holdout": null,
+  "notes": "XAU-EUR log-spread OU fade both legs. Always-long gold not a kill. Holdout sealed."
+}

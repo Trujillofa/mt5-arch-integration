@@ -1,5 +1,60 @@
 # XAU offline loop status
 
+## 2026-09-18 — Develop screen · `xau_fomc_h4_long_only_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_fomc_h4_long_only_v1` |
+| **tape** | MCP H1 2018-04-02→2025-12-31 (Vantage UTC+3) |
+| **result** | n **61** · WR **44.3%** · PF **1.05** · NP **+$148** · DD **6.3%** · always-long **+$149.4k** · beat **false** |
+| **disposition** | **SCREEN_FAIL** — PF<1.2 · lost to always-long · holdout untouched · null not run |
+| **artifact** | `results/xau_fomc_h4_long_only_v1_screen.{json,md}` |
+| **do not** | retune 8 H4 / 1.5 ATR · add CPI/NFP to salvage · screen 2021-only bull · `--live` |
+| **multiplicity** | **K_prior=15 for the next family** |
+
+FOMC windows on gold are not excess vs sitting through 2018–25. Data gate lifted; thesis still dead.
+
+---
+
+## 2026-09-18 — Freeze · `xau_fomc_h4_long_only_v1` · **BLOCKED_ON_DATA**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`BLOCKED_ON_DATA`** then freeze review — **do not screen** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_fomc_h4_long_only_v1` |
+| **charter** | `results/xau_charters/2026-09-18_xau_fomc_h4_long_only_v1.json` |
+| **events** | `results/xau_fomc_scheduled_v1.csv` · 14:00 ET scheduled statements only |
+| **n_free_knobs** | **0** · hold 8 H4 · SL 1.5 ATR · long only |
+| **data gate** | MCP dump `results/xau_fomc_h4/xauusd_h1_2018_2025.csv` · **45 863** H1 bars **2018-04-02 → 2025-12-31**. Jan–Mar 2018 is D1-only on Vantage (no H1). Screen still **not run** — say **screen it**. Do not use 2021-only `xauusd_data.csv` |
+| **control** | always-long 0.5 lot on the **2018+** window |
+| **K** | 15 (K_prior=14) |
+| **do not** | screen 2021-only · add CPI/NFP to salvage · peek holdout · `--live` |
+
+CPI is a sister family, not this freeze. Unscheduled FOMC excluded.
+
+---
+
+## 2026-09-18 — Develop screen · `xau_eur_logspread_ou_fade_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_eur_logspread_ou_fade_v1` |
+| **result** | n **27** · WR **48.1%** · PF **0.47** · NP **−$47.2k** · DD **472%** |
+| **disposition** | **SCREEN_FAIL** — thin-n · PF<1.2 · NP<0 · DD blowup · holdout untouched · null not run |
+| **artifact** | `results/xau_eur_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 60/2/20d · add GBP third leg to salvage · peek holdout · `--live` |
+| **same-week prior fails** | `xau_h4_pullback_weekly_long_only_v1` · `exog_eur_gbp_tvbeta_xau_long_or_flat_v1` (lost to always-long) |
+| **multiplicity** | **K_prior=14 for the next family** |
+
+Standing: directional gold, long-or-flat, and XAU–EUR residual fade are all dead on this tape. Do not hunt another residual.
+
+---
+
 ## 2026-08-21 — Develop screen · `multi_day_variance_expansion_flat` **SCREEN_FAIL** (deterministic)
 
 | Field | Value |
