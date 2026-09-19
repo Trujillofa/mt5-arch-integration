@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `xau_xag_logspread_ou_fade_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_xag_logspread_ou_fade_v1` |
+| **tape** | Vantage XAU∩XAG daily 2018-04-02→2025-12-31 |
+| **result** | n **41** · WR **58.5%** · PF **1.19** · NP **+$9.9k** · DD **225%** · AL-XAU report **+$150.5k** |
+| **disposition** | **SCREEN_FAIL** — PF<1.2 · DD blowup · holdout untouched |
+| **artifact** | `results/xau_xag_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 252/2/5 · seasonal months · reopen XAU–EUR OU · `--live` |
+| **multiplicity** | **K_prior=18 for the next family** |
+
+Metals-ratio fade is not an edge after two-leg costs. Data gate lifted; thesis still dead.
+
+---
+
 ## 2026-09-19 — Freeze · `xau_xag_logspread_ou_fade_v1` · **BLOCKED_ON_DATA**
 
 | Field | Value |
