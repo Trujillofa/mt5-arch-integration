@@ -1,5 +1,24 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `eur_gbp_logspread_ou_fade_v1` · **FROZEN** (off-gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `eur_gbp_logspread_ou_fade_v1` |
+| **charter** | `results/xau_charters/2026-09-19_eur_gbp_logspread_ou_fade_v1.json` |
+| **role** | EURUSD–GBPUSD daily log-spread fade — **not gold** |
+| **n_free_knobs** | **0** · expanding β min **252** · \|z\|**>2** · exit 0 or **5**d · 0.10 EUR |
+| **tape** | Phase 0 EUR∩GBP H1 2021-09-07 → develop `< 2026-01-01` |
+| **control** | always-flat · always-long EUR report-only |
+| **K** | 19 (K_prior=18) |
+| **do not** | retune 252/2/5 · reopen NY scalp · add XAU · peek 2026 · `--live` |
+
+Gold catalog (articles + 10 signal pages) is exhausted. This freeze leaves XAU.
+
+---
+
 ## 2026-09-19 — Develop screen · `xau_xag_logspread_ou_fade_v1` **SCREEN_FAIL**
 
 | Field | Value |

@@ -1,0 +1,75 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "family_id": "eur_gbp_logspread_ou_fade_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "hypothesis": "Fade log(EURUSD) residual on log(GBPUSD) with expanding OLS (min 252d), |z|>2, exit z-cross 0 or 5 days, both FX legs after measured spread. Beat always-flat on develop 2021-09-07 through 2025-12-31. Off-gold.",
+  "data_gate": {
+    "package": "results/instrument_data_packages/4f44b452081041f39fc24f03248b8ca8-ee2a993fb5b1befd/instrument_data",
+    "eur": "eurusd_h1.csv",
+    "gbp": "gbpusd_h1.csv",
+    "h1_min_time": "2021-09-07T02:00:00",
+    "forbid_xau": true,
+    "forbid_eurusd_ny_scalp_lock_cut": true
+  },
+  "clock": {
+    "bar_timestamps": "server_clock_as_stored",
+    "resample": "daily OHLC on server date",
+    "signal": "close of day D-1",
+    "fill": "open of day D"
+  },
+  "rule": {
+    "direction": "fade_spread_both_legs",
+    "beta": "expanding OLS log EUR ~ 1 + log GBP, dates strictly before signal close",
+    "min_obs_daily": 252,
+    "z_entry": 2.0,
+    "z_exit": 0.0,
+    "max_hold_days": 5,
+    "eur_lots": 0.1
+  },
+  "fixed": {
+    "eur_contract_size": 100000.0,
+    "gbp_contract_size": 100000.0,
+    "point": 0.00001,
+    "slippage_points": 0.0,
+    "commission_per_lot": 0.0,
+    "cost_on": "both_legs_round_trip_using_csv_spread",
+    "swap_modeled": false
+  },
+  "control": {
+    "primary": "always_flat",
+    "report_only": "always_long_eurusd_0.10"
+  },
+  "window": {
+    "develop_start": "2021-09-07T00:00:00",
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false,
+    "holdout_note": "Package extends into 2026; unused."
+  },
+  "gates": {
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0
+    }
+  },
+  "multiplicity": {"K_prior": 18, "K": 19},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_EUR_GBP_LOGSPREAD_OU_FADE",
+    "refine_loops": false
+  },
+  "rejected_sister": "XAU third leg; EURUSD NY MR; rolling 60d XAU-EUR params",
+  "explicitly_forbidden": [
+    "retune 252 / 2 / 0 / 5d",
+    "reopen eurusd_ny_scalp",
+    "add XAU",
+    "holdout selection",
+    "paper live promote",
+    "compute develop metrics in the freeze commit"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}
