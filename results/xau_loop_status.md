@@ -1,5 +1,25 @@
 # XAU offline loop status
 
+## 2026-09-19 — Freeze · `xau_garch_voltarget_always_long_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_garch_voltarget_always_long_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_garch_voltarget_always_long_v1.json` |
+| **role** | **Risk module** on the always-long host — not a new entry rule |
+| **n_free_knobs** | **0** · GARCH(1,1) daily · target **15%** ann · cap **0.5** lot · min_obs **252** |
+| **tape** | `results/xau_fomc_h4/xauusd_h1_2018_2025.csv` · 2018-04-02 → 2025-12-31 |
+| **control** | constant 0.5 lot always-long, same post-warmup window, same costs |
+| **gates** | NP>0 · DD **<** control DD · Calmar **>** control Calmar |
+| **K** | 16 (K_prior=15) |
+| **do not** | retune 15/252/GARCH(1,1) · EGARCH/H1 salvage · attach to dead families · peek holdout · `--live` |
+
+Sitting won. This freeze asks whether vol targeting sits with less pain. No metric yet.
+
+---
+
 ## 2026-09-18 — Develop screen · `xau_fomc_h4_long_only_v1` **SCREEN_FAIL**
 
 | Field | Value |
