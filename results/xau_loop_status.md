@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `xau_gvz_voltarget_always_long_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_gvz_voltarget_always_long_v1` |
+| **tape** | daily XAU 2018-04-02→2025-12-31 · FRED GVZCLS as-of · mean GVZ **16.50** |
+| **result** | 2002 days · mean lots **0.439** · NP **+$136.9k** · DD **78.91%** · Calmar **1735** vs control NP **+$149.6k** · DD **78.91%** · Calmar **1896** |
+| **disposition** | **SCREEN_FAIL** — NP>0 pass · DD **tied** (not strictly below) · **Calmar loses** · holdout untouched |
+| **artifact** | `results/xau_gvz_voltarget_always_long_v1_screen.{json,md}` |
+| **do not** | retune 15 / GVZ units · copy article 1.20 flatten · GARCH salvage · `--live` |
+| **multiplicity** | **K_prior=17 for the next family** |
+
+Implied vol did not sit with less pain than 0.5 lot. Realized GARCH and GVZ are both dead on this host.
+
+---
+
 ## 2026-09-19 — Freeze · `xau_gvz_voltarget_always_long_v1` · **FROZEN**
 
 | Field | Value |
