@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-19 — Develop screen · `xau_cot_gc_mm_fade_long_or_flat_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_cot_gc_mm_fade_long_or_flat_v1` |
+| **tape** | Vantage XAU H1 2018-04-02→2025-12-31 · CFTC Disagg COMEX GC 2016–2025 |
+| **result** | n=**2** · PF 99 (thin) · NP **+$10.2k** · DD **61.0%** · always-long **+$149.6k** |
+| **disposition** | **SCREEN_FAIL** — n<40 · DD>15% · does not beat sitting · holdout untouched |
+| **artifact** | `results/xau_cot_gc_mm_fade_long_or_flat_v1_screen.{json,md}` |
+| **do not** | retune −2/−0.5/52 · Legacy COT · short · `--live` |
+| **multiplicity** | **K_prior=21 for the next family** |
+
+Exogenous MM z is not an edge vs 0.5 lot always-long. Kill label `KILL_XAU_COT_GC_MM_FADE_LONG_OR_FLAT`.
+
+---
+
 ## 2026-09-19 — Freeze · `xau_cot_gc_mm_fade_long_or_flat_v1` · **FROZEN**
 
 | Field | Value |
