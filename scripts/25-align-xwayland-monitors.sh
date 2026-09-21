@@ -17,12 +17,14 @@
 # monitors in ascending Wayland-x order leaves the X11 origins in that same
 # order. That is all this script does, and only when the spaces disagree.
 #
-# Idempotent and safe to run on a live desktop: an aligned layout is a no-op,
-# and windows keep their workspaces across the re-create (Hyprland restores
-# them from the persistent workspace rules).
+# Idempotent: an aligned layout is a no-op, and windows keep their workspaces
+# across the re-create (Hyprland restores them from the persistent workspace
+# rules). It refuses to run while any terminal64.exe is up, because detaching
+# an output from under a book wedges that book -- see the guard below.
 #
 #   ./scripts/25-align-xwayland-monitors.sh           # fix if misaligned
 #   ./scripts/25-align-xwayland-monitors.sh --check   # report only, exit 1 if off
+#   ./scripts/25-align-xwayland-monitors.sh --force   # repair anyway, books up
 #
 # Runs from hypr/autostart.lua so a reboot does not reintroduce the mirror:
 #   o.exec_on_start(".../scripts/25-align-xwayland-monitors.sh")
@@ -30,13 +32,52 @@
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 CHECK_ONLY=0
+FORCE=0
 for arg in "$@"; do
   case "$arg" in
     --check) CHECK_ONLY=1 ;;
+    --force) FORCE=1 ;;
     -h|--help) sed -n '2,28p' "$0" | sed 's/^# \?//'; exit 0 ;;
     *) die "unknown argument: $arg" ;;
   esac
 done
+
+# Detaching an output from under a running book wedges it: an MT5 window whose
+# monitor disappears hangs on redraw and then will not even service its own
+# close button (that is how a live Vantage terminal was lost once).
+# At login -- the autostart path -- no book has mapped a window yet, so this
+# never fires there.
+#
+# Deliberately NOT list_terminal64_pids(): that helper is prefix-scoped and
+# returns [] without a WINEPREFIX, so it answers "is this broker running",
+# never "is any book running". What can wedge is a mapped window, so ask
+# Hyprland for the windows, and name the ones sitting on an output that this
+# repair would re-create (every monitor except the leftmost).
+books_at_risk() {
+  hyprctl clients -j 2>/dev/null | python3 -c '
+import json, subprocess, sys
+
+try:
+    clients = json.load(sys.stdin)
+except (json.JSONDecodeError, TypeError):
+    sys.exit(0)
+
+mons = json.loads(subprocess.run(["hyprctl", "monitors", "-j"],
+                                 capture_output=True, text=True, check=True).stdout)
+by_id = {m["id"]: m for m in mons}
+# The leftmost output stays attached; books on it are not detached.
+leftmost = min(mons, key=lambda m: int(m["x"]))["id"] if mons else None
+
+for c in clients:
+    if c.get("class") != "terminal64.exe":
+        continue
+    mon = c.get("monitor")
+    name = by_id.get(mon, {}).get("name", "?")
+    risk = "AT RISK" if (len(mons) > 1 and mon != leftmost) else "safe"
+    title = (c.get("title") or "")[:44] or "(untitled)"
+    print(f"{risk}\t{name}\t{title}")
+' 2>/dev/null || true
+}
 
 require_cmd hyprctl
 require_cmd xrandr
@@ -126,6 +167,24 @@ fi
 if (( CHECK_ONLY )); then
   warn "X11 and Wayland monitor layouts are MIRRORED (see above)"
   exit 1
+fi
+
+BOOKS="$(books_at_risk)"
+if [[ -n "$BOOKS" ]]; then
+  warn "MT5 books have windows open:"
+  while IFS=$'\t' read -r risk mon title; do
+    [[ -z "$risk" ]] && continue
+    printf '    %-8s %-10s %s\n' "$risk" "$mon" "$title" >&2
+  done <<<"$BOOKS"
+  if (( FORCE == 0 )); then
+    warn "Repairing detaches every output except the leftmost. A book whose"
+    warn "monitor disappears wedges on redraw and stops responding to its own"
+    warn "close button -- for a live account that means a forced kill."
+    die "refusing to churn monitors under open books. Close them, or move the
+    AT RISK ones onto the leftmost monitor first, then re-run. --force
+    overrides; --check is always safe."
+  fi
+  warn "--force given: continuing with books open"
 fi
 
 # Force XWayland to re-attach the outputs in left-to-right order: disable
