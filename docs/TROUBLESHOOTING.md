@@ -49,6 +49,15 @@ reintroduces it whenever the right-hand monitor attaches first):
 It detaches every output except the leftmost and then runs `hyprctl reload`, so
 the detached ones re-attach to its right. Windows keep their workspaces.
 
+**It refuses to run while any MT5 window is open.** A book whose monitor is
+detached wedges on redraw and stops responding even to its own close button --
+that is how a live Vantage terminal was lost. The refusal lists each open book
+as `safe` (on the leftmost monitor, never detached) or `AT RISK` (on an output
+this repair re-creates). Close the `AT RISK` ones, or move them onto the
+leftmost monitor, then re-run. `--force` overrides; `--check` is always safe.
+So the normal sequence is: align **before** starting the books, which is what
+the autostart hook does.
+
 Two traps if you do this by hand:
 
 - **Never re-enable with `hl.monitor`.** It returns `ok` and leaves the output

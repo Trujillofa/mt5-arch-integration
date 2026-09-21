@@ -97,6 +97,31 @@ def test_xwayland_alignment_script_never_re_enables_via_hl_monitor() -> None:
         assert "disabled = true" in call, f"non-disable hl.monitor call: {call.strip()}"
 
 
+def test_alignment_guard_is_not_prefix_scoped() -> None:
+    """The guard must answer "is any book open", not "is this broker running".
+
+    ``list_terminal64_pids()`` returns [] without a WINEPREFIX by design, so
+    using it here silently disabled the guard once -- it found zero books with
+    seven open.
+    """
+    text = ALIGN_25.read_text(encoding="utf-8")
+    body = "\n".join(
+        ln for ln in text.splitlines() if ln.strip() and not ln.lstrip().startswith("#")
+    )
+    assert "list_terminal64_pids" not in body
+    # It asks Hyprland for mapped windows instead.
+    assert "hyprctl clients" in body
+    assert "terminal64.exe" in body
+
+
+def test_alignment_guard_refuses_by_default_and_has_a_force_escape() -> None:
+    text = ALIGN_25.read_text(encoding="utf-8")
+    assert "--force" in text
+    assert "FORCE" in text
+    # Refusal must be a hard stop, not a warning that falls through.
+    assert "refusing to churn monitors under open books" in text
+
+
 def test_alignment_script_is_executable_and_parses() -> None:
     assert ALIGN_25.stat().st_mode & 0o111, "25-align-xwayland-monitors.sh is not executable"
     proc = subprocess.run(
