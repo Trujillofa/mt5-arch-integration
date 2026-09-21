@@ -16,6 +16,51 @@ Wine + multi-chart layout glitch. In MT5:
 - Or close floating chart windows and re-open one chart full size
 - Avoid maximizing across mixed DPI monitors when possible
 
+## Terminals act mirrored: scrolling one book moves another
+
+Two monitors, and input or geometry lands on the *other* screen's book -- e.g.
+scrolling a chart in FTMO moves Vantage. Wheel events that "keep going to the
+last focused book" are the same fault.
+
+Cause is the compositor, not MT5 and not Wine. Every book is an XWayland client
+(class `terminal64.exe`), and XWayland assigns each output an X11 origin in the
+order it **attaches** them, ignoring the Wayland positions. When attach order
+disagrees with the configured left-to-right order, the two coordinate spaces
+come out mirrored, and each terminal reports another terminal's X11 coordinates.
+
+Check it -- the two columns must match:
+
+```bash
+./scripts/25-align-xwayland-monitors.sh --check    # exit 1 when mirrored
+```
+
+```
+HDMI-A-2     wayland x=0      x11 x=0      ok
+HDMI-A-1     wayland x=1920   x11 x=1920   ok
+```
+
+Fix (idempotent; also wired into `hypr/autostart.lua`, since a reboot
+reintroduces it whenever the right-hand monitor attaches first):
+
+```bash
+./scripts/25-align-xwayland-monitors.sh
+```
+
+It detaches every output except the leftmost and then runs `hyprctl reload`, so
+the detached ones re-attach to its right. Windows keep their workspaces.
+
+Two traps if you do this by hand:
+
+- **Never re-enable with `hl.monitor`.** It returns `ok` and leaves the output
+  dark (observed failing five times running, on both outputs). `hyprctl reload`
+  re-applies `monitors.lua`, where every monitor is enabled, and is the only
+  reliable way back.
+- `hyprctl keyword` is refused under the Lua config ("keyword can't work with
+  non-legacy parsers"). Use `hyprctl eval '<lua>'`.
+
+A plain `hyprctl reload` does **not** fix the layout on its own -- it preserves
+whatever attach order is current.
+
 ## Generic MetaTrader 5 window is 4K / leftover login
 
 Wine often saves `Config/terminal.ini` `[Window]` as the dual-monitor desktop

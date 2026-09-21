@@ -332,9 +332,19 @@ start_terminal64_detached() {
   info "detached $prefix_name pid-session (log $log)"
 }
 
+# Workspace a book's windows belong on. MT5_WORKSPACE is the per-broker pin
+# (set it in config/brokers/<broker>.env); MT5_BG_WORKSPACE is the shared
+# parking workspace for the prop-firm tab group. Placing by Wine prefix is the
+# only thing that works here -- every book shares class terminal64.exe, and a
+# Hyprland title rule cannot place one, because a terminal maps as
+# "MetaTrader 5" and only gains its broker name after login.
+mt5_target_workspace() {
+  echo "${MT5_WORKSPACE:-${MT5_BG_WORKSPACE:-11}}"
+}
+
 park_prefix_terminals_background() {
   local prefix="${1:-${WINEPREFIX:-}}"
-  local ws="${2:-${MT5_BG_WORKSPACE:-11}}"
+  local ws="${2:-$(mt5_target_workspace)}"
   [[ -n "$prefix" ]] || return 0
   command -v hyprctl >/dev/null 2>&1 || return 0
   PYTHONPATH="${REPO_ROOT}/src${PYTHONPATH:+:$PYTHONPATH}" python3 -c '
