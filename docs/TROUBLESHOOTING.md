@@ -70,6 +70,70 @@ Two traps if you do this by hand:
 A plain `hyprctl reload` does **not** fix the layout on its own -- it preserves
 whatever attach order is current.
 
+**If `--check` says ALIGNED and the symptom persists, this is not your bug.**
+See the next entry: Wine broadcasts raw clicks to every book.
+
+## One click reaches every book (layout ALIGNED)
+
+Right-click one chart and a context menu opens in **every** running book (each
+at the cursor, even on another monitor); scroll one book and another's chart
+moves. `25-align-xwayland-monitors.sh --check` reports **ALIGNED** -- this is a
+different fault from the mirrored layout above, and no compositor setting
+fixes it.
+
+Cause is Wine, not Hyprland. Every book runs in its own prefix, i.e. its own
+wineserver, so each one believes its terminal is the foreground window. Wine
+11 Staging's `winex11` listens for XInput2 **raw** button events on the root
+window (`explorer.exe /desktop` loads `libXi` in every prefix). Raw events are
+broadcast to every client that selects them, whatever window is under the
+pointer, and MT5 acts on the resulting button state. Proven 2026-09-24 with an
+X11 window watcher: one right-click on a plain Tk window -- owned by neither
+book, FTMO on a hidden workspace -- made Vantage and FTMO both create their
+242x885 chart menu in the same millisecond. (Wine's own Notepad did *not*
+react, so it is MT5's input handling plus the broadcast, not every Wine app.)
+
+Fix (in place): `scripts/wine-input/no_xi2.so`, an `LD_PRELOAD` that refuses
+`winex11`'s `dlopen` of `libXi`, so Wine logs "XInput2 not available" and
+falls back to core X11 events, which the X server delivers to exactly one
+window. It is prepended by `export_no_xi2_preload` (lib.sh) in every
+interactive launch path -- `04`, `07`, `13`, `start_terminal64_detached` -- and
+by the generated app launchers (`17-install-desktop-launchers.sh`). Opt out with
+`MT5_WINE_XI2=1`. Nothing a book needs is lost: XInput2 only backs `ClipCursor`
+and `WM_INPUT` raw mouse.
+
+It must be in the environment **when the prefix session starts**, because the
+listener is `explorer.exe /desktop`. A book already running keeps the old
+behaviour until it is closed and relaunched through one of those paths --
+and **every** running book must be relaunched, since an unfixed book still
+reacts to clicks on the fixed ones. Check each prefix:
+
+```bash
+for p in $(pgrep -f 'terminal64.exe|explorer.exe'); do
+  echo "$p $(tr '\0' '\n' </proc/$p/environ | grep ^WINEPREFIX=) \
+    libXi=$(grep -c libXi.so /proc/$p/maps) no_xi2=$(grep -c no_xi2.so /proc/$p/maps)"
+done      # every book: libXi=0 no_xi2>0
+```
+
+Verified after relaunching both books: one right-click on either chart creates
+only that book's menu; 5 wheel notches over Vantage changed 0 pixels of FTMO's
+time axis in 3 trials, while scrolling FTMO itself changed 352.
+
+Two red herrings ruled out along the way:
+
+- **Hidden books stealing input by geometry.** With the layout aligned, the real
+  X stacking (`XQueryTree`) keeps the visible book on top and hidden books get
+  no *motion* events. `scripts/26-park-books.sh` targeted that; it stays a
+  manual diagnostic and is not autostarted (its float/tile churn can wedge
+  Wine). Note that a motion-only probe cannot see this bug -- raw *button* and
+  *wheel* events are what leak.
+- **A failing scroll wheel** gives a similar "chart moves by itself" report from
+  a single book: one detent produced ~34 wheel events with direction reversals.
+  One detent must give one `POINTER_SCROLL_WHEEL`:
+
+```bash
+sudo stdbuf -oL timeout 20 libinput debug-events | grep -E 'POINTER_(SCROLL|BUTTON)'
+```
+
 ## Generic MetaTrader 5 window is 4K / leftover login
 
 Wine often saves `Config/terminal.ini` `[Window]` as the dual-monitor desktop

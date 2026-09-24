@@ -196,4 +196,5 @@ fi
 if [[ "$FULLSCREEN" -eq 1 ]]; then
   warn "--fullscreen requires --detach (will apply after background start)"
 fi
+export_no_xi2_preload
 exec wine "$term" "${ARGS[@]}"

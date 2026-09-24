@@ -102,6 +102,42 @@ ensure_force_src_bind_so() {
   info "rebuilt $so"
 }
 
+# Deny XInput2 to Wine books so one click cannot reach every book at once.
+# Each prefix runs its own wineserver, so every book believes it is the
+# foreground window, and Wine 11 Staging feeds XInput2 *raw* button events
+# (broadcast to every root-window listener) into it. MT5 then acts on them:
+# one right-click opened the chart menu in every running book (tested
+# 2026-09-24, including a click on a non-Wine window). no_xi2.so refuses
+# winex11's dlopen of libXi, which drops it back to core X11 events that the
+# X server delivers to exactly one window. It must be in the environment when
+# the prefix's session starts, since explorer.exe /desktop is the listener.
+# Opt out with MT5_WINE_XI2=1.
+ensure_no_xi2_so() {
+  local src="$REPO_ROOT/scripts/wine-input/no_xi2.c"
+  local so="$REPO_ROOT/scripts/wine-input/no_xi2.so"
+  [[ -f "$src" ]] || return 0
+  if [[ -f "$so" && ! "$src" -nt "$so" ]]; then
+    return 0
+  fi
+  if ! command -v gcc >/dev/null 2>&1; then
+    warn "gcc missing; cannot rebuild $so"
+    return 0
+  fi
+  gcc -shared -fPIC -O2 -o "$so" "$src" -ldl
+  info "rebuilt $so"
+}
+
+export_no_xi2_preload() {
+  [[ "${MT5_WINE_XI2:-0}" == "1" ]] && return 0
+  ensure_no_xi2_so
+  local so="$REPO_ROOT/scripts/wine-input/no_xi2.so"
+  [[ -f "$so" ]] || return 0
+  case ":${LD_PRELOAD:-}:" in
+    *":$so:"*) ;;
+    *) export LD_PRELOAD="$so${LD_PRELOAD:+:$LD_PRELOAD}" ;;
+  esac
+}
+
 # Ensure Wayland clipboard is visible to Wine/XWayland (Ctrl+V paste).
 # Safe to call often; starts bridge if missing and does a one-shot sync.
 ensure_clipboard_bridge() {
@@ -321,6 +357,7 @@ start_terminal64_detached() {
       *mt5-vantage*) ;;
       *) unset LD_PRELOAD || true ;;
     esac
+    export_no_xi2_preload
     export DISPLAY="${DISPLAY:-:0}"
     export WINEPREFIX="${WINEPREFIX}"
     export WINEARCH="${WINEARCH:-win64}"

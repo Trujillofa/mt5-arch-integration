@@ -211,6 +211,21 @@ for key, b in BRANDS.items():
             'export MT5_FORCE_SRC_IP="$(ip -4 route get 1.1.1.1 2>/dev/null | '
             "awk '{for(i=1;i<=NF;i++) if($i==\"src\"){print $(i+1); exit}}' || true)\"\n"
         )
+    # Deny XInput2 so one click cannot reach every book (see
+    # scripts/wine-input/no_xi2.c and export_no_xi2_preload in lib.sh).
+    noxi2_src = script_dir / "wine-input" / "no_xi2.c"
+    noxi2_so = script_dir / "wine-input" / "no_xi2.so"
+    if noxi2_src.is_file() or noxi2_so.is_file():
+        preload += (
+            f'NOXI2_SRC="{noxi2_src}"\n'
+            f'NOXI2_SO="{noxi2_so}"\n'
+            'if [[ "${MT5_WINE_XI2:-0}" != "1" ]]; then\n'
+            '  if [[ -f "$NOXI2_SRC" ]] && { [[ ! -f "$NOXI2_SO" ]] || [[ "$NOXI2_SRC" -nt "$NOXI2_SO" ]]; }; then\n'
+            '    command -v gcc >/dev/null 2>&1 && gcc -shared -fPIC -O2 -o "$NOXI2_SO" "$NOXI2_SRC" -ldl\n'
+            "  fi\n"
+            '  [[ -f "$NOXI2_SO" ]] && export LD_PRELOAD="$NOXI2_SO${LD_PRELOAD:+:$LD_PRELOAD}"\n'
+            "fi\n"
+        )
     launcher.write_text(
         f"""#!/usr/bin/env bash
 set -euo pipefail
