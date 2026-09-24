@@ -107,6 +107,16 @@ apps/seven-desk/data/
 # Large local dumps / session artifacts (never commit)
 results/tick_data/
 results/btc_data/
+results/scalper_tester_*/
+results/scalper_gates_*/
+
+# Local agent noise and session transcripts (never commit)
+.commandcode/
+.playwright-mcp/
+.herdr/
+scratchpad/
+codex-session-*.md
+*saved-conversation*.txt
 
 # BTC NY-session scalp lane
 results/btc_ny_data/
