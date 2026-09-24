@@ -35,6 +35,7 @@ fi
 [[ -n "$term" && -f "$term" ]] || die "could not resolve terminal64.exe under $WINEPREFIX"
 
 info "Starting: $term"
+export_no_xi2_preload
 nohup wine "$term" /portable >>/tmp/mt5-terminal.log 2>&1 &
 echo $! >/tmp/mt5-terminal.pid
 info "PID $(cat /tmp/mt5-terminal.pid)  log=/tmp/mt5-terminal.log"
