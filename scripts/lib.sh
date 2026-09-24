@@ -347,6 +347,7 @@ start_terminal64_detached() {
   shift || true
   local dir log prefix_name
   [[ -n "$term" && -f "$term" ]] || return 1
+  recycle_prefix_wineserver_if_idle
   dir="$(cd "$(dirname "$term")" && pwd)"
   prefix_name="$(basename "$(realpath "${WINEPREFIX:-$HOME/.mt5}")")"
   log="/tmp/mt5-${prefix_name}-terminal.log"
@@ -447,4 +448,22 @@ kill_prefix_wineserver() {
   fi
   info "Stopping wineserver for WINEPREFIX=$WINEPREFIX only"
   env WINEPREFIX="$WINEPREFIX" wineserver -k || true
+}
+
+# New wine clients join the existing wineserver. explorer.exe, the XInput2
+# listener, keeps the environment it was started with, so LD_PRELOAD on a
+# later client does not deny libXi. Recycle only when this prefix has no
+# terminal64 left: a cold start gets a new explorer, a live book is not bounced.
+# 07 is an explicit restart and calls kill_prefix_wineserver itself.
+recycle_prefix_wineserver_if_idle() {
+  require_wineprefix
+  local pids
+  if ! pids="$(list_terminal64_pids)"; then
+    warn "could not list terminal64 pids; not recycling wineserver"
+    return 0
+  fi
+  if [[ -n "${pids//[$' \t\n\r']/}" ]]; then
+    return 0
+  fi
+  kill_prefix_wineserver
 }

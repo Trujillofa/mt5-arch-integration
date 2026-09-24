@@ -26,6 +26,9 @@ wine reg delete 'HKEY_CURRENT_USER\Software\Wine\Explorer' /v Desktop /f >/dev/n
 
 info "Stopping MetaTrader terminal processes in $WINEPREFIX only..."
 kill_terminal64_processes
+# explorer.exe is the XInput2 listener and is not terminal64. Killing only the
+# terminal leaves the old wineserver, so the new client never picks up no_xi2.so.
+kill_prefix_wineserver
 
 term="$(find_terminal64)" || die "terminal64.exe not found. Run ./scripts/02-install-mt5.sh"
 # If path is Windows-style in .env, resolve Linux path
