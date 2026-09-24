@@ -149,6 +149,10 @@ if [[ "$BACKGROUND" -eq 1 && -f "$(dirname "$term")/auto_login.ini" ]]; then
   ARGS+=(/config:auto_login.ini)
 fi
 
+# The running-terminal case already exited. A leftover wineserver still has
+# explorer.exe, which will not see this start's LD_PRELOAD.
+kill_prefix_wineserver
+
 if [[ "$DETACH" -eq 1 ]]; then
   start_terminal64_detached "$term" "${ARGS[@]}"
   if [[ "$BACKGROUND" -eq 1 ]]; then
