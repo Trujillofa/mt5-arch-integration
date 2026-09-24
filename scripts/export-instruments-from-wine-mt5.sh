@@ -217,6 +217,7 @@ info "Running export (timeout ${TIMEOUT_S}s) run_id=$RUN_ID ..."
 cd "$MT5_DIR"
 export WINEDEBUG=-all WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
 set +e
+export_no_xi2_preload
 timeout "$TIMEOUT_S" wine ./terminal64.exe /portable /config:export_instruments.ini
 rc=$?
 set -e

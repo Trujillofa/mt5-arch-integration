@@ -102,6 +102,42 @@ ensure_force_src_bind_so() {
   info "rebuilt $so"
 }
 
+# Deny XInput2 to Wine books so one click cannot reach every book at once.
+# Each prefix runs its own wineserver, so every book believes it is the
+# foreground window, and Wine 11 Staging feeds XInput2 *raw* button events
+# (broadcast to every root-window listener) into it. MT5 then acts on them:
+# one right-click opened the chart menu in every running book (tested
+# 2026-09-24, including a click on a non-Wine window). no_xi2.so refuses
+# winex11's dlopen of libXi, which drops it back to core X11 events that the
+# X server delivers to exactly one window. It must be in the environment when
+# the prefix's session starts, since explorer.exe /desktop is the listener.
+# Opt out with MT5_WINE_XI2=1.
+ensure_no_xi2_so() {
+  local src="$REPO_ROOT/scripts/wine-input/no_xi2.c"
+  local so="$REPO_ROOT/scripts/wine-input/no_xi2.so"
+  [[ -f "$src" ]] || return 0
+  if [[ -f "$so" && ! "$src" -nt "$so" ]]; then
+    return 0
+  fi
+  if ! command -v gcc >/dev/null 2>&1; then
+    warn "gcc missing; cannot rebuild $so"
+    return 0
+  fi
+  gcc -shared -fPIC -O2 -o "$so" "$src" -ldl
+  info "rebuilt $so"
+}
+
+export_no_xi2_preload() {
+  [[ "${MT5_WINE_XI2:-0}" == "1" ]] && return 0
+  ensure_no_xi2_so
+  local so="$REPO_ROOT/scripts/wine-input/no_xi2.so"
+  [[ -f "$so" ]] || return 0
+  case ":${LD_PRELOAD:-}:" in
+    *":$so:"*) ;;
+    *) export LD_PRELOAD="$so${LD_PRELOAD:+:$LD_PRELOAD}" ;;
+  esac
+}
+
 # Ensure Wayland clipboard is visible to Wine/XWayland (Ctrl+V paste).
 # Safe to call often; starts bridge if missing and does a one-shot sync.
 ensure_clipboard_bridge() {
@@ -321,6 +357,7 @@ start_terminal64_detached() {
       *mt5-vantage*) ;;
       *) unset LD_PRELOAD || true ;;
     esac
+    export_no_xi2_preload
     export DISPLAY="${DISPLAY:-:0}"
     export WINEPREFIX="${WINEPREFIX}"
     export WINEARCH="${WINEARCH:-win64}"
@@ -332,9 +369,19 @@ start_terminal64_detached() {
   info "detached $prefix_name pid-session (log $log)"
 }
 
+# Workspace a book's windows belong on. MT5_WORKSPACE is the per-broker pin
+# (set it in config/brokers/<broker>.env); MT5_BG_WORKSPACE is the shared
+# parking workspace for the prop-firm tab group. Placing by Wine prefix is the
+# only thing that works here -- every book shares class terminal64.exe, and a
+# Hyprland title rule cannot place one, because a terminal maps as
+# "MetaTrader 5" and only gains its broker name after login.
+mt5_target_workspace() {
+  echo "${MT5_WORKSPACE:-${MT5_BG_WORKSPACE:-11}}"
+}
+
 park_prefix_terminals_background() {
   local prefix="${1:-${WINEPREFIX:-}}"
-  local ws="${2:-${MT5_BG_WORKSPACE:-11}}"
+  local ws="${2:-$(mt5_target_workspace)}"
   [[ -n "$prefix" ]] || return 0
   command -v hyprctl >/dev/null 2>&1 || return 0
   PYTHONPATH="${REPO_ROOT}/src${PYTHONPATH:+:$PYTHONPATH}" python3 -c '

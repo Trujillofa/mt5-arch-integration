@@ -121,7 +121,7 @@ DETACH=0
 BACKGROUND=0
 PORTABLE=1
 FULLSCREEN=0
-BG_WS="${MT5_BG_WORKSPACE:-11}"
+BG_WS="$(mt5_target_workspace)"   # MT5_WORKSPACE (per broker) else MT5_BG_WORKSPACE
 for arg in "$@"; do
   case "$arg" in
     --detach) DETACH=1 ;;
@@ -196,4 +196,5 @@ fi
 if [[ "$FULLSCREEN" -eq 1 ]]; then
   warn "--fullscreen requires --detach (will apply after background start)"
 fi
+export_no_xi2_preload
 exec wine "$term" "${ARGS[@]}"
