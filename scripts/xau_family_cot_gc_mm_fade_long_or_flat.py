@@ -220,7 +220,6 @@ def main() -> int:
     ctl_daily, ctl_eq = _path(o, c, spr, ctl_lots, slip, comm)
     rt = round_trips(o, c, spr, lots, slip, comm)
     fam = metrics_from_pnls(rt, fam_eq)
-    ctl = metrics_from_pnls(ctl_daily, ctl_eq)
     # NP/DD from daily path (honest equity); n/PF/WR from round trips
     fam_np = float(np.sum(fam_daily))
     ctl_np = float(np.sum(ctl_daily))

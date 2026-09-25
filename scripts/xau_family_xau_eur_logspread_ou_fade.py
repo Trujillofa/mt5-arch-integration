@@ -80,7 +80,6 @@ def main() -> int:
     lx = np.log(d["xau_c"].to_numpy(float))
     le = np.log(d["eur_c"].to_numpy(float))
     n = len(d)
-    idx = d.index
 
     pnls: list[float] = []
     eq = [float(START_BALANCE)]
