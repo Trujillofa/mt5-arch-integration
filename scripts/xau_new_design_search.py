@@ -346,9 +346,8 @@ def simulate_design(
                 and recovered
                 and rsi_lo <= rsi[i] <= rsi_hi
             )
-            if use_macd_rising and i >= 1:
-                if not (macd_h[i] > macd_h[i - 1]):
-                    long_sig = False
+            if use_macd_rising and i >= 1 and not (macd_h[i] > macd_h[i - 1]):
+                long_sig = False
             this_mode = "mr"
             sl_m, tp_m = sl_atr, tp_atr
 
@@ -428,9 +427,10 @@ def is_better(m: Metrics, best_m: Metrics, best_ok: bool) -> bool:
     if m_ok and best_ok:
         if m.net_profit > best_m.net_profit:
             return True
-        if abs(m.net_profit - best_m.net_profit) < 1e-9 and m.profit_factor > best_m.profit_factor:
-            return True
-        return False
+        return (
+            abs(m.net_profit - best_m.net_profit) < 1e-9
+            and m.profit_factor > best_m.profit_factor
+        )
     if not m_ok and best_ok:
         return False
     # neither passes: secondary score
@@ -458,7 +458,7 @@ def product_grid(axes: dict[str, list], fixed: dict | None = None) -> list[dict]
     out: list[dict] = []
     for combo in itertools.product(*vals):
         p = dict(fixed or {})
-        for k, v in zip(keys, combo):
+        for k, v in zip(keys, combo, strict=False):
             p[k] = v
         out.append(p)
     return out
@@ -466,7 +466,7 @@ def product_grid(axes: dict[str, list], fixed: dict | None = None) -> list[dict]
 
 def compact_grids() -> dict[str, list[dict]]:
     """Hardcoded compact grids per family (~<4k total evals)."""
-    shared = dict(risk_pct=0.01, max_lots=0.5, long_only=True, hours=None)
+    shared = {"risk_pct": 0.01, "max_lots": 0.5, "long_only": True, "hours": None}
 
     vol = product_grid(
         {
@@ -634,7 +634,7 @@ def grids_from_specs(specs: dict) -> dict[str, list[dict]] | None:
     """Build grids from xau_new_design_specs.json for core families only."""
     families = specs.get("families") or []
     out: dict[str, list[dict]] = {k: [] for k in CORE_FAMILIES}
-    shared = dict(risk_pct=0.01, max_lots=0.5, long_only=True, hours=None)
+    shared = {"risk_pct": 0.01, "max_lots": 0.5, "long_only": True, "hours": None}
 
     for fam in families:
         fid = fam.get("id", "")
@@ -711,9 +711,13 @@ def grids_from_specs(specs: dict) -> dict[str, list[dict]] | None:
         for p in combos:
             if "rsi_lo" in p and "rsi_hi" in p and p["rsi_lo"] >= p["rsi_hi"]:
                 continue
-            if "sl_atr" in p and "tp_atr" in p and p["tp_atr"] is not None:
-                if float(p["tp_atr"]) < float(p["sl_atr"]) * 0.8:
-                    continue
+            if (
+                "sl_atr" in p
+                and "tp_atr" in p
+                and p["tp_atr"] is not None
+                and float(p["tp_atr"]) < float(p["sl_atr"]) * 0.8
+            ):
+                continue
             pruned.append(p)
         out[mode].extend(pruned)
 

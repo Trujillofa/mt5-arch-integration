@@ -52,7 +52,7 @@ from backtest import (  # noqa: E402
     passes,
     search_score,
 )
-from backtest import (
+from backtest import (  # noqa: E402
     simulate as _simulate,
 )
 
@@ -61,9 +61,9 @@ OUT_JSON = ROOT / "results" / "xau_null_maxstat.json"
 OUT_MD = ROOT / "results" / "xau_null_maxstat.md"
 
 sys.path.insert(0, str(ROOT / "scripts"))
-from xau_research_costs import load_research_costs  # noqa: E402
-from xau_null_core import scramble_ohlc as scramble_ohlc  # noqa: E402
 from xau_null_core import pvalue as _pvalue  # noqa: E402
+from xau_null_core import scramble_ohlc as scramble_ohlc  # noqa: E402
+from xau_research_costs import load_research_costs  # noqa: E402
 
 # Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
 COSTS: dict[str, Any] = load_research_costs()

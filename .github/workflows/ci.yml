@@ -28,15 +28,8 @@ jobs:
           python-version: "3.11"
       - name: Install package + extras
         run: uv sync --all-extras
-      - name: Ruff (platform)
-        run: uv run ruff check src tests
-      - name: Ruff (claim auditor)
-        run: >
-          uv run ruff check
-          scripts/research_claim_verify.py
-          scripts/research_claim_mutant.py
-          scripts/research_claim_instruction.py
-          scripts/research_claim_extract.py
+      - name: Ruff
+        run: uv run ruff check src tests scripts *.py
 
   claim-audit:
     name: claim-audit

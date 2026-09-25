@@ -190,21 +190,20 @@ def run() -> dict:
         payload["by_slip"][str(slip)] = block
         if slip == SLIP_BINDING:
             binding = block
-            if not pass_slip:
-                if n >= N_FILLS_MIN:
-                    if mean_e < mean_rt:
-                        fail.append(
-                            f"mean edge {mean_e:.4f} < mean RT {mean_rt:.4f} (slip={slip})"
-                        )
-                    if med_e < med_rt:
-                        fail.append(
-                            f"median edge {med_e:.4f} < median RT {med_rt:.4f} "
-                            f"(slip={slip}, binding)"
-                        )
-                    if t < 2.0:
-                        fail.append(f"t={t:.3f} < 2.0")
-                    if anti:
-                        fail.append(f"ANTI mean={mean_e:.4f} t={t:.3f}")
+            if not pass_slip and n >= N_FILLS_MIN:
+                if mean_e < mean_rt:
+                    fail.append(
+                        f"mean edge {mean_e:.4f} < mean RT {mean_rt:.4f} (slip={slip})"
+                    )
+                if med_e < med_rt:
+                    fail.append(
+                        f"median edge {med_e:.4f} < median RT {med_rt:.4f} "
+                        f"(slip={slip}, binding)"
+                    )
+                if t < 2.0:
+                    fail.append(f"t={t:.3f} < 2.0")
+                if anti:
+                    fail.append(f"ANTI mean={mean_e:.4f} t={t:.3f}")
 
     payload["pass_gate"] = bool(binding and binding["pass_gate"] and n >= N_FILLS_MIN)
     payload["disposition"] = "PASS" if payload["pass_gate"] else "FAIL"

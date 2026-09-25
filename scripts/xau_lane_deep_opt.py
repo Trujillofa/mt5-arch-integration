@@ -344,20 +344,19 @@ def simulate_vol_gate(
         long_sig = False
         short_sig = False
 
-        # Optional failed-breakout fade only in low atr_pctile
-        if failed_breakout_fade and atr_pc[i] < atr_max and i >= 2:
-            # prior bar broke high then closed back inside → fade short OR
-            # for long_only: fade failed downside break as long re-entry
-            if (
-                not np.isnan(donch_hi20[i - 2])
-                and high[i - 1] > donch_hi20[i - 2]
-                and close[i - 1] < donch_hi20[i - 2]
-                and close[i] < bb_mid[i]
-                and not np.isnan(rsi[i])
-                and rsi[i] <= rsi_buy + 15
-            ):
-                # failed upside breakout in low vol → skip chase; stay MR path
-                pass
+        # Optional failed-breakout fade only in low atr_pctile.
+        # Prior bar broke high then closed back inside → fade short OR
+        # for long_only: fade failed downside break as long re-entry.
+        if failed_breakout_fade and atr_pc[i] < atr_max and i >= 2 and (
+            not np.isnan(donch_hi20[i - 2])
+            and high[i - 1] > donch_hi20[i - 2]
+            and close[i - 1] < donch_hi20[i - 2]
+            and close[i] < bb_mid[i]
+            and not np.isnan(rsi[i])
+            and rsi[i] <= rsi_buy + 15
+        ):
+            # failed upside breakout in low vol → skip chase; stay MR path
+            pass
 
         if atr_pc[i] > atr_max:
             continue
@@ -583,16 +582,19 @@ def simulate_donchian(
                 long_sig = False
 
         # failed breakout fade: only low atr_pctile — reverse turtle
-        if failed_breakout_fade and not np.isnan(atr_pc[i]) and atr_pc[i] < 0.40 and i >= 2:
-            # failed upside break yesterday → fade short (if not long_only) or skip long
-            if (
-                high[i - 1] > donch_hi[i - 2]
-                and close[i - 1] < donch_hi[i - 2]
-                and close[i] < donch_hi[i - 1]
-            ):
-                long_sig = False
-                if not long_only:
-                    short_sig = True
+        # failed upside break yesterday → fade short (if not long_only) or skip long
+        if (
+            failed_breakout_fade
+            and not np.isnan(atr_pc[i])
+            and atr_pc[i] < 0.40
+            and i >= 2
+            and high[i - 1] > donch_hi[i - 2]
+            and close[i - 1] < donch_hi[i - 2]
+            and close[i] < donch_hi[i - 1]
+        ):
+            long_sig = False
+            if not long_only:
+                short_sig = True
 
         if long_only:
             short_sig = False
@@ -1317,7 +1319,7 @@ def product_grid(axes: dict[str, list], fixed: dict | None = None) -> list[dict]
     out: list[dict] = []
     for combo in itertools.product(*vals):
         p = dict(fixed or {})
-        for k, v in zip(keys, combo):
+        for k, v in zip(keys, combo, strict=False):
             p[k] = v
         out.append(p)
     return out

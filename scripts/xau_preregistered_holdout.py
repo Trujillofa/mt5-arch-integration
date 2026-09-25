@@ -208,9 +208,8 @@ def simulate_donchian_turtle(
             continue
         if i < 1 or np.isnan(donch_hi[i - 1]):
             continue
-        if atr_min is not None:
-            if np.isnan(atr_pc[i]) or atr_pc[i] < atr_min:
-                continue
+        if atr_min is not None and (np.isnan(atr_pc[i]) or atr_pc[i] < atr_min):
+            continue
         if trend_filter and (np.isnan(trend[i]) or close[i] <= trend[i]):
             continue
 
@@ -219,10 +218,7 @@ def simulate_donchian_turtle(
         if not long_only:
             # short on close < prior donch_lo(entry_N)
             e_lo_key = f"donch_lo_{int(entry_N)}"
-            if e_lo_key in d.columns:
-                e_lo = d[e_lo_key].to_numpy(float)[i - 1]
-            else:
-                e_lo = np.nan
+            e_lo = d[e_lo_key].to_numpy(float)[i - 1] if e_lo_key in d.columns else np.nan
             short_sig = not np.isnan(e_lo) and close[i] < e_lo
             if trend_filter and close[i] >= trend[i]:
                 short_sig = False
