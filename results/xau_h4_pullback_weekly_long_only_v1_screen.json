@@ -1,0 +1,30 @@
+{
+  "family_id": "xau_h4_pullback_weekly_long_only_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "develop": {
+    "n": 17,
+    "wr": 29.41176470588235,
+    "pf": 7.825089143509946,
+    "np": 105762.13838659495,
+    "dd": 54.85432879944211,
+    "wins": 5,
+    "losses": 12,
+    "h4_bars": 6695,
+    "h4_start": "2021-09-03 19:00:00+00:00",
+    "h4_end": "2025-12-31 20:00:00+00:00"
+  },
+  "always_long": {
+    "n": 1,
+    "np": 127643.0,
+    "pf": 99.0,
+    "dd": 0.0
+  },
+  "beat_always_long": false,
+  "costs": {
+    "slippage_points": 0.0,
+    "commission_per_lot": 0.0
+  },
+  "holdout": null
+}
