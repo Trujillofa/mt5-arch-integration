@@ -87,6 +87,9 @@ results/instrument_data_manifests
 results/multi_instrument_data_readiness.md
 results/multi_instrument_data_readiness.FAIL.md
 
+# Research Kafka compose local env (placeholders live in .env.example)
+research/kafka-signal-bus/.env
+
 # Seven Desk (Next.js) — never commit deps, build, or local secrets
 apps/seven-desk/node_modules/
 apps/seven-desk/.next/

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Trujillofa/mt5-arch-integration/research/kafka-signal-bus/schema/signal_record.v1.json",
+  "title": "SignalRecord",
+  "description": "Versioned paper/research signal payload. Additive: extra properties allowed. book_mode=live is structurally valid, not permission to trade. File bridge remains desk truth.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "symbol",
+    "side",
+    "timeframe",
+    "strategy_id",
+    "terminal_id",
+    "ts",
+    "book_mode"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1,
+      "description": "Bump only when required fields are removed or retyped."
+    },
+    "symbol": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonical or broker symbol (e.g. XAUUSD). Not a Wine path."
+    },
+    "side": {
+      "type": "string",
+      "enum": ["buy", "sell", "flat"]
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": ["BUY_BIAS", "SELL_BIAS", "FLAT"],
+      "description": "Optional article-compatible alias; side remains required."
+    },
+    "timeframe": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Bar period label (M15, H1, PERIOD_M5, …)."
+    },
+    "strategy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "terminal_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Opaque paper/research id. Do not put funded prefix paths here."
+    },
+    "ts": {
+      "type": "string",
+      "minLength": 1,
+      "description": "UTC timestamp, preferably RFC 3339 (…Z)."
+    },
+    "book_mode": {
+      "type": "string",
+      "enum": ["paper", "live"]
+    },
+    "entry": {
+      "type": ["number", "null"],
+      "description": "Hint only. Not a fill."
+    },
+    "sl": {
+      "type": ["number", "null"]
+    },
+    "tp": {
+      "type": ["number", "null"]
+    },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "timestamp_ns": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Optional article-compatible nanosecond stamp."
+    },
+    "partition_key": {
+      "type": "string",
+      "description": "Recommended {symbol}_{timeframe}."
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
