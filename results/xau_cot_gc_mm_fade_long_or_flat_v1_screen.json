@@ -1,0 +1,43 @@
+{
+  "family_id": "xau_cot_gc_mm_fade_long_or_flat_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "h1_start": "2018-04-02 01:00:00",
+  "h1_end": "2025-12-31 23:00:00",
+  "cot_as_of_min": "2016-01-05",
+  "cot_as_of_max": "2025-12-30",
+  "cot_rows": 522,
+  "n_signals_valid_z": 470,
+  "n_skip_warmup": 52,
+  "n_skip_std0": 0,
+  "n_z_enter": 21,
+  "n_z_flatten": 329,
+  "n_z_hold": 120,
+  "n_long_days": 262,
+  "n_flat_days": 1740,
+  "develop": {
+    "n": 2,
+    "wr": 100.0,
+    "pf": 99.0,
+    "np": 10219.250000000002,
+    "dd": 61.04987857276289,
+    "wins": 2,
+    "losses": 0
+  },
+  "always_long": {
+    "np": 149622.25,
+    "dd": 78.91282322364658,
+    "n_days": 2002,
+    "lots": 0.5
+  },
+  "gates": {
+    "n_trades_min_40": false,
+    "profit_factor_min_1_2": true,
+    "net_profit_gt_0": true,
+    "dd_le_15": false,
+    "must_beat_always_long_net": false
+  },
+  "holdout": null,
+  "notes": "Disaggregated Futures-Only GOLD - COMMODITY EXCHANGE INC. Signal first Friday strictly after as-of; fill next daily open. Expanding z min 52w, ddof=1. Round-trip n/PF; daily-path NP/DD. Swap unmodeled both arms."
+}

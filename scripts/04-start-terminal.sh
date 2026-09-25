@@ -121,7 +121,7 @@ DETACH=0
 BACKGROUND=0
 PORTABLE=1
 FULLSCREEN=0
-BG_WS="${MT5_BG_WORKSPACE:-11}"
+BG_WS="$(mt5_target_workspace)"   # MT5_WORKSPACE (per broker) else MT5_BG_WORKSPACE
 for arg in "$@"; do
   case "$arg" in
     --detach) DETACH=1 ;;
@@ -148,6 +148,10 @@ fi
 if [[ "$BACKGROUND" -eq 1 && -f "$(dirname "$term")/auto_login.ini" ]]; then
   ARGS+=(/config:auto_login.ini)
 fi
+
+# The running-terminal case already exited. A leftover wineserver still has
+# explorer.exe, which will not see this start's LD_PRELOAD.
+kill_prefix_wineserver
 
 if [[ "$DETACH" -eq 1 ]]; then
   start_terminal64_detached "$term" "${ARGS[@]}"
@@ -196,4 +200,5 @@ fi
 if [[ "$FULLSCREEN" -eq 1 ]]; then
   warn "--fullscreen requires --detach (will apply after background start)"
 fi
+export_no_xi2_preload
 exec wine "$term" "${ARGS[@]}"

@@ -28,8 +28,9 @@
 
 1. **New `family_id`** — do not reuse/rename server-hour or TOD rules.  
 2. Freeze under this directory **before** inspecting its real grid.  
-3. Sealed charters must be git-tracked and match `HEAD` blob.  
-4. Run 999-trial null **only if** the real grid has ≥1 primary passer (else SCREEN_FAIL without nulls).
+3. **Commit that freeze** (charter + thesis + loop_status prepend) **before** any develop metric. Screen artifacts are a later commit. Never freeze and screen in the same commit.  
+4. Sealed charters must be git-tracked and match `HEAD` blob.  
+5. Run 999-trial null **only if** the real grid has ≥1 primary passer (else SCREEN_FAIL without nulls).
 
 ```bash
 # Example shape only — freeze a NEW family first
