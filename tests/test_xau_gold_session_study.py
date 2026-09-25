@@ -2,6 +2,7 @@
 
 Synthetic data only; no terminal, no MCP server.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,9 +30,17 @@ def _minute_frame(start: str, end: str, seed: int = 0) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
     p = 2600 + np.cumsum(rng.normal(0, 0.3, len(t)))
     c = p + rng.normal(0, 0.05, len(t))
-    return pd.DataFrame({"server_time": pd.Series(t), "open": p,
-                         "high": np.maximum(p, c) + 0.1, "low": np.minimum(p, c) - 0.1,
-                         "close": c, "tickvol": 100, "spread": 20})
+    return pd.DataFrame(
+        {
+            "server_time": pd.Series(t),
+            "open": p,
+            "high": np.maximum(p, c) + 0.1,
+            "low": np.minimum(p, c) - 0.1,
+            "close": c,
+            "tickvol": 100,
+            "spread": 20,
+        }
+    )
 
 
 # ------------------------------------------------------------- trade engine
@@ -106,6 +115,18 @@ def test_timing_p_values_not_extreme_on_random_walk():
 
 
 # ------------------------------------------------------------------- window
+def test_holdout_refuses_before_any_metric(tmp_path):
+    csv = tmp_path / "m1.csv"
+    csv.write_text("not read\n")
+    out = tmp_path / "out"
+    for window in ("holdout", "all"):
+        with pytest.raises(SystemExit) as exc:
+            st.main(["--csv", str(csv), "--window", window, "--out", str(out)])
+        assert "no freeze charter" in str(exc.value)
+        assert not out.exists()
+        assert not csv.with_suffix(".csv.meta.json").exists()
+
+
 def test_develop_window_stops_before_holdout():
     df = _minute_frame("2025-12-22", "2026-01-10")
     dev = st.prepare(df, _args())
@@ -152,8 +173,14 @@ def test_fetcher_refuses_non_loopback_url():
 
 
 def test_fetcher_writes_blank_for_missing_spread():
-    bar = {"time": "2024.01.02 03:15:00", "open": 1, "high": 2, "low": 0.5,
-           "close": 1.5, "tick_volume": 45}
+    bar = {
+        "time": "2024.01.02 03:15:00",
+        "open": 1,
+        "high": 2,
+        "low": 0.5,
+        "close": 1.5,
+        "tick_volume": 45,
+    }
     assert fetch.bar_line(bar).split("\t")[-1] == ""
     assert fetch.bar_line({**bar, "spread": 21}).split("\t")[-1] == "21"
 
@@ -161,14 +188,25 @@ def test_fetcher_writes_blank_for_missing_spread():
 def test_fetcher_parses_sse_and_offset():
     raw = 'event: message\ndata: {"jsonrpc":"2.0","id":1,"result":{}}\n\n'
     assert fetch.parse_rpc(raw)["id"] == 1
-    info = {"utc_time": "2026-09-24T20:32:16Z",
-            "trade_server_last_known_time": "2026-09-24T23:32:37"}
+    info = {
+        "utc_time": "2026-09-24T20:32:16Z",
+        "trade_server_last_known_time": "2026-09-24T23:32:37",
+    }
     assert fetch.server_offset_hours(info) == 3.0
 
 
 def test_csv_round_trip_through_study_loader(tmp_path):
-    bars = [{"time": f"2025.03.03 10:0{i}:00", "open": 1.0 + i, "high": 2.0 + i,
-             "low": 0.5 + i, "close": 1.5 + i, "tick_volume": 10} for i in range(3)]
+    bars = [
+        {
+            "time": f"2025.03.03 10:0{i}:00",
+            "open": 1.0 + i,
+            "high": 2.0 + i,
+            "low": 0.5 + i,
+            "close": 1.5 + i,
+            "tick_volume": 10,
+        }
+        for i in range(3)
+    ]
     bars[1]["spread"] = 20
     path = tmp_path / "m1.csv"
     path.write_text("\n".join([fetch.HEADER, *map(fetch.bar_line, bars)]) + "\n")
