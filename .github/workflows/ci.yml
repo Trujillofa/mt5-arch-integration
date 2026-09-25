@@ -1,5 +1,6 @@
-# Offline CI — lint, claim audit, unit tests.
+# Offline CI — lint, claim audit, unit tests, desk TS tests, desk lint/build, shellcheck.
 # Never runs screens, backtests, fetch_data, live_trader, Strategy Tester, or Wine.
+# Desk eslint is continue-on-error: trade-ticket.tsx has pre-existing set-state-in-effect errors.
 name: ci
 
 on:
@@ -37,6 +38,40 @@ jobs:
           scripts/research_claim_mutant.py
           scripts/research_claim_instruction.py
           scripts/research_claim_extract.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/seven-desk/package-lock.json
+      - name: Desk install
+        working-directory: apps/seven-desk
+        run: npm ci
+      - name: Desk eslint
+        working-directory: apps/seven-desk
+        continue-on-error: true
+        run: npm run lint
+      - name: Desk build
+        working-directory: apps/seven-desk
+        run: npm run build
+      - name: Shellcheck scripts
+        run: |
+          mkdir -p "${RUNNER_TEMP}/bin"
+          curl -fsSL -o "${RUNNER_TEMP}/shellcheck.tar.xz" \
+            https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz
+          tar -xJf "${RUNNER_TEMP}/shellcheck.tar.xz" -C "${RUNNER_TEMP}"
+          install -m 755 "${RUNNER_TEMP}/shellcheck-v0.10.0/shellcheck" "${RUNNER_TEMP}/bin/shellcheck"
+          export PATH="${RUNNER_TEMP}/bin:${PATH}"
+          shellcheck --version
+          shellcheck -S error scripts/*.sh
+          shellcheck -f json scripts/*.sh > "${RUNNER_TEMP}/shellcheck.json" || true
+          python3 - <<'PY'
+          import json, os
+          from collections import Counter
+          data = json.load(open(os.environ["RUNNER_TEMP"] + "/shellcheck.json"))
+          counts = Counter(item["level"] for item in data)
+          print("shellcheck_warning_count", counts["warning"])
+          print("shellcheck_counts", dict(counts))
+          PY
 
   claim-audit:
     name: claim-audit
@@ -93,3 +128,13 @@ jobs:
         env:
           MT5_LIVE_SMOKE: ""
         run: uv run pytest -q -m "not live"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Desk TypeScript tests
+        run: |
+          node --version
+          for f in tests/test_desk_*.ts; do
+            echo "desk-ts: $f"
+            node --import ./tests/desk-alias-register.mjs "$f"
+          done
