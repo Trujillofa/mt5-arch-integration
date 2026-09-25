@@ -80,7 +80,9 @@ class FakeMT5:
             trade_mode=4,
         )
 
-    def copy_rates_from_pos(self, symbol: str, timeframe: int, start: int, count: int) -> list[tuple]:
+    def copy_rates_from_pos(
+        self, symbol: str, timeframe: int, start: int, count: int
+    ) -> list[tuple]:
         assert timeframe in TIMEFRAME_MAP.values()
         # (time, open, high, low, close, tick_volume, spread, real_volume)
         base = 1_700_000_000
@@ -163,6 +165,8 @@ def test_symbol_info_eurusd() -> None:
         assert sym.lot_step == 0.01
         assert sym.trade_mode == "FULL"
         assert sym.digits == 5
+        assert sym.swap_long is None
+        assert sym.swap_mode == ""
 
 
 def test_symbol_unknown_raises() -> None:
