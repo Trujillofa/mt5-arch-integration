@@ -7,7 +7,7 @@ const extraOrigins = (process.env.SEVEN_DESK_DEV_ORIGINS ?? "")
 
 const nextConfig: NextConfig = {
   agentRules: false,
-  // next dev binds 0.0.0.0:3847; Tailscale IP / MagicDNS are not localhost.
+  // next dev/start bind 127.0.0.1:3847. Tailnet names stay allowed for an explicit tunnel.
   allowedDevOrigins: [
     "127.0.0.1",
     "localhost",
