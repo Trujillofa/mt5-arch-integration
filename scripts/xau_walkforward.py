@@ -281,7 +281,7 @@ def main() -> int:
     # Baseline aggregate
     b_nps = [r["baseline_oos_metrics"]["net_profit"] for r in fold_results]
     b_trades = [r["baseline_oos_metrics"]["n_trades"] for r in fold_results]
-    b_wrs = [r["baseline_oos_metrics"]["win_rate"] for r in fold_results]
+    b_wrs = [r["baseline_oos_metrics"]["win_rate"] for r in fold_results]  # noqa: F841  # computed-but-unused (#123): not in the aggregate JSON
     b_pfs = [
         r["baseline_oos_metrics"]["profit_factor"]
         for r in fold_results

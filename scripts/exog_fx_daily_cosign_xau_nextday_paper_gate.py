@@ -72,7 +72,7 @@ def run() -> dict:
     hist = snap.read_all_histories()
     daily = {sym: _to_daily(df) for sym, df in hist.items()}
     # normalize keys
-    key = {s.upper().replace(".CSV", ""): s for s in daily}
+    key = {s.upper().replace(".CSV", ""): s for s in daily}  # noqa: F841  # computed-but-unused (#123): pick() matches by substring
     # histories may be keyed by path stem
     def pick(*names):
         for n in names:

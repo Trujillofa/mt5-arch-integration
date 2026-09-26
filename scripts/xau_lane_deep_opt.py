@@ -93,8 +93,8 @@ def prepare_frame(raw: pd.DataFrame) -> pd.DataFrame:
     h4_ema200 = h4["close"].ewm(span=200, adjust=False).mean()
     # Causal: only completed H4 bar (shift 1) then ffill to H1
     h4_bull = (h4["close"] > h4_ema200).astype(float).shift(1)
-    h4_close = h4["close"].shift(1)
-    h4_ema = h4_ema200.shift(1)
+    h4_close = h4["close"].shift(1)  # noqa: F841  # computed-but-unused (#123): only h4_bull is joined
+    h4_ema = h4_ema200.shift(1)  # noqa: F841  # computed-but-unused (#123): only h4_bull is joined
     bull_h1 = h4_bull.reindex(tmp.index, method="ffill")
     # align back to original d order/length
     d = d.copy()
@@ -513,7 +513,7 @@ def simulate_donchian(
                         pnls.append(pnl)
                         lots -= take
                         partial_done = True
-                        if be_at_r is not None or True:
+                        if be_at_r is not None or True:  # noqa: SIM222  # intent ambiguous (#123 item 18); lane closed, do not change
                             # move remainder to BE after partial
                             sl = entry if pos > 0 else entry
                             be_done = True
@@ -1167,7 +1167,7 @@ def simulate_htf_pullback(
             # and current bar dips into the impulse body / gap region
             j0 = i - int(fvg_lookback)
             impulse = close[i - 1] - open_[j0]
-            gap_low = min(low[j0 : i])  # noqa: E203
+            gap_low = min(low[j0 : i])  # noqa: E203, F841  # computed-but-unused (#123): fvg_ok uses another touch test
             # require impulse of at least 1.0 ATR and touch of impulse zone
             fvg_ok = impulse >= 1.0 * atr[i - 1] and low[i] <= close[i - 1] - 0.25 * atr[i]
 
@@ -1453,7 +1453,7 @@ def optimize_lane(
     print(f"[{lane_id}] stage2 refine around best...", flush=True)
     refine_grid = neighborhood_refine(best_params, refine_axes)
     for p in refine_grid:
-        key = json.dumps(serializable_params(p), sort_keys=True, default=str)
+        key = json.dumps(serializable_params(p), sort_keys=True, default=str)  # noqa: F841  # computed-but-unused (#123): duplicate-skip never applied
         # skip exact duplicates of already eval'd best path cheaply
         m, m_pv = run_eval(sim, d_dev, p, pseudo_slice)
         n_evals += 1
