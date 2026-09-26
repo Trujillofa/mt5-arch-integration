@@ -99,8 +99,18 @@ ln -sfn ~/Projects/trading/mt5-arch-integration/apps/seven-desk/seven-desk.deskt
 Then open **Seven Desk** from the app launcher. That window hides the tab
 strip. A normal tab at http://127.0.0.1:3847 still shows browser chrome.
 
-**Phone on Tailscale.** In Safari (iOS) or Chrome (Android) open
-http://100.95.218.24:3847 or this host’s MagicDNS `*.ts.net` URL on port
-3847. Share → **Add to Home Screen**. Installed mode drops browser chrome;
+**Phone on Tailscale.** The desk binds `127.0.0.1:3847` only (it can send
+live orders), so the tailnet IP on port 3847 no longer answers. Publish it to
+the tailnet, not the LAN, with Tailscale Serve on this host:
+
+```bash
+tailscale serve --bg 3847      # https://<this-host>.<tailnet>.ts.net → 127.0.0.1:3847
+tailscale serve status
+tailscale serve --https=443 off   # stop publishing
+```
+
+Use `serve`, never `funnel` (funnel is the public internet). In Safari (iOS)
+or Chrome (Android) open the `https://…ts.net` URL that `serve status` prints.
+Share → **Add to Home Screen**. Installed mode drops browser chrome;
 the system status bar stays (`standalone`, not `fullscreen`). Use the
 home-screen icon, not a leftover Safari tab.
