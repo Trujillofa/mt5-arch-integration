@@ -59,6 +59,13 @@ SRC_EA=(
   "${ROOT}/mql5/Mt5ArchBridge.mq5"
   "${ROOT}/mql5/Mt5ArchBridgeReadOnly.mq5"
 )
+# Third-party experts kept verbatim for the Strategy Tester — see
+# mql5/Experts/vendor/PROVENANCE.md. Copied so MetaEditor can compile them;
+# attaching either to a chart is a manual act and carries virtual-stop risk.
+SRC_EA_VENDOR=(
+  "${ROOT}/mql5/Experts/vendor/GDS_Renko_ADX_Demo.mq5"
+  "${ROOT}/mql5/Experts/vendor/GDS_Renko_Bollinger_4Mode_Demo.mq5"
+)
 SRC_SCRIPTS=(
   "${ROOT}/mql5/Scripts/ExportHtfFibParityFixture.mq5"
   "${ROOT}/mql5/Scripts/ExportSymbolCapabilities.mq5"
@@ -117,6 +124,10 @@ for mql5 in "${CANDIDATES[@]}"; do
       # Bridge lives as EA in Experts (and historically Advisors) — keep Experts
       cp -v "${f}" "${mql5}/Experts/${base}"
     fi
+  done
+  mkdir -p "${mql5}/Experts/vendor"
+  for f in "${SRC_EA_VENDOR[@]}"; do
+    [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Experts/vendor/$(basename "${f}")"
   done
   for f in "${SRC_PRESETS[@]}"; do
     [[ -f "${f}" ]] && cp -v "${f}" "${mql5}/Presets/"
