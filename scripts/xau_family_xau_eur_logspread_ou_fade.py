@@ -20,7 +20,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from backtest import CONTRACT_SIZE, START_BALANCE, Metrics, metrics_from_pnls  # noqa: E402
+from backtest import START_BALANCE, metrics_from_pnls  # noqa: E402
 
 FAMILY = "xau_eur_logspread_ou_fade_v1"
 LOOKBACK = 60
@@ -80,7 +80,6 @@ def main() -> int:
     lx = np.log(d["xau_c"].to_numpy(float))
     le = np.log(d["eur_c"].to_numpy(float))
     n = len(d)
-    idx = d.index
 
     pnls: list[float] = []
     eq = [float(START_BALANCE)]

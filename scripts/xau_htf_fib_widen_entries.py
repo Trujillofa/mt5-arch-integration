@@ -300,7 +300,7 @@ def secondary_search(d: pd.DataFrame, base: dict[str, Any], budget: int = 150) -
     combos = []
     for vals in itertools.product(*[axes[k] for k in keys]):
         p = deepcopy(base)
-        for k, v in zip(keys, vals):
+        for k, v in zip(keys, vals, strict=False):
             p[k] = v
         if float(p["fib_lo"]) >= float(p["fib_hi"]):
             continue

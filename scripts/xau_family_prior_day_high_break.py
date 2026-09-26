@@ -54,6 +54,8 @@ from backtest import (  # noqa: E402
     holdout_start,
     load_h1,
     metrics_from_pnls,
+)
+from backtest import (  # noqa: E402
     passes as classic_passes,
 )
 
@@ -153,10 +155,7 @@ def simulate(
         else np.full(n, np.nan)
     )
 
-    if hours is None:
-        hours_t = FIXED["hours"]
-    else:
-        hours_t = tuple(int(h) for h in hours)
+    hours_t = FIXED["hours"] if hours is None else tuple(int(h) for h in hours)
 
     if spread_col is not None and spread_col in d.columns:
         spread_pts = np.nan_to_num(d[spread_col].to_numpy(float), nan=0.0)

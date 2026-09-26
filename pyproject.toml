@@ -65,3 +65,26 @@ ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+# Research identifiers are not renamed: E741 (`l`), N803 (`entry_N`/`exit_N`),
+# N806 (`X`, `cN`, `L`/`R`), E402 (imports after sys.path inserts).
+# N813 is the upstream `import MetaTrader5 as mt5` alias.
+# F841 / SIM222 sites that #123 kept on purpose carry a line-level noqa with the reason.
+# SIM113 `done += 1` counters are outside this pass's mechanical allow-list.
+"backtest.py" = ["E741"]
+"fetch_data.py" = ["E741", "N813"]
+"live_trader.py" = ["E741", "N813"]
+"scripts/htf_fib_core.py" = ["E741"]
+"scripts/us_index_session_htf.py" = ["E741"]
+"scripts/xau_donchian_null_maxstat.py" = ["E402", "SIM113"]
+"scripts/xau_family_audjpy_carry_long_hold.py" = ["N806"]
+"scripts/xau_family_eur_gbp_logspread_ou_fade.py" = ["N806"]
+"scripts/xau_family_exog_eur_gbp_tvbeta_xau_long_or_flat.py" = ["N806"]
+"scripts/xau_family_prior_day_high_break.py" = ["E741"]
+"scripts/xau_family_xau_eur_logspread_ou_fade.py" = ["N806"]
+"scripts/xau_family_xau_xag_logspread_ou_fade.py" = ["N806"]
+"scripts/xau_htf_fib_widen_entries.py" = ["N806"]
+"scripts/xau_lane_deep_opt.py" = ["N803"]
+"scripts/xau_null_maxstat.py" = ["E402", "SIM113"]
+"scripts/xau_preregistered_holdout.py" = ["N803"]
+"scripts/xau_train_only_retrain.py" = ["E402"]
+"scripts/xau_walkforward.py" = ["E402"]

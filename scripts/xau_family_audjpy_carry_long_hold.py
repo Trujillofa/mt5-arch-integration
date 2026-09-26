@@ -109,8 +109,6 @@ def main() -> int:
 
     np_swap = price_pnl - spread_cost + swap_pnl
     np_noswap = price_pnl - spread_cost
-    eq_s = np.array([START_BALANCE, START_BALANCE + np_swap], dtype=float)
-    eq_n = np.array([START_BALANCE, START_BALANCE + np_noswap], dtype=float)
     # path DD from daily marks (price only; swap accrued linearly)
     px = d["close"].to_numpy(float)
     daily_jpy = np.diff(np.concatenate([[o0], px]))
