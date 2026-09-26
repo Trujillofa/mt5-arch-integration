@@ -1,5 +1,23 @@
 # XAU offline loop status
 
+## 2026-09-24 — Develop screen · `xau_gold_session_study` (timing / sweep / fade) **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **study** | `scripts/xau_gold_session_study.py` · 3 idea groups: extreme timing vs null, London sweep+reclaim→VWAP, VWAP fade at fixed times |
+| **tape** | Vantage XAUUSD **M1** via official MT5 MCP (`scripts/fetch_m1_official_mcp.py`, read-only allowlist) · develop 500 days 2024-01-02→2025-12-31 |
+| **result** | claim 15:30–16:30 UTC 12.0% vs 9.8% null **p=0.062** · best window fw p 0.17 and shifts 1–2 h by season · sweep best +0.06R t=0.44 (≈0 at +10 pt) · all 7 fades negative |
+| **disposition** | **SCREEN_FAIL** — no idea group clears develop · holdout **untouched** |
+| **artifact** | `results/xau_gold_session_study_develop_screen.{json,md}` |
+| **do not** | retune claim window / reclaim min / ATR k / stop lookback / BE · run holdout on these three · `--window all` for selection |
+| **multiplicity** | 3 idea groups looked at · **K_prior=25 for the next family** (21 + `renko_event_clock_vendor` 1 from #115 + these 3; K counts looks taken, not landings) |
+
+Gold's intraday extreme timing on M1 is indistinguishable from a calibrated null on 2024–25; the sweep and fade setups lose after spread. Kill label `KILL_XAU_GOLD_SESSION_STUDY`.
+
+---
+
 ## 2026-09-19 — Develop screen · `xau_cot_gc_mm_fade_long_or_flat_v1` **SCREEN_FAIL**
 
 | Field | Value |
