@@ -1,6 +1,6 @@
 # Offline CI — lint, claim audit, unit tests, desk TS tests, desk lint/build, shellcheck.
 # Never runs screens, backtests, fetch_data, live_trader, Strategy Tester, or Wine.
-# Desk eslint is continue-on-error: trade-ticket.tsx has pre-existing set-state-in-effect errors.
+# Desk eslint gates; trade-ticket.tsx set-state-in-effect is a scoped warning (eslint.config.mjs).
 name: ci
 
 on:
@@ -48,7 +48,6 @@ jobs:
         run: npm ci
       - name: Desk eslint
         working-directory: apps/seven-desk
-        continue-on-error: true
         run: npm run lint
       - name: Desk build
         working-directory: apps/seven-desk

@@ -758,7 +758,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
         );
         for (const row of pendingSlaves) {
           if (!row.liveBroker) continue;
-          // Captured before await: property narrowing does not survive the cancel round-trip.
+          // Const keeps the LiveBroker narrowing across await (next build typecheck).
           const broker = row.liveBroker;
           const symbol =
             broker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
