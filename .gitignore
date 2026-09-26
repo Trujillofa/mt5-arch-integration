@@ -57,8 +57,11 @@ winetricks.log
 !.grok/workflows/
 !.grok/workflows/**
 
-# Research market data (regenerate: python3 fetch_data.py)
-xauusd_data.csv
+# Serena IDE index (local; not source)
+.serena/
+
+# xauusd_data.csv stays tracked (tests/test_xau_pipeline.py depends on it).
+# Do not ignore it. Regenerate only on purpose: python3 fetch_data.py
 
 # US-index research dumps. Slim metrics JSON + locks + *.md stay tracked.
 results/us_index_data/

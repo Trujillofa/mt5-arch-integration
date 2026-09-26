@@ -82,7 +82,7 @@ Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`, w
 
 ## Data
 
-`xauusd_data.csv` (H1 + M15, ~24 months) is produced by `fetch_data.py`, which falls back through four sources: Windows `MetaTrader5` package → Wine export CSV from `mql5/Scripts/ExportXauHistory.mq5` (see `scripts/export-xau-from-wine-mt5.sh`) → mt5linux RPyC → Dukascopy/yfinance offline. `tests/test_xau_pipeline.py` asserts the CSV exists and spans ≥300 days, so those tests fail on a fresh clone until data is fetched.
+`xauusd_data.csv` (H1 + M15) is tracked (added in e65d71c; still in the tree). `tests/test_xau_pipeline.py` asserts the CSV exists and spans ≥300 days. A fresh clone already has that file, so those tests do not fail for missing data. `fetch_data.py` can regenerate it and falls back through four sources: Windows `MetaTrader5` package → Wine export CSV from `mql5/Scripts/ExportXauHistory.mq5` (see `scripts/export-xau-from-wine-mt5.sh`) → mt5linux RPyC → Dukascopy/yfinance offline. Leave the CSV tracked. Do not rewrite history to drop it.
 
 ## Secrets and safety
 
