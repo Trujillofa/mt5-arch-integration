@@ -733,7 +733,6 @@ def subsample_grids(grids: dict[str, list[dict]], max_total: int) -> dict[str, l
     rng = np.random.default_rng(42)
     # proportional subsample, min 50 per family if available
     out: dict[str, list[dict]] = {}
-    n_fam = sum(1 for v in grids.values() if v)
     for k, v in grids.items():
         if not v:
             out[k] = []
