@@ -7,6 +7,7 @@ cd ~/Projects/trading/mt5-arch-integration
 ./scripts/20-seven-desk.sh          # host systemd --user keep-alive on :3847 (not Podman)
 ./scripts/20-seven-desk.sh --status
 ./scripts/20-seven-desk.sh --stop
+./scripts/20-seven-desk.sh --dev    # next dev on 127.0.0.1:3847 (not the unit)
 # http://127.0.0.1:3847
 ./scripts/16-use-broker.sh wsf      # optional: export WSF MT5 login/server into the shell
 ```
@@ -59,12 +60,13 @@ npm install
 npm run dev
 ```
 
-The dev script binds **0.0.0.0:3847** (not 3000). Open [http://127.0.0.1:3847](http://127.0.0.1:3847).
+The dev and start scripts bind **127.0.0.1:3847** only (not every interface, and not port 3000). Open [http://127.0.0.1:3847](http://127.0.0.1:3847). `./scripts/20-seven-desk.sh --foreground` builds, then runs `npm run start`. `--dev` is the dev server.
 
 Installable PWA (not Electron): `display: standalone`, `viewport-fit=cover`.
 On this box, symlink `seven-desk.desktop` into `~/.local/share/applications/`
 and launch **Seven Desk** (`omarchy-launch-webapp` → Chromium `--app=`).
-On a phone on the tailnet, open `:3847` and **Add to Home Screen**. See
+Add to Home Screen from that loopback tab. A phone on the tailnet cannot open
+this port while the server binds 127.0.0.1. See
 [docs/SEVEN-DESK.md](../../docs/SEVEN-DESK.md).
 
 ```bash
