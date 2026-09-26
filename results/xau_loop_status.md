@@ -12,7 +12,7 @@
 | **disposition** | **SCREEN_FAIL** — n<40 · DD>15% · does not beat sitting · holdout untouched |
 | **artifact** | `results/xau_cot_gc_mm_fade_long_or_flat_v1_screen.{json,md}` |
 | **do not** | retune −2/−0.5/52 · Legacy COT · short · `--live` |
-| **multiplicity** | **K_prior=22 for the next family** |
+| **multiplicity** | **K_prior=21 for the next family** |
 
 Exogenous MM z is not an edge vs 0.5 lot always-long. Kill label `KILL_XAU_COT_GC_MM_FADE_LONG_OR_FLAT`.
 
@@ -241,6 +241,7 @@ Sitting won. This freeze asks whether vol targeting sits with less pain. No metr
 | **artifact** | `results/xau_renko_event_clock_vendor_screen.{json,md}` · review `docs/research/RENKO-VENDOR-EDGE-REVIEW-2026-09-19.md` · ledger row in `results/xau_family_attempts.jsonl` |
 | **falsifiers confirmed** | thin-n (re-entry 28 < 40); path artefact (BB breakout flips verdict PF 1.07 → 1.20 under the reversed intrabar convention); stop geometry (TP+SL account for **0–0.8%** of exits — the advertised 1:0.23 R:R never binds, these are 18–43h time-exit systems); cost slope monotone across 0/5/10/20 pt with no rescue |
 | **multiplicity** | look consumed · **K_prior=12 for the next family** · dead-lines list gains this family |
+| **multiplicity (reconciled on landing 2026-09-25)** | branch-local K_prior=12 above is stale (branch cut before 9 later families). This family counts once in the main ledger: operative K_prior after landing = **22**. Every other entry keeps the number it was screened against. |
 | **dead-line consequence** | Bollinger vehicles confirm `KILL_BB_RSI_LINE` **across clocks** — do not reopen Bollinger on any clock. ADX/DI on the brick clock closes on the largest sample in the screen (n=123, PF 0.84) |
 | **null / paper / live** | **forbidden** — family closed; sealed r1 **not run** |
 | **do not** | retune any vendor parameter · lower n_trades_min · combine vehicles into a portfolio · cite the vendor's 2026-05..2026-09 PF 3.14 / 4.22 as evidence (that window is inside the locked holdout) · attach either expert to a live chart |
