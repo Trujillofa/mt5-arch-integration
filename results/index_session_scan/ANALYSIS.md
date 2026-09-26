@@ -34,6 +34,10 @@ Evaluation-only (not used to rerank): `dukascopy_US500` is the only US-cash row 
 holdout PF > 1 (1.36) after an assumed-60 charge. That is a note, not a promote, and
 not a new family.
 
+The holdout of every ranked row was viewed in this scan, so this holdout is spent for the
+whole grid: it cannot be used to select any config from it, US500 included. A US500 follow-up
+needs its own freeze and a fresh, unviewed evaluation window.
+
 ## US-cash ranking (the only trade-candidate list)
 
 | Rank | id | n | WR | PF | net | max DD | holdout n | holdout PF | spread |
