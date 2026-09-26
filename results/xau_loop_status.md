@@ -12,7 +12,7 @@
 | **disposition** | **SCREEN_FAIL** — no idea group clears develop · holdout **untouched** |
 | **artifact** | `results/xau_gold_session_study_develop_screen.{json,md}` |
 | **do not** | retune claim window / reclaim min / ATR k / stop lookback / BE · run holdout on these three · `--window all` for selection |
-| **multiplicity** | 3 idea groups looked at · **K_prior=24 for the next family** |
+| **multiplicity** | 3 idea groups looked at · **K_prior=25 for the next family** (21 + `renko_event_clock_vendor` 1 from #115 + these 3; K counts looks taken, not landings) |
 
 Gold's intraday extreme timing on M1 is indistinguishable from a calibrated null on 2024–25; the sweep and fade setups lose after spread. Kill label `KILL_XAU_GOLD_SESSION_STUDY`.
 
