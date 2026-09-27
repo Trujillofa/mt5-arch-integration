@@ -249,7 +249,6 @@ def simulate_vol_gate(
     close = d["close"].to_numpy(float)
     high = d["high"].to_numpy(float)
     low = d["low"].to_numpy(float)
-    open_ = d["open"].to_numpy(float) if "open" in d.columns else close
     rsi = d["rsi"].to_numpy(float)
     atr = d["atr"].to_numpy(float)
     atr_pc = d["atr_pctile"].to_numpy(float)
@@ -829,7 +828,6 @@ def simulate_htf_fib_enhanced(
     if not df.index.is_unique:
         df = df[~df.index.duplicated(keep="last")]
 
-    close_s = df["close"].astype(float)
     if "rsi_ma" not in df.columns:
         df["rsi_ma"] = df["rsi"].rolling(14).mean()
 
@@ -1428,7 +1426,6 @@ def optimize_lane(
     best_params: dict | None = None
     best_m: Metrics | None = None
     best_pv: Metrics | None = None
-    history_top: list[dict] = []
 
     print(f"[{lane_id}] stage1 grid={len(grid_use)} (designed={len(grid)})", flush=True)
     for p in grid_use:
