@@ -292,7 +292,7 @@ def secondary_search(d: pd.DataFrame, base: dict[str, Any], budget: int = 200) -
     combos = []
     for vals in itertools.product(*[axes[k] for k in keys]):
         p = deepcopy(base)
-        for k, v in zip(keys, vals):
+        for k, v in zip(keys, vals, strict=False):
             p[k] = v
         # fixed quality defaults from champ path
         p.setdefault("sl_atr", base.get("sl_atr", 1.5))

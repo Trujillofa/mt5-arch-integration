@@ -212,14 +212,13 @@ def score_grid(
         ):
             best_pf = float(m.profit_factor)
             best_pf_i = i
-        if m.n_trades >= min_trades:
-            if m.profit_factor > best_min_pf or (
-                m.profit_factor == best_min_pf
-                and best_min_pf_i >= 0
-                and m.net_profit > nets[best_min_pf_i]
-            ):
-                best_min_pf = float(m.profit_factor)
-                best_min_pf_i = i
+        if m.n_trades >= min_trades and (m.profit_factor > best_min_pf or (
+            m.profit_factor == best_min_pf
+            and best_min_pf_i >= 0
+            and m.net_profit > nets[best_min_pf_i]
+        )):
+            best_min_pf = float(m.profit_factor)
+            best_min_pf_i = i
         if soft_mask[i] and (
             exps[i] > best_soft_exp
             or (exps[i] == best_soft_exp and m.profit_factor > pfs[max(best_soft_i, 0)])
