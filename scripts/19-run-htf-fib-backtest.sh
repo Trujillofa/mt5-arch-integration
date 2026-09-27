@@ -293,6 +293,7 @@ elif [[ -n "${DISPLAY:-}" ]]; then
 fi
 
 set +e
+export_no_xi2_preload
 timeout "$TIMEOUT_SEC" "${RUNNER[@]}" ./terminal64.exe /portable /config:"$CFG_BASENAME" >>"$LOG" 2>&1
 rc=$?
 set -e

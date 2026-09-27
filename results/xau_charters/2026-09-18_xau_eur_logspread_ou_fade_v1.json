@@ -1,0 +1,42 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-18",
+  "family_id": "xau_eur_logspread_ou_fade_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "hypothesis": "Fade the residual of log(XAUUSD) on log(EURUSD) with frozen 60-day OLS hedge, entry |z|>2, exit z-cross 0 or 20 days, both legs traded, after Standard STP costs on both books.",
+  "window": {
+    "develop_rule": "day < 2026-01-01",
+    "holdout_for_selection": false
+  },
+  "fixed": {
+    "lookback_days": 60,
+    "z_entry": 2.0,
+    "z_exit": 0.0,
+    "max_hold_days": 20,
+    "xau_lots": 0.5,
+    "hedge": "eur_notional = beta * xau_notional"
+  },
+  "gates": {
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "must_beat_always_long_xau": false,
+      "note": "spread book; always-long XAU is report-only"
+    }
+  },
+  "multiplicity": {"K_prior": 13, "K": 14},
+  "kill": {"on_screen_fail": "SCREEN_FAIL", "refine_loops": false, "label": "KILL_XAU_EUR_LOGSPREAD_OU_FADE"},
+  "explicitly_forbidden": [
+    "retune 60 / 2 / 0 / 20d",
+    "XAU-only reshape of EUR",
+    "Johansen 3-leg in this freeze",
+    "holdout selection",
+    "paper live promote",
+    "reopen london fx cosign or DXY beta"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

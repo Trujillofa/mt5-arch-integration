@@ -68,6 +68,10 @@ results/btc_trend_pullback_data/
 results/btc_trend_pullback_*_full.json
 results/btc_trend_pullback_*_trades.json
 
+# Index-session scan extracts (lock / slim metrics / write-up stay tracked).
+results/index_session_scan/data/
+results/index_session_scan/*_full.json
+
 # EURUSD NY-scalp research dumps. Slim metrics JSON + lock + *.md stay tracked.
 results/eurusd_data/
 results/eurusd_ny_scalp_*_full.json
@@ -107,6 +111,16 @@ apps/seven-desk/data/
 # Large local dumps / session artifacts (never commit)
 results/tick_data/
 results/btc_data/
+results/scalper_tester_*/
+results/scalper_gates_*/
+
+# Local agent noise and session transcripts (never commit)
+.commandcode/
+.playwright-mcp/
+.herdr/
+scratchpad/
+codex-session-*.md
+*saved-conversation*.txt
 
 # BTC NY-session scalp lane
 results/btc_ny_data/

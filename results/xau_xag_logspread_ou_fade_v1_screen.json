@@ -1,0 +1,24 @@
+{
+  "family_id": "xau_xag_logspread_ou_fade_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "join_days": 2002,
+  "xag_start": "2018-04-02 00:00:00",
+  "xag_end": "2025-12-31 00:00:00",
+  "develop": {
+    "n": 41,
+    "wr": 58.53658536585366,
+    "pf": 1.1877778670777472,
+    "np": 9877.48903948077,
+    "dd": 224.66361832921015,
+    "wins": 24,
+    "losses": 17
+  },
+  "always_long_xau_report_only": {
+    "np": 150467.50000000003,
+    "lots": 0.5
+  },
+  "holdout": null,
+  "notes": "Expanding \u03b2 min 252, |z|>2, hold 5d. Always-long XAU not a kill gate."
+}

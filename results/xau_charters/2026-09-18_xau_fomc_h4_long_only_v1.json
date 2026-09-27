@@ -1,0 +1,66 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-18",
+  "family_id": "xau_fomc_h4_long_only_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "events_file": "results/xau_fomc_scheduled_v1.csv",
+  "hypothesis": "Long XAU on the H4 after a scheduled FOMC statement (14:00 America/New_York), hold 8 H4 bars or SL 1.5 ATR, never short. Beat always-long 0.5 lot on develop starting 2018-01-01 after Standard STP costs.",
+  "data_gate": {
+    "h1_min_time": "2018-01-01T00:00:00+00:00",
+    "if_csv_starts_later": "BLOCKED_ON_DATA",
+    "forbid_screen_on_2021_only_bull": true
+  },
+  "clock": {
+    "event_timezone": "America/New_York",
+    "event_time_local": "14:00",
+    "bar_timestamps": "server_clock_as_stored",
+    "h4_resample": "floor 4h on H1"
+  },
+  "rule": {
+    "direction": "long_only",
+    "signal": "close of H4 bar containing statement instant",
+    "fill": "next H4 open",
+    "hold_h4_bars": 8,
+    "sl_atr": 1.5,
+    "atr_period": 14,
+    "exclude": ["unscheduled", "notation_vote"]
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "costs_source": "results/xau_research_costs.json"
+  },
+  "window": {
+    "develop_start": "2018-01-01T00:00:00+00:00",
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "must_beat_always_long_net": true
+    }
+  },
+  "multiplicity": {"K_prior": 14, "K": 15},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_XAU_FOMC_H4_LONG_ONLY",
+    "refine_loops": false
+  },
+  "rejected_sister": "US CPI release window — new family_id if ever frozen",
+  "explicitly_forbidden": [
+    "screen on xauusd_data.csv starting 2021-09",
+    "retune hold 8 / SL 1.5 / add CPI or NFP",
+    "surprise-signed direction without a new family",
+    "unscheduled Mar 2020 / notation votes",
+    "GOLD_SCALP / M5 OR / OU residual",
+    "holdout selection",
+    "paper live promote"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

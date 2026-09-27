@@ -1,0 +1,96 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "family_id": "xau_gvz_voltarget_always_long_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "role": "risk_module_on_always_long_host",
+  "hypothesis": "GVZCLS (CBOE gold ETF implied vol, percent) as-of yesterday sizes always-long XAU at 15% ann target, cap 0.5 lot, and beats constant 0.5 lot on max DD and Calmar after Standard STP costs on develop 2018-04-02 through 2025-12-31. Distinct from dead GARCH realized-vol sizer.",
+  "article_intake": {
+    "schema": "mt5-article-intake/v1",
+    "article_url": "https://www.mql5.com/en/articles/23734",
+    "claim_type": "math",
+    "independent_python": false,
+    "parity_package": "none",
+    "holdout_used_for_selection": false,
+    "decision": "defer",
+    "reason": "Article is an observe-only IV/RV monitor with a live feed, not a scored book. Catalog numbers are not evidence. Historical sizer uses FRED GVZCLS, not the article GitHub feed.json. Independent Python only at screen, after this freeze commit."
+  },
+  "data_gate": {
+    "xau_csv": "results/xau_fomc_h4/xauusd_h1_2018_2025.csv",
+    "gvz_source": "FRED GVZCLS daily close",
+    "gvz_fetch_at": "screen",
+    "h1_min_time": "2018-04-02T00:00:00",
+    "forbid_screen_on_2021_only_bull": true,
+    "forbid_csv": "xauusd_data.csv",
+    "forbid_live_feed_json": "article GitHub gold-vrp-feed — point-in-time, not history"
+  },
+  "clock": {
+    "bar_timestamps": "server_clock_as_stored",
+    "resample": "daily OHLC on server date of H1 bars",
+    "sizing_bar": "day D open",
+    "gvz_join": "last GVZCLS date strictly < D (as-of); no same-day peek"
+  },
+  "rule": {
+    "direction": "long_only",
+    "signal": "none — always long host",
+    "vol_source": "GVZCLS",
+    "gvz_units": "index points = annualized percent (26.9 means 26.9, not 0.269)",
+    "target_ann_vol": 0.15,
+    "lots": "clip(0.5 * 15 / GVZ_<D, 0, 0.5), floor 0.01 else 0",
+    "missing_gvz": "flat that day",
+    "never_short": true,
+    "forbidden_article_cuts": [1.2, 1.05, 0.95]
+  },
+  "fixed": {
+    "max_lots": 0.5,
+    "min_lot": 0.01,
+    "start_balance": 10000.0,
+    "costs_source": "results/xau_research_costs.json",
+    "cost_on": "lot_changes_and_final_flatten",
+    "spread_missing": "median_impute",
+    "swap_modeled": false,
+    "swap_notes": "Unmodeled on both arms; both hold overnight. Fair vs control, optimistic vs live."
+  },
+  "control": {
+    "name": "constant_lot_always_long",
+    "lots": 0.5,
+    "window": "same days the GVZ arm is eligible (first prior-GVZ day through last develop day)",
+    "costs": "same book on entry, lot-unchanged, final flatten"
+  },
+  "window": {
+    "develop_start": "2018-04-02T00:00:00",
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false,
+    "holdout_note": "Dump ends 2025-12-31; 2026 holdout unused."
+  },
+  "gates": {
+    "soft": {
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_lt_control": true,
+      "calmar_gt_control": true,
+      "calmar": "net_profit / max(max_drawdown_pct, 1e-9)"
+    }
+  },
+  "multiplicity": {"K_prior": 16, "K": 17},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_XAU_GVZ_VOLTARGET_ALWAYS_LONG",
+    "refine_loops": false
+  },
+  "rejected_sister": "article 1.20 IV/RV flatten gate; EGARCH; XAU-XAG OU; COT commercials",
+  "explicitly_forbidden": [
+    "retune target 15% or GVZ units",
+    "copy article 1.20 / 1.05 / 0.95 flatten",
+    "live GitHub feed.json as history",
+    "GARCH salvage / attach to dead entry families",
+    "short",
+    "screen xauusd_data.csv 2021-only bull",
+    "holdout selection",
+    "paper live promote",
+    "compute develop metrics in the freeze commit",
+    "vendor article MQL service into mql5/"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

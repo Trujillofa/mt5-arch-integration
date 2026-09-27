@@ -345,6 +345,7 @@ info "Starting terminal with forced login config"
 # Relative /config from terminal dir avoids Wine path/quoting bugs (saw: cannot load ...ini"")
 (
   cd "$MT5_DIR"
+  export_no_xi2_preload
   nohup wine "$term" /portable /config:auto_login.ini >>/tmp/mt5-force-login.log 2>&1 &
   echo $! > /tmp/mt5-force-login.pid
 )

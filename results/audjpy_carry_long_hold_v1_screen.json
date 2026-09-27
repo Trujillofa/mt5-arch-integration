@@ -1,0 +1,29 @@
+{
+  "family_id": "audjpy_carry_long_hold_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "swap_usd_per_lot_night": 0.0,
+  "swap_source": "symbolinfo_unreadable_bridge_stale_fail_closed",
+  "swap_nights_wed": 413,
+  "swap_nights_other": 1661,
+  "swap_nights_effective": 2900,
+  "price_pnl": 1070.2401326400006,
+  "spread_cost": 1.349042184,
+  "swap_pnl": 0.0,
+  "develop": {
+    "np": 1068.8910904560007,
+    "dd": 17.03242758801195
+  },
+  "no_swap_arm": {
+    "np": 1068.8910904560007
+  },
+  "gates": {
+    "swap_gt_0": false,
+    "net_profit_gt_0": true,
+    "dd_le_15": false,
+    "np_gt_no_swap": false
+  },
+  "holdout": null,
+  "notes": "Fail-closed if SymbolInfo swap unread. tick_value from Vantage USDJPY snapshot."
+}

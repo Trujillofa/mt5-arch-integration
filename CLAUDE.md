@@ -15,6 +15,8 @@ uv run ruff check src tests             # lint (line-length 100, py311 target)
 ./scripts/00-check-deps.sh              # host deps (wine, winetricks, …)
 ./scripts/healthcheck.sh --ping         # live: terminal + bridge reachable
 ./scripts/08-status.sh                  # process / bridge / ghost-window check
+./scripts/25-align-xwayland-monitors.sh --check   # X11 vs Wayland layout mirror
+./scripts/26-park-books.sh --status     # books sharing a rect across workspaces (diagnostic only)
 ```
 
 The `mt5-arch` CLI (`uv run mt5-arch ping|account|symbols|candles|brokers|config|mcp`, plus `--json`, `-v/-vv`) is documented in `README.md`. `mcp` is a read-only stdio server (no orders); see `docs/HOWTO-MT5-AI-MCP.md`.

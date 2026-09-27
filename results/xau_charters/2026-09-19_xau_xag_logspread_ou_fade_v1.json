@@ -1,0 +1,88 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "family_id": "xau_xag_logspread_ou_fade_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "hypothesis": "Fade the residual of log(XAUUSD) on log(XAGUSD) with expanding OLS hedge (min 252d), entry |z|>2, exit z-cross 0 or 5 days, both legs, after Standard STP costs. Beat always-flat on develop; always-long XAU is report-only.",
+  "article_intake": {
+    "schema": "mt5-article-intake/v1",
+    "article_url": "https://www.mql5.com/en/articles/14035",
+    "claim_type": "pattern",
+    "independent_python": false,
+    "parity_package": "none",
+    "holdout_used_for_selection": false,
+    "decision": "defer",
+    "reason": "Article is a spread/seasonality indicator write-up. Catalog PF is not evidence. Seasonal months from their chart are lookahead. Independent Python only after XAG H1 exists, after this freeze commit."
+  },
+  "data_gate": {
+    "xau_csv": "results/xau_fomc_h4/xauusd_h1_2018_2025.csv",
+    "xag_required": "XAGUSD H1 from 2018-04-02, same broker clock as XAU dump",
+    "if_xag_missing": "BLOCKED_ON_DATA",
+    "vantage_mcp_2026-09-19": "XAGUSD / SILVER / XAGUSD.r / XAGUSDm symbol not found",
+    "forbid_screen_on_xau_only": true,
+    "forbid_csv": "xauusd_data.csv"
+  },
+  "clock": {
+    "bar_timestamps": "server_clock_as_stored",
+    "resample": "daily OHLC on server date",
+    "signal": "close of day D-1",
+    "fill": "open of day D"
+  },
+  "rule": {
+    "direction": "fade_spread_both_legs",
+    "beta": "expanding OLS log XAU ~ 1 + log XAG, dates strictly < D",
+    "min_obs_daily": 252,
+    "z_entry": 2.0,
+    "z_exit": 0.0,
+    "max_hold_days": 5,
+    "z_gt_2": "short XAU 0.5 lot, long XAG notional = beta * XAU notional",
+    "z_lt_m2": "long XAU 0.5 lot, short XAG notional = beta * XAU notional",
+    "never_third_leg": true
+  },
+  "fixed": {
+    "xau_lots": 0.5,
+    "xau_contract_size": 100.0,
+    "xag_contract_size": 5000.0,
+    "xag_point": 0.001,
+    "costs_source": "results/xau_research_costs.json",
+    "cost_on": "both_legs_round_trip",
+    "swap_modeled": false
+  },
+  "control": {
+    "primary": "always_flat",
+    "report_only": "always_long_xau_0.5_lot"
+  },
+  "window": {
+    "develop_start": "2018-04-02T00:00:00",
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "must_beat_always_long_xau": false
+    }
+  },
+  "multiplicity": {"K_prior": 17, "K": 18},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_XAU_XAG_LOGSPREAD_OU_FADE",
+    "refine_loops": false
+  },
+  "rejected_sister": "seasonal month windows from article 14035; rolling 60d EUR OU params; Johansen 3-leg",
+  "explicitly_forbidden": [
+    "retune 252 / 2 / 0 / 5d",
+    "copy article seasonal calendar",
+    "reopen xau_eur_logspread_ou_fade_v1",
+    "screen gold-only without XAG H1",
+    "holdout selection",
+    "paper live promote",
+    "compute develop metrics in the freeze commit"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

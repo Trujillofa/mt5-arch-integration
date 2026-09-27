@@ -1,0 +1,116 @@
+{
+  "source": "https://www.cftc.gov/files/dea/history/fut_disagg_txt_{year}.zip",
+  "report": "Disaggregated Futures-Only",
+  "filter": "GOLD + COMMODITY EXCHANGE, exclude MICRO",
+  "years": [
+    {
+      "year": 2016,
+      "zip": "fut_disagg_txt_2016.zip",
+      "sha256": "50f52674fd924d24c794b921c29342be7d35cbe0a241ac823925ccf43ca1a6d2",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2017,
+      "zip": "fut_disagg_txt_2017.zip",
+      "sha256": "6fc467b989df527a4fbea4ba07185e8951f35cb72563f156488904a37c100e43",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2018,
+      "zip": "fut_disagg_txt_2018.zip",
+      "sha256": "df4bf7d72e8984d6ea04087f793c9f2bf3503ea8c2149f4b01eedeef4fbe40a8",
+      "inner": "f_year.txt",
+      "gold_rows": 53,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2019,
+      "zip": "fut_disagg_txt_2019.zip",
+      "sha256": "942a438bcc6f66e65aaf594a1a1fdb8c1505fe4a0feece77a1fd97270317e753",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2020,
+      "zip": "fut_disagg_txt_2020.zip",
+      "sha256": "0aa03c0fd6360f56b6897b6eaff30e8dba774c826bf93cac61598312e19bd1cd",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2021,
+      "zip": "fut_disagg_txt_2021.zip",
+      "sha256": "12d5d49a8963367fd3439050e3e20e6a5338757dfa083432795c5556827ff8ae",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2022,
+      "zip": "fut_disagg_txt_2022.zip",
+      "sha256": "74205d75d4d7b75a9f4159ef2e6abed53eeb4771a74e5a4bf78bc0451410ab7f",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2023,
+      "zip": "fut_disagg_txt_2023.zip",
+      "sha256": "9fe75dba0256819d476bb0d01f9e8e5ac6ec2c4390f609a7e3259e85796b79ce",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2024,
+      "zip": "fut_disagg_txt_2024.zip",
+      "sha256": "5e40f60993120d26c116ab347beaf93702f5da60c7bdccbbee43cb3d0a91d01a",
+      "inner": "f_year.txt",
+      "gold_rows": 53,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    },
+    {
+      "year": 2025,
+      "zip": "fut_disagg_txt_2025.zip",
+      "sha256": "17ac2fef1b53303d01e486bbf5768a4e062308a3c34a2970871f3eab89829cbc",
+      "inner": "f_year.txt",
+      "gold_rows": 52,
+      "markets": [
+        "GOLD - COMMODITY EXCHANGE INC.",
+        "MICRO GOLD - COMMODITY EXCHANGE INC."
+      ]
+    }
+  ],
+  "n_rows": 522,
+  "as_of_min": "2016-01-05",
+  "as_of_max": "2025-12-30"
+}

@@ -67,6 +67,7 @@ Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`; i
 ## Research invariants
 
 - **Causality.** `scripts/htf_fib_core.py` stamps a fractal pivot at its *confirmation* bar (`center + right`), never at the pivot center. Every fib/pivot consumer must import from this module — re-deriving pivots reintroduces lookahead bias.
+- **Freeze commit.** A new `family_id` freeze (charter + thesis memo + `results/xau_loop_status.md` prepend) is its **own git commit before any develop metric**. Screen JSON/MD are a later commit. Never freeze and screen in the same commit.
 - **State file.** Read `results/xau_loop_status.md` before touching the pipeline; it records the current disposition (`live_go`, `stop_reason`, `next_step`) of the XAU research loop. Standing disposition: RESEARCH_ONLY / promote=no.
 - **Costs.** `simulate()` charges per-bar spread, commission and slippage **only if configured** — defaults are zero, so a bare call is frictionless and unfalsifiable. Replay the `costs` block stored in `strategy_params.json` with any fit.
 - **Pre-registered holdout.** `results/xau_holdout_lock.json` fixes `holdout_start = 2026-01-01` under "NEVER used for selection". Anything that *selects* params must fit strictly before it — `backtest.py` enforces this by default (`--unbounded` breaks it and says so). Evaluating on the holdout is allowed; searching on it is not.

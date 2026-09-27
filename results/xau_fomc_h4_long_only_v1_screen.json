@@ -1,0 +1,28 @@
+{
+  "family_id": "xau_fomc_h4_long_only_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "server_ahead_utc_hours": 3,
+  "events_matched": 61,
+  "events_skipped_no_bar": 2,
+  "h1_start": "2018-04-02 01:00:00",
+  "h1_end": "2025-12-31 23:00:00",
+  "h1_bars": 45863,
+  "develop": {
+    "n": 61,
+    "wr": 44.26229508196721,
+    "pf": 1.0503834326285384,
+    "np": 147.8856696301825,
+    "dd": 6.280499829845726,
+    "wins": 27,
+    "losses": 34
+  },
+  "always_long": {
+    "np": 149394.5,
+    "n": 1
+  },
+  "beat_always_long": false,
+  "holdout": null,
+  "notes": "Dump timestamps treated as Vantage UTC+3. 2018-01/03 FOMC skipped (no H1)."
+}
