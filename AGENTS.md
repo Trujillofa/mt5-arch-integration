@@ -34,7 +34,7 @@ uv run ruff check src tests
 ./scripts/healthcheck.sh --ping                      # live: terminal + bridge reachable
 ```
 
-Note: `tests/test_xau_pipeline.py` asserts `xauusd_data.csv` exists and spans ≥300 days — it fails on a fresh clone until `python3 fetch_data.py` has run.
+Note: `tests/test_xau_pipeline.py` asserts `xauusd_data.csv` exists and spans ≥300 days. The CSV is tracked, so a fresh clone already satisfies that check. `python3 fetch_data.py` regenerates it; do not untrack it.
 
 ## Backends & the file bridge
 

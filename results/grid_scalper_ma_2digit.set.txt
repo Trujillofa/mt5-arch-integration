@@ -1,0 +1,31 @@
+; Grid Scalper MA MT5 EA v11.48 — 2-digit gold
+; Authoritative UTF-16LE file: results/grid_scalper_ma_2digit.set
+; Names come from the official .ex5 tester dump (2026-09-12), not the product page.
+; Frozen lock: results/grid_scalper_ma_ruin_lock.md
+; NOT a family_id. Do not optimize. Do not attach to a live chart.
+;
+; signalStrategy=1          ; BOS (page said Price vs MA)
+; lotSizeMode=0             ; static
+; inpLotSize=0.01
+; inpRiskPercent=1.0
+; gridLotMode=0             ; multiplier
+; inpMultiplier=1.5
+; inpRecoveryPercent=30     ; percent — do not ÷10
+; inpRecoveryExtraPts=10    ; 100 / 10
+; inpMagicNo=1234567
+; inpTp_Points=1100         ; 11000 / 10
+; inpGridSize=1100
+; inpBreakevenPts=5         ; 50 / 10
+; slMode=0                  ; no SL
+; inpSl_Points=1100
+; basketTradeCap=0          ; no cap
+; useTrailingStop=true
+; trailingStopPoints=30     ; binary default 300 / 10
+; minProfitPoints=100       ; binary default 1000 / 10
+; tradeDirection=0          ; both
+; geomFilterMode=1
+; inpGeomRangePct=50        ; percent — do not ÷10
+; dailyDrawdownMode=0
+; gridMode=0
+; swingLookback=5
+; inpMAPeriod=21
