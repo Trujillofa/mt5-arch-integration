@@ -31,6 +31,7 @@
 `InpSymbols` / `InpHistorySymbol` use **canonical** names (`EURUSD,GBPUSD,USDJPY,XAUUSD,BTCUSD`).
 `FxResolveSymbol` maps them through `config/symbols/registry.json` and `SymbolSelect`s only that name — no suffix walk.
 `symbols.json` and candle filenames still use the **resolved** broker name (e.g. `XAUUSD.r`).
+v1.29 also dumps `swap_long`, `swap_short`, `swap_mode`, `swap_rollover3days` (raw broker units; missing on older snapshots → Python `None`, never invent 0).
 See [docs/SYMBOL-REGISTRY.md](../docs/SYMBOL-REGISTRY.md).
 
 Roadmap: [docs/FOREX-MT5-ROADMAP.md](../docs/FOREX-MT5-ROADMAP.md) · BTC design: [docs/research/BTC-INDICATOR-DESIGN.md](../docs/research/BTC-INDICATOR-DESIGN.md) · US index: [docs/research/US-INDEX-SESSION-SCALP-DESIGN.md](../docs/research/US-INDEX-SESSION-SCALP-DESIGN.md) · Live operator inventory: [docs/MT5-INTEGRATION-CAPABILITIES.md](../docs/MT5-INTEGRATION-CAPABILITIES.md)
