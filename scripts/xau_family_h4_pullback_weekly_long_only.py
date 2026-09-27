@@ -24,6 +24,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(SCRIPTS))
 
 from htf_fib_core import confirmed_pivots  # noqa: E402
+
 from backtest import CONTRACT_SIZE, START_BALANCE, Metrics, metrics_from_pnls  # noqa: E402
 
 FAMILY = "xau_h4_pullback_weekly_long_only_v1"
@@ -99,10 +100,7 @@ def attach_weekly_permission(h4: pd.DataFrame) -> pd.DataFrame:
 
 
 def prepare(raw: pd.DataFrame) -> pd.DataFrame:
-    if "timeframe" in raw.columns:
-        h1 = raw.loc[raw["timeframe"] == "H1"].copy()
-    else:
-        h1 = raw.copy()
+    h1 = raw.loc[raw["timeframe"] == "H1"].copy() if "timeframe" in raw.columns else raw.copy()
     h1["time"] = pd.to_datetime(h1["time"], utc=True)
     h1 = h1.sort_values("time").reset_index(drop=True)
     return attach_weekly_permission(resample_h4(h1))
@@ -291,9 +289,8 @@ def soft_pass(m: Metrics, always_net: float) -> bool:
         return False
     if m.max_drawdown_pct > 15.0:
         return False
-    if m.net_profit <= always_net:
-        return False
-    return True
+    # Parentheses keep NaN behaviour of `if x <= y: return False; return True`.
+    return not (m.net_profit <= always_net)
 
 
 def main() -> int:

@@ -78,17 +78,19 @@ def is_better(m, best_m, best_passes: bool) -> bool:
     if m_pf_ok and best_pf_ok:
         if m.profit_factor > best_m.profit_factor:
             return True
-        if abs(m.profit_factor - best_m.profit_factor) < 1e-9 and m.net_profit > best_m.net_profit:
-            return True
-        return False
+        return (
+            abs(m.profit_factor - best_m.profit_factor) < 1e-9
+            and m.net_profit > best_m.net_profit
+        )
     if not m_pf_ok and best_pf_ok:
         return False
     # both PF<=1: still pick higher PF, then net_profit
     if m.profit_factor > best_m.profit_factor:
         return True
-    if abs(m.profit_factor - best_m.profit_factor) < 1e-9 and m.net_profit > best_m.net_profit:
-        return True
-    return False
+    return (
+        abs(m.profit_factor - best_m.profit_factor) < 1e-9
+        and m.net_profit > best_m.net_profit
+    )
 
 
 def build_grid() -> list[dict]:
@@ -100,21 +102,21 @@ def build_grid() -> list[dict]:
                     for bb_col in ("bb_lo", "bb_lo15"):
                         for cooldown in (1, 2, 3):
                             grid.append(
-                                dict(
-                                    mode="bb_rsi",
-                                    rsi_buy=float(rsi_buy),
-                                    rsi_sell=float(rsi_sell),
-                                    sl_atr=float(sl_atr),
-                                    tp_atr=float(tp_atr),
-                                    bb_col=bb_col,
-                                    trend_col="ema200",
-                                    use_macd_filter=False,
-                                    hours=None,
-                                    long_only=True,
-                                    risk_pct=0.01,
-                                    cooldown=int(cooldown),
-                                    require_uptrend=bool(require_uptrend),
-                                )
+                                {
+                                    "mode": "bb_rsi",
+                                    "rsi_buy": float(rsi_buy),
+                                    "rsi_sell": float(rsi_sell),
+                                    "sl_atr": float(sl_atr),
+                                    "tp_atr": float(tp_atr),
+                                    "bb_col": bb_col,
+                                    "trend_col": "ema200",
+                                    "use_macd_filter": False,
+                                    "hours": None,
+                                    "long_only": True,
+                                    "risk_pct": 0.01,
+                                    "cooldown": int(cooldown),
+                                    "require_uptrend": bool(require_uptrend),
+                                }
                             )
     return grid
 

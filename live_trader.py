@@ -167,7 +167,7 @@ def compute_signal_from_rates(df: pd.DataFrame, params: dict[str, Any]) -> int:
     hours = params.get("hours")
     if hours is not None:
         hr = pd.to_datetime(row["time"], utc=True).hour if "time" in d.columns else datetime.now(UTC).hour
-        if int(hr) not in set(int(x) for x in hours):
+        if int(hr) not in {int(x) for x in hours}:
             return 0
     trend_col = params.get("trend_col", "ema200")
     bb_col = params.get("bb_col", "bb_lo25")
@@ -178,9 +178,13 @@ def compute_signal_from_rates(df: pd.DataFrame, params: dict[str, Any]) -> int:
     if params.get("long_only", True) and not uptrend:
         return 0
     # bb reclaim
-    if float(row["low"]) <= float(row[bb_col]) and float(row["close"]) > float(row[bb_col]):
-        if float(row["close"]) < float(row["bb_mid"]) and float(row["rsi"]) <= rsi_buy + 10:
-            return 1
+    if (
+        float(row["low"]) <= float(row[bb_col])
+        and float(row["close"]) > float(row[bb_col])
+        and float(row["close"]) < float(row["bb_mid"])
+        and float(row["rsi"]) <= rsi_buy + 10
+    ):
+        return 1
     return 0
 
 

@@ -73,6 +73,7 @@ def test_every_interactive_launch_path_applies_the_shim() -> None:
     assert "MT5_WINE_XI2" in lib  # documented opt-out
     detached = lib[lib.index("start_terminal64_detached()") :]
     detached = detached[: detached.index("\n}\n")]
+    assert detached.index("recycle_prefix_wineserver_if_idle") < detached.index("setsid -f wine")
     # Must come after the prefix-specific `unset LD_PRELOAD`, or it is wiped.
     assert detached.index("unset LD_PRELOAD") < detached.index("export_no_xi2_preload")
     launches = {
@@ -90,6 +91,41 @@ def test_every_interactive_launch_path_applies_the_shim() -> None:
         before = text[: text.index(launch)].rstrip().splitlines()[-1].strip()
         assert before == "export_no_xi2_preload", f"{name}: shim not applied right before launch"
     assert "no_xi2" in LAUNCHERS.read_text(encoding="utf-8")
+    restart = (REPO / "scripts" / "07-restart-terminal.sh").read_text(encoding="utf-8")
+    assert restart.index("kill_terminal64_processes") < restart.index("kill_prefix_wineserver")
+    assert restart.index("kill_prefix_wineserver") < restart.index("export_no_xi2_preload")
+    start = (REPO / "scripts" / "04-start-terminal.sh").read_text(encoding="utf-8")
+    assert start.index("already running") < start.index("kill_prefix_wineserver")
+    assert start.index("kill_prefix_wineserver") < start.index("start_terminal64_detached")
+    launchers = LAUNCHERS.read_text(encoding="utf-8")
+    assert launchers.index("recycle_prefix_wineserver_if_idle") < launchers.index(
+        "exec wine ./terminal64.exe"
+    )
+
+
+def test_idle_wineserver_recycle_does_not_kill_a_live_book() -> None:
+    """A launcher click on a running book must not wineserver -k."""
+    script = r"""
+source "$LIB" >/dev/null 2>&1
+export WINEPREFIX="$PREFIX"
+list_terminal64_pids() { echo 4242; }
+kill_prefix_wineserver() { echo KILLED; }
+recycle_prefix_wineserver_if_idle
+list_terminal64_pids() { true; }
+recycle_prefix_wineserver_if_idle
+"""
+    out = subprocess.run(
+        ["bash", "-c", script],
+        capture_output=True,
+        text=True,
+        check=True,
+        env={
+            "LIB": str(LIB),
+            "PREFIX": str(REPO),
+            "PATH": "/usr/bin:/bin",
+        },
+    ).stdout
+    assert out.strip() == "KILLED"
 
 
 def test_preload_composes_with_existing_preload() -> None:

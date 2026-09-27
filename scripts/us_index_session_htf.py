@@ -25,7 +25,6 @@ if str(_SCRIPTS) not in sys.path:
 from htf_fib_core import (  # noqa: E402
     confirmed_pivots,
     confirmed_pivots_with_centers,
-    fib_level,
     walk_swing_and_fibs,
 )
 from us_index_session_backtest import CostSpec, Trade, _round_trip_cost  # noqa: E402

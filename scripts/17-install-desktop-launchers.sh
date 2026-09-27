@@ -236,7 +236,11 @@ unset WAYLAND_DISPLAY || true
 export WINEDEBUG="${{WINEDEBUG:--all}}"
 export WINEDLLOVERRIDES="${{WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}}"
 export WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="${{WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:---use-angle=swiftshader --enable-unsafe-swiftshader --no-sandbox}}"
-{preload}cd "{b['dir']}"
+{preload}# Cold start only. explorer.exe keeps the LD_PRELOAD it was born with.
+# Do not wineserver -k while this prefix's terminal64 is still up.
+source "{script_dir}/lib.sh"
+recycle_prefix_wineserver_if_idle
+cd "{b['dir']}"
 exec wine ./terminal64.exe /portable "$@"
 """
     )

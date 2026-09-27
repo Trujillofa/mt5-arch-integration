@@ -102,10 +102,14 @@ by the generated app launchers (`17-install-desktop-launchers.sh`). Opt out with
 and `WM_INPUT` raw mouse.
 
 It must be in the environment **when the prefix session starts**, because the
-listener is `explorer.exe /desktop`. A book already running keeps the old
-behaviour until it is closed and relaunched through one of those paths --
-and **every** running book must be relaunched, since an unfixed book still
-reacts to clicks on the fixed ones. Check each prefix:
+listener is `explorer.exe /desktop`. A new client joins the existing wineserver
+and does not reload that listener. `07` kills this prefix's wineserver after
+stopping `terminal64`. A cold start (`04`, `start_terminal64_detached`, and a
+launcher click when no `terminal64` is up) recycles an idle wineserver. A
+launcher click on a book that is already up does not. An explorer started
+without the shim keeps the old behaviour until that cold start or `07`, and
+**every** such book must be relaunched, since an unfixed book still reacts to
+clicks on the fixed ones. Check each prefix:
 
 ```bash
 for p in $(pgrep -f 'terminal64.exe|explorer.exe'); do
