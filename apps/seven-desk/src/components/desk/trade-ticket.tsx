@@ -165,7 +165,7 @@ export function TradeTicket() {
         .join(" · ")}. ${enabledSlaves} slaves will attempt a fill.`;
     }
     return `${enabledSlaves} slaves will attempt a fill. Live OrderSend stays off until you arm a card.`;
-  }, [symbol, lots, ticketDefault, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy, state.fundingpipsLiveCopy, state.neomaaLiveCopy, state.fortradersLiveCopy]);
+  }, [symbol, ticketDefault, enabledSlaves, state.wsfLiveCopy, state.ftmoLiveMaster, state.fundednextLiveCopy, state.alphacapitalLiveCopy, state.fundingpipsLiveCopy, state.neomaaLiveCopy, state.fortradersLiveCopy]);
 
   const lotsN = Number(lots);
   const scalpLots = Number.isFinite(lotsN) && lotsN > 0 ? lotsN : ticketDefault;
