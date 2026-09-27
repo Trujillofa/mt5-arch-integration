@@ -225,9 +225,8 @@ def fetch_via_mt5linux() -> pd.DataFrame:
         default_win = r"C:\Program Files\Vantage International MT5\terminal64.exe"
     path = os.environ.get("MT5_TERMINAL_PATH", default_win)
     mt5 = MetaTrader5(host=host, port=port)
-    if not mt5.initialize(path=path):
-        if not mt5.initialize():
-            raise RuntimeError(f"mt5linux initialize failed: {mt5.last_error()}")
+    if not mt5.initialize(path=path) and not mt5.initialize():
+        raise RuntimeError(f"mt5linux initialize failed: {mt5.last_error()}")
     try:
         if not mt5.symbol_select(SYMBOL, True):
             raise RuntimeError(f"symbol_select: {mt5.last_error()}")

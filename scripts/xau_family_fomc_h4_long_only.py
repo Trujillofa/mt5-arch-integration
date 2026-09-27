@@ -21,7 +21,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from backtest import CONTRACT_SIZE, START_BALANCE, Metrics, metrics_from_pnls  # noqa: E402
+from backtest import CONTRACT_SIZE, START_BALANCE, metrics_from_pnls  # noqa: E402
 
 FAMILY = "xau_fomc_h4_long_only_v1"
 HOLD_BARS = 8
@@ -84,7 +84,6 @@ def main() -> int:
     t0 = h4["time"].to_numpy()
     t1 = t0 + np.timedelta64(4, "h")
     o = h4["open"].to_numpy(float)
-    h = h4["high"].to_numpy(float)
     lo = h4["low"].to_numpy(float)
     c = h4["close"].to_numpy(float)
     atr = h4["atr"].to_numpy(float)
