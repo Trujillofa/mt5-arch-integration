@@ -29,7 +29,7 @@ jobs:
       - name: Install package + extras
         run: uv sync --all-extras
       - name: Ruff (platform)
-        run: uv run ruff check src tests
+        run: uv run ruff check src tests scripts *.py
       - name: Ruff (claim auditor)
         run: >
           uv run ruff check

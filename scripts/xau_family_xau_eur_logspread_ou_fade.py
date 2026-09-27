@@ -20,7 +20,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from backtest import CONTRACT_SIZE, START_BALANCE, Metrics, metrics_from_pnls  # noqa: E402
+from backtest import START_BALANCE, metrics_from_pnls  # noqa: E402
 
 FAMILY = "xau_eur_logspread_ou_fade_v1"
 LOOKBACK = 60

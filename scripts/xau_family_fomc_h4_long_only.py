@@ -21,7 +21,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from backtest import CONTRACT_SIZE, START_BALANCE, Metrics, metrics_from_pnls  # noqa: E402
+from backtest import CONTRACT_SIZE, START_BALANCE, metrics_from_pnls  # noqa: E402
 
 FAMILY = "xau_fomc_h4_long_only_v1"
 HOLD_BARS = 8
