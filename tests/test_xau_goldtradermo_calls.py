@@ -84,6 +84,25 @@ def test_parser_keeps_a_normal_call_and_drops_marketing_and_bad_prices():
     assert "40160" in batch.excluded[0].text or "40160" in batch.excluded[1].text
 
 
+def test_side_glued_to_zone_is_a_kept_call():
+    glued = _html(
+        "message12401",
+        "09.06.2026 09:51:10 UTC-05:00",
+        "XAUUSD SELL4290/4294<br><br>TP 4286<br>TP 4282<br>TP 4278<br>TP 4274<br>SL 4302",
+    )
+    batch = gtm.parse_html(_page(glued), source_file="messages3.html")
+    assert batch.excluded == ()
+    assert len(batch.calls) == 1
+    call = batch.calls[0]
+    assert call.message_id == "message12401"
+    assert call.side == "sell"
+    assert call.zone_lo == pytest.approx(4290)
+    assert call.zone_hi == pytest.approx(4294)
+    assert call.tps == (4286, 4282, 4278, 4274)
+    assert call.sl == pytest.approx(4302)
+    assert call.bar_time == datetime(2026, 6, 9, 14, 51, 10)
+
+
 def test_wrong_side_tp_is_excluded_not_rewritten():
     bad_tp = _html(
         "message30",

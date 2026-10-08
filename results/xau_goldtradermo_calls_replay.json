@@ -7226,6 +7226,34 @@
       "zone_lo": 4326.0
     },
     {
+      "bar_time_utc": "2026-06-09 14:51:10",
+      "cost": null,
+      "entry_bar_time": "2026-06-09 17:30:00",
+      "entry_price": 4294.0,
+      "exit_bar_time": null,
+      "exit_price": null,
+      "export_offset": "-05:00",
+      "export_time": "2026-06-09T09:51:10-05:00",
+      "message_id": "message12401",
+      "nearest_tp": 4286.0,
+      "pnl": null,
+      "reason": "same_bar_sl_and_tp",
+      "side": "sell",
+      "sl": 4302.0,
+      "source_file": "messages3.html",
+      "spread_pts": null,
+      "spread_source": null,
+      "status": "unresolved",
+      "tps": [
+        4286.0,
+        4282.0,
+        4278.0,
+        4274.0
+      ],
+      "zone_hi": 4294.0,
+      "zone_lo": 4290.0
+    },
+    {
       "bar_time_utc": "2026-06-10 05:55:06",
       "cost": null,
       "entry_bar_time": "2026-06-10 08:30:00",
@@ -14106,7 +14134,7 @@
     "reasons": [
       "Kept calls are an XAUUSD entry zone, a stop, and a TP ladder on the instrument's own price. docs/research/XAU-THESIS-PASS-2026-10-03.md already closes intraday own-price, including an indicator on XAUUSD itself.",
       "results/xau_loop_status.md closes session timing, Asia-box, and London sweep/fade (xau_gold_session_study SCREEN_FAIL, plus server_hour_window_flat, tod_london_ny_flat, and asia_box_london_sweep_fade_flat). The call text does not state a session rule. The hour-of-day counts are a description of the export clock, not a new occupancy.",
-      "465 of 503 kept calls have bar time on or after 2026-01-01 UTC. That window is the sealed holdout and is not a selection set. A knob chosen from those calls is forbidden.",
+      "466 of 504 kept calls have bar time on or after 2026-01-01 UTC. That window is the sealed holdout and is not a selection set. A knob chosen from those calls is forbidden.",
       "The 38 calls before the holdout use the same zone, stop, and TP template. They are not a different occupancy, so they do not open a family."
     ]
   },
@@ -14123,10 +14151,10 @@
   },
   "counts": {
     "excluded_malformed": 16,
-    "parsed_calls": 503,
-    "parsed_total": 519,
+    "parsed_calls": 504,
+    "parsed_total": 520,
     "scored": 137,
-    "unresolved": 366
+    "unresolved": 367
   },
   "excluded": [
     {
@@ -14260,7 +14288,7 @@
   "fill_reasons": {
     "no_bar_after_call": 118,
     "same_bar_entry_and_exit": 201,
-    "same_bar_sl_and_tp": 47,
+    "same_bar_sl_and_tp": 48,
     "sl": 29,
     "tp": 108
   },
@@ -14275,7 +14303,7 @@
     "distinct_hours_export_clock": 17,
     "exogenous_messages": 0,
     "export_offsets": {
-      "-05:00": 503
+      "-05:00": 504
     },
     "export_timezone": "UTC-05:00",
     "holdout_start_utc": "2026-01-01 00:00:00",
@@ -14289,7 +14317,7 @@
       36,
       38,
       33,
-      20,
+      21,
       8,
       3,
       0,
@@ -14306,35 +14334,35 @@
       34
     ],
     "indicator_messages": 0,
-    "n": 503,
+    "n": 504,
     "n_before_holdout": 38,
-    "n_on_or_after_holdout": 465,
+    "n_on_or_after_holdout": 466,
     "nearest_tp_distance": {
       "max": 11.0,
       "median": 4.0,
       "min": 2.0,
-      "n": 503
+      "n": 504
     },
     "session_word_messages": 0,
     "side_buy": 261,
-    "side_sell": 242,
+    "side_sell": 243,
     "sl_distance": {
       "max": 116.0,
       "median": 11.0,
       "min": 2.0,
-      "n": 503
+      "n": 504
     },
     "tp_spacing": {
       "max": 96.0,
       "median": 4.0,
       "min": 1.0,
-      "n": 1509
+      "n": 1512
     },
     "zone_width": {
       "max": 12.0,
       "median": 4.0,
       "min": 0.0,
-      "n": 503
+      "n": 504
     }
   },
   "tape": {

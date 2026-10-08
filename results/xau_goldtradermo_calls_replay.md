@@ -14,19 +14,19 @@ Marketing replies are not calls. The export contains 1706 messages that say TP H
 
 | Count | Value |
 | --- | ---: |
-| parsed_total | 519 |
-| parsed_calls | 503 |
+| parsed_total | 520 |
+| parsed_calls | 504 |
 | excluded_malformed | 16 |
 | scored | 137 |
-| unresolved | 366 |
+| unresolved | 367 |
 | tp_hit_messages (not wins) | 1706 |
 | scored_exits_from_bars | 137 |
 
-Identity: excluded_malformed + scored + unresolved = parsed_total (16 + 137 + 366 = 519). parsed_calls = scored + unresolved (503 = 137 + 366).
+Identity: excluded_malformed + scored + unresolved = parsed_total (16 + 137 + 367 = 520). parsed_calls = scored + unresolved (504 = 137 + 367).
 
 Excluded reasons: digit_length=3, side_geometry=12, zone_arity=1.
 
-Fill reasons: no_bar_after_call=118, same_bar_entry_and_exit=201, same_bar_sl_and_tp=47, sl=29, tp=108.
+Fill reasons: no_bar_after_call=118, same_bar_entry_and_exit=201, same_bar_sl_and_tp=48, sl=29, tp=108.
 
 ## Clock
 
@@ -42,14 +42,14 @@ Cost is the entry bar's spread in points when that spread is positive, plus the 
 
 These figures describe the kept calls. They were not used to choose a rule or a knob.
 
-* Time of day is the export clock UTC-05:00. Calls fall in 17 distinct hours. Counts by hour: 00:41, 01:35, 02:22, 03:30, 04:31, 05:33, 06:36, 07:38, 08:33, 09:20, 10:8, 11:3, 19:9, 20:27, 21:55, 22:48, 23:34.
-* Side mix: buy 261, sell 242.
-* Zone width in price units (high minus low): n=503, median=4, min=0, max=12.
-* Stop distance beyond the zone: n=503, median=11, min=2, max=116.
-* Distance from the zone to the nearest TP: n=503, median=4, min=2, max=11.
-* Spacing between consecutive stated TPs: n=1509, median=4, min=1, max=96.
+* Time of day is the export clock UTC-05:00. Calls fall in 17 distinct hours. Counts by hour: 00:41, 01:35, 02:22, 03:30, 04:31, 05:33, 06:36, 07:38, 08:33, 09:21, 10:8, 11:3, 19:9, 20:27, 21:55, 22:48, 23:34.
+* Side mix: buy 261, sell 243.
+* Zone width in price units (high minus low): n=504, median=4, min=0, max=12.
+* Stop distance beyond the zone: n=504, median=11, min=2, max=116.
+* Distance from the zone to the nearest TP: n=504, median=4, min=2, max=11.
+* Spacing between consecutive stated TPs: n=1512, median=4, min=1, max=96.
 * Messages that name an indicator word: 0. Messages that name a session word: 0. Messages that name an exogenous series: 0.
-* Bar time before 2026-01-01 00:00:00 UTC: 38. On or after that instant: 465.
+* Bar time before 2026-01-01 00:00:00 UTC: 38. On or after that instant: 466.
 
 The messages state a zone, a stop, and a TP ladder. They do not state an indicator rule.
 
@@ -59,7 +59,7 @@ Matched shapes: intraday_own_price, session_books_closed_not_restated.
 
 - Kept calls are an XAUUSD entry zone, a stop, and a TP ladder on the instrument's own price. docs/research/XAU-THESIS-PASS-2026-10-03.md already closes intraday own-price, including an indicator on XAUUSD itself.
 - results/xau_loop_status.md closes session timing, Asia-box, and London sweep/fade (xau_gold_session_study SCREEN_FAIL, plus server_hour_window_flat, tod_london_ny_flat, and asia_box_london_sweep_fade_flat). The call text does not state a session rule. The hour-of-day counts are a description of the export clock, not a new occupancy.
-- 465 of 503 kept calls have bar time on or after 2026-01-01 UTC. That window is the sealed holdout and is not a selection set. A knob chosen from those calls is forbidden.
+- 466 of 504 kept calls have bar time on or after 2026-01-01 UTC. That window is the sealed holdout and is not a selection set. A knob chosen from those calls is forbidden.
 - The 38 calls before the holdout use the same zone, stop, and TP template. They are not a different occupancy, so they do not open a family.
 
 **NO_NEW_FAMILY.** promote / live_go / PAPER_GO stay no / false / no. Holdout dates were not used to pick or keep a family. `strategy_params.json` was not rewritten.

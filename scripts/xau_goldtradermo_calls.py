@@ -71,7 +71,7 @@ _HEADER = re.compile(
     r"(?P<side_a>buy|sell)\s+l?\s*(?:xauu?usd|gold)(?:\s+gold)?"
     r"|"
     r"(?:xauu?usd|gold)\s+(?P<side_b>buy|sell)"
-    r")\s+"
+    r")\s*"
     r"(?P<zone>\d+(?:\.\d+)?(?:/{1,2}\d+(?:\.\d+)?)*)"
     r"\s*$",
     re.IGNORECASE,
