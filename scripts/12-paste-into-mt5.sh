@@ -57,11 +57,10 @@ if [[ -z "$TEXT" ]]; then
   die "no text on Wayland clipboard (copy text, not a screenshot). wl-paste --type text is empty."
 fi
 
-# Mirror to X11 with UTF8_STRING (Wine)
+# Mirror to X11 with UTF8_STRING (Wine). clip_to_x11.py skips a selection that
+# already holds this text; a second xclip -i would claim it again and wake the
+# Wayland watch.
 printf '%s' "$TEXT" | python3 "$SCRIPT_DIR/clip_to_x11.py"
-# Also plain xclip as belt-and-suspenders
-printf '%s' "$TEXT" | xclip -selection clipboard -t UTF8_STRING -i
-printf '%s' "$TEXT" | xclip -selection primary -t UTF8_STRING -i
 
 info "clipboard text ready (${#TEXT} chars) → X11 UTF8_STRING"
 if [[ "$MODE" == "sync-only" ]]; then
