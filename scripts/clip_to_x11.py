@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import os
 import subprocess
@@ -48,10 +49,8 @@ def write_stamp(digest: str) -> None:
         os.fsync(fd)
     except Exception:
         os.close(fd)
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(tmp)
-        except OSError:
-            pass
         raise
     os.close(fd)
     os.replace(tmp, path)
@@ -60,10 +59,8 @@ def write_stamp(digest: str) -> None:
 def clear_stamp(digest: str) -> None:
     if read_stamp() != digest:
         return
-    try:
+    with contextlib.suppress(OSError):
         stamp_path().unlink()
-    except OSError:
-        pass
 
 
 def selection_bytes(selection: str) -> bytes | None:
