@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "symbol": "XAUUSD",
+  "side": "buy",
+  "signal_type": "BUY_BIAS",
+  "timeframe": "M15",
+  "strategy_id": "paper.example.ma_cross",
+  "terminal_id": "research-paper-terminal",
+  "ts": "2026-06-15T12:00:00Z",
+  "book_mode": "paper",
+  "entry": 2320.5,
+  "sl": 2315.0,
+  "tp": 2330.0,
+  "confidence": 0.42,
+  "timestamp_ns": 1749996000000000000,
+  "partition_key": "XAUUSD_M15",
+  "notes": "Example only. Not a trade. File bridge remains desk truth."
+}
