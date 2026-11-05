@@ -49,6 +49,43 @@ MAGIC = 26080601
 MAX_RISK_FRAC = 0.01  # hard cap 1%
 CONTRACT_SIZE = 100.0  # standard XAUUSD
 
+# Durable per-intent state: one entry per signal bar that produced an order.
+# Without it, the 60 s loop re-enters on the same closed bar after an SL/TP exit.
+STATE_PATH = Path(__file__).resolve().parent / "state" / "last_signal_bar.json"
+
+
+def signal_comment(side: int, bar_key: str) -> str:
+    """Unique per-intent comment: symbol, signal bar, direction.
+
+    A broker truncates comments (~31 chars); the key is short on purpose and is
+    what intent_already_executed() matches on. It must never be shared by two
+    different intents, or a retry can suppress a legitimate new entry.
+    """
+    tag = "B" if side > 0 else "S"
+    return f"xau-{bar_key}-{tag}"
+
+
+def load_traded_bars(path: Path | None = None) -> dict[str, str]:
+    state = path or STATE_PATH
+    try:
+        raw = json.loads(state.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if isinstance(raw, dict):
+        return {str(k): str(v) for k, v in raw.items()}
+    return {}
+
+
+def record_traded_bar(comment: str, *, path: Path | None = None) -> None:
+    """Persist the intent comment atomically (tmp + replace)."""
+    state = path or STATE_PATH
+    state.parent.mkdir(parents=True, exist_ok=True)
+    bars = load_traded_bars(state)
+    bars[comment] = datetime.now(UTC).isoformat(timespec="seconds")
+    tmp = state.with_suffix(".tmp")
+    tmp.write_text(json.dumps(bars, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(state)
+
 
 @dataclass
 class RiskSize:
@@ -233,12 +270,14 @@ def build_order_request(
     }
 
 
-# Retcodes that often warrant a retry after refresh
+# Retcodes that often warrant a retry after refresh.
+# 10008 PLACED is deliberately NOT here: it is a success state (the order reached
+# the server), and retrying it after a timeout is how a single intent becomes two
+# fills. Retries also re-check the book first (intent_already_executed).
 RETRY_RETCODES = {
     10004,  # REQUOTE
     10006,  # REJECT
     10007,  # CANCEL
-    10008,  # PLACED (sometimes intermediate)
     10012,  # TIMEOUT
     10020,  # PRICE_OFF / price changed
     10021,  # PRICE_CHANGED
@@ -246,10 +285,62 @@ RETRY_RETCODES = {
 }
 
 
+def intent_already_executed(mt5: Any, *, symbol: str, comment: str) -> bool:
+    """True when an order with this intent comment is already live or done.
+
+    A timeout or a None result does not mean the order did not reach the server.
+    Before any retry, look for the intent in open positions, working orders and
+    (when available) recent order history. Never retry blind.
+    """
+    if not comment:
+        # An empty comment cannot be matched; treat as unsafe to retry.
+        return True
+    want = comment.strip()
+
+    def _scan(rows: Any) -> bool:
+        for row in rows or ():
+            got = str(getattr(row, "comment", "") or "").strip()
+            if got == want:
+                return True
+        return False
+
+    try:
+        if _scan(mt5.positions_get(symbol=symbol)):
+            return True
+    except Exception:  # a stub/package without positions_get must not crash the check
+        LOG.debug("positions_get unavailable during idempotency check", exc_info=True)
+    try:
+        if _scan(mt5.orders_get(symbol=symbol)):
+            return True
+    except Exception:
+        LOG.debug("orders_get unavailable during idempotency check", exc_info=True)
+    try:
+        history_orders = getattr(mt5, "history_orders_get", None)
+        if callable(history_orders) and _scan(history_orders(symbol=symbol)):
+            return True
+    except Exception:
+        LOG.debug("history_orders_get unavailable during idempotency check", exc_info=True)
+    return False
+
+
 def send_order_with_retry(mt5: Any, request: dict[str, Any], max_retries: int = 3) -> Any:
-    """order_send with requote/slippage-style retries and connection checks."""
+    """order_send with requote/slippage-style retries and connection checks.
+
+    Every retry is preceded by an idempotency check on the intent comment: if the
+    order is already live or filled, the original result stands and no second
+    order is sent.
+    """
+    comment = str(request.get("comment", ""))
     last = None
     for attempt in range(1, max_retries + 1):
+        if attempt > 1 and intent_already_executed(
+            mt5, symbol=str(request["symbol"]), comment=comment
+        ):
+            LOG.warning(
+                "retry suppressed: intent %r already executed (reconciled against book)",
+                comment,
+            )
+            return last
         if not mt5.terminal_info():
             LOG.error("terminal_info None — connection drop; re-initialize")
             if not mt5.initialize():
@@ -366,6 +457,14 @@ def run_once(*, dry_run: bool = True) -> int:
         if signal == 0:
             return 0
 
+        # One intent per closed signal bar. The loop runs every 60 s; without this
+        # a stop-out inside the same bar re-enters immediately.
+        bar_key = pd.Timestamp(df["time"].iloc[-2]).strftime("%Y%m%dT%H%M")
+        comment = signal_comment(signal, bar_key)
+        if comment in load_traded_bars():
+            LOG.info("signal bar %s already traded (%s) — skipping", bar_key, comment)
+            return 0
+
         # ATR from last closed bar
         c = df["close"].astype(float)
         h = df["high"].astype(float)
@@ -412,6 +511,7 @@ def run_once(*, dry_run: bool = True) -> int:
             lots=risk.lots,
             sl=risk.sl_price,
             tp=risk.tp_price,
+            comment=comment,
         )
         assert req["sl"] and req["tp"], "SL/TP required"
 
@@ -423,6 +523,7 @@ def run_once(*, dry_run: bool = True) -> int:
         if result is None or result.retcode != mt5.TRADE_RETCODE_DONE:
             LOG.error("order failed: %s", result)
             return 1
+        record_traded_bar(comment)
         return 0
     finally:
         mt5.shutdown()

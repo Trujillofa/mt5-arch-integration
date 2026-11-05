@@ -102,14 +102,22 @@ string Esc(const string s)
   }
 
 //+------------------------------------------------------------------+
-//| Simple direct write + share flags; throttle error spam           |
+//| Atomic snapshot write: temp file, then rename over the target.    |
+//| A truncate-in-place write lets a reader sample a 0-byte or prefix  |
+//| file (torn JSON). FileMove is atomic on the same filesystem, so    |
+//| readers see either the previous snapshot or the complete new one.  |
 //+------------------------------------------------------------------+
 void Put(const string rel, const string body)
   {
+   string tmp = rel + ".tmp";
+   int common = 0;
    int flags = FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE;
-   int h = FileOpen(rel, flags);
+   int h = FileOpen(tmp, flags);
    if(h == INVALID_HANDLE)
-      h = FileOpen(rel, flags|FILE_COMMON);
+     {
+      h = FileOpen(tmp, flags|FILE_COMMON);
+      common = FILE_COMMON;
+     }
    if(h == INVALID_HANDLE)
      {
       static datetime s_last_err = 0;
@@ -123,7 +131,20 @@ void Put(const string rel, const string body)
       return;
      }
    FileWriteString(h, body);
+   FileFlush(h);
    FileClose(h);
+   // Rename over the target: readers see the previous snapshot or the complete
+   // new one, never a prefix. Same folder => same filesystem => atomic rename.
+   if(!FileMove(tmp, common, rel, FILE_REWRITE))
+     {
+      static datetime s_last_move_err = 0;
+      datetime now2 = TimeLocal();
+      if(now2 - s_last_move_err >= 60)
+        {
+         s_last_move_err = now2;
+         Print("Atomic publish failed ", rel, " err=", GetLastError());
+        }
+     }
   }
 
 // Under Wine, TERMINAL_CONNECTED is often false even when the trade session is
@@ -324,6 +345,15 @@ void WriteCandles()
          if(StringLen(tf)==0) continue;
          MqlRates rates[];
          int copied = CopyRates(sym, ParseTf(tf), 0, InpCandleCount, rates);
+         if(copied <= 0)
+           {
+            // CopyRates returns <=0 on a cold/unsynchronised symbol. Do NOT publish
+            // {"candles":[]} over the last good file: readers would serve an empty
+            // market as live data. Keep the previous snapshot; the next tick retries.
+            Print("CopyRates empty ", sym, " ", tf, " err=", GetLastError(),
+                  " — keeping previous snapshot");
+            continue;
+           }
          string jsn = "{\"symbol\":\"" + Esc(sym) + "\",\"timeframe\":\"" + tf + "\",\"candles\":[";
          for(int k=0; k<copied; k++)
            {

@@ -29,6 +29,11 @@ from mt5_arch.symbol_registry import SymbolRegistryError, load_registry, resolve
 # Must match Settings.mt5_bridge_max_age (MT5_BRIDGE_MAX_AGE) and AGENTS.md.
 DEFAULT_MAX_AGE_SECONDS = 15.0
 
+# A torn snapshot read (EA truncate-write, reader mid-cycle) is transient: the
+# EA rewrites every timer tick. Three quick reads cover a 5 s tick with margin.
+_READ_ATTEMPTS = 3
+_READ_RETRY_DELAY = 0.05
+
 # Exact header written by Mt5ArchBridge.mq5 DumpDealsIfRequested().
 DEAL_CSV_COLUMNS = (
     "time",
@@ -187,13 +192,27 @@ class FileBridgeClient:
         path = self.bridge_dir / name
         if not path.exists():
             raise FileBridgeError(f"Missing {path}")
-        # Same FILE_ANSI decode as the deal dump: a broker company/server name with
-        # an accented byte is not valid UTF-8, and UnicodeDecodeError is a ValueError.
-        text = _read_bridge_text(path, label=path.name)
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise FileBridgeError(f"Corrupt {path.name}: {exc}") from exc
+        # The EA writes snapshots with FileOpen(FILE_WRITE) — a truncate-in-place
+        # write, not temp+rename. A reader that samples the file mid-write sees a
+        # 0-byte or prefix file: valid text, torn JSON. Retry a few times before
+        # declaring the bridge corrupt; the EA rewrites every timer tick.
+        last: Exception | None = None
+        for attempt in range(_READ_ATTEMPTS):
+            # Same FILE_ANSI decode as the deal dump: a broker company/server name
+            # with an accented byte is not valid UTF-8, and UnicodeDecodeError is
+            # a ValueError.
+            text = _read_bridge_text(path, label=path.name)
+            if text.strip():
+                try:
+                    return json.loads(text)
+                except json.JSONDecodeError as exc:
+                    last = exc
+            if attempt < _READ_ATTEMPTS - 1:
+                time.sleep(_READ_RETRY_DELAY)
+        raise FileBridgeError(
+            f"Corrupt {path.name} after {_READ_ATTEMPTS} reads "
+            f"(torn EA write, or a truncated file the EA is not refreshing): {last}"
+        )
 
     def ping(self) -> TerminalInfo:
         self.ensure_alive()
@@ -208,10 +227,10 @@ class FileBridgeClient:
             tradeapi_disabled=bool(data.get("tradeapi_disabled", False)),
         )
 
-    def account_info(self) -> AccountInfo:
+    def account_info(self, *, allow_cached: bool = False) -> AccountInfo:
         self.ensure_alive()
         data = self._read_json("account.json")
-        return AccountInfo(
+        account = AccountInfo(
             login=int(data.get("login", 0) or 0),
             balance=float(data.get("balance", 0) or 0),
             equity=float(data.get("equity", 0) or 0),
@@ -224,6 +243,27 @@ class FileBridgeClient:
             name=str(data.get("name", "") or ""),
             company=str(data.get("company", "") or ""),
         )
+        # Cold start / reconnect publishes a half-initialised account under a fresh
+        # heartbeat (the EA writes snapshots before the terminal has synced). A
+        # consumer that divides by equity, or reads balance as the daily anchor,
+        # turns that into a phantom total loss. Fail closed instead.
+        if allow_cached:
+            # Diagnostic callers (CLI) want to see the raw cached state and warn;
+            # trading/risk callers must not, hence the strict default.
+            return account
+        if account.login == 0:
+            raise FileBridgeError(
+                "account.json has no login yet (terminal not initialised/synced) — "
+                "refusing to report an account."
+            )
+        if account.balance == 0 and account.equity == 0:
+            raise FileBridgeError(
+                "account.json holds a cached identity only (terminal offline): "
+                f"login={account.login}, balance=0, equity=0 — the money fields are "
+                "empty, so any risk computation would read this as a total loss. "
+                "Refusing to serve cached/offline account state."
+            )
+        return account
 
     def symbol_info(self, symbol: str) -> SymbolInfo:
         self.ensure_alive()
@@ -233,22 +273,33 @@ class FileBridgeClient:
         want = self._mapped_symbol(symbol).upper()
         for row in rows:
             if str(row.get("symbol", "")).upper() == want:
-                return SymbolInfo(
+                spec = SymbolInfo(
                     symbol=str(row["symbol"]),
-                    min_lot=float(row.get("min_lot", 0.01)),
-                    max_lot=float(row.get("max_lot", 100)),
-                    lot_step=float(row.get("lot_step", 0.01)),
-                    contract_size=float(row.get("contract_size", 100000)),
-                    digits=int(row.get("digits", 5)),
-                    point=float(row.get("point", 0.00001)),
-                    tick_value=float(row.get("tick_value", 0)),
-                    tick_size=float(row.get("tick_size", 0)),
-                    trade_mode=str(row.get("trade_mode", "FULL")),
+                    min_lot=float(row.get("min_lot", 0) or 0),
+                    max_lot=float(row.get("max_lot", 0) or 0),
+                    lot_step=float(row.get("lot_step", 0) or 0),
+                    contract_size=float(row.get("contract_size", 0) or 0),
+                    digits=int(row.get("digits", 0) or 0),
+                    point=float(row.get("point", 0) or 0),
+                    tick_value=float(row.get("tick_value", 0) or 0),
+                    tick_size=float(row.get("tick_size", 0) or 0),
+                    trade_mode=str(row.get("trade_mode", "FULL") or "FULL"),
                     swap_long=_opt_float(row, "swap_long"),
                     swap_short=_opt_float(row, "swap_short"),
                     swap_mode=str(row.get("swap_mode") or ""),
                     swap_rollover3days=_opt_int(row, "swap_rollover3days"),
                 )
+                # No FX-shaped defaults: substituting min_lot=0.01 / contract=100000
+                # for a zero-valued field turns an unsynchronised XAUUSD spec into a
+                # 1000x notional error (and a zero contract size into a divide-by-zero).
+                if spec.min_lot <= 0 or spec.lot_step <= 0 or spec.contract_size <= 0:
+                    raise FileBridgeError(
+                        f"symbols.json: {spec.symbol} spec is zero/incomplete "
+                        f"(min_lot={spec.min_lot}, lot_step={spec.lot_step}, "
+                        f"contract_size={spec.contract_size}) — the symbol is not "
+                        "synchronised in the terminal. Refusing to invent a spec."
+                    )
+                return spec
         raise FileBridgeError(
             f"Symbol {symbol!r} not in bridge export. "
             "Add it to EA input InpSymbols and ensure it is in Market Watch."
@@ -268,6 +319,16 @@ class FileBridgeClient:
         data = self._read_json(path.name)
         if not isinstance(data, dict):
             raise FileBridgeError(f"{path.name} is not an object")
+        # Heartbeat freshness says the EA is alive; it says nothing about THIS file.
+        # A symbol dropped from InpSymbols (or unsynchronised) keeps its last file on
+        # disk while the heartbeat ticks, so an old series would be served as live.
+        age = time.time() - path.stat().st_mtime
+        if age > self.max_age_seconds:
+            raise FileBridgeError(
+                f"{path.name} is stale ({age:.0f}s old) while the heartbeat is fresh — "
+                "the EA is not refreshing this symbol/timeframe (symbol removed from "
+                "InpSymbols or not synchronised)."
+            )
         candles_raw = data.get("candles", [])
         if not isinstance(candles_raw, list):
             raise FileBridgeError(f"{path.name}: 'candles' is not a list")
@@ -300,6 +361,15 @@ class FileBridgeClient:
                 )
             except (KeyError, TypeError, ValueError) as exc:
                 raise FileBridgeError(f"{path.name}: bad candle {i}: {exc}") from exc
+        if not candles:
+            # CopyRates() returning <=0 makes the EA overwrite the last good file
+            # with {"candles":[]}; handing that upstream looks like a valid, empty
+            # market and silently freezes every consumer.
+            raise FileBridgeError(
+                f"{path.name} carries zero candles — the EA could not copy rates "
+                "(symbol not synchronised, missing history, or dropped from InpSymbols). "
+                "Refusing to serve an empty series as live data."
+            )
         return CandlesResult(symbol=symbol, timeframe=tf, candles=candles)
 
     def orders(self) -> list[PendingOrder]:
