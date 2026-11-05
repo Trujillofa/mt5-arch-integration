@@ -900,21 +900,36 @@ void DeskOrdProcessRequest()
      }
 
    ENUM_ORDER_TYPE otype = (g_desk_side == "SELL") ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+   // Validate SL/TP against the broker's minimum distance BEFORE sending. The old
+   // path relied on INVALID_STOPS and then silently resent without stops, leaving a
+   // naked position on a funded account.
+   int stops_level = (int)SymbolInfoInteger(symbol, SYMBOL_TRADE_STOPS_LEVEL);
+   if(stops_level > 0 && (g_desk_sl > 0.0 || g_desk_tp > 0.0))
+     {
+      double spt = SymbolInfoDouble(symbol, SYMBOL_POINT);
+      double ref = (otype == ORDER_TYPE_BUY) ? SymbolInfoDouble(symbol, SYMBOL_ASK)
+                                             : SymbolInfoDouble(symbol, SYMBOL_BID);
+      double min_dist = (double)stops_level * spt;
+      if((g_desk_sl > 0.0 && MathAbs(ref - g_desk_sl) < min_dist) ||
+         (g_desk_tp > 0.0 && MathAbs(ref - g_desk_tp) < min_dist))
+        {
+         DeskOrdWriteResult(DeskOrdFail("open",
+                              "SL/TP inside broker stops level — refusing to send",
+                              login, server, TRADE_RETCODE_INVALID_STOPS,
+                              "stops_level=" + IntegerToString(stops_level) +
+                              " min_dist=" + DoubleToString(min_dist, digits)));
+         return;
+        }
+     }
    MqlTradeResult ores;
    bool osent = DeskOrdSendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
                                 g_desk_sl, g_desk_tp, ores);
    if(!osent || !DeskOrdTradeRetOk(ores.retcode))
      {
-      if((g_desk_sl > 0.0 || g_desk_tp > 0.0) && ores.retcode == TRADE_RETCODE_INVALID_STOPS)
-         osent = DeskOrdSendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
-                                 0.0, 0.0, ores);
-      if(!osent || !DeskOrdTradeRetOk(ores.retcode))
-        {
-         DeskOrdWriteResult(DeskOrdFail("open", "OrderSend rejected — not retrying",
-                              login, server, (int)ores.retcode,
-                              ores.comment + " last=" + IntegerToString(GetLastError())));
-         return;
-        }
+      DeskOrdWriteResult(DeskOrdFail("open", "OrderSend rejected — not retrying",
+                           login, server, (int)ores.retcode,
+                           ores.comment + " last=" + IntegerToString(GetLastError())));
+      return;
      }
    if(g_desk_sl > 0.0 || g_desk_tp > 0.0)
       Sleep(200);
@@ -923,10 +938,38 @@ void DeskOrdProcessRequest()
    ZeroMemory(sres);
    if(!DeskOrdEnsureOpenSltp(symbol, pos, g_desk_sl, g_desk_tp, digits, sres))
      {
-      DeskOrdWriteResult(DeskOrdFail("sltp",
-                           "market filled but SL/TP missing — SLTP failed; flatten the naked position",
-                           login, server, (int)sres.retcode,
-                           sres.comment + " deal_open=" + IntegerToString((long)ores.deal)));
+      // A filled position with no stop is the exact state that can breach a funded
+      // account. Flatten it now, bounded retries, instead of asking a human.
+      bool flattened = false;
+      for(int attempt = 1; attempt <= 3; attempt++)
+        {
+         if(pos <= 0 || !PositionSelectByTicket(pos))
+            break;
+         double naked_vol = PositionGetDouble(POSITION_VOLUME);
+         ENUM_ORDER_TYPE close_type =
+            (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY) ? ORDER_TYPE_SELL
+                                                                     : ORDER_TYPE_BUY;
+         MqlTradeResult cres;
+         ZeroMemory(cres);
+         if(DeskOrdSendDeal(symbol, close_type, naked_vol, 0, filling, digits,
+                            "naked-flatten", 0.0, 0.0, cres) &&
+            DeskOrdTradeRetOk(cres.retcode))
+           {
+            flattened = true;
+            break;
+           }
+         Sleep(300 * attempt);
+        }
+      if(flattened)
+         DeskOrdWriteResult(DeskOrdFail("naked_flattened",
+                              "market filled but SL/TP failed — position was flattened",
+                              login, server, (int)sres.retcode,
+                              "deal_open=" + IntegerToString((long)ores.deal)));
+      else
+         DeskOrdWriteResult(DeskOrdFail("naked_unhedged",
+                              "market filled, SL/TP failed, flatten FAILED — close manually NOW",
+                              login, server, (int)sres.retcode,
+                              sres.comment + " deal_open=" + IntegerToString((long)ores.deal)));
       return;
      }
    DeskOrdWriteResult(

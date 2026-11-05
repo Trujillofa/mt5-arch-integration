@@ -130,3 +130,6 @@ results/btc_ny_data/
 results/btc_ny_session_scalp_*_full.json
 .crew/
 pi-session-*.html
+
+# live_trader per-intent state (runtime)
+state/
