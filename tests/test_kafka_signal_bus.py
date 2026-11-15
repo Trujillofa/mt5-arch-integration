@@ -9,7 +9,9 @@ import json
 import os
 import subprocess
 import sys
+from argparse import Namespace
 from pathlib import Path
+from types import ModuleType, SimpleNamespace
 
 import pytest
 import yaml
@@ -19,6 +21,7 @@ SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 from kafka_signal_bus_stub import (  # noqa: E402
+    cmd_consume,
     disposition_for,
     format_log_line,
     paper_example,
@@ -44,6 +47,8 @@ MQL = ROOT / "mql5" / "Include" / "research" / "KafkaSignalPaperContract.mqh"
 INSTALLER = ROOT / "scripts" / "18-install-forex-indicator.sh"
 PLATFORM_SRC = ROOT / "src" / "mt5_arch"
 SEVEN_DESK = ROOT / "apps" / "seven-desk"
+
+
 def _paper() -> dict:
     return json.loads(EXAMPLE_PATH.read_text(encoding="utf-8"))
 
@@ -184,6 +189,59 @@ def test_stub_kafka_without_enable_refuses():
     assert "KAFKA_ENABLE" in proc.stderr
 
 
+def test_kafka_consume_streams_to_out_and_counts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    log_path = tmp_path / "kafka-log.jsonl"
+    good = _paper()
+    live = {**_paper(), "book_mode": "live"}
+
+    class StreamingConsumer:
+        """Fake consumer: proves the sink is written before the stream ends."""
+
+        def __init__(self, messages: list[SimpleNamespace], path: Path) -> None:
+            self._messages = messages
+            self._path = path
+
+        def __iter__(self):
+            for i, msg in enumerate(self._messages):
+                if i == 1:
+                    assert self._path.read_text(encoding="utf-8").count("\n") == 1
+                yield msg
+
+        def close(self) -> None:
+            pass
+
+    messages = [
+        SimpleNamespace(value=json.dumps(good).encode("utf-8")),
+        SimpleNamespace(value=b"{not-json"),
+        SimpleNamespace(value=json.dumps(live).encode("utf-8")),
+    ]
+    fake_kafka = ModuleType("kafka")
+    fake_kafka.KafkaConsumer = lambda *a, **kw: StreamingConsumer(messages, log_path)
+    monkeypatch.setitem(sys.modules, "kafka", fake_kafka)
+    monkeypatch.setenv("KAFKA_ENABLE", "1")
+
+    args = Namespace(
+        kafka=True,
+        from_file=None,
+        out=log_path,
+        bootstrap=None,
+        topic=None,
+        group=None,
+        timeout_ms=10,
+    )
+    assert cmd_consume(args) == 0
+
+    rows = [json.loads(ln) for ln in log_path.read_text(encoding="utf-8").splitlines() if ln]
+    assert [row["disposition"] for row in rows] == ["log", "drop_non_paper"]
+    assert all(row["orders"] is False and row["actionable"] is False for row in rows)
+    err = capsys.readouterr().err
+    assert "n=3" in err
+    assert "logged=1 dropped=1 invalid=1" in err
+    assert "actionable=0 orders=0" in err
+
+
 def test_refuse_live_and_prop_topics():
     assert is_paper_topic(PAPER_TOPIC) is True
     with pytest.raises(SignalSchemaError, match="live"):
@@ -229,9 +287,7 @@ def test_adr_and_howto_state_file_bridge_truth_and_reject_list():
 
 def test_mql_contract_is_paper_only_no_transport():
     text = MQL.read_text(encoding="utf-8")
-    code = "\n".join(
-        ln for ln in text.splitlines() if not ln.lstrip().startswith("//")
-    )
+    code = "\n".join(ln for ln in text.splitlines() if not ln.lstrip().startswith("//"))
     assert "KAFKA_SIGNAL_SCHEMA_VERSION" in text
     assert "book_mode" in text
     assert "paper" in text

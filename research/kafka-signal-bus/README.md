@@ -21,7 +21,9 @@ Policy: [`docs/adr/0001-kafka-signal-bus.md`](../../docs/adr/0001-kafka-signal-b
 Python (repo `scripts/`, stdlib, no new package deps):
 
 - `scripts/verify_kafka_signal_schema.py`
-- `scripts/kafka_signal_bus_stub.py` (log-only consumer / paper publisher)
+- `scripts/kafka_signal_bus_stub.py` (log-only consumer / paper publisher;
+  Kafka opt-in streams JSONL to stdout or `--out`, skips malformed records with
+  counts, never orders)
 
 MQL5 contract only (no sockets, no `OrderSend`, **not** installed by
 `scripts/18-install-forex-indicator.sh`):

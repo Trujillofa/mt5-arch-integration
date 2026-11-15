@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 import sys
+from collections.abc import Iterable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
@@ -69,14 +70,25 @@ def format_log_line(record: dict[str, Any], *, source: str) -> str:
     return json.dumps(payload, separators=(",", ":"))
 
 
-def emit_lines(records: list[dict[str, Any]], *, source: str, out: TextIO) -> int:
+def _write_log_line(record: dict[str, Any], *, source: str, out: TextIO) -> bool:
+    """Write one log line immediately; return True when the disposition is log."""
+    out.write(format_log_line(record, source=source) + "\n")
+    out.flush()
+    return disposition_for(record) == "log"
+
+
+def emit_lines(records: Iterable[dict[str, Any]], *, source: str, out: TextIO) -> int:
     n_log = 0
     for rec in records:
-        line = format_log_line(rec, source=source)
-        out.write(line + "\n")
-        if disposition_for(rec) == "log":
+        if _write_log_line(rec, source=source, out=out):
             n_log += 1
     return n_log
+
+
+def _open_sink(path: Path | None) -> tuple[TextIO, bool]:
+    if path is None:
+        return sys.stdout, False
+    return path.open("w", encoding="utf-8"), True
 
 
 def paper_example() -> dict[str, Any]:
@@ -90,21 +102,16 @@ def cmd_consume(args: argparse.Namespace) -> int:
     if path is None:
         raise SystemExit("consume requires --from-file unless --kafka is set")
     records = load_records(path)
-    dest: TextIO
-    close = False
-    if args.out:
-        dest = args.out.open("w", encoding="utf-8")
-        close = True
-    else:
-        dest = sys.stdout
+    dest, close = _open_sink(args.out)
     try:
         n_log = emit_lines(records, source=str(path), out=dest)
     finally:
         if close:
             dest.close()
+    n_drop = len(records) - n_log
     print(
         f"kafka-signal-bus-stub consume n={len(records)} logged={n_log} "
-        f"actionable=0 orders=0",
+        f"dropped={n_drop} invalid=0 actionable=0 orders=0",
         file=sys.stderr,
     )
     return 0
@@ -149,22 +156,38 @@ def _consume_kafka(args: argparse.Namespace) -> int:
         ) from exc
     bootstrap = args.bootstrap or os.environ.get("KAFKA_BOOTSTRAP_SERVERS", DEFAULT_BOOTSTRAP)
     group = args.group or os.environ.get("KAFKA_GROUP_ID", "mt5-arch-research-logger")
-    consumer = KafkaConsumer(
-        topic,
-        bootstrap_servers=bootstrap,
-        auto_offset_reset="earliest",
-        group_id=group,
-        consumer_timeout_ms=args.timeout_ms,
-    )
-    records: list[dict[str, Any]] = []
+    source = f"kafka:{topic}"
+    dest, close = _open_sink(args.out)
+    consumer = None
+    seen = logged = dropped = invalid = 0
     try:
+        consumer = KafkaConsumer(
+            topic,
+            bootstrap_servers=bootstrap,
+            auto_offset_reset="earliest",
+            group_id=group,
+            consumer_timeout_ms=args.timeout_ms,
+        )
         for msg in consumer:
-            records.append(validate_record(json.loads(msg.value.decode("utf-8"))))
+            seen += 1
+            try:
+                rec = validate_record(json.loads(msg.value.decode("utf-8")))
+            except (json.JSONDecodeError, UnicodeDecodeError, SignalSchemaError) as exc:
+                invalid += 1
+                print(f"kafka-signal-bus-stub skip invalid record: {exc}", file=sys.stderr)
+                continue
+            if _write_log_line(rec, source=source, out=dest):
+                logged += 1
+            else:
+                dropped += 1
     finally:
-        consumer.close()
-    emit_lines(records, source=f"kafka:{topic}", out=sys.stdout)
+        if consumer is not None:
+            consumer.close()
+        if close:
+            dest.close()
     print(
-        f"kafka-signal-bus-stub consume-kafka n={len(records)} actionable=0 orders=0",
+        f"kafka-signal-bus-stub consume-kafka n={seen} logged={logged} "
+        f"dropped={dropped} invalid={invalid} actionable=0 orders=0",
         file=sys.stderr,
     )
     return 0

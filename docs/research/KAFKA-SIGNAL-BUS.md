@@ -47,6 +47,11 @@ explicit opt-in when `kafka-python` is installed by the operator. `uv sync`
 does not install it. The stub still refuses non-paper topics and never calls
 order APIs.
 
+The opt-in Kafka consume path streams each validated record to the sink as it
+arrives (`--out FILE` or stdout, flushed per line), skips malformed payloads
+with a stderr warning instead of aborting the stream, and prints an
+`n=… logged=… dropped=… invalid=…` summary. It remains log-only.
+
 ## What this does not do
 
 - Refactor `mql5/Mt5ArchBridge.mq5` or the file bridge client.
