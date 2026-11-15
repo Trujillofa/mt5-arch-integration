@@ -257,7 +257,7 @@ def cmd_resolve(broker: str, symbol: str, as_json: bool) -> int:
 
 
 def cmd_account(client: Any, as_json: bool) -> int:
-    account = client.account_info()
+    account = client.account_info(allow_cached=True)
     payload = asdict(account)
     _print_result(payload, as_json=as_json)
     # Surface offline/cached sessions: login present but no money meta fields

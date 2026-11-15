@@ -1,0 +1,369 @@
+{
+  "family_id": "renko_event_clock_vendor",
+  "charter": "results/xau_charters/2026-09-19_renko_event_clock_vendor_v1.json",
+  "charter_sha256": "ddeae18a71bcb141d7033bfcf1d6fab4ed56cf03c21535d6b3ab326a244ab614",
+  "data_csv_sha256": "529b8f5759fd6bb27244c3bb7945e47be5bb3a287a89ffeeca5d50317652d22a",
+  "costs_sha256": "4c78c45c95bf6410fa2d5e90ac50dec438779eb9e3d7f0e1d2fdde60f1a42879",
+  "cost_label": "account_matched_spread_commission_only",
+  "window": {
+    "rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "timeframe": "M15",
+    "bars": 85802,
+    "first_bar": "2022-05-17T09:15:00+00:00",
+    "last_bar": "2025-12-31T23:45:00+00:00"
+  },
+  "sizing": {
+    "lots": 0.01,
+    "contract_size": 100.0,
+    "start_balance": 10000.0
+  },
+  "gates_soft": {
+    "n_trades_min": 40,
+    "profit_factor_min": 1.2,
+    "net_profit_gt": 0.0,
+    "max_drawdown_pct_max": 15.0,
+    "used_for": "null_n_passers_primary"
+  },
+  "holdout_touched": false,
+  "vehicles": {
+    "adx": {
+      "label": "ADX/DI trend (77234)",
+      "brick_size": 16.0,
+      "tp_bricks": 9.5,
+      "sl_bricks": 42.0,
+      "risk_per_trade_usd": 672.0,
+      "risk_per_trade_pct_of_start_balance": 6.72,
+      "reward_risk": 0.226,
+      "base": {
+        "n_trades": 123,
+        "net_profit": -268.88,
+        "profit_factor": 0.8372,
+        "win_rate_pct": 47.97,
+        "max_drawdown_pct": 3.62,
+        "avg_pnl": -2.19,
+        "bricks": 1329,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 11,
+          "TIME": 110,
+          "TP": 1
+        },
+        "overflow": false
+      },
+      "soft_gate_pass": false,
+      "soft_gate_failures": [
+        "PF 0.8372 < 1.2",
+        "net -268.88 <= 0.0"
+      ],
+      "slippage_sensitivity": {
+        "0": {
+          "net_profit": -268.88,
+          "profit_factor": 0.8372,
+          "n_trades": 123
+        },
+        "5": {
+          "net_profit": -281.18,
+          "profit_factor": 0.8304,
+          "n_trades": 123
+        },
+        "10": {
+          "net_profit": -293.48,
+          "profit_factor": 0.8237,
+          "n_trades": 123
+        },
+        "20": {
+          "net_profit": -318.08,
+          "profit_factor": 0.8104,
+          "n_trades": 123
+        }
+      },
+      "path_reversed": {
+        "n_trades": 124,
+        "net_profit": -303.75,
+        "profit_factor": 0.8222,
+        "win_rate_pct": 48.39,
+        "max_drawdown_pct": 4.4,
+        "avg_pnl": -2.45,
+        "bricks": 1401,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 12,
+          "TIME": 110,
+          "TP": 1
+        },
+        "overflow": false
+      },
+      "path_verdict_flip": false
+    },
+    "bb_breakout": {
+      "label": "BB breakout (77236 mode 1)",
+      "brick_size": 17.0,
+      "tp_bricks": 24.0,
+      "sl_bricks": 42.0,
+      "risk_per_trade_usd": 714.0,
+      "risk_per_trade_pct_of_start_balance": 7.14,
+      "reward_risk": 0.571,
+      "base": {
+        "n_trades": 121,
+        "net_profit": 105.64,
+        "profit_factor": 1.0688,
+        "win_rate_pct": 56.2,
+        "max_drawdown_pct": 3.81,
+        "avg_pnl": 0.87,
+        "bricks": 1180,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 6,
+          "TIME": 114
+        },
+        "overflow": false
+      },
+      "soft_gate_pass": false,
+      "soft_gate_failures": [
+        "PF 1.0688 < 1.2"
+      ],
+      "slippage_sensitivity": {
+        "0": {
+          "net_profit": 105.64,
+          "profit_factor": 1.0688,
+          "n_trades": 121
+        },
+        "5": {
+          "net_profit": 93.54,
+          "profit_factor": 1.0607,
+          "n_trades": 121
+        },
+        "10": {
+          "net_profit": 81.44,
+          "profit_factor": 1.0527,
+          "n_trades": 121
+        },
+        "20": {
+          "net_profit": 57.24,
+          "profit_factor": 1.0368,
+          "n_trades": 121
+        }
+      },
+      "path_reversed": {
+        "n_trades": 122,
+        "net_profit": 298.48,
+        "profit_factor": 1.2005,
+        "win_rate_pct": 56.56,
+        "max_drawdown_pct": 2.86,
+        "avg_pnl": 2.45,
+        "bricks": 1228,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 6,
+          "TIME": 115
+        },
+        "overflow": false
+      },
+      "path_verdict_flip": true
+    },
+    "bb_reentry": {
+      "label": "BB re-entry (77236 mode 2)",
+      "brick_size": 30.0,
+      "tp_bricks": 28.0,
+      "sl_bricks": 48.5,
+      "risk_per_trade_usd": 1455.0,
+      "risk_per_trade_pct_of_start_balance": 14.55,
+      "reward_risk": 0.577,
+      "base": {
+        "n_trades": 28,
+        "net_profit": 313.0,
+        "profit_factor": 2.3971,
+        "win_rate_pct": 64.29,
+        "max_drawdown_pct": 0.97,
+        "avg_pnl": 11.18,
+        "bricks": 410,
+        "exit_reasons": {
+          "BB_MID": 4,
+          "TIME": 24
+        },
+        "overflow": false
+      },
+      "soft_gate_pass": false,
+      "soft_gate_failures": [
+        "n_trades 28 < 40"
+      ],
+      "slippage_sensitivity": {
+        "0": {
+          "net_profit": 313.0,
+          "profit_factor": 2.3971,
+          "n_trades": 28
+        },
+        "5": {
+          "net_profit": 310.2,
+          "profit_factor": 2.3784,
+          "n_trades": 28
+        },
+        "10": {
+          "net_profit": 307.4,
+          "profit_factor": 2.3599,
+          "n_trades": 28
+        },
+        "20": {
+          "net_profit": 301.8,
+          "profit_factor": 2.3235,
+          "n_trades": 28
+        }
+      },
+      "path_reversed": {
+        "n_trades": 28,
+        "net_profit": 313.0,
+        "profit_factor": 2.3971,
+        "win_rate_pct": 64.29,
+        "max_drawdown_pct": 0.97,
+        "avg_pnl": 11.18,
+        "bricks": 410,
+        "exit_reasons": {
+          "BB_MID": 4,
+          "TIME": 24
+        },
+        "overflow": false
+      },
+      "path_verdict_flip": false
+    },
+    "bb_midline": {
+      "label": "BB midline cross (77236 mode 3)",
+      "brick_size": 30.0,
+      "tp_bricks": 10.0,
+      "sl_bricks": 34.5,
+      "risk_per_trade_usd": 1035.0,
+      "risk_per_trade_pct_of_start_balance": 10.35,
+      "reward_risk": 0.29,
+      "base": {
+        "n_trades": 49,
+        "net_profit": -522.51,
+        "profit_factor": 0.518,
+        "win_rate_pct": 36.73,
+        "max_drawdown_pct": 7.02,
+        "avg_pnl": -10.66,
+        "bricks": 410,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 16,
+          "TIME": 32
+        },
+        "overflow": false
+      },
+      "soft_gate_pass": false,
+      "soft_gate_failures": [
+        "PF 0.518 < 1.2",
+        "net -522.51 <= 0.0"
+      ],
+      "slippage_sensitivity": {
+        "0": {
+          "net_profit": -522.51,
+          "profit_factor": 0.518,
+          "n_trades": 49
+        },
+        "5": {
+          "net_profit": -527.41,
+          "profit_factor": 0.5148,
+          "n_trades": 49
+        },
+        "10": {
+          "net_profit": -532.31,
+          "profit_factor": 0.5117,
+          "n_trades": 49
+        },
+        "20": {
+          "net_profit": -542.11,
+          "profit_factor": 0.5055,
+          "n_trades": 49
+        }
+      },
+      "path_reversed": {
+        "n_trades": 49,
+        "net_profit": -522.51,
+        "profit_factor": 0.518,
+        "win_rate_pct": 36.73,
+        "max_drawdown_pct": 7.02,
+        "avg_pnl": -10.66,
+        "bricks": 410,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 16,
+          "TIME": 32
+        },
+        "overflow": false
+      },
+      "path_verdict_flip": false
+    },
+    "bb_squeeze": {
+      "label": "BB squeeze (77236 mode 4)",
+      "brick_size": 14.0,
+      "tp_bricks": 26.0,
+      "sl_bricks": 31.0,
+      "risk_per_trade_usd": 434.0,
+      "risk_per_trade_pct_of_start_balance": 4.34,
+      "reward_risk": 0.839,
+      "base": {
+        "n_trades": 67,
+        "net_profit": 109.02,
+        "profit_factor": 1.1076,
+        "win_rate_pct": 56.72,
+        "max_drawdown_pct": 3.19,
+        "avg_pnl": 1.63,
+        "bricks": 1737,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 1,
+          "TIME": 65
+        },
+        "overflow": false
+      },
+      "soft_gate_pass": false,
+      "soft_gate_failures": [
+        "PF 1.1076 < 1.2"
+      ],
+      "slippage_sensitivity": {
+        "0": {
+          "net_profit": 109.02,
+          "profit_factor": 1.1076,
+          "n_trades": 67
+        },
+        "5": {
+          "net_profit": 102.32,
+          "profit_factor": 1.1007,
+          "n_trades": 67
+        },
+        "10": {
+          "net_profit": 95.62,
+          "profit_factor": 1.0938,
+          "n_trades": 67
+        },
+        "20": {
+          "net_profit": 82.22,
+          "profit_factor": 1.0802,
+          "n_trades": 67
+        }
+      },
+      "path_reversed": {
+        "n_trades": 70,
+        "net_profit": 198.39,
+        "profit_factor": 1.197,
+        "win_rate_pct": 57.14,
+        "max_drawdown_pct": 3.29,
+        "avg_pnl": 2.83,
+        "bricks": 1845,
+        "exit_reasons": {
+          "EOD_FORCE": 1,
+          "SIGNAL_FLIP": 1,
+          "TIME": 68
+        },
+        "overflow": false
+      },
+      "path_verdict_flip": false
+    }
+  },
+  "n_passers": 0,
+  "passers": [],
+  "disposition": "SCREEN_FAIL",
+  "null_spent": false,
+  "promote": false,
+  "live_go": false
+}

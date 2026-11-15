@@ -76,6 +76,7 @@ print('ini ok')
 info "Running export (timeout 120s)..."
 cd "$MT5_DIR"
 export WINEDEBUG=-all WINEDLLOVERRIDES="${WINEDLLOVERRIDES:-d3d11=b;d3d12=b;dxgi=b}"
+export_no_xi2_preload
 timeout 120 wine ./terminal64.exe /portable /config:export_xau.ini || true
 OUT="$MT5_DIR/MQL5/Files/xauusd_mt5_export.csv"
 [[ -f "$OUT" ]] || die "export missing"

@@ -1,0 +1,163 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-17",
+  "charter_version": 1,
+  "family_id": "xau_h4_pullback_weekly_long_only_v1",
+  "display_name": "Zero-knob H4 confirmed pivot-low reclaim, weekly EMA20 permission, long only",
+  "thesis_class": "htf_pullback_weekly_permission_long_only",
+  "thesis_memo": "docs/research/XAU-THESIS-xau_h4_pullback_weekly_long_only_v1.md",
+  "hypothesis": "On XAUUSD H4 resampled from Vantage H1 in xauusd_data.csv (server_clock_as_stored; no DST), a long-only reclaim of the latest confirmed H4 fractal pivot low (htf_fib_core left=5 right=5, active at center+5) while the last completed weekly close is above EMA(weekly close, 20), filled next H4 open, SL=pivot_low-0.25*ATR14, no TP, flatten on H4 close below the pivot or weekly close below that EMA, has no free parameters. Any edge must beat always-long 0.5 lot on the same dates and Standard STP costs.",
+  "clock_contract": {
+    "source": "MqlRates time via Mt5ArchBridge; CSV tagged UTC without conversion",
+    "interpretation": "server_clock_as_stored",
+    "london_ny_overlap_claimed": false,
+    "dst_conversion": false,
+    "h4_resample": "pandas floor 4h on H1 timestamps; open=first high=max low=min close=last spread=last"
+  },
+  "instrument": {
+    "symbol": "XAUUSD",
+    "timeframe": "H4",
+    "permission_timeframe": "W",
+    "source_csv_timeframe": "H1"
+  },
+  "rule": {
+    "direction": "long_only",
+    "intraday_flat": false,
+    "overnight_ok": true,
+    "pivot_module": "scripts/htf_fib_core.py::confirmed_pivots",
+    "pivot_left": 5,
+    "pivot_right": 5,
+    "pivot_stamp": "confirmation_bar_center_plus_right",
+    "weekly_ema": 20,
+    "weekly_permission": "last_completed_weekly_close > ema(weekly_close, 20)",
+    "signal_long": "flat AND permission AND close > latest unconsumed confirmed pivot low",
+    "entry": "next H4 open; skip if open <= SL",
+    "entry_timing": "next_bar_open",
+    "one_trade_per_pivot_low": true,
+    "sl_long": "pivot_low - 0.25 * ATR(H4,14) at signal bar",
+    "tp": null,
+    "exit_priority": ["1_stop_loss", "2_h4_close_below_pivot_next_open", "3_weekly_close_below_ema_next_open"],
+    "never_short": true,
+    "control": "always_long_0.5_lot_same_window_same_costs"
+  },
+  "fixed": {
+    "risk_pct": 0.01,
+    "max_lots": 0.5,
+    "min_lot": 0.01,
+    "atr_period": 14,
+    "sl_atr_frac": 0.25,
+    "costs_source": "results/xau_research_costs.json",
+    "costs": {
+      "account_type": "STANDARD_STP",
+      "commission_per_lot": 0.0,
+      "slippage_points": 0.0,
+      "spread_col": "spread",
+      "point_size": 0.01,
+      "cost_label": "account_matched_spread_commission_only",
+      "slippage_notes": "UNMEASURED"
+    }
+  },
+  "free_knobs": [],
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "window": {
+    "develop_rule": "time < holdout_start",
+    "holdout_start": "2026-01-01T00:00:00+00:00",
+    "holdout_lock": "results/xau_holdout_lock.json",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "soft": {
+      "n_trades_min": 40,
+      "profit_factor_min": 1.2,
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "must_beat_always_long_net": true,
+      "used_for": "null_n_passers_primary"
+    },
+    "primary_n_passers": "soft",
+    "thin_n_is_screen_fail": true
+  },
+  "null": {
+    "method": "h4_ohlc_increment_rotate_per_week_v1",
+    "n_trials": 999,
+    "base_seed": 20260917,
+    "notes": "Declare only at freeze. Do not run unless screen passes. Rotate H4 increments inside each ISO week; timestamps and spreads fixed.",
+    "forbidden_methods": ["day_block_shuffle", "global_return_shuffle"]
+  },
+  "multiplicity": {
+    "method": "finite_catalog_bonferroni_open_catalog",
+    "alpha_uncorrected": 0.05,
+    "K_prior": 11,
+    "K": 12,
+    "alpha_adjusted": 0.004166666666666667,
+    "prior_scored_family_ids": [
+      "tod_london_ny_flat",
+      "server_hour_window_flat",
+      "early_server_range_break_flat",
+      "day_open_reclaim_flat",
+      "joint_london_open_cosign_fade_flat",
+      "bb_rsi",
+      "Donchian",
+      "prior_day_high_break",
+      "exog_london_fx_cosign_xau_follow_flat",
+      "asia_box_london_sweep_fade_flat",
+      "multi_day_variance_expansion_flat"
+    ]
+  },
+  "kill": {
+    "on_null_fail": "KILL_XAU_H4_PULLBACK_WEEKLY_LONG_ONLY",
+    "on_wf_fail": "KILL_XAU_H4_PULLBACK_WEEKLY_LONG_ONLY",
+    "on_screen_fail": "SCREEN_FAIL",
+    "refine_loops": false
+  },
+  "explicitly_forbidden": [
+    "GOLD_SCALP / M5 session-OR / NY metals box / snapshot tpl zones",
+    "H1 tpl-zone reject as host or filter",
+    "DFII10 / DXY / US10Y beta or regime",
+    "shorts",
+    "re-deriving pivots (must import htf_fib_core)",
+    "retune left/right/weekly EMA/ATR/SL-frac after peek",
+    "holdout selection",
+    "paper, live, or promote",
+    "write strategy_params.json from this family",
+    "combine with any KILLED.md row"
+  ],
+  "dead_lines_do_not_revive": [
+    "bb_rsi",
+    "Donchian",
+    "prior_day_high_break",
+    "tod_london_ny_flat",
+    "server_hour_window_flat",
+    "early_server_range_break_flat",
+    "day_open_reclaim_flat",
+    "joint_london_open_cosign_fade_flat",
+    "exog_london_fx_cosign_xau_follow_flat",
+    "asia_box_london_sweep_fade_flat",
+    "multi_day_variance_expansion_flat",
+    "xau_london_defined_r_be_flat_v1",
+    "exog_dfii10_regime_long_or_flat_v1",
+    "exog_dxy_us10y_daily_tvbeta_xau_follow_flat_v1",
+    "exog_dfii10_dtwex_daily_tvbeta_xau_follow_flat_v1",
+    "xau_h1_bb_rsi_garch11_invvol_size_v1"
+  ],
+  "safety": {
+    "offline_only": true,
+    "promote_default": "no",
+    "live_go": false
+  },
+  "execution_contract": {
+    "bar": "closed H4 for signal; entry at next H4 open",
+    "warmup_h4_bars": 80,
+    "sizing": {
+      "risk_pct": 0.01,
+      "max_lots": 0.5,
+      "min_lot": 0.01,
+      "contract_size": 100.0,
+      "start_balance": 10000.0,
+      "control_lots": 0.5
+    },
+    "costs_on_entry": "RT (spread_pts+2*slip)*point*cs*lots + 2*commission*lots measured at fill, deducted at exit"
+  }
+}

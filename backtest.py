@@ -517,20 +517,20 @@ def build_search_candidates(max_n: int = 1200, seed: int = 42) -> list[dict]:
                                 for macd_f in (False, True):
                                     for hrs in (None, tuple(range(7, 17)), tuple(range(12, 21))):
                                         candidates.append(
-                                            dict(
-                                                mode=mode,
-                                                rsi_buy=float(rsi_buy),
-                                                rsi_sell=float(rsi_sell),
-                                                sl_atr=float(sl_a),
-                                                tp_atr=float(tp_a),
-                                                bb_col=bb,
-                                                trend_col=trend,
-                                                use_macd_filter=macd_f,
-                                                hours=hrs,
-                                                long_only=True,
-                                                risk_pct=0.01,
-                                                cooldown=2,
-                                            )
+                                            {
+                                                "mode": mode,
+                                                "rsi_buy": float(rsi_buy),
+                                                "rsi_sell": float(rsi_sell),
+                                                "sl_atr": float(sl_a),
+                                                "tp_atr": float(tp_a),
+                                                "bb_col": bb,
+                                                "trend_col": trend,
+                                                "use_macd_filter": macd_f,
+                                                "hours": hrs,
+                                                "long_only": True,
+                                                "risk_pct": 0.01,
+                                                "cooldown": 2,
+                                            }
                                         )
 
     rng = np.random.default_rng(seed)
@@ -539,11 +539,11 @@ def build_search_candidates(max_n: int = 1200, seed: int = 42) -> list[dict]:
         candidates = [candidates[i] for i in sorted(pick)]
 
     seeds = [
-        dict(mode="bb_rsi", rsi_buy=35, rsi_sell=58, sl_atr=1.2, tp_atr=2.0, bb_col="bb_lo", trend_col="ema100", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.01, cooldown=2),
-        dict(mode="bb_rsi", rsi_buy=32, rsi_sell=55, sl_atr=1.0, tp_atr=1.8, bb_col="bb_lo15", trend_col="ema100", use_macd_filter=True, hours=None, long_only=True, risk_pct=0.01, cooldown=1),
-        dict(mode="rsi_cross", rsi_buy=30, rsi_sell=60, sl_atr=1.5, tp_atr=2.5, bb_col="bb_lo", trend_col="ema200", use_macd_filter=False, hours=tuple(range(7, 17)), long_only=True, risk_pct=0.01, cooldown=3),
-        dict(mode="macd_pullback", rsi_buy=40, rsi_sell=60, sl_atr=1.2, tp_atr=2.4, bb_col="bb_lo", trend_col="ema100", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.01, cooldown=2),
-        dict(mode="bb_rsi", rsi_buy=38, rsi_sell=52, sl_atr=1.0, tp_atr=1.5, bb_col="bb_lo", trend_col="ema50", use_macd_filter=False, hours=None, long_only=True, risk_pct=0.008, cooldown=1),
+        {"mode": "bb_rsi", "rsi_buy": 35, "rsi_sell": 58, "sl_atr": 1.2, "tp_atr": 2.0, "bb_col": "bb_lo", "trend_col": "ema100", "use_macd_filter": False, "hours": None, "long_only": True, "risk_pct": 0.01, "cooldown": 2},
+        {"mode": "bb_rsi", "rsi_buy": 32, "rsi_sell": 55, "sl_atr": 1.0, "tp_atr": 1.8, "bb_col": "bb_lo15", "trend_col": "ema100", "use_macd_filter": True, "hours": None, "long_only": True, "risk_pct": 0.01, "cooldown": 1},
+        {"mode": "rsi_cross", "rsi_buy": 30, "rsi_sell": 60, "sl_atr": 1.5, "tp_atr": 2.5, "bb_col": "bb_lo", "trend_col": "ema200", "use_macd_filter": False, "hours": tuple(range(7, 17)), "long_only": True, "risk_pct": 0.01, "cooldown": 3},
+        {"mode": "macd_pullback", "rsi_buy": 40, "rsi_sell": 60, "sl_atr": 1.2, "tp_atr": 2.4, "bb_col": "bb_lo", "trend_col": "ema100", "use_macd_filter": False, "hours": None, "long_only": True, "risk_pct": 0.01, "cooldown": 2},
+        {"mode": "bb_rsi", "rsi_buy": 38, "rsi_sell": 52, "sl_atr": 1.0, "tp_atr": 1.5, "bb_col": "bb_lo", "trend_col": "ema50", "use_macd_filter": False, "hours": None, "long_only": True, "risk_pct": 0.008, "cooldown": 1},
     ]
     return seeds + candidates
 
@@ -751,21 +751,21 @@ def main(argv: list[str] | None = None) -> int:
             for sl_a, tp_a in ((1.5, 1.2), (2.0, 1.5), (1.2, 1.0), (1.0, 0.8), (2.0, 2.5), (1.5, 2.5)):
                 for trend in ("ema50", "ema100", "ema20"):
                     stage3.append(
-                        dict(
-                            mode="bb_rsi",
-                            rsi_buy=float(rsi_buy),
-                            rsi_sell=min(70.0, rsi_buy + 15),
-                            sl_atr=float(sl_a),
-                            tp_atr=float(tp_a),
-                            bb_col="bb_lo15",
-                            trend_col=trend,
-                            use_macd_filter=False,
-                            hours=None,
-                            long_only=True,
-                            risk_pct=0.01,
-                            cooldown=0,
-                            max_lots=0.3,
-                        )
+                        {
+                            "mode": "bb_rsi",
+                            "rsi_buy": float(rsi_buy),
+                            "rsi_sell": min(70.0, rsi_buy + 15),
+                            "sl_atr": float(sl_a),
+                            "tp_atr": float(tp_a),
+                            "bb_col": "bb_lo15",
+                            "trend_col": trend,
+                            "use_macd_filter": False,
+                            "hours": None,
+                            "long_only": True,
+                            "risk_pct": 0.01,
+                            "cooldown": 0,
+                            "max_lots": 0.3,
+                        }
                     )
         for p in stage3:
             m = sim(d, p)
@@ -781,21 +781,21 @@ def main(argv: list[str] | None = None) -> int:
         for rsi_buy in (25, 30, 35):
             for sl_a, tp_a in ((1.0, 1.5), (1.2, 2.0), (1.5, 2.5)):
                 for req in (True, False):
-                    p = dict(
-                        mode="bb_rsi",
-                        rsi_buy=float(rsi_buy),
-                        rsi_sell=55.0,
-                        sl_atr=float(sl_a),
-                        tp_atr=float(tp_a),
-                        bb_col="bb_lo",
-                        trend_col="ema200",
-                        use_macd_filter=False,
-                        hours=None,
-                        long_only=False,
-                        require_uptrend=req,
-                        risk_pct=0.01,
-                        cooldown=2,
-                    )
+                    p = {
+                        "mode": "bb_rsi",
+                        "rsi_buy": float(rsi_buy),
+                        "rsi_sell": 55.0,
+                        "sl_atr": float(sl_a),
+                        "tp_atr": float(tp_a),
+                        "bb_col": "bb_lo",
+                        "trend_col": "ema200",
+                        "use_macd_filter": False,
+                        "hours": None,
+                        "long_only": False,
+                        "require_uptrend": req,
+                        "risk_pct": 0.01,
+                        "cooldown": 2,
+                    }
                     m = sim(d, p)
                     if passes(m) and (not passes(best_m) or m.net_profit > best_m.net_profit):
                         best_p, best_m = p, m

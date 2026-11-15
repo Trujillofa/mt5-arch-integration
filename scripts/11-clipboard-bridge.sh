@@ -5,6 +5,10 @@
 # - Only sync *text* (screenshots/PNG must not wipe/replace X11 text incorrectly)
 # - Offer UTF8_STRING (Wine prefers this)
 # - Keep WAYLAND_DISPLAY set for the watcher; Wine itself uses DISPLAY=:0
+# - Do not claim the X11 selection when it already holds this text, or when
+#   the text is the echo of our own last claim (sha256 stamp written before
+#   xclip -i). Xwayland mirrors a new claim back to Wayland, and wl-paste
+#   --watch would loop.
 #
 # Usage:
 #   ./scripts/11-clipboard-bridge.sh start|stop|status|sync|once
@@ -49,11 +53,14 @@ sync_wl_to_x11() {
   if [[ "$content" == $'\x89PNG'* ]]; then
     return 1
   fi
+  # One writer. A second xclip -i after clip_to_x11.py claims the selection
+  # again and restarts the Xwayland echo loop.
   if [[ -f "$CLIP_PY" ]]; then
     printf '%s' "$content" | python3 "$CLIP_PY" || true
+  else
+    printf '%s' "$content" | xclip -selection clipboard -t UTF8_STRING -i
+    printf '%s' "$content" | xclip -selection primary -t UTF8_STRING -i
   fi
-  printf '%s' "$content" | xclip -selection clipboard -t UTF8_STRING -i
-  printf '%s' "$content" | xclip -selection primary -t UTF8_STRING -i
   return 0
 }
 
@@ -112,21 +119,46 @@ cmd_stop() {
   info "clipboard bridge stopped"
 }
 
-run_worker() {
-  echo "[$(date -Iseconds)] bridge start DISPLAY=${DISPLAY:-} WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-}"
-  # Only watch text MIME — screenshots won't fire empty overwrites
-  exec -a "$WORKER_TAG" wl-paste --type text --watch bash -c '
-    data=$(cat)
-    [ -z "$data" ] && exit 0
-    case "$data" in
-      $'\''\x89PNG'\''*) exit 0 ;;
-    esac
+# One watch event. wl-paste passes the new Wayland text on stdin.
+# Re-read on every event so a stamp fix applies without another restart.
+cmd_apply() {
+  local data stamp sum got cur
+  data=$(cat)
+  [[ -z "$data" ]] && exit 0
+  case "$data" in
+    $'\x89PNG'*) exit 0 ;;
+  esac
+  # Echo of our own claim: hash was stored before xclip -i. Skip even when
+  # xclip -o fails or the selection bytes differ. A new claim would loop.
+  stamp="${XDG_RUNTIME_DIR:-/tmp}/mt5-clipboard-bridge.sha"
+  sum=$(printf %s "$data" | sha256sum)
+  sum=${sum%% *}
+  if [[ -f "$stamp" ]]; then
+    got=$(tr -d '[:space:]' <"$stamp" 2>/dev/null || true)
+    if [[ -n "$sum" && "$sum" == "$got" ]]; then
+      exit 0
+    fi
+  fi
+  cur=$(timeout 1 xclip -selection clipboard -o -t UTF8_STRING 2>/dev/null || true)
+  [[ "$data" == "$cur" ]] && exit 0
+  if [[ -f "$CLIP_PY" ]]; then
+    printf %s "$data" | python3 "$CLIP_PY" 2>/dev/null || true
+  else
+    umask 077
+    printf '%s\n' "$sum" >"${stamp}.tmp"
+    mv -f "${stamp}.tmp" "$stamp"
     printf %s "$data" | xclip -selection clipboard -t UTF8_STRING -i
     printf %s "$data" | xclip -selection primary -t UTF8_STRING -i
-    if [ -f "'"$CLIP_PY"'" ]; then
-      printf %s "$data" | python3 "'"$CLIP_PY"'" 2>/dev/null || true
-    fi
-  '
+  fi
+  exit 0
+}
+
+run_worker() {
+  echo "[$(date -Iseconds)] bridge start DISPLAY=${DISPLAY:-} WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-}"
+  # Only watch text MIME — screenshots won't fire empty overwrites.
+  # --apply is a fresh bash each event, so it picks up script edits.
+  exec -a "$WORKER_TAG" wl-paste --type text --watch \
+    bash "$SCRIPT_DIR/11-clipboard-bridge.sh" --apply
 }
 
 cmd_start() {
@@ -172,6 +204,7 @@ cmd_once() {
 
 case "${1:-start}" in
   --worker) run_worker ;;
+  --apply) cmd_apply ;;
   start) cmd_start ;;
   stop) cmd_stop ;;
   status) cmd_status || true ;;

@@ -52,9 +52,9 @@ from us_index_session_backtest import (  # noqa: E402
 )
 from us_index_session_core import ATR_PERIOD, to_utc, wilder_atr  # noqa: E402
 from us_index_session_htf import (  # noqa: E402
+    completed_daily_sma50_slope,
     fib_pullback_signals,
     h4_impulses,
-    completed_daily_sma50_slope,
     simulate_htf_exits,
     squeeze_breakout_signals,
 )

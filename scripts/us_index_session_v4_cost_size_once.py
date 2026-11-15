@@ -16,8 +16,6 @@ from dataclasses import asdict
 from datetime import date
 from pathlib import Path
 
-import numpy as np
-
 _SCRIPTS = Path(__file__).resolve().parent
 _ROOT = _SCRIPTS.parent
 if str(_SCRIPTS) not in sys.path:
@@ -34,7 +32,6 @@ from us_index_session_autoresearch_v4 import (  # noqa: E402
     split_v4,
 )
 from us_index_session_backtest import (  # noqa: E402
-    CostSpec,
     costs_from_meta,
     load_m5_csv,
     parse_meta,

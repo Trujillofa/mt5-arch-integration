@@ -1,0 +1,85 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "family_id": "xau_garch_voltarget_always_long_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "role": "risk_module_on_always_long_host",
+  "hypothesis": "GARCH(1,1) daily vol-target of always-long XAU (15% ann, cap 0.5 lot) beats constant 0.5 lot on max DD and Calmar after Standard STP costs, without going net-negative, on develop 2018-04-02 through 2025-12-31.",
+  "data_gate": {
+    "csv": "results/xau_fomc_h4/xauusd_h1_2018_2025.csv",
+    "h1_min_time": "2018-04-02T00:00:00",
+    "forbid_screen_on_2021_only_bull": true,
+    "forbid_csv": "xauusd_data.csv"
+  },
+  "clock": {
+    "bar_timestamps": "server_clock_as_stored",
+    "resample": "daily OHLC on server date of H1 bars",
+    "sizing_bar": "day D open after close D-1 fit"
+  },
+  "rule": {
+    "direction": "long_only",
+    "signal": "none — always long host",
+    "vol_model": "gaussian_garch_11",
+    "variance": "sigma2_t = omega + alpha * r_{t-1}^2 + beta * sigma2_{t-1}",
+    "constraints": ["omega>0", "alpha>=0", "beta>=0", "alpha+beta<1"],
+    "returns": "log daily close-to-close",
+    "fit": "expanding window MLE, dates strictly < D",
+    "min_obs_daily_returns": 252,
+    "refit": "once per day",
+    "forecast": "one_step_sigma_D",
+    "annualization": "sqrt(252)",
+    "target_ann_vol": 0.15,
+    "lots": "clip(0.5 * 0.15 / sigma_ann, 0, 0.5), floor 0.01 else 0",
+    "never_short": true
+  },
+  "fixed": {
+    "max_lots": 0.5,
+    "min_lot": 0.01,
+    "start_balance": 10000.0,
+    "costs_source": "results/xau_research_costs.json",
+    "cost_on": "lot_changes_and_final_flatten",
+    "spread_missing": "median_impute",
+    "swap_modeled": false,
+    "swap_notes": "Unmodeled on both arms; both hold overnight. Fair vs control, optimistic vs live."
+  },
+  "control": {
+    "name": "constant_lot_always_long",
+    "lots": 0.5,
+    "window": "same post-warmup develop days",
+    "costs": "same book on entry, lot-unchanged, final flatten"
+  },
+  "window": {
+    "develop_start": "2018-04-02T00:00:00",
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false,
+    "holdout_note": "Dump ends 2025-12-31; 2026 holdout unused."
+  },
+  "gates": {
+    "soft": {
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_lt_control": true,
+      "calmar_gt_control": true,
+      "calmar": "net_profit / max(max_drawdown_pct, 1e-9)"
+    }
+  },
+  "multiplicity": {"K_prior": 15, "K": 16},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_XAU_GARCH_VOLTARGET_ALWAYS_LONG",
+    "refine_loops": false
+  },
+  "rejected_sister": "EGARCH/GJR, 10%/20% target, H1 GARCH, vol-target a dead entry family",
+  "explicitly_forbidden": [
+    "retune target 15% / min_obs 252 / GARCH(1,1)",
+    "EGARCH GJR or H1 GARCH salvage",
+    "attach sizer to FOMC H4 pullback OU Renko GOLD_SCALP",
+    "short",
+    "screen xauusd_data.csv 2021-only bull",
+    "holdout selection",
+    "paper live promote",
+    "compute develop metrics in the freeze commit"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

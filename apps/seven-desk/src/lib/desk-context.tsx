@@ -758,10 +758,12 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
         );
         for (const row of pendingSlaves) {
           if (!row.liveBroker) continue;
+          // Const keeps the LiveBroker narrowing across await (next build typecheck).
+          const broker = row.liveBroker;
           const symbol =
-            row.liveBroker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
-          const cancelled = await postLiveOrder(row.liveBroker, "cancel", {
-            confirm: confirmFor(row.liveBroker, refs),
+            broker === "wsf" && row.symbol === "EURUSD" ? "EURUSDc" : row.symbol;
+          const cancelled = await postLiveOrder(broker, "cancel", {
+            confirm: confirmFor(broker, refs),
             symbol,
             side: row.side,
             ticket: row.liveOrder ?? null,
@@ -778,7 +780,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             status: liveCloseAlreadyFlat(cancelled) ? "filled" : "error",
             reason: liveCloseAlreadyFlat(cancelled)
               ? `follow · FTMO ticket ${row.liveOrder ?? "—"} · HTTP cancel · ${cancelled.holdMs ?? "—"}ms`
-              : cancelled.reason || `${row.liveBroker} cancel failed`,
+              : cancelled.reason || `${broker} cancel failed`,
             liveTicket: row.liveOrder,
             latencyMs: cancelled.holdMs,
             httpAction: "cancel",
@@ -806,15 +808,15 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
                 sl: row.sl,
                 tp: row.tp,
                 status: "queued" as const,
-                reason: pendingReasonFor(row.liveBroker),
+                reason: pendingReasonFor(broker),
                 createdAt: Date.now(),
                 updatedAt: Date.now(),
               },
               ...current.blotter,
             ].slice(0, 200),
           }));
-          const opened = await postLiveOrder(row.liveBroker, "open", {
-            confirm: confirmFor(row.liveBroker, refs),
+          const opened = await postLiveOrder(broker, "open", {
+            confirm: confirmFor(broker, refs),
             symbol,
             side: row.side,
             volume: row.lots,
@@ -822,7 +824,7 @@ export function DeskProvider({ children }: { children: React.ReactNode }) {
             tp: row.tp,
             orderType: "market",
           });
-          applyLiveCopyResult(eventId, opened, row.liveBroker);
+          applyLiveCopyResult(eventId, opened, broker);
         }
       }
     },

@@ -57,12 +57,17 @@ for broker in "$@"; do
   [[ -f "$profile" ]] || die "missing profile: $profile"
 
   # Isolate each broker from leftover MT5_* of the previous loop.
-  unset WINEPREFIX MT5_LOGIN MT5_SERVER MT5_TERMINAL_PATH MT5_PASSWORD || true
+  # MT5_WORKSPACE too: it is a per-broker pin, so one book's value must not
+  # leak into the next iteration of this loop.
+  unset WINEPREFIX MT5_LOGIN MT5_SERVER MT5_TERMINAL_PATH MT5_PASSWORD MT5_WORKSPACE || true
   set -a
   # shellcheck disable=SC1090
   source "$profile"
   set +a
   export_wine_env
+
+  # A broker env may pin its own workspace; otherwise use the shared one.
+  BG_WS="$(mt5_target_workspace)"
 
   # Wine IPv6 connect often fails with STATUS_HOST_UNREACHABLE and yields
   # zero Network journal lines (Neomaa symptom). Alpha already has this key.

@@ -15,6 +15,8 @@ uv run ruff check src tests             # lint (line-length 100, py311 target)
 ./scripts/00-check-deps.sh              # host deps (wine, winetricks, …)
 ./scripts/healthcheck.sh --ping         # live: terminal + bridge reachable
 ./scripts/08-status.sh                  # process / bridge / ghost-window check
+./scripts/25-align-xwayland-monitors.sh --check   # X11 vs Wayland layout mirror
+./scripts/26-park-books.sh --status     # books sharing a rect across workspaces (diagnostic only)
 ```
 
 The `mt5-arch` CLI (`uv run mt5-arch ping|account|symbols|candles|brokers|config|mcp`, plus `--json`, `-v/-vv`) is documented in `README.md`. `mcp` is a read-only stdio server (no orders); see `docs/HOWTO-MT5-AI-MCP.md`.
@@ -68,9 +70,18 @@ Indicators expose signals through `iCustom` buffers consumed by `ForexSignalLogg
 
 Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`, whose header documents the non-obvious constraints it works around: login must come from `Config/common.ini` (UTF-16) because `Login=0` yields "account not specified", the `/config` ini itself must be **ASCII + CRLF**, `.set` presets must be UTF-16LE, and `Expert=` takes a bare name.
 
+`scripts/25-run-renko-vendor-backtest.sh` is the same harness for the vendored third-party
+Renko experts in `mql5/Experts/vendor/` (see that directory's `PROVENANCE.md`). It differs in
+two ways that matter: it pins `MODEL=4` (every tick based on real ticks) and refuses 1/2/3,
+because an EA that builds Renko from ticks reads the tester's OHLC interpolation as price and
+produces fiction under the `MODEL=1` default; and it **refuses a `TO` date at or past
+`holdout_start`**, so a tester run cannot quietly burn the pre-registered holdout. Its `.set` is
+generated from the frozen charter rather than hand-written, so the tester and the offline screen
+run the same numbers.
+
 ## Research invariants
 
-- **Causality.** `scripts/htf_fib_core.py` stamps a fractal pivot at its *confirmation* bar (`center + right`), never at the pivot center — a pivot is not knowable when it forms. Every fib/pivot consumer must import from this module rather than re-deriving pivots; re-implementing it is how lookahead bias gets reintroduced.
+- **Causality.** `scripts/htf_fib_core.py` stamps a fractal pivot at its *confirmation* bar (`center + right`), never at the pivot center — a pivot is not knowable when it forms. Every fib/pivot consumer must import from this module rather than re-deriving pivots; re-implementing it is how lookahead bias gets reintroduced. The same rule applies to `scripts/renko_core.py` for the price-event clock: a Renko brick is stamped at the price that *completes* it, and re-deriving brick boundaries anywhere else is how lookahead gets back in. `renko_core` is stdlib-only on purpose, so it runs under plain `uv run pytest` without numpy/pandas.
 - **State file.** `results/xau_loop_status.md` records the current disposition (`live_go`, `stop_reason`, `next_step`) of the long-running XAU research loop, with per-run artifacts in `results/*.json` and hostile-review `*_skeptic.md` notes. Read it before touching the pipeline; the standing disposition is RESEARCH_ONLY / promote=no.
 - **Costs.** `simulate()` charges per-bar spread (`spread_col`, points from `MqlRates.spread`), commission and slippage; the settings a fit used are stored in `strategy_params.json`'s `costs` block and must be replayed with it. Defaults are zero — if you call `simulate()` without costs you get a frictionless result, which is what made every earlier gate result unfalsifiable. Commission and slippage are **not** obtainable from history (MT5 exposes them only on executed deals), so they stay explicit assumptions.
 - **Pre-registered holdout.** `results/xau_holdout_lock.json` fixes `holdout_start = 2026-01-01` under the rule "NEVER used for selection". Anything that *selects* params must fit strictly before it — `backtest.py` enforces this by default (`--to` overrides, `--unbounded` breaks it and says so). Evaluating on the holdout is allowed; searching on it is not.
@@ -80,7 +91,7 @@ Headless Strategy Tester runs go through `scripts/19-run-htf-fib-backtest.sh`, w
 
 ## Data
 
-`xauusd_data.csv` (H1 + M15, ~24 months) is produced by `fetch_data.py`, which falls back through four sources: Windows `MetaTrader5` package → Wine export CSV from `mql5/Scripts/ExportXauHistory.mq5` (see `scripts/export-xau-from-wine-mt5.sh`) → mt5linux RPyC → Dukascopy/yfinance offline. `tests/test_xau_pipeline.py` asserts the CSV exists and spans ≥300 days, so those tests fail on a fresh clone until data is fetched.
+`xauusd_data.csv` (H1 + M15) is tracked (added in e65d71c; still in the tree). `tests/test_xau_pipeline.py` asserts the CSV exists and spans ≥300 days. A fresh clone already has that file, so those tests do not fail for missing data. `fetch_data.py` can regenerate it and falls back through four sources: Windows `MetaTrader5` package → Wine export CSV from `mql5/Scripts/ExportXauHistory.mq5` (see `scripts/export-xau-from-wine-mt5.sh`) → mt5linux RPyC → Dukascopy/yfinance offline. Leave the CSV tracked. Do not rewrite history to drop it.
 
 ## Secrets and safety
 

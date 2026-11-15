@@ -57,8 +57,11 @@ winetricks.log
 !.grok/workflows/
 !.grok/workflows/**
 
-# Research market data (regenerate: python3 fetch_data.py)
-xauusd_data.csv
+# Serena IDE index (local; not source)
+.serena/
+
+# xauusd_data.csv stays tracked (tests/test_xau_pipeline.py depends on it).
+# Do not ignore it. Regenerate only on purpose: python3 fetch_data.py
 
 # US-index research dumps. Slim metrics JSON + locks + *.md stay tracked.
 results/us_index_data/
@@ -67,6 +70,10 @@ results/us_index_session_*_trades.json
 results/btc_trend_pullback_data/
 results/btc_trend_pullback_*_full.json
 results/btc_trend_pullback_*_trades.json
+
+# Index-session scan extracts (lock / slim metrics / write-up stay tracked).
+results/index_session_scan/data/
+results/index_session_scan/*_full.json
 
 # EURUSD NY-scalp research dumps. Slim metrics JSON + lock + *.md stay tracked.
 results/eurusd_data/
@@ -110,9 +117,22 @@ apps/seven-desk/data/
 # Large local dumps / session artifacts (never commit)
 results/tick_data/
 results/btc_data/
+results/scalper_tester_*/
+results/scalper_gates_*/
+
+# Local agent noise and session transcripts (never commit)
+.commandcode/
+.playwright-mcp/
+.herdr/
+scratchpad/
+codex-session-*.md
+*saved-conversation*.txt
 
 # BTC NY-session scalp lane
 results/btc_ny_data/
 results/btc_ny_session_scalp_*_full.json
 .crew/
 pi-session-*.html
+
+# live_trader per-intent state (runtime)
+state/

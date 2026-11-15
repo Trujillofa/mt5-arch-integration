@@ -1,0 +1,82 @@
+{
+  "status": "FROZEN",
+  "protocol_version": 2.2,
+  "frozen_at": "2026-09-19",
+  "family_id": "audjpy_carry_long_hold_v1",
+  "n_free_knobs": 0,
+  "search_cardinality": 1,
+  "role": "carry_harvest_not_price_forecast",
+  "hypothesis": "Always-long 0.10 AUDJPY on Vantage, crediting a screen-time frozen SYMBOL_SWAP_LONG (USD/lot/night, Wednesday×3) plus measured spread on entry/exit, beats the identical long with swap=0 on develop net profit, with NP>0 and DD≤15%.",
+  "article_intake": {
+    "schema": "mt5-article-intake/v1",
+    "article_url": "https://www.mql5.com/en/articles/22175",
+    "claim_type": "math",
+    "independent_python": false,
+    "parity_package": "none",
+    "holdout_used_for_selection": false,
+    "decision": "defer",
+    "reason": "Article is swap plumbing, not a scored AUDJPY book. Catalog PF is not evidence. Independent Python only after this freeze commit, at screen."
+  },
+  "data_gate": {
+    "symbol": "AUDJPY",
+    "h1_source": "Vantage MCP get_chart_history at screen",
+    "if_missing": "BLOCKED_ON_DATA",
+    "swap_source": "SymbolInfoDouble SYMBOL_SWAP_LONG at screen, convert to USD/lot/night, freeze that scalar",
+    "if_swap_long_le_0": "SCREEN_FAIL fail-closed"
+  },
+  "clock": {
+    "bar_timestamps": "server_clock_as_stored",
+    "resample": "daily OHLC on server date",
+    "entry": "first develop day open",
+    "exit": "last develop day close"
+  },
+  "rule": {
+    "direction": "long_only",
+    "lots": 0.1,
+    "never_short": true,
+    "no_entry_filter": true,
+    "swap_nights": "weekday rollovers; Wednesday multiplier 3",
+    "weekend": "do not invent extra weekend swap days"
+  },
+  "fixed": {
+    "contract_size": 100000.0,
+    "point": 0.001,
+    "slippage_points": 0.0,
+    "commission_per_lot": 0.0,
+    "cost_on": "entry_and_final_flatten_spread",
+    "swap_constant_from": "screen_time_symbolinfo"
+  },
+  "control": {
+    "primary": "identical_long_swap_zero",
+    "must_beat_no_swap_net": true,
+    "report_only": "always_flat"
+  },
+  "window": {
+    "develop_rule": "time < 2026-01-01",
+    "holdout_for_selection": false
+  },
+  "gates": {
+    "soft": {
+      "net_profit_gt": 0.0,
+      "max_drawdown_pct_max": 15.0,
+      "np_gt_no_swap_arm": true
+    }
+  },
+  "multiplicity": {"K_prior": 19, "K": 20},
+  "kill": {
+    "on_screen_fail": "SCREEN_FAIL",
+    "label": "KILL_AUDJPY_CARRY_LONG_HOLD",
+    "refine_loops": false
+  },
+  "rejected_sister": "NZDUSD carry; short JPY; historical swap path reconstruction",
+  "explicitly_forbidden": [
+    "retune 0.10 lots or Wednesday x3",
+    "short AUDJPY",
+    "search swap rate",
+    "gold books",
+    "holdout selection",
+    "paper live promote",
+    "compute develop metrics in the freeze commit"
+  ],
+  "safety": {"offline_only": true, "promote_default": "no", "live_go": false}
+}

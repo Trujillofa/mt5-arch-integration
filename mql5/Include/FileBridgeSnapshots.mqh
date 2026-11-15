@@ -102,14 +102,22 @@ string Esc(const string s)
   }
 
 //+------------------------------------------------------------------+
-//| Simple direct write + share flags; throttle error spam           |
+//| Atomic snapshot write: temp file, then rename over the target.    |
+//| A truncate-in-place write lets a reader sample a 0-byte or prefix  |
+//| file (torn JSON). FileMove is atomic on the same filesystem, so    |
+//| readers see either the previous snapshot or the complete new one.  |
 //+------------------------------------------------------------------+
 void Put(const string rel, const string body)
   {
+   string tmp = rel + ".tmp";
+   int common = 0;
    int flags = FILE_WRITE|FILE_TXT|FILE_ANSI|FILE_SHARE_READ|FILE_SHARE_WRITE;
-   int h = FileOpen(rel, flags);
+   int h = FileOpen(tmp, flags);
    if(h == INVALID_HANDLE)
-      h = FileOpen(rel, flags|FILE_COMMON);
+     {
+      h = FileOpen(tmp, flags|FILE_COMMON);
+      common = FILE_COMMON;
+     }
    if(h == INVALID_HANDLE)
      {
       static datetime s_last_err = 0;
@@ -123,7 +131,20 @@ void Put(const string rel, const string body)
       return;
      }
    FileWriteString(h, body);
+   FileFlush(h);
    FileClose(h);
+   // Rename over the target: readers see the previous snapshot or the complete
+   // new one, never a prefix. Same folder => same filesystem => atomic rename.
+   if(!FileMove(tmp, common, rel, FILE_REWRITE))
+     {
+      static datetime s_last_move_err = 0;
+      datetime now2 = TimeLocal();
+      if(now2 - s_last_move_err >= 60)
+        {
+         s_last_move_err = now2;
+         Print("Atomic publish failed ", rel, " err=", GetLastError());
+        }
+     }
   }
 
 // Under Wine, TERMINAL_CONNECTED is often false even when the trade session is
@@ -236,7 +257,22 @@ void WriteSymbols()
       j += "\"point\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_POINT), 8) + ",";
       j += "\"tick_value\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_VALUE), 8) + ",";
       j += "\"tick_size\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_TRADE_TICK_SIZE), 8) + ",";
-      j += "\"trade_mode\":\"" + mode_s + "\"";
+      j += "\"trade_mode\":\"" + mode_s + "\",";
+      string swap_s = "UNKNOWN";
+      long sm = SymbolInfoInteger(sym, SYMBOL_SWAP_MODE);
+      if(sm == SYMBOL_SWAP_MODE_DISABLED)            swap_s = "DISABLED";
+      else if(sm == SYMBOL_SWAP_MODE_POINTS)         swap_s = "POINTS";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_SYMBOL) swap_s = "CURRENCY_SYMBOL";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_MARGIN) swap_s = "CURRENCY_MARGIN";
+      else if(sm == SYMBOL_SWAP_MODE_CURRENCY_DEPOSIT) swap_s = "CURRENCY_DEPOSIT";
+      else if(sm == SYMBOL_SWAP_MODE_INTEREST_CURRENT) swap_s = "INTEREST_CURRENT";
+      else if(sm == SYMBOL_SWAP_MODE_INTEREST_OPEN)   swap_s = "INTEREST_OPEN";
+      else if(sm == SYMBOL_SWAP_MODE_REOPEN_CURRENT)  swap_s = "REOPEN_CURRENT";
+      else if(sm == SYMBOL_SWAP_MODE_REOPEN_BID)      swap_s = "REOPEN_BID";
+      j += "\"swap_long\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_LONG), 8) + ",";
+      j += "\"swap_short\":" + DoubleToString(SymbolInfoDouble(sym, SYMBOL_SWAP_SHORT), 8) + ",";
+      j += "\"swap_mode\":\"" + swap_s + "\",";
+      j += "\"swap_rollover3days\":" + IntegerToString((int)SymbolInfoInteger(sym, SYMBOL_SWAP_ROLLOVER3DAYS));
       j += "}";
      }
    j += "]";
@@ -309,6 +345,15 @@ void WriteCandles()
          if(StringLen(tf)==0) continue;
          MqlRates rates[];
          int copied = CopyRates(sym, ParseTf(tf), 0, InpCandleCount, rates);
+         if(copied <= 0)
+           {
+            // CopyRates returns <=0 on a cold/unsynchronised symbol. Do NOT publish
+            // {"candles":[]} over the last good file: readers would serve an empty
+            // market as live data. Keep the previous snapshot; the next tick retries.
+            Print("CopyRates empty ", sym, " ", tf, " err=", GetLastError(),
+                  " — keeping previous snapshot");
+            continue;
+           }
          string jsn = "{\"symbol\":\"" + Esc(sym) + "\",\"timeframe\":\"" + tf + "\",\"candles\":[";
          for(int k=0; k<copied; k++)
            {

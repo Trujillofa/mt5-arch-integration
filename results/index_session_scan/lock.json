@@ -1,0 +1,46 @@
+{
+  "search_id": "index_session_scan_v1",
+  "locked_at": "2026-09-10T12:10:00-05:00",
+  "family_id": "ny_cash_orb_vwap_ema_flat",
+  "rules": "unmodified frozen combo \u2014 not a retune of v1\u2013v8 or GoldSessionScalp",
+  "tf": "M5",
+  "holdout_start": "2026-06-01",
+  "selection_window": "et_date < holdout_start",
+  "holdout_rule": "NEVER used for ranking or selection (index v1 lock, not XAU)",
+  "june_2026": "in holdout (v1 split). Do not mix with v4 burned-June split.",
+  "score": {
+    "primary": "develop_profit_factor_after_costs",
+    "profit_factor_none_pins_to": 3.0,
+    "n_floor": 40,
+    "secondary": "develop_max_dd",
+    "tertiary": "develop_expectancy",
+    "note": "Rank eligible rows (develop trades >= n_floor) by PF desc, then max_dd desc (less negative better), then expectancy desc. Holdout/select-eval metrics are recorded but ignored by the ranker."
+  },
+  "n_floor": 40,
+  "costs": {
+    "point_size": 0.01,
+    "contract_size": 1.0,
+    "lots": 1.0,
+    "commission_per_lot": 0.0,
+    "slippage_points": 10.0,
+    "max_spread_points": 200.0,
+    "assumed_spread_when_unmeasured": 60.0,
+    "frictionless": false,
+    "slippage_note": "10 MT5 points (0.01) per side, UNMEASURED \u2014 same locked book as us_index_session_develop_v1. Not 10 index points. RT slip \u2248 $0.20.",
+    "spread_note": "Wine .hc uses tape spread. Dukascopy public bars have no spread; those rows charge assumed_spread_when_unmeasured=60 (US100 typical cash from the design memo), labeled unmeasured. Spread 0 + slip 0 is refused.",
+    "note": "Frozen $10k / 1 lot / 10 pt slip book. Commission 0 is the spread-inclusive CFD assumption from the existing stack \u2014 not a zero-cost run."
+  },
+  "suitability": {
+    "trade_candidate_requires": [
+      "session_fit=us_cash_0930",
+      "develop_n>=n_floor"
+    ],
+    "wrong_event": "GER40/DAX, UK100, JP225, AU200, EU50, FRA40 and other non-US cash opens are research-only even if develop PF ranks first. The frozen model is NY cash 09:30 ET.",
+    "promote": false,
+    "live_go": false
+  },
+  "min_bars_m5": 2000,
+  "promote": false,
+  "live_go": false,
+  "disposition": "research-only / promote=no (goal archived 2026-08-20; this scan does not promote)"
+}

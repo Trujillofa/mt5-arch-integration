@@ -362,6 +362,177 @@ def lua_set_tiled(window: str) -> str:
     )
 
 
+def lua_set_floating(window: str) -> str:
+    return (
+        "hl.dispatch(hl.dsp.window.float({ "
+        f"window = {_lua_quote(window)}, action = 'enable' }}))"
+    )
+
+
+# --- Off-screen parking -------------------------------------------------
+#
+# Wine works purely in X11 coordinates and knows nothing about Hyprland
+# workspaces. Hyprland keeps XWayland windows on *hidden* workspaces mapped at
+# their real geometry, and tiles every window on a monitor to the same rect, so
+# two books on one monitor are literally the same rectangle to X11. The X
+# server then routes pointer events there by geometry and stacking order, and
+# the hidden book can be the topmost one -- that is the "scrolling Vantage
+# moves FTMO" / "right-click opens two menus" failure.
+#
+# Hyprland ignores external X11 restack and iconify requests, so the only lever
+# is geometry: float the hidden book and move it below every monitor. The
+# pointer is confined to the monitor area (y < screen height), so a book parked
+# at y = PARK_Y can never be under the cursor, while staying mapped and fully
+# alive -- EAs, ticks and the file bridge are untouched.
+
+PARK_X = 40
+PARK_Y = 3000  # every monitor bottom edge is far above this
+PARK_STRIDE = 200  # parked books get distinct rects too, never a shared one
+
+
+@dataclass(frozen=True, slots=True)
+class ParkPlan:
+    """One book's desired parking state."""
+
+    address: str
+    title: str
+    action: str  # "park" | "unpark" | "keep"
+    x: int = 0
+    y: int = 0
+
+
+def is_book_window(client: ClientRef, *, min_size: int = 200) -> bool:
+    """A real MT5 shell window, not a Wine popup/tooltip/dialog leftover.
+
+    Reuses the main-terminal filter so Login (which hyprland.lua floats on
+    purpose), Navigator, Toolbox and undocked charts are all excluded -- parking
+    those would fight a deliberate window rule. The size floor additionally
+    drops the orphaned 195x40 surfaces Wine leaves behind, which are already
+    harmless and would only churn Wine.
+    """
+    return (
+        is_main_terminal_client(client)
+        and client.size[0] >= min_size
+        and client.size[1] >= min_size
+    )
+
+
+def is_parked(client: ClientRef, *, park_y: int = PARK_Y) -> bool:
+    return client.floating and client.at[1] >= park_y
+
+
+def rects_overlap(a: ClientRef, b: ClientRef) -> bool:
+    """True when two windows share any X11 pixel -- the crosstalk precondition."""
+    ax, ay = a.at
+    aw, ah = a.size
+    bx, by = b.at
+    bw, bh = b.size
+    return ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah
+
+
+def plan_park(
+    clients: Sequence[ClientRef],
+    *,
+    visible_workspaces: Sequence[int],
+    parked_addresses: Sequence[str] = (),
+    park_x: int = PARK_X,
+    park_y: int = PARK_Y,
+    stride: int = PARK_STRIDE,
+) -> list[ParkPlan]:
+    """Park hidden books that would steal a visible book's input; restore the rest.
+
+    Pure: takes parsed clients plus the workspace ids currently displayed on
+    some monitor, and returns one plan per book.
+
+    Only a hidden book whose rectangle *overlaps a book that is on screen* can
+    steal input -- that needs both of them on one monitor. A hidden book alone
+    on its monitor is harmless, and parking it would float/tile-churn Wine for
+    nothing; that churn is what wedges a terminal, and the live book would take
+    it on every workspace switch. So such a book plans as "keep".
+
+    A parked book's rectangle is off-screen and therefore overlaps nothing, so
+    it stays parked until its own workspace comes back on screen. That
+    hysteresis is deliberate: it stops a book flapping as other workspaces move.
+
+    "keep" means already correct -- callers must skip those.
+    """
+    visible = {int(w) for w in visible_workspaces}
+    known_parked = set(parked_addresses)
+    books = [c for c in clients if is_book_window(c)]
+    books.sort(key=lambda c: (c.workspace_id if c.workspace_id is not None else -1, c.address))
+    on_screen = [c for c in books if c.workspace_id in visible]
+
+    plans: list[ParkPlan] = []
+    slot = 0
+    for client in books:
+        # Geometry alone is not enough: moving a parked book to another
+        # workspace makes Hyprland clamp it back into view, so it is still
+        # floating but no longer sits at the park coordinates. Without the
+        # caller's record of what it parked, such a book would be left floating
+        # for good instead of returning to the tiled layout.
+        parked = is_parked(client, park_y=park_y) or client.address in known_parked
+        if client.workspace_id in visible:
+            plans.append(
+                ParkPlan(client.address, client.title, "unpark" if parked else "keep")
+            )
+            continue
+        conflicts = any(
+            other.address != client.address and rects_overlap(client, other)
+            for other in on_screen
+        )
+        if not conflicts:
+            plans.append(ParkPlan(client.address, client.title, "keep"))
+            continue
+        target_y = park_y + slot * stride
+        slot += 1
+        action = "keep" if parked and client.at == (park_x, target_y) else "park"
+        plans.append(ParkPlan(client.address, client.title, action, park_x, target_y))
+    return plans
+
+
+def plan_unpark_all(clients: Sequence[ClientRef], *, park_y: int = PARK_Y) -> list[ParkPlan]:
+    """Restore every parked book to tiled. The undo for plan_park."""
+    return [
+        ParkPlan(c.address, c.title, "unpark")
+        for c in clients
+        if is_book_window(c) and is_parked(c, park_y=park_y)
+    ]
+
+
+def lua_for_park_plan(plan: ParkPlan) -> list[str]:
+    """Lua statements realising one plan. Empty for "keep"."""
+    sel = plan.address if plan.address.startswith("address:") else f"address:{plan.address}"
+    if plan.action == "park":
+        return [lua_set_floating(sel), lua_move_window_xy(sel, plan.x, plan.y)]
+    if plan.action == "unpark":
+        return [lua_set_tiled(sel)]
+    return []
+
+
+def apply_park_plans(plans: Sequence[ParkPlan], *, dry_run: bool = False) -> list[str]:
+    """Execute plans via hyprctl eval. Returns the Lua actually issued."""
+    issued: list[str] = []
+    for plan in plans:
+        for lua in lua_for_park_plan(plan):
+            issued.append(lua)
+            if not dry_run:
+                hypr_eval(lua)
+    return issued
+
+
+def visible_workspace_ids(monitors_payload: Any = None) -> list[int]:
+    """Workspace ids currently displayed on some monitor."""
+    data = monitors_payload if monitors_payload is not None else _hyprctl_json(["monitors"])
+    out: list[int] = []
+    for row in data:
+        if row.get("disabled"):
+            continue
+        ws = row.get("activeWorkspace") or {}
+        if isinstance(ws, dict) and "id" in ws:
+            out.append(int(ws["id"]))
+    return out
+
+
 def lua_fullscreen_state(window: str, *, internal: int, client: int) -> str:
     return (
         "hl.dispatch(hl.dsp.window.fullscreen_state({ "

@@ -93,8 +93,8 @@ def prepare_frame(raw: pd.DataFrame) -> pd.DataFrame:
     h4_ema200 = h4["close"].ewm(span=200, adjust=False).mean()
     # Causal: only completed H4 bar (shift 1) then ffill to H1
     h4_bull = (h4["close"] > h4_ema200).astype(float).shift(1)
-    h4_close = h4["close"].shift(1)
-    h4_ema = h4_ema200.shift(1)
+    h4_close = h4["close"].shift(1)  # noqa: F841  # computed-but-unused (#123): only h4_bull is joined
+    h4_ema = h4_ema200.shift(1)  # noqa: F841  # computed-but-unused (#123): only h4_bull is joined
     bull_h1 = h4_bull.reindex(tmp.index, method="ffill")
     # align back to original d order/length
     d = d.copy()
@@ -249,7 +249,6 @@ def simulate_vol_gate(
     close = d["close"].to_numpy(float)
     high = d["high"].to_numpy(float)
     low = d["low"].to_numpy(float)
-    open_ = d["open"].to_numpy(float) if "open" in d.columns else close
     rsi = d["rsi"].to_numpy(float)
     atr = d["atr"].to_numpy(float)
     atr_pc = d["atr_pctile"].to_numpy(float)
@@ -344,20 +343,19 @@ def simulate_vol_gate(
         long_sig = False
         short_sig = False
 
-        # Optional failed-breakout fade only in low atr_pctile
-        if failed_breakout_fade and atr_pc[i] < atr_max and i >= 2:
-            # prior bar broke high then closed back inside → fade short OR
-            # for long_only: fade failed downside break as long re-entry
-            if (
-                not np.isnan(donch_hi20[i - 2])
-                and high[i - 1] > donch_hi20[i - 2]
-                and close[i - 1] < donch_hi20[i - 2]
-                and close[i] < bb_mid[i]
-                and not np.isnan(rsi[i])
-                and rsi[i] <= rsi_buy + 15
-            ):
-                # failed upside breakout in low vol → skip chase; stay MR path
-                pass
+        # Optional failed-breakout fade only in low atr_pctile.
+        # Prior bar broke high then closed back inside → fade short OR
+        # for long_only: fade failed downside break as long re-entry.
+        if failed_breakout_fade and atr_pc[i] < atr_max and i >= 2 and (
+            not np.isnan(donch_hi20[i - 2])
+            and high[i - 1] > donch_hi20[i - 2]
+            and close[i - 1] < donch_hi20[i - 2]
+            and close[i] < bb_mid[i]
+            and not np.isnan(rsi[i])
+            and rsi[i] <= rsi_buy + 15
+        ):
+            # failed upside breakout in low vol → skip chase; stay MR path
+            pass
 
         if atr_pc[i] > atr_max:
             continue
@@ -515,7 +513,7 @@ def simulate_donchian(
                         pnls.append(pnl)
                         lots -= take
                         partial_done = True
-                        if be_at_r is not None or True:
+                        if be_at_r is not None or True:  # noqa: SIM222  # intent ambiguous (#123 item 18); lane closed, do not change
                             # move remainder to BE after partial
                             sl = entry if pos > 0 else entry
                             be_done = True
@@ -583,16 +581,19 @@ def simulate_donchian(
                 long_sig = False
 
         # failed breakout fade: only low atr_pctile — reverse turtle
-        if failed_breakout_fade and not np.isnan(atr_pc[i]) and atr_pc[i] < 0.40 and i >= 2:
-            # failed upside break yesterday → fade short (if not long_only) or skip long
-            if (
-                high[i - 1] > donch_hi[i - 2]
-                and close[i - 1] < donch_hi[i - 2]
-                and close[i] < donch_hi[i - 1]
-            ):
-                long_sig = False
-                if not long_only:
-                    short_sig = True
+        # failed upside break yesterday → fade short (if not long_only) or skip long
+        if (
+            failed_breakout_fade
+            and not np.isnan(atr_pc[i])
+            and atr_pc[i] < 0.40
+            and i >= 2
+            and high[i - 1] > donch_hi[i - 2]
+            and close[i - 1] < donch_hi[i - 2]
+            and close[i] < donch_hi[i - 1]
+        ):
+            long_sig = False
+            if not long_only:
+                short_sig = True
 
         if long_only:
             short_sig = False
@@ -829,7 +830,6 @@ def simulate_htf_fib_enhanced(
     if not df.index.is_unique:
         df = df[~df.index.duplicated(keep="last")]
 
-    close_s = df["close"].astype(float)
     if "rsi_ma" not in df.columns:
         df["rsi_ma"] = df["rsi"].rolling(14).mean()
 
@@ -1167,7 +1167,7 @@ def simulate_htf_pullback(
             # and current bar dips into the impulse body / gap region
             j0 = i - int(fvg_lookback)
             impulse = close[i - 1] - open_[j0]
-            gap_low = min(low[j0 : i])  # noqa: E203
+            gap_low = min(low[j0 : i])  # noqa: E203, F841  # computed-but-unused (#123): fvg_ok uses another touch test
             # require impulse of at least 1.0 ATR and touch of impulse zone
             fvg_ok = impulse >= 1.0 * atr[i - 1] and low[i] <= close[i - 1] - 0.25 * atr[i]
 
@@ -1317,7 +1317,7 @@ def product_grid(axes: dict[str, list], fixed: dict | None = None) -> list[dict]
     out: list[dict] = []
     for combo in itertools.product(*vals):
         p = dict(fixed or {})
-        for k, v in zip(keys, combo):
+        for k, v in zip(keys, combo, strict=False):
             p[k] = v
         out.append(p)
     return out
@@ -1428,7 +1428,6 @@ def optimize_lane(
     best_params: dict | None = None
     best_m: Metrics | None = None
     best_pv: Metrics | None = None
-    history_top: list[dict] = []
 
     print(f"[{lane_id}] stage1 grid={len(grid_use)} (designed={len(grid)})", flush=True)
     for p in grid_use:
@@ -1454,7 +1453,7 @@ def optimize_lane(
     print(f"[{lane_id}] stage2 refine around best...", flush=True)
     refine_grid = neighborhood_refine(best_params, refine_axes)
     for p in refine_grid:
-        key = json.dumps(serializable_params(p), sort_keys=True, default=str)
+        key = json.dumps(serializable_params(p), sort_keys=True, default=str)  # noqa: F841  # computed-but-unused (#123): duplicate-skip never applied
         # skip exact duplicates of already eval'd best path cheaply
         m, m_pv = run_eval(sim, d_dev, p, pseudo_slice)
         n_evals += 1

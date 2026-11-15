@@ -1,0 +1,21 @@
+{
+  "family_id": "exog_eur_gbp_tvbeta_xau_long_or_flat_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "lookback": 60,
+  "develop": {
+    "n": 544,
+    "wr": 52.205882352941174,
+    "pf": 1.270598945402097,
+    "np": 57219.50000000035,
+    "dd": 56.68373917992001
+  },
+  "always_long": {
+    "np": 126844.50000000001,
+    "n": 1
+  },
+  "beat_always_long": false,
+  "holdout": null,
+  "notes": "EUR+GBP rolling OLS 60d \u2192 long XAU next day iff pred>0; never short. Holdout sealed."
+}

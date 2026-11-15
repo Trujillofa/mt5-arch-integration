@@ -50,7 +50,6 @@ def long_signal_mask(d: pd.DataFrame, params: dict) -> pd.Series:
 
     close = d["close"]
     low = d["low"]
-    high = d["high"]
     rsi = d["rsi"]
     atr = d["atr"]
     bb_lo = d[bb_col]

@@ -36,6 +36,10 @@ class SymbolInfo:
     tick_value: float
     tick_size: float
     trade_mode: str
+    swap_long: float | None = None
+    swap_short: float | None = None
+    swap_mode: str = ""
+    swap_rollover3days: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

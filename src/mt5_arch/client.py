@@ -50,6 +50,19 @@ TRADE_MODE_LABELS: dict[int, str] = {
     4: "FULL",
 }
 
+# ENUM_SYMBOL_SWAP_MODE — raw broker units, not USD/lot/night.
+SWAP_MODE_LABELS: dict[int, str] = {
+    0: "DISABLED",
+    1: "POINTS",
+    2: "CURRENCY_SYMBOL",
+    3: "CURRENCY_MARGIN",
+    4: "CURRENCY_DEPOSIT",
+    5: "INTEREST_CURRENT",
+    6: "INTEREST_OPEN",
+    7: "REOPEN_CURRENT",
+    8: "REOPEN_BID",
+}
+
 
 class MT5ArchError(Exception):
     """Base error for the integration layer."""
@@ -206,6 +219,16 @@ class MT5ArchClient:
             trade_mode = TRADE_MODE_LABELS.get(int(trade_mode_raw), str(trade_mode_raw))
         except (TypeError, ValueError):
             trade_mode = str(trade_mode_raw)
+        swap_mode_raw = data.get("swap_mode")
+        swap_mode = ""
+        if swap_mode_raw is not None and swap_mode_raw != "":
+            try:
+                swap_mode = SWAP_MODE_LABELS.get(int(swap_mode_raw), str(swap_mode_raw))
+            except (TypeError, ValueError):
+                swap_mode = str(swap_mode_raw)
+        swap_long = data.get("swap_long")
+        swap_short = data.get("swap_short")
+        rollover = data.get("swap_rollover3days")
         return SymbolInfo(
             symbol=str(data.get("name", symbol) or symbol),
             min_lot=float(data.get("volume_min", 0.01) or 0.01),
@@ -217,6 +240,10 @@ class MT5ArchClient:
             tick_value=float(data.get("trade_tick_value", 0.0) or 0.0),
             tick_size=float(data.get("trade_tick_size", 0.0) or 0.0),
             trade_mode=trade_mode,
+            swap_long=None if swap_long is None else float(swap_long),
+            swap_short=None if swap_short is None else float(swap_short),
+            swap_mode=swap_mode,
+            swap_rollover3days=None if rollover is None else int(rollover),
         )
 
     def copy_rates(
@@ -248,7 +275,9 @@ class MT5ArchClient:
                 h = float(row["high"])
                 low = float(row["low"])
                 c = float(row["close"])
-                vol = float(row["tick_volume"] if "tick_volume" in row.dtype.names else row["real_volume"])
+                vol = float(
+                    row["tick_volume"] if "tick_volume" in row.dtype.names else row["real_volume"]
+                )
             except (TypeError, ValueError, AttributeError, IndexError, KeyError):
                 ts = int(row[0])
                 o, h, low, c = float(row[1]), float(row[2]), float(row[3]), float(row[4])

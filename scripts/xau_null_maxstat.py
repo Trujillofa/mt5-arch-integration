@@ -52,7 +52,7 @@ from backtest import (  # noqa: E402
     passes,
     search_score,
 )
-from backtest import (
+from backtest import (  # noqa: E402
     simulate as _simulate,
 )
 
@@ -60,10 +60,14 @@ PARAMS_PATH = ROOT / "strategy_params.json"
 OUT_JSON = ROOT / "results" / "xau_null_maxstat.json"
 OUT_MD = ROOT / "results" / "xau_null_maxstat.md"
 
+# Shipped baseline params. Grid costs stay on the research floor (COSTS below),
+# not this file's costs block.
+_SAVED = json.loads(PARAMS_PATH.read_text())
+
 sys.path.insert(0, str(ROOT / "scripts"))
-from xau_research_costs import load_research_costs  # noqa: E402
-from xau_null_core import scramble_ohlc as scramble_ohlc  # noqa: E402
 from xau_null_core import pvalue as _pvalue  # noqa: E402
+from xau_null_core import scramble_ohlc as scramble_ohlc  # noqa: E402
+from xau_research_costs import load_research_costs  # noqa: E402
 
 # Research cost floor (Vantage RAW ECN); see results/xau_research_costs.json.
 COSTS: dict[str, Any] = load_research_costs()
@@ -89,6 +93,21 @@ def metrics_dict(m) -> dict:
         "n_trades": int(m.n_trades),
         "wins": int(m.wins),
         "losses": int(m.losses),
+    }
+
+
+def replay_shipped_baseline(d: pd.DataFrame) -> dict[str, Any]:
+    """Replay ``strategy_params.json`` on ``d`` with the null-grid costs.
+
+    Reads module-level ``_SAVED``. Does not score the search grid.
+    """
+    baseline_params = normalize_params(_SAVED.get("params") or {})
+    base_m = simulate(d, **baseline_params)
+    return {
+        "params": serializable_params(baseline_params),
+        **metrics_dict(base_m),
+        "search_score": search_score(base_m),
+        "passes": passes(base_m),
     }
 
 
@@ -399,18 +418,11 @@ def main() -> int:
     )
 
     # shipped baseline on same window + costs
-    baseline_params = normalize_params(_SAVED.get("params") or {})
-    base_m = simulate(d_real, **baseline_params)
-    baseline_replay = {
-        "params": serializable_params(baseline_params),
-        **metrics_dict(base_m),
-        "search_score": search_score(base_m),
-        "passes": passes(base_m),
-    }
+    baseline_replay = replay_shipped_baseline(d_real)
     print(
         f"REAL: max_PF(n≥20)={real['max_pf']:.4f} max_score(n≥20)={real['max_score']:.1f} "
         f"passers={real['n_passers']} early={real['n_early_exit_eligible']} "
-        f"baseline_PF={base_m.profit_factor:.4f} n={base_m.n_trades} "
+        f"baseline_PF={baseline_replay['profit_factor']:.4f} n={baseline_replay['n_trades']} "
         f"(raw max_PF={real['max_pf_raw']:.1f})",
         flush=True,
     )

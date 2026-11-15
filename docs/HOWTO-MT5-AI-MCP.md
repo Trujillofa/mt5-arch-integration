@@ -149,6 +149,16 @@ Wine note (verified on Vantage / Wine 11.15 / build 6140):
 - Route A still needs an **MQL5.community** login (Tools → Options → Community), not the broker login. If the assistant menu is missing after that, skip to C.
 - If `ss` shows nothing after Enable=1 + restart, or the handshake stays 401 after a UI-generated token, use route C.
 
+## M1 history from official MCP
+
+`scripts/fetch_m1_official_mcp.py` reads bars from the official MCP HTTP server (route B). The client is read-only by construction: its allowlist is only `get_chart_history` and `get_time_information`. Any other tool name, including every trade_* tool the official server also exposes, raises before the request is sent. The URL host must be loopback (127.0.0.1, localhost, or ::1). Any other host is refused, because that server can trade. Pass the dialog token as `MT5_MCP_TOKEN`. Never commit the token.
+
+The server returns only bars already in that terminal's chart cache. Cache length is Tools → Options → Charts → Max bars in chart, stored as `[Charts] MaxBars` in the prefix Config/common.ini. A value of 100000 is about three months of M1. The script warns when the first bar served starts later than requested.
+
+On 2026-09-24 the Vantage prefix cap changed from 100000 to 2000000. The previous file sits beside it as common.ini.bak-maxbars-20260924. The new cap applies only after that terminal is started again. This repository does not edit Wine prefixes.
+
+Only the terminal64.exe that bound 127.0.0.1:22346 first answers. Check with `ss -ltnp | grep 22346` and `scripts/21-official-mcp-status.sh`.
+
 ## Route C — `mt5-arch mcp` (implemented here)
 
 Read-only stdio MCP over the same client as `mt5-arch ping|account|symbols|candles`.

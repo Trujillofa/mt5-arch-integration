@@ -1,5 +1,334 @@
 # XAU offline loop status
 
+## 2026-09-24 — Develop screen · `xau_gold_session_study` (timing / sweep / fade) **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **study** | `scripts/xau_gold_session_study.py` · 3 idea groups: extreme timing vs null, London sweep+reclaim→VWAP, VWAP fade at fixed times |
+| **tape** | Vantage XAUUSD **M1** via official MT5 MCP (`scripts/fetch_m1_official_mcp.py`, read-only allowlist) · develop 500 days 2024-01-02→2025-12-31 |
+| **result** | claim 15:30–16:30 UTC 12.0% vs 9.8% null **p=0.062** · best window fw p 0.17 and shifts 1–2 h by season · sweep best +0.06R t=0.44 (≈0 at +10 pt) · all 7 fades negative |
+| **disposition** | **SCREEN_FAIL** — no idea group clears develop · holdout **untouched** |
+| **artifact** | `results/xau_gold_session_study_develop_screen.{json,md}` |
+| **do not** | retune claim window / reclaim min / ATR k / stop lookback / BE · run holdout on these three · `--window all` for selection |
+| **multiplicity** | 3 idea groups looked at · **K_prior=25 for the next family** (21 + `renko_event_clock_vendor` 1 from #115 + these 3; K counts looks taken, not landings) |
+
+Gold's intraday extreme timing on M1 is indistinguishable from a calibrated null on 2024–25; the sweep and fade setups lose after spread. Kill label `KILL_XAU_GOLD_SESSION_STUDY`.
+
+---
+
+## 2026-09-19 — Develop screen · `xau_cot_gc_mm_fade_long_or_flat_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_cot_gc_mm_fade_long_or_flat_v1` |
+| **tape** | Vantage XAU H1 2018-04-02→2025-12-31 · CFTC Disagg COMEX GC 2016–2025 |
+| **result** | n=**2** · PF 99 (thin) · NP **+$10.2k** · DD **61.0%** · always-long **+$149.6k** |
+| **disposition** | **SCREEN_FAIL** — n<40 · DD>15% · does not beat sitting · holdout untouched |
+| **artifact** | `results/xau_cot_gc_mm_fade_long_or_flat_v1_screen.{json,md}` |
+| **do not** | retune −2/−0.5/52 · Legacy COT · short · `--live` |
+| **multiplicity** | **K_prior=21 for the next family** |
+
+Exogenous MM z is not an edge vs 0.5 lot always-long. Kill label `KILL_XAU_COT_GC_MM_FADE_LONG_OR_FLAT`.
+
+---
+
+## 2026-09-19 — Freeze · `xau_cot_gc_mm_fade_long_or_flat_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** download COT or compute PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_cot_gc_mm_fade_long_or_flat_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_cot_gc_mm_fade_long_or_flat_v1.json` |
+| **role** | COMEX GC **managed-money** net % OI → long-or-flat Vantage XAU |
+| **n_free_knobs** | **0** · z**< −2** long 0.5 · flatten z**> −0.5** · min **52**w · Friday close → next open |
+| **data** | XAU dump on disk · CFTC Disaggregated **at screen** · never Tuesday-as-of before Friday 15:30 ET |
+| **control** | always-long 0.5 lot |
+| **K** | 21 (K_prior=20) |
+| **do not** | retune −2/−0.5/52 · Legacy COT · short · Bookmap · peek holdout · `--live` |
+
+Exogenous positioning, still vs sitting. Fetch COT only when screening.
+
+---
+
+## 2026-09-19 — Develop screen · `audjpy_carry_long_hold_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `audjpy_carry_long_hold_v1` |
+| **tape** | Vantage AUDJPY H1 2018-01-02→2025-12-31 |
+| **result** | NP **+$1.07k** · DD **17.0%** · swap **unread (fail-closed 0)** · no-swap arm **identical** |
+| **disposition** | **SCREEN_FAIL** — swap>0 fail · DD>15% · does not beat no-swap · holdout untouched |
+| **artifact** | `results/audjpy_carry_long_hold_v1_screen.{json,md}` |
+| **do not** | invent a web swap · retune 0.10 · `--live` |
+| **multiplicity** | **K_prior=20 for the next family** |
+
+Bridge was stale; charter fail-closed. Price path alone already breaks DD≤15%.
+
+---
+
+## 2026-09-19 — Freeze · `audjpy_carry_long_hold_v1` · **FROZEN** (carry, not gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `audjpy_carry_long_hold_v1` |
+| **charter** | `results/xau_charters/2026-09-19_audjpy_carry_long_hold_v1.json` |
+| **role** | Always-long **0.10 AUDJPY** · harvest frozen `SYMBOL_SWAP_LONG` (Wed×3) |
+| **n_free_knobs** | **0** |
+| **control** | identical long **swap=0** (must beat) |
+| **K** | 20 (K_prior=19) |
+| **do not** | retune 0.10 · short JPY · peek holdout · `--live` |
+
+Interest, not a price forecast. Swap path caveat in the charter.
+
+---
+
+## 2026-09-19 — Develop screen · `eur_gbp_logspread_ou_fade_v1` **SCREEN_FAIL** (off-gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `eur_gbp_logspread_ou_fade_v1` |
+| **tape** | Phase 0 EUR∩GBP daily 2021-09-07→2025-12-31 |
+| **result** | n **29** · WR **62.1%** · PF **2.01** · NP **+$519** · DD **1.60%** · AL-EUR report **+$1.8k** |
+| **disposition** | **SCREEN_FAIL** — **thin-n** (29<40) · PF/NP/DD pass · holdout untouched |
+| **artifact** | `results/eur_gbp_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 252/2/5 to farm n · reopen NY scalp · add XAU · `--live` |
+| **multiplicity** | **K_prior=19 for the next family** |
+
+Off-gold OU is too rare on this window. Do not cut `n_trades_min`.
+
+---
+
+## 2026-09-19 — Freeze · `eur_gbp_logspread_ou_fade_v1` · **FROZEN** (off-gold)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `eur_gbp_logspread_ou_fade_v1` |
+| **charter** | `results/xau_charters/2026-09-19_eur_gbp_logspread_ou_fade_v1.json` |
+| **role** | EURUSD–GBPUSD daily log-spread fade — **not gold** |
+| **n_free_knobs** | **0** · expanding β min **252** · \|z\|**>2** · exit 0 or **5**d · 0.10 EUR |
+| **tape** | Phase 0 EUR∩GBP H1 2021-09-07 → develop `< 2026-01-01` |
+| **control** | always-flat · always-long EUR report-only |
+| **K** | 19 (K_prior=18) |
+| **do not** | retune 252/2/5 · reopen NY scalp · add XAU · peek 2026 · `--live` |
+
+Gold catalog (articles + 10 signal pages) is exhausted. This freeze leaves XAU.
+
+---
+
+## 2026-09-19 — Develop screen · `xau_xag_logspread_ou_fade_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_xag_logspread_ou_fade_v1` |
+| **tape** | Vantage XAU∩XAG daily 2018-04-02→2025-12-31 |
+| **result** | n **41** · WR **58.5%** · PF **1.19** · NP **+$9.9k** · DD **225%** · AL-XAU report **+$150.5k** |
+| **disposition** | **SCREEN_FAIL** — PF<1.2 · DD blowup · holdout untouched |
+| **artifact** | `results/xau_xag_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 252/2/5 · seasonal months · reopen XAU–EUR OU · `--live` |
+| **multiplicity** | **K_prior=18 for the next family** |
+
+Metals-ratio fade is not an edge after two-leg costs. Data gate lifted; thesis still dead.
+
+---
+
+## 2026-09-19 — Freeze · `xau_xag_logspread_ou_fade_v1` · **BLOCKED_ON_DATA**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`BLOCKED_ON_DATA`** — need **XAGUSD H1** 2018-04-02+ · **do not screen gold-only** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_xag_logspread_ou_fade_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_xag_logspread_ou_fade_v1.json` |
+| **role** | Market-neutral **XAU–XAG** log-spread fade — not a gold sizer |
+| **n_free_knobs** | **0** · expanding β min **252** · \|z\|**>2** · exit 0 or **5**d · 0.5 XAU |
+| **data gate** | Vantage MCP **XAGUSD not found** (2026-09-19). XAU dump exists. Forbid gold-only screen |
+| **control** | always-flat primary · always-long XAU report-only |
+| **article** | [14035](https://www.mql5.com/en/articles/14035) · intake **defer** · no seasonal months |
+| **K** | 18 (K_prior=17) |
+| **do not** | retune 252/2/5 · reopen XAU–EUR OU · peek holdout · `--live` |
+
+GVZ and GARCH are dead. This freeze is the metals ratio, stalled on silver history.
+
+---
+
+## 2026-09-19 — Develop screen · `xau_gvz_voltarget_always_long_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_gvz_voltarget_always_long_v1` |
+| **tape** | daily XAU 2018-04-02→2025-12-31 · FRED GVZCLS as-of · mean GVZ **16.50** |
+| **result** | 2002 days · mean lots **0.439** · NP **+$136.9k** · DD **78.91%** · Calmar **1735** vs control NP **+$149.6k** · DD **78.91%** · Calmar **1896** |
+| **disposition** | **SCREEN_FAIL** — NP>0 pass · DD **tied** (not strictly below) · **Calmar loses** · holdout untouched |
+| **artifact** | `results/xau_gvz_voltarget_always_long_v1_screen.{json,md}` |
+| **do not** | retune 15 / GVZ units · copy article 1.20 flatten · GARCH salvage · `--live` |
+| **multiplicity** | **K_prior=17 for the next family** |
+
+Implied vol did not sit with less pain than 0.5 lot. Realized GARCH and GVZ are both dead on this host.
+
+---
+
+## 2026-09-19 — Freeze · `xau_gvz_voltarget_always_long_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_gvz_voltarget_always_long_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_gvz_voltarget_always_long_v1.json` |
+| **role** | **Risk module** on always-long — **implied** vol (GVZCLS), not realized GARCH |
+| **n_free_knobs** | **0** · `lots = 0.5 × 15 / GVZ_<D` · cap **0.5** · as-of join · missing → flat |
+| **tape** | XAU MCP H1 2018-04-02→2025-12-31 · GVZ **FRED at screen** (not this commit) |
+| **article** | [23734](https://www.mql5.com/en/articles/23734) observe-only · intake **defer** · do **not** copy 1.20 cuts |
+| **control** | constant 0.5 lot, same eligible days, same costs |
+| **gates** | NP>0 · DD **<** control DD · Calmar **>** control Calmar |
+| **K** | 17 (K_prior=16) |
+| **do not** | retune 15 · flatten-ratio salvage · GARCH/EGARCH · peek holdout · `--live` |
+
+GARCH realized-vol sizer is dead. This freeze asks whether **options-implied** vol sits with less pain. No metric yet.
+
+---
+
+## 2026-09-19 — Develop screen · `xau_garch_voltarget_always_long_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_garch_voltarget_always_long_v1` |
+| **tape** | daily from MCP H1 2018-04-02→2025-12-31 · first size 2019-03-25 |
+| **result** | 1749 days · mean lots **0.473** · NP **+$145.4k** · DD **45.89%** · Calmar **3169** vs control NP **+$150.3k** · DD **46.36%** · Calmar **3241** |
+| **disposition** | **SCREEN_FAIL** — NP>0 and DD&lt;control pass · **Calmar loses** · holdout untouched |
+| **artifact** | `results/xau_garch_voltarget_always_long_v1_screen.{json,md}` |
+| **do not** | retune 15/252/GARCH(1,1) · EGARCH/H1 salvage · attach to dead families · `--live` |
+| **multiplicity** | **K_prior=16 for the next family** |
+
+Vol targeting barely left 0.5 lot (gold often under 15% vol). Sitting with a constant 0.5 lot still wins Calmar.
+
+---
+
+## 2026-09-19 — Freeze · `xau_garch_voltarget_always_long_v1` · **FROZEN**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`FROZEN`** — say **screen it**. **Do not** compute develop PF in this freeze |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_garch_voltarget_always_long_v1` |
+| **charter** | `results/xau_charters/2026-09-19_xau_garch_voltarget_always_long_v1.json` |
+| **role** | **Risk module** on the always-long host — not a new entry rule |
+| **n_free_knobs** | **0** · GARCH(1,1) daily · target **15%** ann · cap **0.5** lot · min_obs **252** |
+| **tape** | `results/xau_fomc_h4/xauusd_h1_2018_2025.csv` · 2018-04-02 → 2025-12-31 |
+| **control** | constant 0.5 lot always-long, same post-warmup window, same costs |
+| **gates** | NP>0 · DD **<** control DD · Calmar **>** control Calmar |
+| **K** | 16 (K_prior=15) |
+| **do not** | retune 15/252/GARCH(1,1) · EGARCH/H1 salvage · attach to dead families · peek holdout · `--live` |
+
+Sitting won. This freeze asks whether vol targeting sits with less pain. No metric yet.
+
+---
+
+## 2026-09-19 — Develop screen · `renko_event_clock_vendor` **SCREEN_FAIL** (deterministic)
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote** | **no** |
+| **live_go** | **false** |
+| **PAPER_GO** | **no** |
+| **family_id** | `renko_event_clock_vendor` |
+| **charter v1 (operative)** | `results/xau_charters/2026-09-19_renko_event_clock_vendor_v1.json` · SHA `ddeae18a71bcb141d7033bfcf1d6fab4ed56cf03c21535d6b3ab326a244ab614` (zero free knobs; all five vehicles copied verbatim from MQL5 Code Base 77234 / 77236) |
+| **screen** | develop 85,802 M15 bars · 2022-05-17 → 2025-12-31 · holdout **untouched** |
+| **result** | primary passers **0 / 5**. ADX/DI n **123** · PF **0.84** · NP **−268.88**; BB breakout n 121 · PF 1.07; BB re-entry n 28 (thin) · PF 2.40; BB midline n 49 · PF 0.52 · NP −522.51; BB squeeze n 67 · PF 1.11 |
+| **disposition** | **SCREEN_FAIL — ZERO_PRIMARY_PASSERS** · terminal · null **skipped** (charter: a zero-passer screen is terminal without spending the null) · `r1_burned=false` |
+| **artifact** | `results/xau_renko_event_clock_vendor_screen.{json,md}` · review `docs/research/RENKO-VENDOR-EDGE-REVIEW-2026-09-19.md` · ledger row in `results/xau_family_attempts.jsonl` |
+| **falsifiers confirmed** | thin-n (re-entry 28 < 40); path artefact (BB breakout flips verdict PF 1.07 → 1.20 under the reversed intrabar convention); stop geometry (TP+SL account for **0–0.8%** of exits — the advertised 1:0.23 R:R never binds, these are 18–43h time-exit systems); cost slope monotone across 0/5/10/20 pt with no rescue |
+| **multiplicity** | look consumed · **K_prior=12 for the next family** · dead-lines list gains this family |
+| **multiplicity (reconciled on landing 2026-09-25)** | branch-local K_prior=12 above is stale (branch cut before 9 later families). This family counts once in the main ledger: operative K_prior after landing = **22**. Every other entry keeps the number it was screened against. |
+| **dead-line consequence** | Bollinger vehicles confirm `KILL_BB_RSI_LINE` **across clocks** — do not reopen Bollinger on any clock. ADX/DI on the brick clock closes on the largest sample in the screen (n=123, PF 0.84) |
+| **null / paper / live** | **forbidden** — family closed; sealed r1 **not run** |
+| **do not** | retune any vendor parameter · lower n_trades_min · combine vehicles into a portfolio · cite the vendor's 2026-05..2026-09 PF 3.14 / 4.22 as evidence (that window is inside the locked holdout) · attach either expert to a live chart |
+
+Thesis dead as frozen: sampling XAUUSD on a price-event clock (fixed-brick Renko) does **not**
+rescue trend or band rules that failed on the time clock. Five published, independently tuned
+parameter sets all fail after Standard STP costs, and swap is unmodeled so the true numbers are
+worse. Standing: 12 dead families. One open verification remains and is cheap —
+`scripts/25-run-renko-vendor-backtest.sh` re-runs the same frozen parameters on real ticks
+(`MODEL=4`, holdout-guarded) to confirm the M15 brick reconstruction was faithful; it cannot
+revive the family, only corroborate or impeach the reconstruction.
+
+---
+
+## 2026-09-18 — Develop screen · `xau_fomc_h4_long_only_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_fomc_h4_long_only_v1` |
+| **tape** | MCP H1 2018-04-02→2025-12-31 (Vantage UTC+3) |
+| **result** | n **61** · WR **44.3%** · PF **1.05** · NP **+$148** · DD **6.3%** · always-long **+$149.4k** · beat **false** |
+| **disposition** | **SCREEN_FAIL** — PF<1.2 · lost to always-long · holdout untouched · null not run |
+| **artifact** | `results/xau_fomc_h4_long_only_v1_screen.{json,md}` |
+| **do not** | retune 8 H4 / 1.5 ATR · add CPI/NFP to salvage · screen 2021-only bull · `--live` |
+| **multiplicity** | **K_prior=15 for the next family** |
+
+FOMC windows on gold are not excess vs sitting through 2018–25. Data gate lifted; thesis still dead.
+
+---
+
+## 2026-09-18 — Freeze · `xau_fomc_h4_long_only_v1` · **BLOCKED_ON_DATA**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`BLOCKED_ON_DATA`** then freeze review — **do not screen** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_fomc_h4_long_only_v1` |
+| **charter** | `results/xau_charters/2026-09-18_xau_fomc_h4_long_only_v1.json` |
+| **events** | `results/xau_fomc_scheduled_v1.csv` · 14:00 ET scheduled statements only |
+| **n_free_knobs** | **0** · hold 8 H4 · SL 1.5 ATR · long only |
+| **data gate** | MCP dump `results/xau_fomc_h4/xauusd_h1_2018_2025.csv` · **45 863** H1 bars **2018-04-02 → 2025-12-31**. Jan–Mar 2018 is D1-only on Vantage (no H1). Screen still **not run** — say **screen it**. Do not use 2021-only `xauusd_data.csv` |
+| **control** | always-long 0.5 lot on the **2018+** window |
+| **K** | 15 (K_prior=14) |
+| **do not** | screen 2021-only · add CPI/NFP to salvage · peek holdout · `--live` |
+
+CPI is a sister family, not this freeze. Unscheduled FOMC excluded.
+
+---
+
+## 2026-09-18 — Develop screen · `xau_eur_logspread_ou_fade_v1` **SCREEN_FAIL**
+
+| Field | Value |
+|-------|--------|
+| **next_step** | **`RESEARCH_IDLE_PENDING_GENUINELY_NEW_THESIS`** |
+| **promote / live_go / PAPER_GO** | **no / false / no** |
+| **family_id** | `xau_eur_logspread_ou_fade_v1` |
+| **result** | n **27** · WR **48.1%** · PF **0.47** · NP **−$47.2k** · DD **472%** |
+| **disposition** | **SCREEN_FAIL** — thin-n · PF<1.2 · NP<0 · DD blowup · holdout untouched · null not run |
+| **artifact** | `results/xau_eur_logspread_ou_fade_v1_screen.{json,md}` |
+| **do not** | retune 60/2/20d · add GBP third leg to salvage · peek holdout · `--live` |
+| **same-week prior fails** | `xau_h4_pullback_weekly_long_only_v1` · `exog_eur_gbp_tvbeta_xau_long_or_flat_v1` (lost to always-long) |
+| **multiplicity** | **K_prior=14 for the next family** |
+
+Standing: directional gold, long-or-flat, and XAU–EUR residual fade are all dead on this tape. Do not hunt another residual.
+
+---
+
 ## 2026-08-21 — Develop screen · `multi_day_variance_expansion_flat` **SCREEN_FAIL** (deterministic)
 
 | Field | Value |

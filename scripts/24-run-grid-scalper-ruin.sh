@@ -176,6 +176,7 @@ run_tester() {
   : >"$TESTER_LOG"
   (
     cd "$MT5_DIR"
+    export_no_xi2_preload
     timeout "$timeout_sec" wine ./terminal64.exe /portable /config:"$cfg_base" >>"$TESTER_LOG" 2>&1
   ) || true
   info "tester finished (log $TESTER_LOG)"

@@ -5,7 +5,8 @@
 #
 # Usage:
 #   ./scripts/20-seven-desk.sh              # install + enable --now user unit
-#   ./scripts/20-seven-desk.sh --foreground # exec npm run dev (for the unit)
+#   ./scripts/20-seven-desk.sh --foreground # build, then exec npm run start (for the unit)
+#   ./scripts/20-seven-desk.sh --dev        # exec npm run dev
 #   ./scripts/20-seven-desk.sh --stop
 #   ./scripts/20-seven-desk.sh --restart
 #   ./scripts/20-seven-desk.sh --status
@@ -63,13 +64,25 @@ prepare_app() {
   fi
 }
 
-run_foreground() {
-  prepare_app
+refuse_if_port_busy() {
   if port_listening; then
     info "port ${PORT} already in use (HTTP $(http_code)); not binding a second Next.js"
     exit 1
   fi
+}
+
+run_foreground() {
+  prepare_app
+  refuse_if_port_busy
   info "Seven Desk on $URL (paper copy default; WSF live order is opt-in)"
+  npm run build
+  exec npm run start
+}
+
+run_dev() {
+  prepare_app
+  refuse_if_port_busy
+  info "Seven Desk dev on $URL (paper copy default; WSF live order is opt-in)"
   exec npm run dev
 }
 
@@ -136,6 +149,9 @@ case "$cmd" in
   --foreground)
     run_foreground
     ;;
+  --dev)
+    run_dev
+    ;;
   --stop)
     stop_desk
     ;;
@@ -148,9 +164,9 @@ case "$cmd" in
     print_status
     ;;
   -h | --help)
-    sed -n '2,14p' "$0"
+    sed -n '2,15p' "$0"
     ;;
   *)
-    die "Usage: $0 [--start|--foreground|--stop|--restart|--status]"
+    die "Usage: $0 [--start|--foreground|--dev|--stop|--restart|--status]"
     ;;
 esac

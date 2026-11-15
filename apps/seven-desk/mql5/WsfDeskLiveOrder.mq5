@@ -748,19 +748,12 @@ void OnStart()
       open_ms = GetTickCount();
       if(!sent || !TradeRetOk(res.retcode))
         {
-         if((g_sl > 0.0 || g_tp > 0.0) && res.retcode == TRADE_RETCODE_INVALID_STOPS)
-           {
-            sent = SendDeal(symbol, otype, volume, 0, filling, digits, comment_open,
-                            0.0, 0.0, res);
-            open_ret = (int)res.retcode;
-           }
-         if(!sent || !TradeRetOk(res.retcode))
-           {
-            WriteResult(FailJson("open", "OrderSend rejected — not retrying",
-                                 login, server, open_ret,
-                                 res.comment + " last=" + IntegerToString(GetLastError())));
-            return;
-           }
+         // Never resend without stops: a naked position on a funded account is the
+         // breach state. Reject and let the caller retry with a valid distance.
+         WriteResult(FailJson("open", "OrderSend rejected — not retrying",
+                              login, server, open_ret,
+                              res.comment + " last=" + IntegerToString(GetLastError())));
+         return;
         }
       order_ticket = res.order;
       deal_open = res.deal;

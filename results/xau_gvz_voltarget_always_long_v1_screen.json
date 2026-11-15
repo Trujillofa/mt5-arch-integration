@@ -1,0 +1,37 @@
+{
+  "family_id": "xau_gvz_voltarget_always_long_v1",
+  "verdict": "SCREEN_FAIL",
+  "promote": false,
+  "live_go": false,
+  "h1_start": "2018-04-02 01:00:00",
+  "h1_end": "2025-12-31 23:00:00",
+  "gvz_start": "2008-06-03",
+  "gvz_end": "2025-12-31",
+  "daily_bars": 2002,
+  "first_sized_day": "2018-04-02 01:00:00",
+  "n_days": 2002,
+  "n_sized_days": 2002,
+  "n_flat_missing_or_tiny": 0,
+  "mean_gvz": 16.495739260739256,
+  "develop": {
+    "np": 136908.455,
+    "dd": 78.91282322364658,
+    "calmar": 1734.9329222702902,
+    "wr": 53.74625374625375,
+    "pf": 1.2627946052232857,
+    "mean_lots": 0.43914585414585416
+  },
+  "constant_lot": {
+    "np": 149622.25,
+    "dd": 78.91282322364658,
+    "calmar": 1896.0448237412068,
+    "lots": 0.5
+  },
+  "gates": {
+    "net_profit_gt_0": true,
+    "dd_lt_control": false,
+    "calmar_gt_control": false
+  },
+  "holdout": null,
+  "notes": "GVZ as-of join date < D. Units = percent. Article 1.20 cuts unused. Swap unmodeled both arms."
+}

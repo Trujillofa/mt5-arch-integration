@@ -1,0 +1,157 @@
+{
+  "study": "xau_gold_session_study",
+  "disposition": "SCREEN_FAIL",
+  "window": "develop",
+  "holdout": "untouched (holdout_start 2026-01-01, results/xau_holdout_lock.json)",
+  "promote": false,
+  "live_go": false,
+  "data": {
+    "source": "official MT5 MCP get_chart_history",
+    "symbol": "XAUUSD",
+    "period": "M1",
+    "first_bar_server": "2024.01.02 01:00:00",
+    "last_bar_server": "2026.09.24 23:45:00",
+    "rows": 968301,
+    "bars_missing_spread": 2669,
+    "sha256": "d457e11e1fa586258469a9f44ee33d0317cb52f147248175b578a6345bf95f75",
+    "server_utc_offset_h": 3.0
+  },
+  "develop_days": 500,
+  "develop_range_tday": [
+    "2024-01-02",
+    "2025-12-31"
+  ],
+  "settings": {
+    "server_tz": "ny-close",
+    "london_open": "08:00",
+    "n_null": 500,
+    "null_block_min": 30,
+    "seed": 7,
+    "claim": "15:30-16:30@utc",
+    "costs": "per-bar MqlRates.spread (bar minimum); +0/5/10/20 pt sensitivity"
+  },
+  "timing": {
+    "claim_15_30_16_30_utc": {
+      "all": {
+        "real": 0.12,
+        "null": 0.098,
+        "p": 0.062
+      },
+      "summer": {
+        "real": 0.11,
+        "null": 0.095,
+        "p": 0.224
+      },
+      "winter": {
+        "real": 0.147,
+        "null": 0.11,
+        "p": 0.06
+      }
+    },
+    "best_2h_window_familywise_p": {
+      "utc_all": 0.17,
+      "lon_all": 0.62,
+      "et_all": 0.47,
+      "winter_any_clock": 0.07,
+      "summer_any_clock": 0.68
+    },
+    "clock_stability": "best window shifts -1.0h (UTC) / -2.0h (London, NY) summer->winter: no clock holds it",
+    "null_calibration": "40 synthetic random walks: share p<0.05 = 0.050 (claim), 0.075 (fw best window)"
+  },
+  "sweep": [
+    {
+      "ref": "LDN_AM",
+      "side": "long@low",
+      "n": 214,
+      "avgR_noBE": 0.056,
+      "avgR_BE_0.5R": 0.048,
+      "avgR_BE_halfway": 0.055,
+      "t_noBE": 0.44
+    },
+    {
+      "ref": "LDN_AM",
+      "side": "short@high",
+      "n": 220,
+      "avgR_noBE": -0.203,
+      "avgR_BE_0.5R": -0.112,
+      "avgR_BE_halfway": -0.152,
+      "t_noBE": -1.8
+    },
+    {
+      "ref": "LDN_FULL",
+      "side": "long@low",
+      "n": 63,
+      "avgR_noBE": -0.361,
+      "avgR_BE_0.5R": -0.064,
+      "avgR_BE_halfway": -0.323,
+      "t_noBE": -2.02
+    },
+    {
+      "ref": "LDN_FULL",
+      "side": "short@high",
+      "n": 91,
+      "avgR_noBE": -0.393,
+      "avgR_BE_0.5R": -0.364,
+      "avgR_BE_halfway": -0.441,
+      "t_noBE": -2.28
+    }
+  ],
+  "fade": [
+    {
+      "anchor": "11:00@New York",
+      "n": 295,
+      "avgR_noBE": -0.089,
+      "avgR_BE_0.5R": -0.112,
+      "avgR_BE_halfway": -0.108,
+      "t_noBE": -0.99
+    },
+    {
+      "anchor": "12:00@New York",
+      "n": 295,
+      "avgR_noBE": -0.187,
+      "avgR_BE_0.5R": -0.106,
+      "avgR_BE_halfway": -0.177,
+      "t_noBE": -2.43
+    },
+    {
+      "anchor": "15:00@London",
+      "n": 291,
+      "avgR_noBE": -0.286,
+      "avgR_BE_0.5R": -0.166,
+      "avgR_BE_halfway": -0.204,
+      "t_noBE": -3.86
+    },
+    {
+      "anchor": "15:00@UTC",
+      "n": 294,
+      "avgR_noBE": -0.211,
+      "avgR_BE_0.5R": -0.157,
+      "avgR_BE_halfway": -0.208,
+      "t_noBE": -2.5
+    },
+    {
+      "anchor": "16:00@London",
+      "n": 299,
+      "avgR_noBE": -0.084,
+      "avgR_BE_0.5R": -0.105,
+      "avgR_BE_halfway": -0.092,
+      "t_noBE": -0.93
+    },
+    {
+      "anchor": "16:00@UTC",
+      "n": 299,
+      "avgR_noBE": -0.158,
+      "avgR_BE_0.5R": -0.107,
+      "avgR_BE_halfway": -0.147,
+      "t_noBE": -1.93
+    },
+    {
+      "anchor": "17:00@UTC",
+      "n": 294,
+      "avgR_noBE": -0.055,
+      "avgR_BE_0.5R": -0.053,
+      "avgR_BE_halfway": -0.068,
+      "t_noBE": -0.66
+    }
+  ]
+}

@@ -260,7 +260,7 @@ def secondary_refine(
 
     for vals in itertools.product(*[axes[k] for k in keys]):
         p = deepcopy(base)
-        for k, v in zip(keys, vals):
+        for k, v in zip(keys, vals, strict=False):
             p[k] = v
         if p.get("partial_tp"):
             p.setdefault("partial_tp_r", 1.5)
