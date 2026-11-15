@@ -79,3 +79,11 @@ Details and “one install for all brokers?” answer: [MULTI-BROKER-MT5.md](MUL
 ## Related
 
 - Strategies / risk / Telegram: separate app repos (e.g. trading agents), not this platform layer.
+
+## Kafka signal bus (research-only)
+
+Optional paper/dev fan-out. File bridge remains Seven Desk truth. **promote=no**.
+Merge ≠ host deploy. Do not enable on funded Wine prefixes.
+
+- ADR: [adr/0001-kafka-signal-bus.md](adr/0001-kafka-signal-bus.md)
+- How-to: [research/KAFKA-SIGNAL-BUS.md](research/KAFKA-SIGNAL-BUS.md)
