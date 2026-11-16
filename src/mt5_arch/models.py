@@ -103,6 +103,7 @@ class Position:
     profit: float
     magic: int
     status: str = "open"
+    price_current: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)

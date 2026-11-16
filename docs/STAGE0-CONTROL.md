@@ -49,11 +49,12 @@ sent.
 
 ## Not in this slice
 
-- Prometheus gauges (equity, margin, open positions, exposure, control age,
-  `feed_stale`).
-- XAUUSD per-firm contract size.
 - A `REDUCE`/`FLAT` actor in `DeskOrderBridge.mqh` (closing by ticket). That is
   the order path: it needs an F7 compile plus a live-terminal gate.
+
+Metrics for the switch and the book live in [METRICS.md](METRICS.md); exposure
+uses the broker's per-symbol `contract_size` from `symbols.json` and refuses to
+price a symbol without one.
 
 ## Deploy note
 

@@ -299,6 +299,7 @@ def test_positions_json_parses_open_positions(tmp_path: Path) -> None:
     assert pos.side == "buy"
     assert pos.volume == 0.10
     assert pos.open_price == 1.085
+    assert pos.price_current == 1.09
     assert pos.stop_loss == 1.08
     assert pos.take_profit == 1.10
     assert pos.profit == 12.5
