@@ -6,6 +6,8 @@
 #ifndef DESK_ORDER_BRIDGE_MQH
 #define DESK_ORDER_BRIDGE_MQH
 
+#include <DeskControl.mqh>
+
 #define DESK_REQ_PATH      "mt5_arch\\desk_live_order_request.txt"
 #define DESK_RES_PATH      "mt5_arch\\desk_live_order_result.json"
 #define DESK_CLAIM_PATH    "mt5_arch\\desk_live_order_claimed.txt"
@@ -670,6 +672,17 @@ void DeskOrdProcessRequest()
      {
       DeskOrdWriteResult(DeskOrdFail("action", "scratch is market open+close only",
                            login, server, 0, g_desk_order_type));
+      return;
+     }
+
+   // Entries only: close, cancel, and modify must never be blocked by the
+   // coordinator's inhibit switch. scratch opens first, so it is gated too.
+   string control_reason = "";
+   if(want_open && DeskControlEntriesBlocked(control_reason))
+     {
+      DeskOrdWriteResult(DeskOrdFail("control",
+                           "entries inhibited — " + control_reason,
+                           login, server, 0, g_desk_action));
       return;
      }
 
