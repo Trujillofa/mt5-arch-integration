@@ -90,6 +90,22 @@ class PendingOrder:
 
 
 @dataclass(frozen=True, slots=True)
+class Position:
+    """One open position from Mt5ArchBridge positions.json (PositionsTotal)."""
+
+    ticket: int
+    symbol: str
+    side: str
+    volume: float
+    open_price: float
+    stop_loss: float
+    take_profit: float
+    profit: float
+    magic: int
+    status: str = "open"
+
+
+@dataclass(frozen=True, slots=True)
 class Deal:
     """One closed deal from Mt5ArchBridge deals_export.csv (14-day window).
 

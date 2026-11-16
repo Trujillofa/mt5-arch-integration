@@ -95,6 +95,23 @@ def write_bridge_fixture(bridge: Path, *, age_seconds: float = 0.0) -> None:
     (bridge / "account.json").write_text(json.dumps(account), encoding="utf-8")
     (bridge / "terminal.json").write_text(json.dumps(terminal), encoding="utf-8")
     (bridge / "symbols.json").write_text(json.dumps(symbols), encoding="utf-8")
+    positions = {
+        "positions": [
+            {
+                "ticket": 9001,
+                "symbol": "EURUSD",
+                "side": "buy",
+                "volume": 0.10,
+                "open_price": 1.085,
+                "stop_loss": 1.08,
+                "take_profit": 1.10,
+                "profit": 12.5,
+                "magic": 12345,
+                "status": "open",
+            }
+        ]
+    }
+    (bridge / "positions.json").write_text(json.dumps(positions), encoding="utf-8")
     (bridge / "candles_EURUSD_H1.json").write_text(json.dumps(candles), encoding="utf-8")
     (bridge / "heartbeat.txt").write_text(str(int(time.time())), encoding="utf-8")
     if age_seconds > 0:
@@ -145,10 +162,7 @@ def default_deals_csv(*, n_rows: int = 2) -> str:
 
 def default_dump_deals_done(*, rows: int) -> str:
     """dump_deals.done body: rows=<N> from=<ts> to=<ts> at=<ts>."""
-    return (
-        f"rows={rows} from=2026.08.17 10:00:00 to=2026.08.31 10:00:00 "
-        f"at=2026.08.31 12:00:00"
-    )
+    return f"rows={rows} from=2026.08.17 10:00:00 to=2026.08.31 10:00:00 at=2026.08.31 12:00:00"
 
 
 def write_deal_dump_fixture(

@@ -2,7 +2,15 @@
 
 from mt5_arch.client import MT5ArchClient
 from mt5_arch.config import Settings
-from mt5_arch.models import AccountInfo, Candle, CandlesResult, Deal, SymbolInfo, TerminalInfo
+from mt5_arch.models import (
+    AccountInfo,
+    Candle,
+    CandlesResult,
+    Deal,
+    Position,
+    SymbolInfo,
+    TerminalInfo,
+)
 
 __version__ = "0.1.0"
 
@@ -12,6 +20,7 @@ __all__ = [
     "CandlesResult",
     "Deal",
     "MT5ArchClient",
+    "Position",
     "Settings",
     "SymbolInfo",
     "TerminalInfo",

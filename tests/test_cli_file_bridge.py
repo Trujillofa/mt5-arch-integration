@@ -46,6 +46,36 @@ def test_cli_account_against_fixture(bridge_env: Path, capsys: pytest.CaptureFix
     assert data["server"] == "WSFmarkets-Server"
 
 
+def test_cli_positions_json(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(["positions", "--json"])
+    assert code == 0
+    data = json.loads(capsys.readouterr().out)
+    assert data["count"] == 1
+    assert data["positions"][0]["ticket"] == 9001
+    assert data["positions"][0]["symbol"] == "EURUSD"
+    assert data["positions"][0]["side"] == "buy"
+    assert data["positions"][0]["open_price"] == 1.085
+
+
+def test_cli_positions_text(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(["positions"])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "positions 1" in out
+    assert "9001" in out
+    assert "EURUSD" in out
+
+
+def test_cli_positions_missing_file_exits_1(
+    bridge_env: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (bridge_env / "positions.json").unlink()
+    code = main(["positions", "--json"])
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "positions.json" in err
+
+
 def test_cli_ping_against_fixture(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
     code = main(["ping", "--json"])
     assert code == 0
@@ -85,7 +115,9 @@ def test_cli_missing_heartbeat_errors(
     assert "heartbeat" in err.lower()
 
 
-def test_cli_stale_bridge_errors(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_stale_bridge_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     bridge = tmp_path / "old"
     write_bridge_fixture(bridge, age_seconds=200)
     monkeypatch.setenv("MT5_BACKEND", "file")
@@ -176,7 +208,11 @@ def test_cli_deals_request_timeout_exits_1(
 
 
 def test_cli_deals_empty_dump(bridge_env: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    write_deal_dump_fixture(bridge_env, csv_text="time,deal_id,order_id,position_id,symbol,type,entry,volume,price,profit,swap,commission,fee,reason,magic,comment\n", n_rows=0)
+    write_deal_dump_fixture(
+        bridge_env,
+        csv_text="time,deal_id,order_id,position_id,symbol,type,entry,volume,price,profit,swap,commission,fee,reason,magic,comment\n",
+        n_rows=0,
+    )
     code = main(["deals", "--json"])
     assert code == 0
     data = json.loads(capsys.readouterr().out)

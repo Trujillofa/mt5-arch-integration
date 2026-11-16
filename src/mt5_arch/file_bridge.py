@@ -21,6 +21,7 @@ from mt5_arch.models import (
     CandlesResult,
     Deal,
     PendingOrder,
+    Position,
     SymbolInfo,
     TerminalInfo,
 )
@@ -384,6 +385,23 @@ class FileBridgeClient:
         data = self._read_json("orders.json")
         return parse_pending_orders(data)
 
+    def positions(self) -> list[Position]:
+        """Read positions.json (PositionsTotal open positions).
+
+        Missing file is an error, not an empty book: the EA writes positions.json
+        on every snapshot, so absence means an old build or a broken bridge —
+        a consumer that treats that as "flat" would understate exposure.
+        """
+        self.ensure_alive()
+        path = self.bridge_dir / "positions.json"
+        if not path.exists():
+            raise FileBridgeError(
+                f"Missing {path.name} in {self.bridge_dir}. "
+                "Mt5ArchBridge >= 1.27 writes positions.json each tick; "
+                "redeploy the EA or check the bridge."
+            )
+        return parse_positions(self._read_json("positions.json"))
+
     def deals(self) -> list[Deal]:
         """Read deals_export.csv. Completeness is dump_deals.done only — not heartbeat.
 
@@ -534,6 +552,44 @@ def parse_pending_orders(raw: object) -> list[PendingOrder]:
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise FileBridgeError(f"orders.json: bad order {i}: {exc}") from exc
+    return out
+
+
+def parse_positions(raw: object) -> list[Position]:
+    """Parse EA positions.json. History is not accepted as a substitute."""
+    if raw is None:
+        return []
+    rows: list[object]
+    if isinstance(raw, list):
+        rows = raw
+    elif isinstance(raw, dict):
+        inner = raw.get("positions", [])
+        if not isinstance(inner, list):
+            raise FileBridgeError("positions.json: 'positions' is not a list")
+        rows = inner
+    else:
+        raise FileBridgeError("positions.json is not an object or list")
+    out: list[Position] = []
+    for i, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise FileBridgeError(f"positions.json: position {i} is not an object")
+        try:
+            out.append(
+                Position(
+                    ticket=int(row["ticket"]),
+                    symbol=str(row.get("symbol", "") or ""),
+                    side=str(row.get("side", "") or ""),
+                    volume=float(row.get("volume", 0) or 0),
+                    open_price=float(row.get("open_price", row.get("price_open", 0)) or 0),
+                    stop_loss=float(row.get("stop_loss", 0) or 0),
+                    take_profit=float(row.get("take_profit", 0) or 0),
+                    profit=float(row.get("profit", 0) or 0),
+                    magic=int(row.get("magic", 0) or 0),
+                    status=str(row.get("status", "open") or "open"),
+                )
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise FileBridgeError(f"positions.json: bad position {i}: {exc}") from exc
     return out
 
 
