@@ -47,6 +47,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("ping", parents=[common], help="Check file-bridge or RPyC connectivity")
     sub.add_parser("account", parents=[common], help="Print account snapshot")
     sub.add_parser(
+        "positions",
+        parents=[common],
+        help="Print open positions (file bridge; read-only)",
+    )
+    sub.add_parser(
         "mcp",
         help="Run read-only MCP stdio server for AI agents (no orders)",
     )
@@ -308,6 +313,29 @@ def cmd_candles(
     return 0
 
 
+def cmd_positions(client: Any, as_json: bool) -> int:
+    if not isinstance(client, FileBridgeClient):
+        print("error: positions is file-bridge only (set MT5_BACKEND=file)", file=sys.stderr)
+        return 1
+    rows = client.positions()
+    payload = {"count": len(rows), "positions": [asdict(p) for p in rows]}
+    if as_json:
+        _print_result(payload, as_json=True)
+        return 0
+    print(f"positions {len(rows)}")
+    print(
+        f"{'ticket':>10} {'symbol':<10} {'side':<5} {'vol':>8} "
+        f"{'open':>12} {'sl':>12} {'tp':>12} {'profit':>10}"
+    )
+    for p in rows:
+        print(
+            f"{p.ticket:>10} {p.symbol:<10} {p.side:<5} {p.volume:>8.4f} "
+            f"{p.open_price:>12.5f} {p.stop_loss:>12.5f} "
+            f"{p.take_profit:>12.5f} {p.profit:>10.2f}"
+        )
+    return 0
+
+
 def cmd_deals(client: Any, as_json: bool, *, request: bool, timeout: float) -> int:
     if not isinstance(client, FileBridgeClient):
         print("error: deals is file-bridge only (set MT5_BACKEND=file)", file=sys.stderr)
@@ -414,6 +442,8 @@ def _dispatch(args: argparse.Namespace, client: Any) -> int:
         return cmd_ping(client, args.json)
     if args.command == "account":
         return cmd_account(client, args.json)
+    if args.command == "positions":
+        return cmd_positions(client, args.json)
     if args.command == "symbols":
         return cmd_symbols(client, args.symbols, args.json)
     if args.command == "candles":

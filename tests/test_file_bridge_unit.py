@@ -17,6 +17,7 @@ from mt5_arch.file_bridge import (
     FileBridgeError,
     default_bridge_dir,
     parse_pending_orders,
+    parse_positions,
 )
 
 
@@ -285,6 +286,50 @@ def test_stale_bridge_refuses_orders(tmp_path: Path) -> None:
     client = FileBridgeClient(bridge, max_age_seconds=10.0)
     with pytest.raises(FileBridgeError, match="stale"):
         client.orders()
+
+
+def test_positions_json_parses_open_positions(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    rows = FileBridgeClient(bridge, max_age_seconds=30.0).positions()
+    assert len(rows) == 1
+    pos = rows[0]
+    assert pos.ticket == 9001
+    assert pos.symbol == "EURUSD"
+    assert pos.side == "buy"
+    assert pos.volume == 0.10
+    assert pos.open_price == 1.085
+    assert pos.stop_loss == 1.08
+    assert pos.take_profit == 1.10
+    assert pos.profit == 12.5
+    assert pos.magic == 12345
+    assert pos.status == "open"
+
+
+def test_positions_json_missing_fails_closed(tmp_path: Path) -> None:
+    bridge = tmp_path / "mt5_arch"
+    write_bridge_fixture(bridge)
+    (bridge / "positions.json").unlink()
+    client = FileBridgeClient(bridge, max_age_seconds=30.0)
+    with pytest.raises(FileBridgeError, match="positions.json"):
+        client.positions()
+
+
+def test_parse_positions_rejects_history_shaped_object() -> None:
+    assert parse_positions({"positions": []}) == []
+    assert parse_positions([{"ticket": 1, "symbol": "EURUSD"}])[0].ticket == 1
+    with pytest.raises(FileBridgeError, match="not a list"):
+        parse_positions({"positions": {"ticket": 1}})
+    with pytest.raises(FileBridgeError, match="bad position"):
+        parse_positions({"positions": [{"symbol": "EURUSD"}]})
+
+
+def test_stale_bridge_refuses_positions(tmp_path: Path) -> None:
+    bridge = tmp_path / "stale-positions"
+    write_bridge_fixture(bridge, age_seconds=120.0)
+    client = FileBridgeClient(bridge, max_age_seconds=10.0)
+    with pytest.raises(FileBridgeError, match="stale"):
+        client.positions()
 
 
 def test_non_ascii_symbol_json_does_not_leak_unicode_error(tmp_path: Path) -> None:

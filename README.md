@@ -78,6 +78,7 @@ In the MT5 window:
 # .env should have MT5_BACKEND=file (default)
 uv run mt5-arch ping
 uv run mt5-arch account
+uv run mt5-arch positions              # open positions from positions.json
 uv run mt5-arch symbols EURUSD XAUUSD
 uv run mt5-arch candles EURUSD --tf H1 --count 10
 uv run mt5-arch deals                  # existing dump; --request is opt-in
@@ -95,6 +96,7 @@ uv run mt5-arch deals                  # existing dump; --request is opt-in
 |---------|-------------|
 | `mt5-arch ping` | Terminal connectivity |
 | `mt5-arch account` | Balance / equity / margin |
+| `mt5-arch positions` | Open positions from `positions.json` (file bridge; read-only) |
 | `mt5-arch symbols SYM...` | Lot min/max/step, ticks |
 | `mt5-arch candles SYM [--tf H1] [--count 10]` | OHLCV |
 | `mt5-arch deals [--request] [--timeout 30]` | Closed deals (file bridge; `--request` writes `dump_deals.request`) |
