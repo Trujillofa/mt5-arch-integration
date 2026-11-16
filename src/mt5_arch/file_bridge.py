@@ -586,6 +586,7 @@ def parse_positions(raw: object) -> list[Position]:
                     profit=float(row.get("profit", 0) or 0),
                     magic=int(row.get("magic", 0) or 0),
                     status=str(row.get("status", "open") or "open"),
+                    price_current=float(row.get("price_current", row.get("open_price", 0)) or 0),
                 )
             )
         except (KeyError, TypeError, ValueError) as exc:

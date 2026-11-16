@@ -392,6 +392,7 @@ void WritePositions()
       j += "\"side\":\"" + side + "\",";
       j += "\"volume\":" + DoubleToString(PositionGetDouble(POSITION_VOLUME), 4) + ",";
       j += "\"open_price\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_OPEN), 8) + ",";
+      j += "\"price_current\":" + DoubleToString(PositionGetDouble(POSITION_PRICE_CURRENT), 8) + ",";
       j += "\"stop_loss\":" + DoubleToString(PositionGetDouble(POSITION_SL), 8) + ",";
       j += "\"take_profit\":" + DoubleToString(PositionGetDouble(POSITION_TP), 8) + ",";
       j += "\"profit\":" + DoubleToString(PositionGetDouble(POSITION_PROFIT), 2) + ",";

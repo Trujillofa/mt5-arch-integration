@@ -103,6 +103,7 @@ def write_bridge_fixture(bridge: Path, *, age_seconds: float = 0.0) -> None:
                 "side": "buy",
                 "volume": 0.10,
                 "open_price": 1.085,
+                "price_current": 1.09,
                 "stop_loss": 1.08,
                 "take_profit": 1.10,
                 "profit": 12.5,
