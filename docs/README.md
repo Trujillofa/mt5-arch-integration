@@ -9,6 +9,7 @@ Platform layer: **Wine MT5 + file bridge (or RPyC) + Python CLI** on Arch Linux.
 | [../README.md](../README.md) | Project overview, quick start, CLI table |
 | [INSTALL-LINUX-ARCH.md](INSTALL-LINUX-ARCH.md) | Arch install steps (Wine, prefix, MT5) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | File bridge vs RPyC data paths |
+| [STAGE0-CONTROL.md](STAGE0-CONTROL.md) | Entry inhibit switch (`control.json`); exits never gated |
 | [MULTI-BROKER-MT5.md](MULTI-BROKER-MT5.md) | **One MT5 vs per-broker installers** (feasibility + evidence) |
 | [TROUBLESHOOTING.md](TROUBLESHOOTING.md) | Network silence, Wine, multi-broker, Algo Trading |
 | [CHARTS-AND-STABILITY.md](CHARTS-AND-STABILITY.md) | Black charts, maximize, clipboard paste under Wine |

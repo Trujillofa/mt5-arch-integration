@@ -73,6 +73,7 @@ int OnInit()
    EventSetTimer((int)MathMax(3, InpTimerSec));
    Print("Mt5ArchBridge WRITER v" + BRIDGE_VERSION + " broker=", InpBroker, " ON ", _Symbol,
          " -> Files/", g_dir, " every ", InpTimerSec, "s (timer only, no tick writes)");
+   DeskControlLogOnInit();
    WriteAll();
    DumpHistoryOnce();
    return INIT_SUCCEEDED;
