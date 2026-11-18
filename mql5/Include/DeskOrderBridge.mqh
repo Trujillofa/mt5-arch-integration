@@ -569,6 +569,45 @@ bool DeskOrdIsNetting()
    return (AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_NETTING);
   }
 
+// A ticket that is gone can be a successful retry (flat) or a bad ticket.
+// History is the discriminator: no deals for that position id = never existed.
+bool DeskOrdPositionEverExisted(const ulong ticket)
+  {
+   if(ticket == 0)
+      return false;
+   if(!HistorySelectByPosition((long)ticket))
+      return false;
+   return (HistoryDealsTotal() > 0);
+  }
+
+string DeskOrdFlatJson(const bool ok, const string stage, const string reason,
+                       const long login, const string server, const string symbol,
+                       const ulong ticket, const double volume_before,
+                       const double volume_closed, const double volume_after,
+                       const int retcode, const string retmsg)
+  {
+   return
+      "{\n"
+      "  \"ok\": " + (ok ? "true" : "false") + ",\n"
+      "  \"source\": \"seven-desk\",\n"
+      "  \"path\": \"ea\",\n"
+      "  \"request_id\": \"" + DeskOrdEsc(g_desk_request_id) + "\",\n"
+      "  \"stage\": \"" + DeskOrdEsc(stage) + "\",\n"
+      "  \"reason\": \"" + DeskOrdEsc(reason) + "\",\n"
+      "  \"login\": " + IntegerToString(login) + ",\n"
+      "  \"server\": \"" + DeskOrdEsc(server) + "\",\n"
+      "  \"symbol\": \"" + DeskOrdEsc(symbol) + "\",\n"
+      "  \"ticket\": " + IntegerToString((long)ticket) + ",\n"
+      "  \"position\": " + IntegerToString((long)ticket) + ",\n"
+      "  \"volume_before\": " + DoubleToString(volume_before, 2) + ",\n"
+      "  \"volume_closed\": " + DoubleToString(volume_closed, 2) + ",\n"
+      "  \"volume_after\": " + DoubleToString(volume_after, 2) + ",\n"
+      "  \"retcode\": " + IntegerToString(retcode) + ",\n"
+      "  \"retmsg\": \"" + DeskOrdEsc(retmsg) + "\",\n"
+      "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
+      "}\n";
+  }
+
 void DeskOrdProcessRequest()
   {
    const long login0 = AccountInfoInteger(ACCOUNT_LOGIN);
@@ -660,11 +699,14 @@ void DeskOrdProcessRequest()
                               g_desk_order_type == "buy_stop" || g_desk_order_type == "sell_stop");
    const bool want_cancel = (g_desk_action == "cancel");
    const bool want_modify = (g_desk_action == "modify");
+   const bool want_flat = (g_desk_action == "flat");
+   const bool want_reduce = (g_desk_action == "reduce");
    const bool want_open = (g_desk_action == "scratch" || g_desk_action == "open");
    const bool want_close = (g_desk_action == "scratch" || g_desk_action == "close");
-   if(!want_open && !want_close && !want_cancel && !want_modify)
+   if(!want_open && !want_close && !want_cancel && !want_modify && !want_flat && !want_reduce)
      {
-      DeskOrdWriteResult(DeskOrdFail("action", "action must be scratch, open, close, cancel, or modify",
+      DeskOrdWriteResult(DeskOrdFail("action",
+                           "action must be scratch, open, close, cancel, modify, flat, or reduce",
                            login, server, 0, g_desk_action));
       return;
      }
@@ -687,7 +729,7 @@ void DeskOrdProcessRequest()
      }
 
    double volume = 0.0;
-   if(!want_cancel && !want_modify)
+   if(!want_cancel && !want_modify && !want_flat)
      {
       if(!DeskOrdResolveVolume(symbol, login, server, volume))
          return;
@@ -829,6 +871,109 @@ void DeskOrdProcessRequest()
          "  \"retcode\": " + IntegerToString((int)pres.retcode) + ",\n"
          "  \"balance_after\": " + DoubleToString(AccountInfoDouble(ACCOUNT_BALANCE), 2) + "\n"
          "}\n");
+      return;
+     }
+
+   if(want_flat || want_reduce)
+     {
+      // Entries are gated by control.json; exits are not. Explicit ticket only:
+      // a symbol-wide flat in a hedging account is ambiguous.
+      if(g_desk_ticket == 0)
+        {
+         DeskOrdWriteResult(DeskOrdFail("ticket",
+                              "flat/reduce require an explicit position ticket",
+                              login, server, 0, symbol));
+         return;
+        }
+      string done_stage = "flat";
+      if(want_reduce)
+         done_stage = "reduced";
+
+      if(!PositionSelectByTicket(g_desk_ticket))
+        {
+         if(DeskOrdPositionEverExisted(g_desk_ticket))
+           {
+            DeskOrdWriteResult(DeskOrdFlatJson(true, "already_flat",
+                                 "position already closed — idempotent flat",
+                                 login, server, symbol, g_desk_ticket,
+                                 0.0, 0.0, 0.0, 0, ""));
+            return;
+           }
+         DeskOrdWriteResult(DeskOrdFail("ticket", "position ticket not found",
+                              login, server, 0,
+                              IntegerToString((long)g_desk_ticket)));
+         return;
+        }
+
+      string pos_symbol = PositionGetString(POSITION_SYMBOL);
+      if(pos_symbol != symbol)
+        {
+         DeskOrdWriteResult(DeskOrdFail("symbol",
+                              "position symbol " + pos_symbol + " is not the configured " + symbol,
+                              login, server, 0,
+                              IntegerToString((long)g_desk_ticket)));
+         return;
+        }
+
+      double vol_before = PositionGetDouble(POSITION_VOLUME);
+      double close_vol = vol_before;
+      if(want_reduce)
+        {
+         if(!DeskOrdResolveVolume(symbol, login, server, close_vol))
+            return;
+         if(close_vol > vol_before + 1e-8)
+           {
+            DeskOrdWriteResult(DeskOrdFail("volume",
+                                 "reduce exceeds position volume — refusing",
+                                 login, server, 0,
+                                 "reduce=" + DoubleToString(close_vol, 2) +
+                                 " position=" + DoubleToString(vol_before, 2)));
+            return;
+           }
+         if(close_vol >= vol_before - 1e-8)
+            close_vol = vol_before;
+        }
+
+      ENUM_ORDER_TYPE ctype = (PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_BUY)
+                              ? ORDER_TYPE_SELL : ORDER_TYPE_BUY;
+      string comment = "7desk-f-" + g_desk_request_id;
+      MqlTradeResult fres;
+      ZeroMemory(fres);
+      bool sent = DeskOrdSendDeal(symbol, ctype, close_vol, g_desk_ticket, filling, digits,
+                                  comment, 0.0, 0.0, fres);
+      if(!sent && DeskOrdIsNetting())
+         sent = DeskOrdSendDeal(symbol, ctype, close_vol, 0, filling, digits,
+                                comment, 0.0, 0.0, fres);
+      if(!sent || (fres.retcode != TRADE_RETCODE_DONE &&
+                   fres.retcode != TRADE_RETCODE_DONE_PARTIAL))
+        {
+         DeskOrdWriteResult(DeskOrdFail(done_stage,
+                              "OrderSend " + done_stage + " rejected — not retrying",
+                              login, server, (int)fres.retcode,
+                              fres.comment + " last=" + IntegerToString(GetLastError())));
+         return;
+        }
+
+      double vol_after = 0.0;
+      bool selected = PositionSelectByTicket(g_desk_ticket);
+      if(!selected && DeskOrdIsNetting())
+        {
+         ulong again = DeskOrdFindPosition(symbol);
+         if(again > 0)
+            selected = PositionSelectByTicket(again);
+        }
+      if(selected && PositionGetString(POSITION_SYMBOL) == symbol)
+         vol_after = PositionGetDouble(POSITION_VOLUME);
+      if(vol_after <= 0.0)
+         done_stage = "flat";
+
+      string done_reason = "seven-desk position flattened";
+      if(want_reduce && vol_after > 0.0)
+         done_reason = "seven-desk position reduced";
+      DeskOrdWriteResult(DeskOrdFlatJson(true, done_stage, done_reason,
+                           login, server, symbol, g_desk_ticket,
+                           vol_before, close_vol, vol_after,
+                           (int)fres.retcode, fres.comment));
       return;
      }
 
