@@ -47,10 +47,10 @@ sent.
   `DeskOrdProcessRequest`. The file is re-read every time, so a coordinator
   update takes effect on the next request — no restart.
 
-## Not in this slice
+## Related
 
-- A `REDUCE`/`FLAT` actor in `DeskOrderBridge.mqh` (closing by ticket). That is
-  the order path: it needs an F7 compile plus a live-terminal gate.
+- [REDUCE-FLAT.md](REDUCE-FLAT.md) — the coordinator `flat`/`reduce` exits
+  (explicit ticket, idempotent, never gated by this switch).
 
 Metrics for the switch and the book live in [METRICS.md](METRICS.md); exposure
 uses the broker's per-symbol `contract_size` from `symbols.json` and refuses to
